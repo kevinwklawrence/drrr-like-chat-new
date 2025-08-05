@@ -9,12 +9,15 @@ A new drrr-like-chat project made from scratch, using HTML, CSS, JS, PHP, Ajax, 
 - Registration
 - Room passwords
 - Room descriptions
+- Hosts
+- Host passing/Host room nuking
+- Auto-deleting rooms
+- Permanent rooms
 
 # PLANNED FEATURES
 - Room settings/Kick/Ban
-- Hosts
-- Auto-terminating rooms
 - Private messaging
+- Knocking
 - Etc...
 
 # REQUIRES SQL SETUP
