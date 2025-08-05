@@ -1,5 +1,6 @@
 # DRRR-LIKE-CHAT-NEW
-A new drrr-like-chat project made from scratch, using HTML, CSS, JS, PHP, Ajax, and SQL. By Lenn, 2025.
+A new drrr-like-chat project made from scratch, using HTML, CSS, JS, PHP, Ajax, and SQL. 
+©Lenn, 2025.
 
 # FEATURES
 - Guest Login
