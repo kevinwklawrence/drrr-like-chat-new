@@ -9,8 +9,10 @@
 </head>
 <body>
     <div class="container mt-5">
-        <h2>Guest Login</h2>
-        <form id="guestLoginForm">
+        <div class="row justify-content-center">
+        <div class="col-md-6">
+        <h2 class="text-center">Guest Login</h2>
+        <form id="guestLoginForm" class="mt-4">
             <div class="mb-3">
                 <label for="guestName" class="form-label">Name</label>
                 <input type="text" class="form-control" id="guestName" required>
@@ -34,16 +36,19 @@
                     <img src="images/m8.png" class="avatar" data-avatar="m8.png">
                     <img src="images/m9.png" class="avatar" data-avatar="m9.png">
                     <img src="images/f7.png" class="avatar" data-avatar="f7.png">
-                    <img src="images/f8.png" class="avatar" data-avatar="f8.png">
-                    <img src="images/f9.png" class="avatar" data-avatar="f9.png">
                     <!-- Add more avatars -->
                 </div>
                 <input type="hidden" id="selectedAvatar" name="avatar" required>
             </div>
-            <button type="submit" class="btn btn-primary">Enter Lounge</button>
+                    <button type="submit" class="btn btn-primary w-100">Login</button>
         </form>
-        <p><a href="login.php">Login with account</a></p>
+        <div class="text-center mt-3">
+                    <p>Already have an account? <a href="login.php">Login here</a></p>
+                    <p>Or <a href="register.php">Register here</a></p>
+                </div>
     </div>
+</div>
+</div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="js/script.js"></script>

@@ -25,15 +25,23 @@ $user_id = ($_SESSION['user']['type'] === 'user') ? $_SESSION['user']['id'] : nu
 $guest_name = ($_SESSION['user']['type'] === 'guest') ? $_SESSION['user']['name'] : null;
 $avatar = ($_SESSION['user']['type'] === 'user') ? $_SESSION['user']['avatar'] : ($_SESSION['user']['avatar'] ?? null);
 
-error_log("Inserting message: room_id=$room_id, user_id=$user_id, guest_name=$guest_name, avatar=$avatar, message=$message"); // Debug
+// Get the user_id string for both registered users and guests
+$user_id_string = '';
+if ($_SESSION['user']['type'] === 'user') {
+    $user_id_string = $_SESSION['user']['user_id'] ?? '';
+} else {
+    $user_id_string = $_SESSION['user']['user_id'] ?? '';
+}
 
-$stmt = $conn->prepare("INSERT INTO messages (room_id, user_id, guest_name, message, avatar) VALUES (?, ?, ?, ?, ?)");
+error_log("Inserting message: room_id=$room_id, user_id=$user_id, guest_name=$guest_name, avatar=$avatar, user_id_string=$user_id_string, message=$message");
+
+$stmt = $conn->prepare("INSERT INTO messages (room_id, user_id, guest_name, message, avatar, user_id_string) VALUES (?, ?, ?, ?, ?, ?)");
 if (!$stmt) {
     error_log("Prepare failed in send_message.php: " . $conn->error);
     echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
     exit;
 }
-$stmt->bind_param("iisss", $room_id, $user_id, $guest_name, $message, $avatar);
+$stmt->bind_param("iissss", $room_id, $user_id, $guest_name, $message, $avatar, $user_id_string);
 if (!$stmt->execute()) {
     error_log("Execute failed in send_message.php: " . $stmt->error);
     echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $stmt->error]);

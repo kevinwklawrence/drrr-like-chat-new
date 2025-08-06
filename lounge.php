@@ -12,15 +12,16 @@ if (!isset($_SESSION['user'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lounge</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
 </head>
 <body>
     <div class="container mt-5">
         <h2>Welcome, <?php echo htmlspecialchars($_SESSION['user']['name'] ?? $_SESSION['user']['username']); ?>
             <?php if ($_SESSION['user']['type'] === 'user') { ?>
-                <span class="badge bg-success">Verified</span>
+                <span class="badge rounded-pill bg-success">Verified</span>
                 <?php if ($_SESSION['user']['is_admin']) { ?>
-                    <span class="badge bg-danger">Staff</span>
+                    <span class="badge rounded-pill bg-danger">Staff</span>
                 <?php } ?>
             <?php } ?>
         </h2>
@@ -38,17 +39,17 @@ if (!isset($_SESSION['user'])) {
                 <textarea class="form-control" id="description"></textarea>
             </div>
             <div class="mb-3">
-                <label for="background" class="form-label">Background Image</label>
+                <label for="background" class="form-label">Background</label>
                 <select class="form-select" id="background">
-                    <option value="">Select Background</option>
-                    <option value="images/background1.jpg">Background 1</option>
-                    <option value="images/background2.jpg">Background 2</option>
+                   <option value="">No Background</option>
+                    <option value="images/bg1.png">Background 1</option>
+                    <option value="images/bg2.png">Background 2</option>
                 </select>
             </div>
             <div class="mb-3">
                 <label for="capacity" class="form-label">Capacity</label>
                 <select class="form-select" id="capacity" required>
-                    <option value="">Select Capacity</option>
+                    <!--<option value="">Select Capacity</option>-->
                     <option value="5">5</option>
                     <option value="10">10</option>
                     <option value="20">20</option>
@@ -72,9 +73,10 @@ if (!isset($_SESSION['user'])) {
             <button type="submit" class="btn btn-primary">Create Room</button>
         </form>
     </div>
+    
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/script.js"></script>
-    <!--<script src="js/lounge.js"></script>-->
+    <script src="js/lounge.js"></script>
 </body>
 </html>

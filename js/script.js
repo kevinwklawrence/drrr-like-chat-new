@@ -39,12 +39,20 @@ $(document).ready(function() {
     $('#userLoginForm').submit(function(e) {
         e.preventDefault();
         console.log('User login form submitted');
+        
+        // Check if avatar is selected
+        if (!$('#selectedAvatar').val()) {
+            alert('Please select an avatar');
+            return;
+        }
+        
         $.ajax({
             url: 'api/login.php',
             method: 'POST',
             data: {
                 username: $('#username').val(),
                 password: $('#password').val(),
+                avatar: $('#selectedAvatar').val(),
                 type: 'user'
             },
             dataType: 'json',

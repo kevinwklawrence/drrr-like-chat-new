@@ -5,10 +5,27 @@
 #chatbox img { margin-right: 5px; }
 #chatbox .system-message { 
     color: #6c757d; 
-    font-style: italic; 
-    background-color: #f8f9fa; 
-    padding: 5px; 
-    border-left: 3px solid #6c757d; 
+    padding-top: 14px; 
+    font-style: italic;
+     text-align:center;
 }
+#chatbox {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background: rgba(63, 63, 63, 0.75);
+        }
 #userList img { margin-right: 5px; }.badge.bg-primary { background-color: #007bff !important; } /* Host badge */
-body {background-color: rgb(184, 184, 184);}
+body {
+    background-color: rgb(47 47 47);
+     color:white;
+     }
+.modal { color: black; }
+.chat-message {min-height: 58px;}
+
+#m3 {background:hwb(30.3deg 46.67% 14.51%);}
+#rf1 {background:black;}
+
+
+/*#chatbox .blue-msg {background:blue}*/

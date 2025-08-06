@@ -61,30 +61,60 @@ foreach ($empty_rooms as $room) {
         $seconds_empty = $current_time - $last_activity_time;
 
         if ($seconds_empty >= 30) {
-            // Delete the room
+            // Delete the room (with proper foreign key handling)
+            
+            // First delete all users (should be none, but just in case)
+            $stmt = $conn->prepare("DELETE FROM chatroom_users WHERE room_id = ?");
+            if ($stmt) {
+                $stmt->bind_param("i", $room_id);
+                $stmt->execute();
+                $stmt->close();
+            }
+            
+            // Then delete all messages
+            $stmt = $conn->prepare("DELETE FROM messages WHERE room_id = ?");
+            if ($stmt) {
+                $stmt->bind_param("i", $room_id);
+                $stmt->execute();
+                $stmt->close();
+            }
+            
+            // Finally delete the room
             $stmt = $conn->prepare("DELETE FROM chatrooms WHERE id = ?");
             $stmt->bind_param("i", $room_id);
             if ($stmt->execute()) {
-                error_log("Deleted empty non-permanent room: id=$room_id, name={$room['name']}");
+                error_log("Cleaned up empty non-permanent room: id=$room_id, name={$room['name']}");
             } else {
                 error_log("Failed to delete room id=$room_id: " . $stmt->error);
             }
-            $stmt->close();
-
-            // Optional: Delete associated messages
-            $stmt = $conn->prepare("DELETE FROM messages WHERE room_id = ?");
-            $stmt->bind_param("i", $room_id);
-            $stmt->execute();
             $stmt->close();
         } else {
             error_log("Room id=$room_id not empty long enough: $seconds_empty seconds");
         }
     } else {
         // No activity ever, delete immediately if non-permanent
+        
+        // First delete all users (should be none, but just in case)
+        $stmt = $conn->prepare("DELETE FROM chatroom_users WHERE room_id = ?");
+        if ($stmt) {
+            $stmt->bind_param("i", $room_id);
+            $stmt->execute();
+            $stmt->close();
+        }
+        
+        // Then delete all messages
+        $stmt = $conn->prepare("DELETE FROM messages WHERE room_id = ?");
+        if ($stmt) {
+            $stmt->bind_param("i", $room_id);
+            $stmt->execute();
+            $stmt->close();
+        }
+        
+        // Finally delete the room
         $stmt = $conn->prepare("DELETE FROM chatrooms WHERE id = ?");
         $stmt->bind_param("i", $room_id);
         if ($stmt->execute()) {
-            error_log("Deleted empty non-permanent room with no activity: id=$room_id, name={$room['name']}");
+            error_log("Cleaned up empty non-permanent room with no activity: id=$room_id, name={$room['name']}");
         } else {
             error_log("Failed to delete room id=$room_id: " . $stmt->error);
         }

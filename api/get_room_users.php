@@ -16,7 +16,7 @@ if ($room_id <= 0) {
 error_log("Fetching users for room_id=$room_id"); // Debug
 
 $stmt = $conn->prepare("
-    SELECT cu.user_id, cu.guest_name, cu.guest_avatar, u.username, u.is_admin, u.avatar 
+    SELECT cu.user_id, cu.guest_name, cu.guest_avatar, cu.user_id_string, cu.is_host, u.username, u.is_admin, u.avatar 
     FROM chatroom_users cu 
     LEFT JOIN users u ON cu.user_id = u.id 
     WHERE cu.room_id = ?

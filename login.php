@@ -26,7 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $stmt = $conn->prepare("SELECT id, username, password, is_admin, avatar FROM users WHERE username = ?");
+    // Updated query to include user_id and email
+    $stmt = $conn->prepare("SELECT id, username, user_id, email, password, is_admin, avatar FROM users WHERE username = ?");
     if (!$stmt) {
         error_log("Prepare failed in login.php: " . $conn->error);
         echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
@@ -50,15 +51,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Updated session to include user_id and email - IMPORTANT: user_id is required for host system
     $_SESSION['user'] = [
         'type' => 'user',
         'id' => $user['id'],
         'username' => $user['username'],
+        'user_id' => $user['user_id'],  // This is crucial for the host system!
+        'email' => $user['email'],
         'is_admin' => $user['is_admin'],
         'avatar' => $user['avatar']
     ];
 
-    error_log("User logged in: id={$user['id']}, username={$user['username']}"); // Debug
+    // Debug log to ensure user_id is set
+    error_log("User logged in with user_id: " . ($user['user_id'] ?? 'NULL'));
     $stmt->close();
     echo json_encode(['status' => 'success']);
     exit;
@@ -76,49 +81,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="container mt-5">
-        <h2>Login</h2>
-        <form id="loginForm" class="mt-3">
-            <div class="mb-3">
-                <label for="username" class="form-label">Username</label>
-                <input type="text" class="form-control" id="username" name="username" required>
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <h2 class="text-center">Login</h2>
+                <form id="userLoginForm" class="mt-4">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Choose Avatar</label>
+                        <div id="avatarSelection">
+                            <img src="images/m1.png" class="avatar" data-avatar="m1.png">
+                            <img src="images/m2.png" class="avatar" data-avatar="m2.png">
+                            <img src="images/m3.png" class="avatar" data-avatar="m3.png">
+                            <img src="images/f1.png" class="avatar" data-avatar="f1.png">
+                            <img src="images/f2.png" class="avatar" data-avatar="f2.png">
+                            <img src="images/f3.png" class="avatar" data-avatar="f3.png">
+                            <img src="images/m4.png" class="avatar" data-avatar="m4.png">
+                            <img src="images/m5.png" class="avatar" data-avatar="m5.png">
+                            <img src="images/m6.png" class="avatar" data-avatar="m6.png">
+                            <img src="images/f4.png" class="avatar" data-avatar="f4.png">
+                            <img src="images/f5.png" class="avatar" data-avatar="f5.png">
+                            <img src="images/f6.png" class="avatar" data-avatar="f6.png">
+                            <img src="images/m7.png" class="avatar" data-avatar="m7.png">
+                            <img src="images/m8.png" class="avatar" data-avatar="m8.png">
+                            <img src="images/m9.png" class="avatar" data-avatar="m9.png">
+                            <img src="images/f7.png" class="avatar" data-avatar="f7.png">
+                            <img src="images/rm1.png" class="avatar" data-avatar="rm1.png">
+                            <img src="images/rm2.png" class="avatar" data-avatar="rm2.png">
+                            <img src="images/rm3.png" class="avatar" data-avatar="rm3.png">
+                            <img src="images/rf1.png" class="avatar" data-avatar="rf1.png">
+                            <img src="images/rf2.png" class="avatar" data-avatar="rf2.png">
+                            <img src="images/rf3.png" class="avatar" data-avatar="rf3.png">
+                            <img src="images/rm4.png" class="avatar" data-avatar="rm4.png">
+                            <img src="images/rm5.png" class="avatar" data-avatar="rm5.png">
+                            <img src="images/rm6.png" class="avatar" data-avatar="rm6.png">
+                            <img src="images/rf4.png" class="avatar" data-avatar="rf4.png">
+                            <img src="images/rf5.png" class="avatar" data-avatar="rf5.png">
+                            <img src="images/rf6.png" class="avatar" data-avatar="rf6.png">
+                        </div>
+                        <input type="hidden" id="selectedAvatar" name="avatar" required>
+                        <div class="form-text">Select an avatar for your profile</div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">Login</button>
+                </form>
+                
+                <div class="text-center mt-3">
+                    <p>Don't have an account? <a href="register.php">Register here</a></p>
+                    <p>Or <a href="index.php">continue as guest</a></p>
+                </div>
             </div>
-            <div class="mb-3">
-                <label for="password" class="form-label">Password</label>
-                <input type="password" class="form-control" id="password" name="password" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Login</button>
-        </form>
+        </div>
     </div>
+    
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        $('#loginForm').on('submit', function(e) {
-            e.preventDefault();
-            console.log('Login form submitted:', $('#username').val());
-            $.ajax({
-                url: 'login.php',
-                method: 'POST',
-                data: $(this).serialize(),
-                success: function(response) {
-                    console.log('Response from login.php:', response);
-                    try {
-                        let res = JSON.parse(response);
-                        if (res.status === 'success') {
-                            window.location.href = 'lounge.php';
-                        } else {
-                            alert('Error: ' + res.message);
-                        }
-                    } catch (e) {
-                        console.error('JSON parse error:', e, response);
-                        alert('Invalid response from server');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('AJAX error in login:', status, error, xhr.responseText);
-                    alert('AJAX error: ' + error);
-                }
-            });
-        });
-    </script>
+    <script src="js/script.js"></script>
 </body>
 </html>
