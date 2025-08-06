@@ -76,7 +76,7 @@ if (!empty($user_id_string)) {
 </head>
 <body>
     <div class="container mt-5">
-        <div class="d-flex justify-content-between align-items-center pe-2 col-md-8">
+        <div class="d-flex justify-content-between align-items-center pe-2 col-md-9">
             <h2><?php echo htmlspecialchars($room['name']); ?>
                 <?php if ($is_host): ?>
                     <span class="badge rounded-pill bg-primary">Host</span>
@@ -91,7 +91,7 @@ if (!empty($user_id_string)) {
         </div>
         
         <div class="row">
-            <div class="col-md-8">
+            <div class="col-md-9">
                 <div id="chatbox"></div>
                 <form id="messageForm" class="mt-3">
                     <div class="input-group">
@@ -100,11 +100,13 @@ if (!empty($user_id_string)) {
                     </div>
                 </form>
             </div>
-            <div class="col-md-4">
-                <h3>Users</h3>
-                <div id="userList"></div>
-            </div>
-        </div>
+            <div class="col-md-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>Users</h3>
+        <button class="btn btn-sm btn-secondary" onclick="createTestUser()">+ Test User</button>
+    </div>
+    <div id="userList"></div>
+</div>
     </div>
     
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -114,13 +116,17 @@ if (!empty($user_id_string)) {
         const roomId = <?php echo json_encode($room_id); ?>;
         const isAdmin = <?php echo isset($_SESSION['user']['is_admin']) && $_SESSION['user']['is_admin'] ? 'true' : 'false'; ?>;
         const isHost = <?php echo $is_host ? 'true' : 'false'; ?>;
-        console.log('roomId set to:', roomId, 'isHost:', isHost);
+        const currentUserIdString = <?php echo json_encode($_SESSION['user']['user_id'] ?? ''); ?>;
+        console.log('roomId set to:', roomId, 'isHost:', isHost, 'currentUserIdString:', currentUserIdString);
         if (!roomId) {
             console.error('roomId is invalid, redirecting to lounge');
             window.location.href = 'lounge.php';
         }
     </script>
     <script src="js/room.js"></script>
-    <?php //include 'debug_session.php' ?>
+    <!-- Add this button somewhere in your room.php for testing -->
+
+    <?php// include 'debug_session.php' ?>
+    
 </body>
 </html>

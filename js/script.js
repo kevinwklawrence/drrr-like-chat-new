@@ -42,7 +42,8 @@ $(document).ready(function() {
         
         // Check if avatar is selected
         if (!$('#selectedAvatar').val()) {
-            alert('Please select an avatar');
+            //alert('Please select an avatar');
+            $('#selectedAvatar').val("u0.png")
             return;
         }
         

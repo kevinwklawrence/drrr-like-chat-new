@@ -127,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <img src="images/rf5.png" class="avatar" data-avatar="rf5.png">
                             <img src="images/rf6.png" class="avatar" data-avatar="rf6.png">
                         </div>
-                        <input type="hidden" id="selectedAvatar" name="avatar" required>
+                        <input type="hidden" id="selectedAvatar" name="avatar">
                         <div class="form-text">Select an avatar for your profile</div>
                     </div>
                     

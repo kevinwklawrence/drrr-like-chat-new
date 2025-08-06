@@ -14,9 +14,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $guest_name = $_POST['guest_name'] ?? '';
 $avatar = $_POST['avatar'] ?? '';
 
-if (empty($guest_name) || empty($avatar)) {
-    echo json_encode(['status' => 'error', 'message' => 'Guest name and avatar are required']);
+if (empty($guest_name)) {
+    echo json_encode(['status' => 'error', 'message' => 'Guest name required']);
     exit;
+}
+
+if (empty($avatar)) {
+    $avatar = 'u0.png'; // Default avatar if none selected
 }
 
 // Generate encrypted user_id for guest using their IP address

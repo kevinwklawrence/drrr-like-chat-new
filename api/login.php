@@ -21,7 +21,8 @@ if (empty($username) || empty($password)) {
 }
 
 if (empty($selected_avatar)) {
-    echo json_encode(['status' => 'error', 'message' => 'Please select an avatar']);
+    //echo json_encode(['status' => 'error', 'message' => 'Please select an avatar']);
+    $selected_avatar = 'u0.png'; // Default avatar if none selected
     exit;
 }
 
