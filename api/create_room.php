@@ -1,180 +1,215 @@
 <?php
-ob_start();
 session_start();
-include '../db_connect.php';
-
-ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
-error_reporting(E_ALL);
-
 header('Content-Type: application/json');
 
-error_log("Starting create_room.php");
-
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    error_log("Invalid request method in create_room.php");
-    ob_end_clean();
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request method']);
+// Check if user is logged in
+if (!isset($_SESSION['user'])) {
+    echo json_encode(['status' => 'error', 'message' => 'Not authorized']);
     exit;
 }
 
-if (!isset($_SESSION['user']) || !isset($_SESSION['user']['type'])) {
-    error_log("No valid user session in create_room.php: " . json_encode($_SESSION));
-    ob_end_clean();
-    echo json_encode(['status' => 'error', 'message' => 'No valid user session']);
+include '../db_connect.php';
+
+// Get form data
+$name = trim($_POST['name'] ?? '');
+$description = trim($_POST['description'] ?? '');
+$capacity = (int)($_POST['capacity'] ?? 10);
+$background = $_POST['background'] ?? '';
+$has_password = (int)($_POST['has_password'] ?? 0);
+$password = $_POST['password'] ?? '';
+$allow_knocking = (int)($_POST['allow_knocking'] ?? 1);
+
+$user_id_string = $_SESSION['user']['user_id'] ?? '';
+$host_user_id = $_SESSION['user']['type'] === 'registered' ? $_SESSION['user']['user_id'] : null;
+
+// Validation
+if (empty($name)) {
+    echo json_encode(['status' => 'error', 'message' => 'Room name is required']);
     exit;
 }
 
-$name = isset($_POST['name']) ? trim($_POST['name']) : '';
-$password = isset($_POST['password']) ? trim($_POST['password']) : '';
-$description = isset($_POST['description']) ? trim($_POST['description']) : '';
-$capacity = isset($_POST['capacity']) ? (int)$_POST['capacity'] : 10;
-$background = isset($_POST['background']) ? trim($_POST['background']) : '';
-$permanent = isset($_POST['permanent']) ? (int)$_POST['permanent'] : 0;
-
-if (empty($name) || $capacity <= 0) {
-    error_log("Invalid room data in create_room.php: name=$name, capacity=$capacity");
-    ob_end_clean();
-    echo json_encode(['status' => 'error', 'message' => 'Room name and valid capacity are required']);
+if (strlen($name) > 50) {
+    echo json_encode(['status' => 'error', 'message' => 'Room name is too long (max 50 characters)']);
     exit;
 }
 
-// Get user information and user_id
-$user_id = ($_SESSION['user']['type'] === 'user') ? ($_SESSION['user']['id'] ?? null) : null;
-$guest_name = ($_SESSION['user']['type'] === 'guest') ? ($_SESSION['user']['name'] ?? null) : null;
-$guest_avatar = ($_SESSION['user']['type'] === 'guest') ? ($_SESSION['user']['avatar'] ?? 'default_avatar.jpg') : null;
-
-// Get the user_id string for both registered users and guests
-$creator_user_id_string = '';
-if ($_SESSION['user']['type'] === 'user') {
-    $creator_user_id_string = $_SESSION['user']['user_id'] ?? '';
-} else {
-    $creator_user_id_string = $_SESSION['user']['user_id'] ?? '';
-}
-
-error_log("Session debug in create_room.php: " . json_encode($_SESSION['user']));
-error_log("Creator user_id_string: $creator_user_id_string");
-
-if (!$user_id && !$guest_name) {
-    error_log("Invalid session in create_room.php: no user_id or guest_name");
-    ob_end_clean();
-    echo json_encode(['status' => 'error', 'message' => 'Invalid user session']);
+if ($has_password && empty($password)) {
+    echo json_encode(['status' => 'error', 'message' => 'Password is required when password protection is enabled']);
     exit;
 }
 
-if (empty($creator_user_id_string)) {
-    error_log("Missing user_id string in create_room.php for user type: " . $_SESSION['user']['type']);
-    ob_end_clean();
-    echo json_encode(['status' => 'error', 'message' => 'Invalid user session - missing user_id. Please log in again.']);
-    exit;
+if (!in_array($capacity, [5, 10, 20, 50])) {
+    $capacity = 10;
 }
 
-$hashed_password = $password ? password_hash($password, PASSWORD_DEFAULT) : null;
-
-// Insert room with creator and host information
-// IMPORTANT: created_by should be the database user ID (for registered users) or NULL (for guests)
-$stmt = $conn->prepare("INSERT INTO chatrooms (name, password, description, capacity, background, created_by, host_user_id, permanent) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-if (!$stmt) {
-    error_log("Prepare failed in create_room.php: " . $conn->error);
-    ob_end_clean();
-    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
-    exit;
-}
-$stmt->bind_param("sssisisi", $name, $hashed_password, $description, $capacity, $background, $user_id, $creator_user_id_string, $permanent);
-if (!$stmt->execute()) {
-    error_log("Execute failed in create_room.php: " . $stmt->error);
-    ob_end_clean();
-    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $stmt->error]);
-    $stmt->close();
-    exit;
-}
-$room_id = $conn->insert_id;
-$stmt->close();
-
-error_log("Created room: id=$room_id, name=$name, permanent=$permanent, created_by=$user_id, host_user_id=$creator_user_id_string");
-
-// Check for duplicate user in chatroom_users
-$stmt = $conn->prepare("SELECT id FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");
-if (!$stmt) {
-    error_log("Prepare failed for duplicate check in create_room.php: " . $conn->error);
-    ob_end_clean();
-    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
-    exit;
-}
-$stmt->bind_param("is", $room_id, $creator_user_id_string);
-if (!$stmt->execute()) {
-    error_log("Execute failed for duplicate check in create_room.php: " . $stmt->error);
-    ob_end_clean();
-    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $stmt->error]);
-    $stmt->close();
-    exit;
-}
-if ($stmt->get_result()->num_rows > 0) {
-    error_log("User already in room: room_id=$room_id, user_id_string=$creator_user_id_string");
+try {
+    $conn->begin_transaction();
     
-    // Update existing entry to make them host
-    $stmt->close();
-    $stmt = $conn->prepare("UPDATE chatroom_users SET is_host = 1 WHERE room_id = ? AND user_id_string = ?");
+    // Check what columns exist in chatrooms table
+    $columns_query = $conn->query("SHOW COLUMNS FROM chatrooms");
+    $chatroom_columns = [];
+    while ($row = $columns_query->fetch_assoc()) {
+        $chatroom_columns[] = $row['Field'];
+    }
+    
+    // Build INSERT query based on available columns
+    $insert_fields = ['name', 'description', 'capacity', 'created_at'];
+    $insert_values = ['?', '?', '?', 'NOW()'];
+    $param_types = 'ssi';
+    $param_values = [$name, $description, $capacity];
+    
+    if (in_array('background', $chatroom_columns)) {
+        $insert_fields[] = 'background';
+        $insert_values[] = '?';
+        $param_types .= 's';
+        $param_values[] = $background;
+    }
+    
+    if (in_array('password', $chatroom_columns)) {
+        $hashed_password = $has_password ? password_hash($password, PASSWORD_DEFAULT) : null;
+        $insert_fields[] = 'password';
+        $insert_values[] = '?';
+        $param_types .= 's';
+        $param_values[] = $hashed_password;
+    }
+    
+    if (in_array('has_password', $chatroom_columns)) {
+        $insert_fields[] = 'has_password';
+        $insert_values[] = '?';
+        $param_types .= 'i';
+        $param_values[] = $has_password;
+    }
+    
+    if (in_array('allow_knocking', $chatroom_columns)) {
+        $insert_fields[] = 'allow_knocking';
+        $insert_values[] = '?';
+        $param_types .= 'i';
+        $param_values[] = $allow_knocking;
+    }
+    
+    if (in_array('host_user_id', $chatroom_columns)) {
+        $insert_fields[] = 'host_user_id';
+        $insert_values[] = '?';
+        $param_types .= 'i';
+        $param_values[] = $host_user_id;
+    }
+    
+    if (in_array('host_user_id_string', $chatroom_columns)) {
+        $insert_fields[] = 'host_user_id_string';
+        $insert_values[] = '?';
+        $param_types .= 's';
+        $param_values[] = $user_id_string;
+    }
+    
+    $insert_sql = "INSERT INTO chatrooms (" . implode(', ', $insert_fields) . ") VALUES (" . implode(', ', $insert_values) . ")";
+    
+    $stmt = $conn->prepare($insert_sql);
     if (!$stmt) {
-        error_log("Prepare failed for host update in create_room.php: " . $conn->error);
-        ob_end_clean();
-        echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
-        exit;
+        throw new Exception('Database error: ' . $conn->error);
     }
-    $stmt->bind_param("is", $room_id, $creator_user_id_string);
+    
+    $stmt->bind_param($param_types, ...$param_values);
+    
     if (!$stmt->execute()) {
-        error_log("Execute failed for host update in create_room.php: " . $stmt->error);
-        ob_end_clean();
-        echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $stmt->error]);
-        $stmt->close();
-        exit;
+        throw new Exception('Failed to create room: ' . $stmt->error);
     }
-    $stmt->close();
-    error_log("Updated existing user to host: room_id=$room_id, user_id_string=$creator_user_id_string");
-} else {
+    
+    $room_id = $conn->insert_id;
     $stmt->close();
     
-    // Auto-join the creator to the room and set them as host
-    $ip_address = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-    $stmt = $conn->prepare("INSERT INTO chatroom_users (room_id, user_id, guest_name, guest_avatar, user_id_string, is_host, ip_address) VALUES (?, ?, ?, ?, ?, 1, ?)");
-    if (!$stmt) {
-        error_log("Prepare failed for auto-join in create_room.php: " . $conn->error);
-        ob_end_clean();
-        echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
-        exit;
+    // Check what columns exist in chatroom_users table
+    $user_columns_query = $conn->query("SHOW COLUMNS FROM chatroom_users");
+    $user_columns = [];
+    while ($row = $user_columns_query->fetch_assoc()) {
+        $user_columns[] = $row['Field'];
     }
-    $stmt->bind_param("iissss", $room_id, $user_id, $guest_name, $guest_avatar, $creator_user_id_string, $ip_address);
+    
+    // Build INSERT query for chatroom_users based on available columns
+    $user_insert_fields = ['room_id', 'user_id_string', 'is_host'];
+    $user_insert_values = ['?', '?', '1'];
+    $user_param_types = 'is';
+    $user_param_values = [$room_id, $user_id_string];
+    
+    if (in_array('user_id', $user_columns)) {
+        $user_insert_fields[] = 'user_id';
+        $user_insert_values[] = '?';
+        $user_param_types .= 'i';
+        $user_param_values[] = $host_user_id;
+    }
+    
+    if (in_array('guest_name', $user_columns)) {
+        $guest_name = $_SESSION['user']['name'] ?? null;
+        $user_insert_fields[] = 'guest_name';
+        $user_insert_values[] = '?';
+        $user_param_types .= 's';
+        $user_param_values[] = $guest_name;
+    }
+    
+    if (in_array('guest_avatar', $user_columns)) {
+        $avatar = $_SESSION['user']['avatar'] ?? 'default_avatar.jpg';
+        $user_insert_fields[] = 'guest_avatar';
+        $user_insert_values[] = '?';
+        $user_param_types .= 's';
+        $user_param_values[] = $avatar;
+    }
+    
+    if (in_array('ip_address', $user_columns)) {
+        $ip_address = $_SERVER['REMOTE_ADDR'];
+        $user_insert_fields[] = 'ip_address';
+        $user_insert_values[] = '?';
+        $user_param_types .= 's';
+        $user_param_values[] = $ip_address;
+    }
+    
+    $user_insert_sql = "INSERT INTO chatroom_users (" . implode(', ', $user_insert_fields) . ") VALUES (" . implode(', ', $user_insert_values) . ")";
+    
+    $stmt = $conn->prepare($user_insert_sql);
+    if (!$stmt) {
+        throw new Exception('Database error: ' . $conn->error);
+    }
+    
+    $stmt->bind_param($user_param_types, ...$user_param_values);
+    
     if (!$stmt->execute()) {
-        error_log("Execute failed for auto-join in create_room.php: " . $stmt->error);
-        ob_end_clean();
-        echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $stmt->error]);
-        $stmt->close();
-        exit;
+        throw new Exception('Failed to add host to room: ' . $stmt->error);
     }
     $stmt->close();
-    error_log("Creator joined room as host: room_id=$room_id, user_id=$user_id, guest_name=$guest_name, user_id_string=$creator_user_id_string, is_host=1");
+    
+    // Add room creation message if messages table has the right columns
+    $message_columns_query = $conn->query("SHOW COLUMNS FROM messages");
+    $message_columns = [];
+    while ($row = $message_columns_query->fetch_assoc()) {
+        $message_columns[] = $row['Field'];
+    }
+    
+    if (in_array('is_system', $message_columns)) {
+        $display_name = $_SESSION['user']['name'] ?? $_SESSION['user']['username'] ?? 'Host';
+        $creation_message = "Room '{$name}' has been created by {$display_name}";
+        
+        $stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp) VALUES (?, '', ?, 1, NOW())");
+        if ($stmt) {
+            $stmt->bind_param("is", $room_id, $creation_message);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
+    
+    // Set session room_id so user is automatically in the room
+    $_SESSION['room_id'] = $room_id;
+    
+    $conn->commit();
+    
+    echo json_encode([
+        'status' => 'success',
+        'message' => 'Room created successfully',
+        'room_id' => $room_id
+    ]);
+    
+} catch (Exception $e) {
+    $conn->rollback();
+    error_log("Create room error: " . $e->getMessage());
+    echo json_encode(['status' => 'error', 'message' => 'Failed to create room: ' . $e->getMessage()]);
 }
 
-// Insert system message for room creation and host assignment
-$display_name = $user_id ? ($_SESSION['user']['username'] ?? 'Unknown') : $guest_name;
-$avatar = $user_id ? ($_SESSION['user']['avatar'] ?? 'default_avatar.jpg') : $guest_avatar;
-$system_message = "$display_name has created the room and is now the host.";
-$stmt = $conn->prepare("INSERT INTO messages (room_id, user_id, guest_name, message, avatar, user_id_string, type) VALUES (?, ?, ?, ?, ?, ?, 'system')");
-if (!$stmt) {
-    error_log("Prepare failed for system message in create_room.php: " . $conn->error);
-    ob_end_clean();
-    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
-    exit;
-}
-$stmt->bind_param("iissss", $room_id, $user_id, $guest_name, $system_message, $avatar, $creator_user_id_string);
-if (!$stmt->execute()) {
-    error_log("Execute failed for system message in create_room.php: " . $stmt->error);
-}
-$stmt->close();
-
-$_SESSION['room_id'] = $room_id;
-error_log("Set session room_id: $room_id");
-ob_end_clean();
-echo json_encode(['status' => 'success', 'room_id' => $room_id]);
-exit;
+$conn->close();
 ?>

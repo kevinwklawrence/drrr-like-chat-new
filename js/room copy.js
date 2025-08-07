@@ -136,33 +136,9 @@ $(document).ready(function() {
             loadBannedUsers();
         });
         
-        // Show/hide knocking option based on password setting
-        $('#settingsHasPassword').on('change', function() {
-            if (this.checked) {
-                $('#knockingOption').show();
-            } else {
-                $('#knockingOption').hide();
-                $('#settingsAllowKnocking').prop('checked', false);
-            }
-        });
-        
         // Show modal
         $('#roomSettingsModal').modal('show');
     }
-
-    // Function to toggle password visibility
-    window.togglePasswordVisibility = function() {
-        const passwordInput = $('#settingsPassword');
-        const toggleIcon = $('#passwordToggleIcon');
-        
-        if (passwordInput.attr('type') === 'password') {
-            passwordInput.attr('type', 'text');
-            toggleIcon.removeClass('fa-eye').addClass('fa-eye-slash');
-        } else {
-            passwordInput.attr('type', 'password');
-            toggleIcon.removeClass('fa-eye-slash').addClass('fa-eye');
-        }
-    };
 
     // Function to load banned users
     function loadBannedUsers() {
@@ -252,7 +228,7 @@ $(document).ready(function() {
                 console.log('HTML content set');
             },
             error: function(xhr, status, error) {
-                console.error('AJAX error in callSimpleBanlistAPI:');
+                console.error('AJAX error in loadBannedUsers:');
                 console.error('Status:', status);
                 console.error('Error:', error);
                 console.error('Response Text:', xhr.responseText);
@@ -274,7 +250,7 @@ $(document).ready(function() {
         }
         
         $.ajax({
-            url: 'api/unban_user_simple.php',  // Using simple version
+            url: 'api/unban_user.php',
             method: 'POST',
             dataType: 'json',
             data: {
@@ -319,18 +295,12 @@ $(document).ready(function() {
             capacity: $('#settingsCapacity').val(),
             background: $('#settingsBackground').val(),
             password: $('#settingsPassword').val(),
-            has_password: $('#settingsHasPassword').is(':checked') ? 1 : 0,
-            allow_knocking: $('#settingsAllowKnocking').is(':checked') ? 1 : 0,
             permanent: $('#settingsPermanent').is(':checked') ? 1 : 0
         };
         
         if (!formData.name) {
             alert('Room name is required');
             $('#settingsRoomName').focus();
-            return;
-        }
-        
-        if (formData.has_password && !formData.password && !confirm('No password entered. This will remove password protection. Continue?')) {
             return;
         }
         
@@ -426,7 +396,7 @@ $(document).ready(function() {
         console.log('Banning user:', userIdString, 'for:', duration, 'reason:', reason);
         
         $.ajax({
-            url: 'api/ban_user_simple.php',  // Using simple version
+            url: 'api/ban_user.php',  // Using debug version temporarily
             method: 'POST',
             dataType: 'json',
             data: {
@@ -487,7 +457,7 @@ $(document).ready(function() {
                         html = '<p>No users in room.</p>';
                     } else {
                         users.forEach(user => {
-                            const avatar = user.avatar || user.guest_avatar || 'default_avatar.jpg';
+                            const avatar = user.avatar || user.guest_avatar || 'u0.png';
                             const name = user.username || user.guest_name || 'Unknown';
                             html += `
                                 <div class="user-item mb-2">
@@ -788,16 +758,20 @@ $(document).ready(function() {
                         html = '<p>No messages yet.</p>';
                     } else {
                         messages.forEach(msg => {
-                            const avatar = msg.avatar || msg.guest_avatar || 'default_avatar.jpg';
+                            const avatar = msg.avatar || msg.guest_avatar || 'u0.png';
                             const name = msg.username || msg.guest_name || 'Unknown';
+                            if (msg.type === 'system') {
+                                html += `<div class="chat-message system-message"><p><img src="images/${avatar}" width="22" alt="${name}'s avatar" style="vertical-align: middle;">${msg.message}</p></div>`;
+                                return; // Skip further processing for system messages
+                            }
                             html += `
-                                <p>
+                                <div class="chat-message"><p>
                                     <img src="images/${avatar}" width="30" alt="${name}'s avatar" style="vertical-align: middle;">
                                     <strong>${name}</strong>
                                     ${msg.is_admin ? '<span class="badge bg-danger">Staff</span>' : ''}
                                     ${msg.user_id ? '<span class="badge bg-success">Verified</span>' : ''}:
                                     ${msg.message}
-                                </p>`;
+                                </p></div>`;
                             if (isAdmin) {
                                 html += `<small>IP: ${msg.ip_address || 'N/A'}</small>`;
                             }
