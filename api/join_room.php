@@ -72,7 +72,7 @@ try {
         $stmt->close();
     }
     
-    // Check if user is banned
+    // Check if user is banned using simple banlist
     $banlist = $room['banlist'] ? json_decode($room['banlist'], true) : [];
     $current_time = time();
     
@@ -129,37 +129,82 @@ try {
         }
     }
     
-    // Add user to room
+    // Add user to room - Check what columns exist first
     $conn->begin_transaction();
     
-    $username = $_SESSION['user']['username'] ?? null;
-    $guest_name = $_SESSION['user']['name'] ?? null;
-    $avatar = $_SESSION['user']['avatar'] ?? 'default_avatar.jpg';
-    $user_id = $_SESSION['user']['type'] === 'registered' ? $_SESSION['user']['user_id'] : null;
+    // Check what columns exist in chatroom_users table
+    $columns_query = $conn->query("SHOW COLUMNS FROM chatroom_users");
+    $available_columns = [];
+    while ($row = $columns_query->fetch_assoc()) {
+        $available_columns[] = $row['Field'];
+    }
+    
+    // Get user data
+    $user_data = $_SESSION['user'];
+    $guest_name = $user_data['name'] ?? null;
+    $username = $user_data['username'] ?? null;
+    $avatar = $user_data['avatar'] ?? 'default_avatar.jpg';
+    $user_id = $user_data['type'] === 'user' ? $user_data['id'] : null;
     $ip_address = $_SERVER['REMOTE_ADDR'];
     
-    $stmt = $conn->prepare("
-        INSERT INTO chatroom_users (
-            room_id, user_id, user_id_string, username, guest_name, 
-            avatar, guest_avatar, is_host, ip_address
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)
-    ");
+    // Build dynamic insert query based on available columns
+    $insert_fields = ['room_id', 'user_id_string', 'is_host'];
+    $insert_values = ['?', '?', '0'];
+    $param_types = 'is';
+    $param_values = [$room_id, $user_id_string];
     
+    // Add optional columns if they exist
+    if (in_array('user_id', $available_columns) && $user_id) {
+        $insert_fields[] = 'user_id';
+        $insert_values[] = '?';
+        $param_types .= 'i';
+        $param_values[] = $user_id;
+    }
+    
+    if (in_array('username', $available_columns) && $username) {
+        $insert_fields[] = 'username';
+        $insert_values[] = '?';
+        $param_types .= 's';
+        $param_values[] = $username;
+    }
+    
+    if (in_array('guest_name', $available_columns) && $guest_name) {
+        $insert_fields[] = 'guest_name';
+        $insert_values[] = '?';
+        $param_types .= 's';
+        $param_values[] = $guest_name;
+    }
+    
+    if (in_array('avatar', $available_columns)) {
+        $insert_fields[] = 'avatar';
+        $insert_values[] = '?';
+        $param_types .= 's';
+        $param_values[] = $avatar;
+    }
+    
+    if (in_array('guest_avatar', $available_columns)) {
+        $insert_fields[] = 'guest_avatar';
+        $insert_values[] = '?';
+        $param_types .= 's';
+        $param_values[] = $avatar;
+    }
+    
+    if (in_array('ip_address', $available_columns)) {
+        $insert_fields[] = 'ip_address';
+        $insert_values[] = '?';
+        $param_types .= 's';
+        $param_values[] = $ip_address;
+    }
+    
+    // Build and execute the insert query
+    $insert_sql = "INSERT INTO chatroom_users (" . implode(', ', $insert_fields) . ") VALUES (" . implode(', ', $insert_values) . ")";
+    
+    $stmt = $conn->prepare($insert_sql);
     if (!$stmt) {
         throw new Exception('Database error: ' . $conn->error);
     }
     
-    $stmt->bind_param(
-        "iissssss",
-        $room_id,
-        $user_id,
-        $user_id_string,
-        $username,
-        $guest_name,
-        $avatar,
-        $avatar,
-        $ip_address
-    );
+    $stmt->bind_param($param_types, ...$param_values);
     
     if (!$stmt->execute()) {
         throw new Exception('Failed to join room: ' . $stmt->error);
@@ -170,9 +215,9 @@ try {
     $display_name = $guest_name ?? $username ?? 'Unknown User';
     $join_message = $display_name . ' joined the room';
     
-    $stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp) VALUES (?, '', ?, 1, NOW())");
+    $stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, '', ?, 1, NOW(), ?, 'system')");
     if ($stmt) {
-        $stmt->bind_param("is", $room_id, $join_message);
+        $stmt->bind_param("iss", $room_id, $join_message, $avatar);
         $stmt->execute();
         $stmt->close();
     }
