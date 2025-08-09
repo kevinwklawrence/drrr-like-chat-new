@@ -2,6 +2,7 @@
 session_start();
 header('Content-Type: application/json');
 
+// Enhanced error reporting for debugging
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
@@ -16,7 +17,7 @@ $knock_id = (int)($_POST['knock_id'] ?? 0);
 $response = $_POST['response'] ?? '';
 $current_user_id_string = $_SESSION['user']['user_id'] ?? '';
 
-error_log("KNOCK_RESPONSE: Starting - knock_id: $knock_id, response: $response, user: $current_user_id_string");
+error_log("KNOCK_RESPONSE_FIXED: Starting - knock_id: $knock_id, response: $response, user: $current_user_id_string");
 
 if ($knock_id <= 0 || !in_array($response, ['accepted', 'denied']) || empty($current_user_id_string)) {
     echo json_encode(['status' => 'error', 'message' => 'Invalid parameters']);
@@ -26,15 +27,24 @@ if ($knock_id <= 0 || !in_array($response, ['accepted', 'denied']) || empty($cur
 try {
     $conn->begin_transaction();
     
-    // First, let's check if room_keys column exists
+    // First, ensure room_keys column exists
     $columns_check = $conn->query("SHOW COLUMNS FROM chatrooms LIKE 'room_keys'");
     $room_keys_column_exists = $columns_check->num_rows > 0;
-    error_log("KNOCK_RESPONSE: room_keys column exists: " . ($room_keys_column_exists ? 'YES' : 'NO'));
+    error_log("KNOCK_RESPONSE_FIXED: room_keys column exists: " . ($room_keys_column_exists ? 'YES' : 'NO'));
+    
+    if (!$room_keys_column_exists) {
+        error_log("KNOCK_RESPONSE_FIXED: Creating room_keys column...");
+        $create_column = $conn->query("ALTER TABLE chatrooms ADD COLUMN room_keys TEXT DEFAULT NULL");
+        if (!$create_column) {
+            throw new Exception('Failed to create room_keys column: ' . $conn->error);
+        }
+        $room_keys_column_exists = true;
+        error_log("KNOCK_RESPONSE_FIXED: room_keys column created successfully");
+    }
     
     // Get knock details and verify user is host
     $stmt = $conn->prepare("
-        SELECT rk.*, c.name as room_name, c.has_password" . 
-        ($room_keys_column_exists ? ", c.room_keys" : "") . "
+        SELECT rk.*, c.name as room_name, c.has_password, c.room_keys
         FROM room_knocks rk 
         JOIN chatrooms c ON rk.room_id = c.id 
         JOIN chatroom_users cu ON c.id = cu.room_id 
@@ -62,9 +72,9 @@ try {
     $knock = $result->fetch_assoc();
     $stmt->close();
     
-    error_log("KNOCK_RESPONSE: Found knock - room_id: {$knock['room_id']}, user: {$knock['user_id_string']}, has_password: {$knock['has_password']}");
+    error_log("KNOCK_RESPONSE_FIXED: Found knock - room_id: {$knock['room_id']}, user: {$knock['user_id_string']}, has_password: {$knock['has_password']}");
     
-    // Update knock status
+    // Update knock status first
     $stmt = $conn->prepare("UPDATE room_knocks SET status = ?, responded_by = ?, responded_at = NOW() WHERE id = ?");
     if (!$stmt) {
         throw new Exception('Database error: ' . $conn->error);
@@ -77,26 +87,32 @@ try {
     }
     $stmt->close();
     
-    error_log("KNOCK_RESPONSE: Updated knock status to $response");
+    error_log("KNOCK_RESPONSE_FIXED: Updated knock status to $response");
     
     if ($response === 'accepted') {
-        // Only create room key if room has password AND room_keys column exists
-        if ($knock['has_password'] == 1 && $room_keys_column_exists) {
-            error_log("KNOCK_RESPONSE: Room has password, creating room key...");
+        // Only create room key if room has password
+        if ($knock['has_password'] == 1) {
+            error_log("KNOCK_RESPONSE_FIXED: Room has password, creating room key...");
             
-            // Get current room keys
-            $current_room_keys = isset($knock['room_keys']) ? $knock['room_keys'] : null;
+            // Get current room keys - handle both NULL and empty string cases
+            $current_room_keys = $knock['room_keys'] ?? null;
             $room_keys = [];
-            if (!empty($current_room_keys)) {
-                $room_keys = json_decode($current_room_keys, true) ?: [];
-                error_log("KNOCK_RESPONSE: Existing room keys: " . print_r($room_keys, true));
+            
+            if (!empty($current_room_keys) && $current_room_keys !== 'null') {
+                $decoded_keys = json_decode($current_room_keys, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded_keys)) {
+                    $room_keys = $decoded_keys;
+                    error_log("KNOCK_RESPONSE_FIXED: Existing room keys loaded: " . count($room_keys) . " keys");
+                } else {
+                    error_log("KNOCK_RESPONSE_FIXED: Failed to decode existing room keys, starting fresh");
+                }
             } else {
-                error_log("KNOCK_RESPONSE: No existing room keys");
+                error_log("KNOCK_RESPONSE_FIXED: No existing room keys, starting fresh");
             }
             
             // Create new room key
             $expires_at = time() + (2 * 60 * 60); // 2 hours
-            $room_keys[$knock['user_id_string']] = [
+            $new_key = [
                 'granted_by' => $current_user_id_string,
                 'granted_at' => time(),
                 'expires_at' => $expires_at,
@@ -104,12 +120,18 @@ try {
                 'room_id' => $knock['room_id']
             ];
             
-            error_log("KNOCK_RESPONSE: New room key created for {$knock['user_id_string']}, expires: " . date('Y-m-d H:i:s', $expires_at));
-            error_log("KNOCK_RESPONSE: Full room_keys array: " . print_r($room_keys, true));
+            $room_keys[$knock['user_id_string']] = $new_key;
             
-            // Update room keys in database
-            $room_keys_json = json_encode($room_keys);
-            error_log("KNOCK_RESPONSE: JSON to save: $room_keys_json");
+            error_log("KNOCK_RESPONSE_FIXED: New room key created for {$knock['user_id_string']}, expires: " . date('Y-m-d H:i:s', $expires_at));
+            error_log("KNOCK_RESPONSE_FIXED: Total room keys now: " . count($room_keys));
+            
+            // Encode and save room keys
+            $room_keys_json = json_encode($room_keys, JSON_UNESCAPED_SLASHES);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new Exception('Failed to encode room keys: ' . json_last_error_msg());
+            }
+            
+            error_log("KNOCK_RESPONSE_FIXED: JSON to save: $room_keys_json");
             
             $stmt = $conn->prepare("UPDATE chatrooms SET room_keys = ? WHERE id = ?");
             if (!$stmt) {
@@ -123,7 +145,7 @@ try {
             }
             
             $affected_rows = $stmt->affected_rows;
-            error_log("KNOCK_RESPONSE: Room keys update affected $affected_rows rows");
+            error_log("KNOCK_RESPONSE_FIXED: Room keys update affected $affected_rows rows");
             $stmt->close();
             
             // Verify the save worked
@@ -134,15 +156,22 @@ try {
             $verify_data = $verify_result->fetch_assoc();
             $verify_stmt->close();
             
-            error_log("KNOCK_RESPONSE: Verification - saved room_keys: " . ($verify_data['room_keys'] ?? 'NULL'));
+            error_log("KNOCK_RESPONSE_FIXED: Verification - saved room_keys: " . substr($verify_data['room_keys'] ?? 'NULL', 0, 100) . "...");
+            
+            // Double-check that our key was saved
+            if (!empty($verify_data['room_keys'])) {
+                $saved_keys = json_decode($verify_data['room_keys'], true);
+                if (isset($saved_keys[$knock['user_id_string']])) {
+                    error_log("KNOCK_RESPONSE_FIXED: ✅ Room key successfully saved and verified");
+                } else {
+                    error_log("KNOCK_RESPONSE_FIXED: ❌ Room key was not found in saved data");
+                }
+            } else {
+                error_log("KNOCK_RESPONSE_FIXED: ❌ No room keys found in verification");
+            }
             
         } else {
-            if ($knock['has_password'] != 1) {
-                error_log("KNOCK_RESPONSE: Room has no password, skipping room key creation");
-            }
-            if (!$room_keys_column_exists) {
-                error_log("KNOCK_RESPONSE: room_keys column doesn't exist, skipping room key creation");
-            }
+            error_log("KNOCK_RESPONSE_FIXED: Room has no password, skipping room key creation");
         }
         
         // Add system message about accepted knock
@@ -167,9 +196,9 @@ try {
             $stmt->close();
         }
         
-        error_log("KNOCK_RESPONSE: Knock accepted and processed successfully");
+        error_log("KNOCK_RESPONSE_FIXED: Knock accepted and processed successfully");
     } else {
-        error_log("KNOCK_RESPONSE: Knock denied");
+        error_log("KNOCK_RESPONSE_FIXED: Knock denied");
     }
     
     $conn->commit();
@@ -187,13 +216,14 @@ try {
         'debug' => [
             'room_keys_column_exists' => $room_keys_column_exists,
             'room_has_password' => $knock['has_password'] == 1,
-            'should_create_key' => ($knock['has_password'] == 1 && $room_keys_column_exists)
+            'should_create_key' => ($knock['has_password'] == 1),
+            'response_type' => $response
         ]
     ]);
     
 } catch (Exception $e) {
     $conn->rollback();
-    error_log("KNOCK_RESPONSE: Error - " . $e->getMessage());
+    error_log("KNOCK_RESPONSE_FIXED: Error - " . $e->getMessage());
     echo json_encode(['status' => 'error', 'message' => 'Failed to respond to knock request: ' . $e->getMessage()]);
 }
 

@@ -164,7 +164,7 @@ function displayOnlineUsers(users) {
             
             html += `
                 <div class="d-flex align-items-center mb-2">
-                    <img src="images/${avatar}" width="30" height="30" class="rounded-circle me-2" alt="${name}">
+                    <img src="images/${avatar}" width="30" height="30" class="me-2" alt="${name}">
                     <div>
                         <small class="fw-bold">${name}</small>
                         ${user.is_admin ? '<br><span class="badge bg-danger badge-sm">Admin</span>' : ''}
