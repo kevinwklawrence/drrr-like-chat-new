@@ -36,12 +36,12 @@ if (!empty($user_id_string)) {
     <link href="css/style.css" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+          /*  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+           */ min-height: 100vh;
         }
         
         .lounge-container {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(230, 230, 230, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
@@ -49,7 +49,9 @@ if (!empty($user_id_string)) {
         }
         
         .user-profile-card {
-            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+            /*background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+            */
+            background: rgb(47 47 47);
             color: white;
             border-radius: 15px;
             padding: 20px;
@@ -79,7 +81,7 @@ if (!empty($user_id_string)) {
         }
         
         .room-header {
-            background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+            background: rgb(47 47 47);
             color: white;
             border-radius: 15px 15px 0 0;
             padding: 15px 20px;
@@ -122,8 +124,8 @@ if (!empty($user_id_string)) {
         <div class="lounge-container p-4">
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="display-4 fw-bold text-primary">
-                    <i class="fas fa-comments"></i> Chat Lounge
+                <h1 class="display-4 fw-bold text-dark">
+                    <i class="fas fa-comments"></i> Lounge
                 </h1>
                 <div>
                     <button class="btn create-room-btn me-3" onclick="showCreateRoomModal()">
@@ -142,7 +144,7 @@ if (!empty($user_id_string)) {
                         <div class="text-center mb-3">
                             <img src="images/<?php echo htmlspecialchars($avatar); ?>" 
                                  width="80" height="80" 
-                                 class="rounded-circle avatar-selector" 
+                                 class="avatar-selector" 
                                  id="currentAvatar" 
                                  onclick="showAvatarSelector()"
                                  alt="Your avatar">
@@ -161,7 +163,7 @@ if (!empty($user_id_string)) {
                     
                     <!-- Online Users -->
                     <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-primary text-white">
+                        <div class="card-header bg-dark text-white">
                             <i class="fas fa-users"></i> Online Users
                         </div>
                         <div class="card-body" id="onlineUsersList">
@@ -173,7 +175,7 @@ if (!empty($user_id_string)) {
                 <!-- Rooms List -->
                 <div class="col-lg-9">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h3><i class="fas fa-door-open"></i> Available Rooms</h3>
+                        <h3 class="text-dark"><i class="fas fa-door-open"></i> Available Rooms</h3>
                         <button class="btn btn-outline-primary" onclick="loadRooms()">
                             <i class="fas fa-sync-alt"></i> Refresh
                         </button>

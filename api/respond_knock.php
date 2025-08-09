@@ -1,109 +1,147 @@
 <?php
 session_start();
+header('Content-Type: application/json');
+
+// Check if user is logged in
+if (!isset($_SESSION['user'])) {
+    echo json_encode(['status' => 'error', 'message' => 'Not authorized']);
+    exit;
+}
+
 include '../db_connect.php';
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+$knock_id = (int)($_POST['knock_id'] ?? 0);
+$response = $_POST['response'] ?? '';
+$current_user_id_string = $_SESSION['user']['user_id'] ?? '';
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request method']);
+if ($knock_id <= 0 || !in_array($response, ['accepted', 'denied']) || empty($current_user_id_string)) {
+    echo json_encode(['status' => 'error', 'message' => 'Invalid parameters']);
     exit;
 }
 
-if (!isset($_SESSION['user']) || !isset($_SESSION['user']['type'])) {
-    echo json_encode(['status' => 'error', 'message' => 'No valid user session']);
-    exit;
-}
-
-$knock_id = isset($_POST['knock_id']) ? (int)$_POST['knock_id'] : 0;
-$response = isset($_POST['response']) ? $_POST['response'] : ''; // 'accept' or 'deny'
-
-if ($knock_id <= 0 || !in_array($response, ['accept', 'deny'])) {
-    echo json_encode(['status' => 'error', 'message' => 'Invalid knock ID or response']);
-    exit;
-}
-
-// Get user_id_string from session
-$user_id_string = $_SESSION['user']['user_id'] ?? '';
-$host_name = ($_SESSION['user']['type'] === 'user') ? $_SESSION['user']['username'] : $_SESSION['user']['name'];
-
-if (empty($user_id_string)) {
-    echo json_encode(['status' => 'error', 'message' => 'Invalid user session']);
-    exit;
-}
-
-// Get knock details and verify host
-$stmt = $conn->prepare("
-    SELECT rk.*, c.password, c.name as room_name, cu.is_host
-    FROM room_knocks rk
-    JOIN chatrooms c ON rk.room_id = c.id
-    LEFT JOIN chatroom_users cu ON c.id = cu.room_id AND cu.user_id_string = ?
-    WHERE rk.id = ? AND rk.status = 'pending'
-");
-if (!$stmt) {
-    error_log("Prepare failed in respond_knock.php: " . $conn->error);
-    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
-    exit;
-}
-$stmt->bind_param("si", $user_id_string, $knock_id);
-$stmt->execute();
-$result = $stmt->get_result();
-if ($result->num_rows === 0) {
-    echo json_encode(['status' => 'error', 'message' => 'Knock not found or already processed']);
-    $stmt->close();
-    exit;
-}
-$knock = $result->fetch_assoc();
-$stmt->close();
-
-// Verify user is host
-if ($knock['is_host'] != 1) {
-    echo json_encode(['status' => 'error', 'message' => 'Only hosts can respond to knocks']);
-    exit;
-}
-
-// Update knock status
-$new_status = ($response === 'accept') ? 'accepted' : 'denied';
-$stmt = $conn->prepare("UPDATE room_knocks SET status = ?, responded_at = NOW() WHERE id = ?");
-if (!$stmt) {
-    error_log("Prepare failed for knock update in respond_knock.php: " . $conn->error);
-    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
-    exit;
-}
-$stmt->bind_param("si", $new_status, $knock_id);
-if (!$stmt->execute()) {
-    error_log("Execute failed for knock update in respond_knock.php: " . $stmt->error);
-    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $stmt->error]);
-    $stmt->close();
-    exit;
-}
-$stmt->close();
-
-$knocker_name = $knock['username'] ?: $knock['guest_name'];
-
-if ($response === 'accept') {
-    // If accepted, provide the room password to the knocker or auto-join them
-    error_log("Knock accepted: knock_id=$knock_id, knocker=$knocker_name, host=$host_name");
+try {
+    $conn->begin_transaction();
     
-    echo json_encode([
-        'status' => 'success',
-        'message' => "Access granted to $knocker_name",
-        'action' => 'accepted',
-        'room_password' => $knock['password'],
-        'knocker_user_id' => $knock['user_id_string'],
-        'knocker_name' => $knocker_name
-    ]);
-} else {
-    // If denied, just update the status
-    error_log("Knock denied: knock_id=$knock_id, knocker=$knocker_name, host=$host_name");
+    // Get knock details and verify user is host
+    $stmt = $conn->prepare("
+        SELECT rk.*, c.room_keys, c.name as room_name
+        FROM room_knocks rk 
+        JOIN chatrooms c ON rk.room_id = c.id 
+        JOIN chatroom_users cu ON c.id = cu.room_id 
+        WHERE rk.id = ? 
+        AND cu.user_id_string = ? 
+        AND cu.is_host = 1 
+        AND rk.status = 'pending'
+    ");
     
-    echo json_encode([
-        'status' => 'success',
-        'message' => "Access denied to $knocker_name",
-        'action' => 'denied',
-        'knocker_user_id' => $knock['user_id_string'],
-        'knocker_name' => $knocker_name
-    ]);
+    if (!$stmt) {
+        throw new Exception('Database error: ' . $conn->error);
+    }
+    
+    $stmt->bind_param("is", $knock_id, $current_user_id_string);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        echo json_encode(['status' => 'error', 'message' => 'Knock request not found or you are not authorized']);
+        $stmt->close();
+        $conn->rollback();
+        exit;
+    }
+    
+    $knock = $result->fetch_assoc();
+    $stmt->close();
+    
+    // Update knock status
+    $stmt = $conn->prepare("UPDATE room_knocks SET status = ?, responded_by = ?, responded_at = NOW() WHERE id = ?");
+    if (!$stmt) {
+        throw new Exception('Database error: ' . $conn->error);
+    }
+    
+    $stmt->bind_param("ssi", $response, $current_user_id_string, $knock_id);
+    
+    if (!$stmt->execute()) {
+        throw new Exception('Failed to update knock status: ' . $stmt->error);
+    }
+    $stmt->close();
+    
+    // If accepted, generate a temporary room key
+    if ($response === 'accepted') {
+        // Check if room_keys column exists
+        $columns_query = $conn->query("SHOW COLUMNS FROM chatrooms LIKE 'room_keys'");
+        if ($columns_query->num_rows > 0) {
+            // Get current room keys
+            $room_keys = [];
+            if (!empty($knock['room_keys'])) {
+                $room_keys = json_decode($knock['room_keys'], true) ?: [];
+            }
+            
+            // Create new room key
+            $room_keys[$knock['user_id_string']] = [
+                'granted_by' => $current_user_id_string,
+                'granted_at' => time(),
+                'expires_at' => time() + (24 * 60 * 60), // 24 hours
+                'knock_id' => $knock_id
+            ];
+            
+            // Update room keys
+            $stmt = $conn->prepare("UPDATE chatrooms SET room_keys = ? WHERE id = ?");
+            if (!$stmt) {
+                throw new Exception('Database error: ' . $conn->error);
+            }
+            
+            $room_keys_json = json_encode($room_keys);
+            $stmt->bind_param("si", $room_keys_json, $knock['room_id']);
+            
+            if (!$stmt->execute()) {
+                throw new Exception('Failed to update room keys: ' . $stmt->error);
+            }
+            $stmt->close();
+        }
+        
+        // Add system message about accepted knock
+        $knocker_name = $knock['username'] ?: $knock['guest_name'] ?: 'Unknown User';
+        $accept_message = $knocker_name . " was granted access to the room (knock accepted)";
+        
+        // Check if messages table supports system messages
+        $msg_columns = [];
+        $msg_columns_query = $conn->query("SHOW COLUMNS FROM messages");
+        while ($row = $msg_columns_query->fetch_assoc()) {
+            $msg_columns[] = $row['Field'];
+        }
+        
+        if (in_array('is_system', $msg_columns)) {
+            $stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, '', ?, 1, NOW(), 'key.png', 'system')");
+        } else {
+            $stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, timestamp, avatar) VALUES (?, '', ?, NOW(), 'key.png')");
+        }
+        
+        if ($stmt) {
+            $stmt->bind_param("is", $knock['room_id'], $accept_message);
+            $stmt->execute();
+            $stmt->close();
+        }
+        
+        error_log("Knock accepted: knock_id={$knock_id}, user={$knock['user_id_string']}, room={$knock['room_id']}");
+    } else {
+        // Add system message about denied knock (optional)
+        $knocker_name = $knock['username'] ?: $knock['guest_name'] ?: 'Unknown User';
+        error_log("Knock denied: knock_id={$knock_id}, user={$knock['user_id_string']}, room={$knock['room_id']}");
+    }
+    
+    $conn->commit();
+    
+    $message = $response === 'accepted' ? 
+        'Knock request accepted - user can now join the room' : 
+        'Knock request denied';
+        
+    echo json_encode(['status' => 'success', 'message' => $message]);
+    
+} catch (Exception $e) {
+    $conn->rollback();
+    error_log("Respond knock error: " . $e->getMessage());
+    echo json_encode(['status' => 'error', 'message' => 'Failed to respond to knock request: ' . $e->getMessage()]);
 }
+
+$conn->close();
 ?>

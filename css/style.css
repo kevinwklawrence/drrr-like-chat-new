@@ -5,7 +5,6 @@
 #chatbox img { margin-right: 5px; }
 #chatbox .system-message { 
     color: #6c757d; 
-    padding-top: 14px; 
     font-style: italic;
      text-align:center;
 }
@@ -31,3 +30,230 @@ body {
 /*#chatbox .blue-msg {background:blue}*/
 #unbanmessage {color:#aea20e;}
 #banmessage {color:#ae0e0e;}
+
+/* Knocking System Styles */
+.knock-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1060;
+    max-width: 400px;
+    min-width: 350px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    border-left: 4px solid #007bff;
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Room Access Modal Styles */
+#roomAccessModal .modal-body {
+    padding: 2rem;
+}
+
+#roomAccessModal .modal-header {
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    color: white;
+}
+
+#roomAccessModal .btn-close {
+    filter: invert(1);
+}
+
+/* Room Card Enhanced Styles */
+.room-card {
+    transition: all 0.3s ease;
+    border-radius: 15px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.room-header.knock-available {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    position: relative;
+}
+
+.room-header.knock-available::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 8px;
+    height: 8px;
+    background: #fff;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(1.2);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.room-header.password-protected {
+    background: linear-gradient(45deg, #ffc107, #fd7e14);
+    color: #212529;
+}
+
+.room-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+}
+
+/* Password Input Enhancements */
+#roomPasswordInput {
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    padding: 12px;
+    border-radius: 8px;
+    border: 2px solid #dee2e6;
+    transition: border-color 0.3s ease;
+}
+
+#roomPasswordInput:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+/* Knock Button Styling */
+.btn-outline-primary {
+    border-width: 2px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+}
+
+/* Multiple knock notifications stacking */
+.knock-notification:not(:first-child) {
+    top: calc(20px + (120px * var(--knock-index, 1)));
+}
+
+/* Success/Error message styling */
+.alert-success {
+    border-left: 4px solid #28a745;
+    background-color: rgba(40, 167, 69, 0.1);
+}
+
+.alert-danger {
+    border-left: 4px solid #dc3545;
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+/* Avatar in knock notifications */
+.knock-notification img {
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Room icons */
+.fa-lock, .fa-hand-paper {
+    opacity: 0.8;
+    margin-left: 0.3rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .knock-notification {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        max-width: none;
+        min-width: auto;
+    }
+    
+    .room-card {
+        margin-bottom: 1rem;
+    }
+    
+    .room-header {
+        padding: 1rem;
+    }
+    
+    .room-header h5 {
+        font-size: 1.1rem;
+    }
+}
+
+/* Loading states */
+.btn[disabled] {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn[disabled]::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-left: -8px;
+    margin-top: -8px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    color: #fff;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Enhanced modal styling */
+.modal-content {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+.modal-header {
+    border-radius: 15px 15px 0 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.modal-footer {
+    border-top: 1px solid #dee2e6;
+    border-radius: 0 0 15px 15px;
+}
+
+/* Form enhancements */
+.form-control:focus, .form-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+/* Button hover effects */
+.btn {
+    transition: all 0.3s ease;
+}
+
+.btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}

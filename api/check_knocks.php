@@ -2,8 +2,12 @@
 session_start();
 header('Content-Type: application/json');
 
+// Debug logging
+error_log("CHECK_KNOCKS: Starting check_knocks.php");
+
 // Check if user is logged in
 if (!isset($_SESSION['user'])) {
+    error_log("CHECK_KNOCKS: No user in session");
     echo json_encode([]);
     exit;
 }
@@ -11,8 +15,10 @@ if (!isset($_SESSION['user'])) {
 include '../db_connect.php';
 
 $current_user_id_string = $_SESSION['user']['user_id'] ?? '';
+error_log("CHECK_KNOCKS: User ID string: $current_user_id_string");
 
 if (empty($current_user_id_string)) {
+    error_log("CHECK_KNOCKS: Empty user ID string");
     echo json_encode([]);
     exit;
 }
@@ -32,6 +38,7 @@ try {
     ");
     
     if (!$stmt) {
+        error_log("CHECK_KNOCKS: Prepare failed: " . $conn->error);
         echo json_encode([]);
         exit;
     }
@@ -42,23 +49,27 @@ try {
     
     $knocks = [];
     while ($row = $result->fetch_assoc()) {
-        $knocks[] = [
+        $knock = [
             'id' => (int)$row['id'],
             'room_id' => (int)$row['room_id'],
             'room_name' => $row['room_name'],
             'user_id_string' => $row['user_id_string'],
             'username' => $row['username'],
             'guest_name' => $row['guest_name'],
-            'avatar' => $row['avatar'],
+            'avatar' => $row['avatar'] ?: 'default_avatar.jpg',
             'created_at' => $row['created_at']
         ];
+        $knocks[] = $knock;
+        error_log("CHECK_KNOCKS: Found knock ID {$row['id']} from user {$row['user_id_string']} for room {$row['room_name']}");
     }
     
     $stmt->close();
+    
+    error_log("CHECK_KNOCKS: Returning " . count($knocks) . " knocks");
     echo json_encode($knocks);
     
 } catch (Exception $e) {
-    error_log("Check knocks error: " . $e->getMessage());
+    error_log("CHECK_KNOCKS: Exception: " . $e->getMessage());
     echo json_encode([]);
 }
 

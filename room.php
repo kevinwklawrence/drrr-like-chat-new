@@ -127,6 +127,32 @@ if (!empty($user_id_string)) {
     <!-- Add this button somewhere in your room.php for testing -->
 
     <?php// include 'debug_session.php' ?>
+
+    <!-- Add this to room.php before </body> -->
+<div id="knockNotifications"></div>
+
+<!-- Also add this CSS for better room page styling -->
+<style>
+.knock-notification {
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Ensure notifications appear above everything */
+.knock-notification {
+    z-index: 1070 !important;
+}
+</style>
     
 </body>
 </html>

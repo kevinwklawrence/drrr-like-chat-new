@@ -2,6 +2,10 @@
 session_start();
 header('Content-Type: application/json');
 
+// Turn off error display to prevent HTML in JSON response
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
 // Check if user is logged in
 if (!isset($_SESSION['user'])) {
     echo json_encode(['status' => 'error', 'message' => 'Not authorized']);
@@ -47,6 +51,10 @@ try {
     
     // Check what columns exist in chatrooms table
     $columns_query = $conn->query("SHOW COLUMNS FROM chatrooms");
+    if (!$columns_query) {
+        throw new Exception('Cannot check table structure: ' . $conn->error);
+    }
+    
     $chatroom_columns = [];
     while ($row = $columns_query->fetch_assoc()) {
         $chatroom_columns[] = $row['Field'];
@@ -103,9 +111,12 @@ try {
     
     $insert_sql = "INSERT INTO chatrooms (" . implode(', ', $insert_fields) . ") VALUES (" . implode(', ', $insert_values) . ")";
     
+    error_log("Create room SQL: " . $insert_sql);
+    error_log("Create room params: " . print_r($param_values, true));
+    
     $stmt = $conn->prepare($insert_sql);
     if (!$stmt) {
-        throw new Exception('Database error: ' . $conn->error);
+        throw new Exception('Database prepare error: ' . $conn->error);
     }
     
     $stmt->bind_param($param_types, ...$param_values);
@@ -119,6 +130,10 @@ try {
     
     // Check what columns exist in chatroom_users table
     $user_columns_query = $conn->query("SHOW COLUMNS FROM chatroom_users");
+    if (!$user_columns_query) {
+        throw new Exception('Cannot check user table structure: ' . $conn->error);
+    }
+    
     $user_columns = [];
     while ($row = $user_columns_query->fetch_assoc()) {
         $user_columns[] = $row['Field'];
@@ -153,6 +168,14 @@ try {
         $user_param_values[] = $avatar;
     }
     
+    if (in_array('avatar', $user_columns)) {
+        $avatar = $_SESSION['user']['avatar'] ?? 'default_avatar.jpg';
+        $user_insert_fields[] = 'avatar';
+        $user_insert_values[] = '?';
+        $user_param_types .= 's';
+        $user_param_values[] = $avatar;
+    }
+    
     if (in_array('ip_address', $user_columns)) {
         $ip_address = $_SERVER['REMOTE_ADDR'];
         $user_insert_fields[] = 'ip_address';
@@ -165,7 +188,7 @@ try {
     
     $stmt = $conn->prepare($user_insert_sql);
     if (!$stmt) {
-        throw new Exception('Database error: ' . $conn->error);
+        throw new Exception('Database prepare error for user: ' . $conn->error);
     }
     
     $stmt->bind_param($user_param_types, ...$user_param_values);
@@ -177,20 +200,23 @@ try {
     
     // Add room creation message if messages table has the right columns
     $message_columns_query = $conn->query("SHOW COLUMNS FROM messages");
-    $message_columns = [];
-    while ($row = $message_columns_query->fetch_assoc()) {
-        $message_columns[] = $row['Field'];
-    }
-    
-    if (in_array('is_system', $message_columns)) {
-        $display_name = $_SESSION['user']['name'] ?? $_SESSION['user']['username'] ?? 'Host';
-        $creation_message = "Room '{$name}' has been created by {$display_name}";
+    if ($message_columns_query) {
+        $message_columns = [];
+        while ($row = $message_columns_query->fetch_assoc()) {
+            $message_columns[] = $row['Field'];
+        }
         
-        $stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp) VALUES (?, '', ?, 1, NOW())");
-        if ($stmt) {
-            $stmt->bind_param("is", $room_id, $creation_message);
-            $stmt->execute();
-            $stmt->close();
+        if (in_array('is_system', $message_columns)) {
+            $display_name = $_SESSION['user']['name'] ?? $_SESSION['user']['username'] ?? 'Host';
+            $creation_message = "Room '{$name}' has been created by {$display_name}";
+            
+            $stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, '', ?, 1, NOW(), ?, 'system')");
+            if ($stmt) {
+                $avatar = $_SESSION['user']['avatar'] ?? 'default_avatar.jpg';
+                $stmt->bind_param("iss", $room_id, $creation_message, $avatar);
+                $stmt->execute();
+                $stmt->close();
+            }
         }
     }
     
@@ -198,6 +224,8 @@ try {
     $_SESSION['room_id'] = $room_id;
     
     $conn->commit();
+    
+    error_log("Room created successfully: ID=$room_id, Name=$name, HasPassword=$has_password, AllowKnocking=$allow_knocking");
     
     echo json_encode([
         'status' => 'success',

@@ -1,6 +1,23 @@
 $(document).ready(function() {
+
+// ADD THIS PART:
+    // Start knock checking if user is host
+    if (typeof isHost !== 'undefined' && isHost) {
+        console.log('User is host, starting knock checking...');
+        
+        // Check for knocks every 3 seconds
+        setInterval(checkForKnocks, 3000);
+        
+        // Check immediately after 1 second
+        setTimeout(checkForKnocks, 1000);
+    } else {
+        console.log('User is not host or isHost not defined, no knock checking');
+    }
+    
+
     console.log('room.js loaded, roomId:', roomId);
 
+    
     // Function to show room settings
     window.showRoomSettings = function() {
         console.log('Loading room settings for roomId:', roomId);
@@ -393,7 +410,7 @@ $(document).ready(function() {
                             
                             html += '<div class="user-item mb-3 p-2 border rounded">' +
                                 '<div class="d-flex align-items-center">' +
-                                '<img src="images/' + avatar + '" width="40" height="40" class="rounded-circle me-2" alt="' + name + '\'s avatar">' +
+                                '<img src="images/' + avatar + '" width="40" height="40" class="me-2" alt="' + name + '\'s avatar">' +
                                 '<div class="flex-grow-1">' +
                                 '<div class="fw-bold">' + name + '</div>' +
                                 '<div class="d-flex flex-wrap gap-1">';
@@ -702,13 +719,13 @@ $(document).ready(function() {
                             
                             if (msg.type === 'system' || msg.is_system) {
                                 html += '<div class="chat-message system-message text-center my-2">' +
-                                    '<img src="images/' + avatar + '" width="20" height="20" class="rounded-circle me-1" alt="System">' +
+                                    '<img src="images/' + avatar + '" width="20" height="20" class="me-1" alt="System">' +
                                     '<span class="text-muted">' + msg.message + '</span>' +
                                     '</div>';
                             } else {
                                 html += '<div class="chat-message mb-2">' +
                                     '<div class="d-flex align-items-start">' +
-                                    '<img src="images/' + avatar + '" width="40" height="40" class="rounded-circle me-2" alt="' + name + '\'s avatar">' +
+                                    '<img src="images/' + avatar + '" width="48" class="me-2" alt="' + name + '\'s avatar">' +
                                     '<div class="flex-grow-1">' +
                                     '<div class="d-flex align-items-center mb-1">' +
                                     '<strong class="me-2">' + name + '</strong>';
@@ -803,3 +820,161 @@ $(document).ready(function() {
     setInterval(loadMessages, 3000);
     setInterval(loadUsers, 5000);
 });
+
+// ADD THESE FUNCTIONS TO THE END OF YOUR EXISTING room.js FILE
+// ============================================================
+
+// Knock notification functions for room page
+function checkForKnocks() {
+    // Only check if user is host
+    if (!isHost) {
+        return;
+    }
+    
+    console.log('checkForKnocks: Checking for knocks in room...');
+    
+    $.ajax({
+        url: 'api/check_knocks.php',
+        method: 'GET',
+        dataType: 'json',
+        success: function(knocks) {
+            console.log('checkForKnocks: Received response:', knocks);
+            
+            if (Array.isArray(knocks) && knocks.length > 0) {
+                console.log('checkForKnocks: Found', knocks.length, 'knocks');
+                displayKnockNotifications(knocks);
+            } else {
+                console.log('checkForKnocks: No knocks found');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.log('checkForKnocks: Error:', {
+                status: status,
+                error: error,
+                responseText: xhr.responseText
+            });
+        }
+    });
+}
+
+// Make it globally available
+window.checkForKnocks = checkForKnocks;
+
+function displayKnockNotifications(knocks) {
+    console.log('displayKnockNotifications: Processing', knocks.length, 'knocks');
+    
+    knocks.forEach((knock, index) => {
+        console.log('Processing knock:', knock);
+        
+        // Check if notification already exists
+        if ($(`#knock-${knock.id}`).length > 0) {
+            console.log('Notification already exists for knock', knock.id);
+            return;
+        }
+        
+        const userName = knock.username || knock.guest_name || 'Unknown User';
+        const avatar = knock.avatar || 'default_avatar.jpg';
+        const roomName = knock.room_name || 'This Room';
+        
+        // Calculate position for multiple notifications
+        const topPosition = 20 + (index * 140);
+        
+        const notificationHtml = `
+            <div class="alert alert-info knock-notification" 
+                 id="knock-${knock.id}" 
+                 role="alert" 
+                 style="position: fixed; top: ${topPosition}px; right: 20px; z-index: 1070; max-width: 400px; min-width: 350px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); border-left: 4px solid #007bff; background: rgba(255,255,255,0.98);">
+                <div class="d-flex align-items-center">
+                    <img src="images/${avatar}" width="40" height="40" class="rounded-circle me-3" alt="${userName}" style="border: 2px solid #fff;">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1" style="color: #333;">
+                            <i class="fas fa-hand-paper text-primary"></i> Knock Request
+                        </h6>
+                        <p class="mb-2" style="color: #555;"><strong>${userName}</strong> wants to join this room</p>
+                        <div>
+                            <button class="btn btn-success btn-sm me-2" onclick="respondToKnock(${knock.id}, 'accepted')">
+                                <i class="fas fa-check"></i> Accept
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="respondToKnock(${knock.id}, 'denied')">
+                                <i class="fas fa-times"></i> Deny
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" onclick="dismissKnock(${knock.id})" style="color: #333;"></button>
+                </div>
+            </div>
+        `;
+        
+        console.log('Adding knock notification for knock', knock.id);
+        $('body').append(notificationHtml);
+        
+        // Add entrance animation
+        $(`#knock-${knock.id}`).hide().fadeIn(300);
+        
+        // Auto-dismiss after 45 seconds
+        setTimeout(() => {
+            console.log('Auto-dismissing knock', knock.id);
+            dismissKnock(knock.id);
+        }, 45000);
+    });
+}
+
+// Respond to knock function
+window.respondToKnock = function(knockId, response) {
+    console.log('respondToKnock:', knockId, response);
+    
+    $.ajax({
+        url: 'api/respond_knocks.php',
+        method: 'POST',
+        data: {
+            knock_id: knockId,
+            response: response
+        },
+        dataType: 'json',
+        success: function(result) {
+            console.log('Knock response result:', result);
+            if (result.status === 'success') {
+                dismissKnock(knockId);
+                
+                // Reload messages to show any system messages
+                loadMessages();
+                
+                // Show success message
+                const message = response === 'accepted' ? 
+                    'Knock accepted! The user can now join the room.' : 
+                    'Knock request denied.';
+                alert(message);
+            } else {
+                alert('Error: ' + result.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error responding to knock:', error, xhr.responseText);
+            alert('Error responding to knock: ' + error);
+        }
+    });
+};
+
+// Dismiss knock notification
+window.dismissKnock = function(knockId) {
+    console.log('dismissKnock:', knockId);
+    $(`#knock-${knockId}`).fadeOut(300, function() {
+        $(this).remove();
+        repositionKnockNotifications();
+    });
+};
+
+// Reposition remaining notifications
+function repositionKnockNotifications() {
+    $('.knock-notification').each(function(index) {
+        $(this).animate({
+            top: (20 + (index * 140)) + 'px'
+        }, 200);
+    });
+}
+
+// Test function
+window.testKnockCheck = function() {
+    console.log('Manual knock check...');
+    checkForKnocks();
+};
