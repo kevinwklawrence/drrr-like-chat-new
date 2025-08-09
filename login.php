@@ -68,6 +68,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     echo json_encode(['status' => 'success']);
     exit;
 }
+
+function getAverageColor($img_path) {
+    $size = 10; // Resize for speed
+    $ext = strtolower(pathinfo($img_path, PATHINFO_EXTENSION));
+    if (!in_array($ext, ['png', 'jpg', 'jpeg', 'gif', 'webp'])) return null;
+
+    switch ($ext) {
+        case 'png': $img = @imagecreatefrompng($img_path); break;
+        case 'jpg':
+        case 'jpeg': $img = @imagecreatefromjpeg($img_path); break;
+        case 'gif': $img = @imagecreatefromgif($img_path); break;
+        case 'webp': $img = @imagecreatefromwebp($img_path); break;
+        default: return null;
+    }
+    if (!$img) return null;
+
+    $resized = imagecreatetruecolor($size, $size);
+    imagecopyresampled($resized, $img, 0, 0, 0, 0, $size, $size, imagesx($img), imagesy($img));
+
+    $r = $g = $b = 0;
+    $total = $size * $size;
+    for ($x = 0; $x < $size; $x++) {
+        for ($y = 0; $y < $size; $y++) {
+            $rgb = imagecolorat($resized, $x, $y);
+            $r += ($rgb >> 16) & 0xFF;
+            $g += ($rgb >> 8) & 0xFF;
+            $b += $rgb & 0xFF;
+        }
+    }
+    imagedestroy($img);
+    imagedestroy($resized);
+
+    return [$r / $total, $g / $total, $b / $total];
+}
 ?>
 
 <!DOCTYPE html>
@@ -96,36 +130,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     
                     <div class="mb-3">
+                        <label for="avatarSort" class="form-label">Sort/Filter Avatars</label>
+                        <select id="avatarSort" class="form-select">
+                            <option value="all">All Colors</option>
+                            <?php
+                            $image_base_dir = __DIR__ . '/images';
+                            $excluded_folders = ['staff', 'bg', 'icon', 'default', 'special']; // Add any folders to exclude, including priority folders if needed
+                            foreach (glob($image_base_dir . '/*', GLOB_ONLYDIR) as $color_dir) {
+                                $color_name = basename($color_dir);
+                                if (in_array(strtolower($color_name), $excluded_folders)) continue;
+                                echo '<option value="' . strtolower($color_name) . '">' . ucfirst($color_name) . '</option>';
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
                         <label class="form-label">Choose Avatar</label>
                         <div id="avatarSelection">
-                            <img src="images/m1.png" class="avatar" data-avatar="m1.png">
-                            <img src="images/m2.png" class="avatar" data-avatar="m2.png">
-                            <img src="images/m3.png" class="avatar" data-avatar="m3.png">
-                            <img src="images/f1.png" class="avatar" data-avatar="f1.png">
-                            <img src="images/f2.png" class="avatar" data-avatar="f2.png">
-                            <img src="images/f3.png" class="avatar" data-avatar="f3.png">
-                            <img src="images/m4.png" class="avatar" data-avatar="m4.png">
-                            <img src="images/m5.png" class="avatar" data-avatar="m5.png">
-                            <img src="images/m6.png" class="avatar" data-avatar="m6.png">
-                            <img src="images/f4.png" class="avatar" data-avatar="f4.png">
-                            <img src="images/f5.png" class="avatar" data-avatar="f5.png">
-                            <img src="images/f6.png" class="avatar" data-avatar="f6.png">
-                            <img src="images/m7.png" class="avatar" data-avatar="m7.png">
-                            <img src="images/m8.png" class="avatar" data-avatar="m8.png">
-                            <img src="images/m9.png" class="avatar" data-avatar="m9.png">
-                            <img src="images/f7.png" class="avatar" data-avatar="f7.png">
-                            <img src="images/rm1.png" class="avatar" data-avatar="rm1.png">
-                            <img src="images/rm2.png" class="avatar" data-avatar="rm2.png">
-                            <img src="images/rm3.png" class="avatar" data-avatar="rm3.png">
-                            <img src="images/rf1.png" class="avatar" data-avatar="rf1.png">
-                            <img src="images/rf2.png" class="avatar" data-avatar="rf2.png">
-                            <img src="images/rf3.png" class="avatar" data-avatar="rf3.png">
-                            <img src="images/rm4.png" class="avatar" data-avatar="rm4.png">
-                            <img src="images/rm5.png" class="avatar" data-avatar="rm5.png">
-                            <img src="images/rm6.png" class="avatar" data-avatar="rm6.png">
-                            <img src="images/rf4.png" class="avatar" data-avatar="rf4.png">
-                            <img src="images/rf5.png" class="avatar" data-avatar="rf5.png">
-                            <img src="images/rf6.png" class="avatar" data-avatar="rf6.png">
+                            <?php
+                            $image_base_dir = __DIR__ . '/images';
+                            $web_base_dir = 'images/';
+                            $allowed_ext = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+                            $excluded_folders = ['staff', 'bg', 'icon']; // Add any folder names you want to exclude
+                            $priority_folders = ['default', 'special'];
+
+                            // Show priority folders first if they exist
+                            foreach ($priority_folders as $folder) {
+                                $color_dir = $image_base_dir . '/' . $folder;
+                                if (is_dir($color_dir)) {
+                                    echo '<div class="mb-2"><strong>' . ucfirst($folder) . ' Avatars</strong></div>';
+                                    foreach (glob($color_dir . '/*.{png,jpg,jpeg,gif,webp}', GLOB_BRACE) as $img_path) {
+                                        $img_file = basename($img_path);
+                                        $ext = strtolower(pathinfo($img_file, PATHINFO_EXTENSION));
+                                        if (in_array($ext, $allowed_ext)) {
+                                            echo '<img src="' . $web_base_dir . $folder . '/' . $img_file . '" class="avatar" data-avatar="' . $folder . '/' . $img_file . '">';
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Now show all other folders except excluded and priority
+                            foreach (glob($image_base_dir . '/*', GLOB_ONLYDIR) as $color_dir) {
+                                $color_name = basename($color_dir);
+                                if (in_array(strtolower($color_name), $excluded_folders)) continue;
+                                if (in_array(strtolower($color_name), $priority_folders)) continue;
+
+                                echo '<div class="mb-2 avatar-group" data-group="' . strtolower($color_name) . '"><div class="mb-2"><strong>' . ucfirst($color_name) . ' Avatars</strong></div>';
+                                foreach (glob($color_dir . '/*.{png,jpg,jpeg,gif,webp}', GLOB_BRACE) as $img_path) {
+                                    $img_file = basename($img_path);
+                                    $ext = strtolower(pathinfo($img_file, PATHINFO_EXTENSION));
+                                    if (in_array($ext, $allowed_ext)) {
+                                        echo '<img src="' . $web_base_dir . $color_name . '/' . $img_file . '" class="avatar" data-avatar="' . $color_name . '/' . $img_file . '">';
+                                    }
+                                }
+                                echo '</div>';
+                            }
+                            ?>
                         </div>
                         <input type="hidden" id="selectedAvatar" name="avatar">
                         <div class="form-text">Select an avatar for your profile</div>
@@ -145,5 +206,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/script.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#avatarSort').on('change', function() {
+                var selected = $(this).val();
+                if (selected === 'all') {
+                    $('.avatar-group').show();
+                } else {
+                    $('.avatar-group').each(function() {
+                        if ($(this).data('group') === selected) {
+                            $(this).show();
+                        } else {
+                            $(this).hide();
+                        }
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>

@@ -20,23 +20,26 @@
             <div class="mb-3">
                 <label class="form-label">Choose Avatar</label>
                 <div id="avatarSelection">
-                    <img src="images/m1.png" class="avatar" data-avatar="m1.png">
-                    <img src="images/m2.png" class="avatar" data-avatar="m2.png">
-                    <img src="images/m3.png" class="avatar" data-avatar="m3.png">
-                    <img src="images/f1.png" class="avatar" data-avatar="f1.png">
-                    <img src="images/f2.png" class="avatar" data-avatar="f2.png">
-                    <img src="images/f3.png" class="avatar" data-avatar="f3.png">
-                    <img src="images/m4.png" class="avatar" data-avatar="m4.png">
-                    <img src="images/m5.png" class="avatar" data-avatar="m5.png">
-                    <img src="images/m6.png" class="avatar" data-avatar="m2.png">
-                    <img src="images/f4.png" class="avatar" data-avatar="f4.png">
-                    <img src="images/f5.png" class="avatar" data-avatar="f5.png">
-                    <img src="images/f6.png" class="avatar" data-avatar="f6.png">
-                    <img src="images/m7.png" class="avatar" data-avatar="m7.png">
-                    <img src="images/m8.png" class="avatar" data-avatar="m8.png">
-                    <img src="images/m9.png" class="avatar" data-avatar="m9.png">
-                    <img src="images/f7.png" class="avatar" data-avatar="f7.png">
-                    <!-- Add more avatars -->
+                    <?php
+                    $image_base_dir = __DIR__ . '/images';
+                    $web_base_dir = 'images/';
+                    $priority_folders = ['default', 'special'];
+                    $allowed_ext = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+
+                    foreach ($priority_folders as $folder) {
+                        $folder_path = $image_base_dir . '/' . $folder;
+                        if (is_dir($folder_path)) {
+                            echo '<div class="mb-2"><strong>' . ucfirst($folder) . ' Avatars</strong></div>';
+                            foreach (glob($folder_path . '/*.{png,jpg,jpeg,gif,webp}', GLOB_BRACE) as $img_path) {
+                                $img_file = basename($img_path);
+                                $ext = strtolower(pathinfo($img_file, PATHINFO_EXTENSION));
+                                if (in_array($ext, $allowed_ext)) {
+                                    echo '<img src="' . $web_base_dir . $folder . '/' . $img_file . '" class="avatar" data-avatar="' . $folder . '/' . $img_file . '">';
+                                }
+                            }
+                        }
+                    }
+                    ?>
                 </div>
                 <input type="hidden" id="selectedAvatar" name="avatar" required>
             </div>
