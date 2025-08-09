@@ -1,5 +1,16 @@
+let banCheckInterval;
+let userBannedModalShown = false;
+
 $(document).ready(function() {
 
+
+    // Start checking for bans every 3 seconds
+    banCheckInterval = setInterval(checkUserBanStatus, 3000);
+    
+    // Also check immediately
+    setTimeout(checkUserBanStatus, 1000);
+
+    
 // ADD THIS PART:
     // Start knock checking if user is host
     if (typeof isHost !== 'undefined' && isHost) {
@@ -18,6 +29,192 @@ $(document).ready(function() {
     console.log('room.js loaded, roomId:', roomId);
 
     
+// Function to check if current user has been banned
+function checkUserBanStatus() {
+    // Don't check if we've already shown the ban modal
+    if (userBannedModalShown) {
+        return;
+    }
+    
+    $.ajax({
+        url: 'api/check_user_status.php',
+        method: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            console.log('User status check:', response);
+            
+            if (response.status === 'banned') {
+                handleUserBanned(response);
+            } else if (response.status === 'removed') {
+                handleUserRemoved(response);
+            } else if (response.status === 'not_in_room') {
+                // User is not in a room, redirect to lounge
+                window.location.href = 'lounge.php';
+            }
+            // If status is 'active', user is still in room - continue normally
+        },
+        error: function(xhr, status, error) {
+            // Silently handle errors to avoid spamming console
+            console.log('Ban check error (this is normal if user leaves):', error);
+        }
+    });
+}
+
+// Handle when user has been banned
+function handleUserBanned(response) {
+    console.log('User has been banned:', response);
+    
+    // Stop checking for more bans
+    userBannedModalShown = true;
+    if (banCheckInterval) {
+        clearInterval(banCheckInterval);
+    }
+    
+    // Prepare ban message
+    let banMessage = response.message || 'You have been banned from this room';
+    let banDetails = '';
+    
+    if (response.ban_info) {
+        if (response.ban_info.permanent) {
+            banDetails = '<p><strong>This is a permanent ban.</strong></p>';
+        } else if (response.ban_info.expires_in_minutes) {
+            banDetails = `<p><strong>Ban expires in ${response.ban_info.expires_in_minutes} minute${response.ban_info.expires_in_minutes !== 1 ? 's' : ''}.</strong></p>`;
+        }
+        
+        if (response.ban_info.reason) {
+            banDetails += `<p><strong>Reason:</strong> ${response.ban_info.reason}</p>`;
+        }
+        
+        if (response.ban_info.banned_by) {
+            banDetails += `<p><strong>Banned by:</strong> ${response.ban_info.banned_by}</p>`;
+        }
+    }
+    
+    // Show ban notification modal
+    showBanNotificationModal(banMessage, banDetails);
+}
+
+// Handle when user has been removed (kicked but not banned)
+function handleUserRemoved(response) {
+    console.log('User has been removed from room:', response);
+    
+    // Stop checking
+    userBannedModalShown = true;
+    if (banCheckInterval) {
+        clearInterval(banCheckInterval);
+    }
+    
+    // Show simple notification and redirect
+    alert(response.message || 'You have been removed from this room');
+    window.location.href = 'lounge.php';
+}
+
+// Show ban notification modal
+function showBanNotificationModal(message, details) {
+    const modalHtml = `
+        <div class="modal fade" id="banNotificationModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-danger">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-ban"></i> You Have Been Banned
+                        </h5>
+                    </div>
+                    <div class="modal-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-ban fa-3x text-danger"></i>
+                        </div>
+                        <h6 class="text-danger">${message}</h6>
+                        ${details}
+                        <div class="alert alert-warning mt-3">
+                            <i class="fas fa-info-circle"></i>
+                            You will be redirected to the lounge.
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-center">
+                        <button type="button" class="btn btn-primary" onclick="handleBanModalClose()">
+                            <i class="fas fa-home"></i> Return to Lounge
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove any existing ban modal
+    $('#banNotificationModal').remove();
+    
+    // Add modal to page
+    $('body').append(modalHtml);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('banNotificationModal'));
+    modal.show();
+    
+    // Auto-redirect after 10 seconds if user doesn't click button
+    setTimeout(() => {
+        handleBanModalClose();
+    }, 10000);
+}
+
+// Handle ban modal close
+function handleBanModalClose() {
+    // Clear session room_id on server side
+    $.ajax({
+        url: 'api/leave_room.php',
+        method: 'POST',
+        data: { 
+            room_id: roomId,
+            action: 'banned_user_cleanup'
+        },
+        complete: function() {
+            // Always redirect regardless of response
+            window.location.href = 'lounge.php';
+        }
+    });
+}
+
+// Enhanced ban notification with sound (optional)
+function showBanNotificationWithSound(message, details) {
+    // Play notification sound if available
+    try {
+        const audio = new Audio('sounds/ban_notification.mp3'); // You'd need to add this sound file
+        audio.play().catch(e => console.log('Could not play ban sound:', e));
+    } catch (e) {
+        // Sound not available, continue without it
+    }
+    
+    showBanNotificationModal(message, details);
+}
+
+// Cleanup function to stop ban checking when leaving room normally
+function stopBanChecking() {
+    if (banCheckInterval) {
+        clearInterval(banCheckInterval);
+        banCheckInterval = null;
+    }
+}
+
+// Override the existing leaveRoom function to stop ban checking
+const originalLeaveRoom = window.leaveRoom;
+window.leaveRoom = function() {
+    stopBanChecking();
+    if (originalLeaveRoom) {
+        originalLeaveRoom();
+    }
+};
+
+// Make functions globally available for testing
+window.checkUserBanStatus = checkUserBanStatus;
+window.stopBanChecking = stopBanChecking;
+
+// Test function
+window.testBanDetection = function() {
+    console.log('Testing ban detection...');
+    checkUserBanStatus();
+};
+
+
     // Function to show room settings
     window.showRoomSettings = function() {
         console.log('Loading room settings for roomId:', roomId);

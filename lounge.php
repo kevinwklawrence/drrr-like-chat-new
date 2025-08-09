@@ -128,7 +128,7 @@ if (!empty($user_id_string)) {
                     <i class="fas fa-comments"></i> Lounge
                 </h1>
                 <div>
-                    <button class="btn create-room-btn me-3" onclick="showCreateRoomModal()">
+                    <button class="btn btn-success me-3" onclick="showCreateRoomModal()">
                         <i class="fas fa-plus"></i> Create Room
                     </button>
                     <a href="logout.php" class="btn btn-outline-danger">
@@ -143,7 +143,7 @@ if (!empty($user_id_string)) {
                     <div class="user-profile-card">
                         <div class="text-center mb-3">
                             <img src="images/<?php echo htmlspecialchars($avatar); ?>" 
-                                 width="80" height="80" 
+                                 width="58" 
                                  class="avatar-selector" 
                                  id="currentAvatar" 
                                  onclick="showAvatarSelector()"
@@ -197,6 +197,7 @@ if (!empty($user_id_string)) {
         const currentUser = <?php echo json_encode($_SESSION['user']); ?>;
         console.log('Current user:', currentUser);
     </script>
+    
     <script src="js/lounge.js"></script>
 </body>
 </html>

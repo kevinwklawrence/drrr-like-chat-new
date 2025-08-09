@@ -17,7 +17,7 @@ $room_id = (int)($_POST['room_id'] ?? 0);
 $password = $_POST['password'] ?? '';
 $user_id_string = $user_session['user_id'] ?? '';
 
-error_log("JOIN_ROOM_PERMANENT_KEYS: Starting - room_id: $room_id, user: $user_id_string, password_provided: " . (!empty($password) ? 'YES' : 'NO'));
+error_log("JOIN_ROOM_WITH_BAN_CHECK: Starting - room_id: $room_id, user: $user_id_string, password_provided: " . (!empty($password) ? 'YES' : 'NO'));
 
 if ($room_id <= 0 || empty($user_id_string)) {
     echo json_encode(['status' => 'error', 'message' => 'Invalid parameters']);
@@ -25,20 +25,47 @@ if ($room_id <= 0 || empty($user_id_string)) {
 }
 
 try {
+    // CRITICAL FIX: Check if user is banned FIRST before any other checks
+    $ban_check_result = checkUserBanStatus($conn, $room_id, $user_id_string);
+    if ($ban_check_result['banned']) {
+        error_log("JOIN_ROOM_WITH_BAN_CHECK: User $user_id_string is banned from room $room_id");
+        
+        $ban_message = "You are banned from this room";
+        if ($ban_check_result['permanent']) {
+            $ban_message .= " permanently";
+        } else {
+            $expires_time = strtotime($ban_check_result['expires']);
+            $remaining_time = $expires_time - time();
+            if ($remaining_time > 0) {
+                $minutes_remaining = ceil($remaining_time / 60);
+                $ban_message .= " for $minutes_remaining more minute" . ($minutes_remaining != 1 ? 's' : '');
+            }
+        }
+        if (!empty($ban_check_result['reason'])) {
+            $ban_message .= ". Reason: " . $ban_check_result['reason'];
+        }
+        
+        echo json_encode([
+            'status' => 'error', 
+            'message' => $ban_message,
+            'banned' => true,
+            'ban_info' => $ban_check_result
+        ]);
+        exit;
+    }
+    
     // Ensure room_keys column exists
     $columns_check = $conn->query("SHOW COLUMNS FROM chatrooms LIKE 'room_keys'");
     $room_keys_column_exists = $columns_check->num_rows > 0;
     
     if (!$room_keys_column_exists) {
-        error_log("JOIN_ROOM_PERMANENT_KEYS: Creating room_keys column...");
+        error_log("JOIN_ROOM_WITH_BAN_CHECK: Creating room_keys column...");
         $create_column = $conn->query("ALTER TABLE chatrooms ADD COLUMN room_keys TEXT DEFAULT NULL");
         if ($create_column) {
             $room_keys_column_exists = true;
-            error_log("JOIN_ROOM_PERMANENT_KEYS: room_keys column created successfully");
+            error_log("JOIN_ROOM_WITH_BAN_CHECK: room_keys column created successfully");
         }
     }
-    
-    error_log("JOIN_ROOM_PERMANENT_KEYS: room_keys column exists: " . ($room_keys_column_exists ? 'YES' : 'NO'));
     
     // Get room information
     $select_fields = "id, name, capacity, password, has_password";
@@ -64,7 +91,7 @@ try {
     $room = $result->fetch_assoc();
     $stmt->close();
     
-    error_log("JOIN_ROOM_PERMANENT_KEYS: Room found - name: {$room['name']}, has_password: {$room['has_password']}");
+    error_log("JOIN_ROOM_WITH_BAN_CHECK: Room found - name: {$room['name']}, has_password: {$room['has_password']}");
     
     // Check if user is already in the room
     $stmt = $conn->prepare("SELECT id FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");
@@ -98,39 +125,29 @@ try {
         $stmt->close();
     }
     
-    // Handle password protection and room keys
+    // Handle password protection and room keys (rest of existing logic)
     $requires_password = ($room['has_password'] == 1);
     $access_granted = false;
     $used_room_key = false;
     
-    error_log("JOIN_ROOM_PERMANENT_KEYS: Requires password: " . ($requires_password ? 'YES' : 'NO'));
+    error_log("JOIN_ROOM_WITH_BAN_CHECK: Requires password: " . ($requires_password ? 'YES' : 'NO'));
     
     if ($requires_password) {
-        // First check if user has a valid room key (from accepted knock)
+        // Check for room key first
         if ($room_keys_column_exists && isset($room['room_keys']) && !empty($room['room_keys']) && $room['room_keys'] !== 'null') {
-            error_log("JOIN_ROOM_PERMANENT_KEYS: Checking room keys...");
+            error_log("JOIN_ROOM_WITH_BAN_CHECK: Checking room keys...");
             
             $room_keys = json_decode($room['room_keys'], true);
             if (json_last_error() === JSON_ERROR_NONE && is_array($room_keys)) {
-                error_log("JOIN_ROOM_PERMANENT_KEYS: Room keys decoded successfully: " . count($room_keys) . " keys found");
-                error_log("JOIN_ROOM_PERMANENT_KEYS: Available keys for users: " . implode(', ', array_keys($room_keys)));
-                
                 if (isset($room_keys[$user_id_string])) {
                     $key_data = $room_keys[$user_id_string];
-                    error_log("JOIN_ROOM_PERMANENT_KEYS: Found key for user, checking expiration...");
-                    error_log("JOIN_ROOM_PERMANENT_KEYS: Key expires at: " . date('Y-m-d H:i:s', $key_data['expires_at']) . ", current time: " . date('Y-m-d H:i:s'));
                     
-                    // Check if key is still valid
                     if (isset($key_data['expires_at']) && $key_data['expires_at'] > time()) {
                         $access_granted = true;
                         $used_room_key = true;
-                        error_log("JOIN_ROOM_PERMANENT_KEYS: ✅ Valid room key found, granting access");
+                        error_log("JOIN_ROOM_WITH_BAN_CHECK: ✅ Valid room key found, granting access");
                         
-                        // FIXED: DO NOT REMOVE THE ROOM KEY - KEEP IT FOR FUTURE USE
-                        // The key should remain valid for future entries
-                        error_log("JOIN_ROOM_PERMANENT_KEYS: Room key used but NOT removed (permanent access)");
-                        
-                        // Optional: Update last_used timestamp for the key
+                        // Update key usage stats
                         $room_keys[$user_id_string]['last_used'] = time();
                         $room_keys[$user_id_string]['use_count'] = ($room_keys[$user_id_string]['use_count'] ?? 0) + 1;
                         
@@ -140,73 +157,41 @@ try {
                             $stmt->bind_param("si", $room_keys_json, $room_id);
                             $stmt->execute();
                             $stmt->close();
-                            error_log("JOIN_ROOM_PERMANENT_KEYS: Room key usage stats updated");
                         }
-                        
-                    } else {
-                        error_log("JOIN_ROOM_PERMANENT_KEYS: ❌ Room key found but expired");
                     }
-                } else {
-                    error_log("JOIN_ROOM_PERMANENT_KEYS: ❌ No room key found for user $user_id_string");
                 }
-            } else {
-                error_log("JOIN_ROOM_PERMANENT_KEYS: ❌ Failed to decode room keys or not an array");
             }
-        } else {
-            error_log("JOIN_ROOM_PERMANENT_KEYS: No room keys to check (column_exists: " . ($room_keys_column_exists ? 'YES' : 'NO') . ", room_keys: " . ($room['room_keys'] ?? 'NULL') . ")");
         }
         
         // If no valid key, check password
         if (!$access_granted) {
-            error_log("JOIN_ROOM_PERMANENT_KEYS: No valid room key, checking password...");
-            
             if (empty($password)) {
-                error_log("JOIN_ROOM_PERMANENT_KEYS: ❌ No password provided");
                 echo json_encode(['status' => 'error', 'message' => 'Password required']);
                 exit;
             }
             
-            $stored_password = $room['password'];
-            error_log("JOIN_ROOM_PERMANENT_KEYS: Verifying password against stored hash");
-            error_log("JOIN_ROOM_PERMANENT_KEYS: Password length: " . strlen($password));
-            error_log("JOIN_ROOM_PERMANENT_KEYS: Hash info: " . print_r(password_get_info($stored_password), true));
-            
-            // Try password verification
-            $password_valid = password_verify($password, $stored_password);
-            error_log("JOIN_ROOM_PERMANENT_KEYS: Password verification result: " . ($password_valid ? '✅ VALID' : '❌ INVALID'));
+            $password_valid = password_verify($password, $room['password']);
             
             if (!$password_valid) {
                 // Try trimmed versions as fallback
-                $password_variants = [
-                    trim($password),
-                    rtrim($password),
-                    ltrim($password)
-                ];
-                
+                $password_variants = [trim($password), rtrim($password), ltrim($password)];
                 foreach ($password_variants as $variant) {
-                    if ($variant !== $password) {
-                        $test_result = password_verify($variant, $stored_password);
-                        error_log("JOIN_ROOM_PERMANENT_KEYS: Testing variant '$variant': " . ($test_result ? '✅ VALID' : '❌ INVALID'));
-                        if ($test_result) {
-                            $password_valid = true;
-                            break;
-                        }
+                    if ($variant !== $password && password_verify($variant, $room['password'])) {
+                        $password_valid = true;
+                        break;
                     }
                 }
             }
             
             if (!$password_valid) {
-                error_log("JOIN_ROOM_PERMANENT_KEYS: ❌ All password attempts failed");
                 echo json_encode(['status' => 'error', 'message' => 'Incorrect password']);
                 exit;
             }
             
             $access_granted = true;
-            error_log("JOIN_ROOM_PERMANENT_KEYS: ✅ Password verified successfully");
         }
     } else {
         $access_granted = true;
-        error_log("JOIN_ROOM_PERMANENT_KEYS: ✅ Room has no password, access granted");
     }
     
     if (!$access_granted) {
@@ -220,8 +205,6 @@ try {
     while ($row = $columns_query->fetch_assoc()) {
         $available_columns[] = $row['Field'];
     }
-    
-    error_log("JOIN_ROOM_PERMANENT_KEYS: Available columns in chatroom_users: " . implode(', ', $available_columns));
     
     // Build dynamic INSERT statement
     $conn->begin_transaction();
@@ -276,8 +259,6 @@ try {
     
     $insert_sql = "INSERT INTO chatroom_users (" . implode(', ', $insert_fields) . ") VALUES (" . implode(', ', $insert_values) . ")";
     
-    error_log("JOIN_ROOM_PERMANENT_KEYS: Insert SQL: $insert_sql");
-    
     $stmt = $conn->prepare($insert_sql);
     if (!$stmt) {
         throw new Exception('Database error: ' . $conn->error);
@@ -316,23 +297,78 @@ try {
     
     $conn->commit();
     
-    error_log("JOIN_ROOM_PERMANENT_KEYS: ✅ Successfully joined room $room_id" . ($used_room_key ? ' using permanent room key' : ''));
+    error_log("JOIN_ROOM_WITH_BAN_CHECK: ✅ Successfully joined room $room_id" . ($used_room_key ? ' using permanent room key' : ''));
     echo json_encode([
         'status' => 'success', 
         'message' => 'Joined room successfully',
         'used_room_key' => $used_room_key,
-        'permanent_access' => $used_room_key // Indicate this is permanent access
+        'permanent_access' => $used_room_key
     ]);
     
 } catch (Exception $e) {
     if (isset($conn)) {
         $conn->rollback();
     }
-    error_log("JOIN_ROOM_PERMANENT_KEYS: ❌ Exception - " . $e->getMessage());
+    error_log("JOIN_ROOM_WITH_BAN_CHECK: ❌ Exception - " . $e->getMessage());
     echo json_encode(['status' => 'error', 'message' => 'Failed to join room: ' . $e->getMessage()]);
 }
 
 if (isset($conn)) {
     $conn->close();
+}
+
+// CRITICAL FUNCTION: Check if user is banned from room
+function checkUserBanStatus($conn, $room_id, $user_id_string) {
+    // Get banlist from chatrooms table (simple version)
+    $stmt = $conn->prepare("SELECT banlist FROM chatrooms WHERE id = ?");
+    if (!$stmt) {
+        error_log("Failed to prepare ban check query: " . $conn->error);
+        return ['banned' => false];
+    }
+    
+    $stmt->bind_param("i", $room_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        $stmt->close();
+        return ['banned' => false];
+    }
+    
+    $room_data = $result->fetch_assoc();
+    $banlist = $room_data['banlist'] ? json_decode($room_data['banlist'], true) : [];
+    $stmt->close();
+    
+    if (!is_array($banlist)) {
+        return ['banned' => false];
+    }
+    
+    // Check if user is in banlist
+    foreach ($banlist as $ban) {
+        if ($ban['user_id_string'] === $user_id_string) {
+            // Check if ban is still active
+            if ($ban['ban_until'] === null) {
+                // Permanent ban
+                return [
+                    'banned' => true,
+                    'permanent' => true,
+                    'reason' => $ban['reason'] ?? ''
+                ];
+            } else {
+                // Temporary ban - check if still valid
+                if ($ban['ban_until'] > time()) {
+                    return [
+                        'banned' => true,
+                        'permanent' => false,
+                        'expires' => date('Y-m-d H:i:s', $ban['ban_until']),
+                        'reason' => $ban['reason'] ?? ''
+                    ];
+                }
+                // Ban expired, should clean it up but for now just ignore
+            }
+        }
+    }
+    
+    return ['banned' => false];
 }
 ?>
