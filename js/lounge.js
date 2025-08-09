@@ -1,7 +1,11 @@
 $(document).ready(function() {
     console.log('Lounge loaded');
     
+    // Store user's room keys globally
+    let userRoomKeys = [];
+    
     // Load initial data
+    loadUserRoomKeys(); // Load this first
     loadRooms();
     loadOnlineUsers();
     
@@ -9,7 +13,31 @@ $(document).ready(function() {
     setInterval(loadRooms, 5000);
     setInterval(loadOnlineUsers, 10000);
     setInterval(checkForKnocks, 3000);
+    setInterval(loadUserRoomKeys, 30000); // Refresh room keys every 30 seconds
 });
+
+// NEW: Function to load user's room keys
+function loadUserRoomKeys() {
+    console.log('Loading user room keys...');
+    $.ajax({
+        url: 'api/check_user_room_keys.php',
+        method: 'GET',
+        dataType: 'json',
+        success: function(keys) {
+            console.log('User room keys loaded:', keys);
+            userRoomKeys = Array.isArray(keys) ? keys : [];
+        },
+        error: function(xhr, status, error) {
+            console.log('Error loading user room keys (this is normal if user has no keys):', error);
+            userRoomKeys = [];
+        }
+    });
+}
+
+// Function to check if user has a room key
+function hasRoomKey(roomId) {
+    return userRoomKeys.includes(parseInt(roomId));
+}
 
 // Function to load rooms
 function loadRooms() {
@@ -41,10 +69,9 @@ function loadRooms() {
     });
 }
 
-// REPLACE your existing displayRooms function with this one:
-
+// UPDATED: Display rooms with room key awareness
 function displayRooms(rooms) {
-    console.log('displayRooms called with:', rooms); // Debug line
+    console.log('displayRooms called with:', rooms);
     let html = '';
     
     if (!Array.isArray(rooms) || rooms.length === 0) {
@@ -57,41 +84,54 @@ function displayRooms(rooms) {
         `;
     } else {
         rooms.forEach(room => {
-            console.log('Processing room:', room); // Debug line
+            console.log('Processing room:', room);
             
             const isPasswordProtected = room.has_password == 1;
             const allowsKnocking = room.allow_knocking == 1;
             const userCount = room.user_count || 0;
             const capacity = room.capacity || 10;
+            const hasKey = hasRoomKey(room.id); // NEW: Check if user has room key
             
-            console.log('Room password status:', isPasswordProtected, 'Knocking allowed:', allowsKnocking); // Debug
+            console.log(`Room ${room.id}: password=${isPasswordProtected}, knocking=${allowsKnocking}, hasKey=${hasKey}`);
             
             let headerClass = 'room-header';
-            if (isPasswordProtected && allowsKnocking) {
-                headerClass += ' knock-available';
-            } else if (isPasswordProtected) {
-                headerClass += ' password-protected';
-            }
-            
             let actionButtons = '';
-            if (isPasswordProtected) {
-                console.log('Room has password, creating password button for room:', room.id); // Debug
+            
+            // NEW: Logic that accounts for room keys
+            if (isPasswordProtected && hasKey) {
+                // User has a room key - can join directly
+                headerClass += ' knock-available'; // Use a special styling to indicate access granted
                 actionButtons = `
-                    <button class="btn btn-primary btn-sm me-2" onclick="console.log('Password button clicked for room ${room.id}'); showPasswordModal(${room.id}, '${room.name.replace(/'/g, "\\'")}');">
+                    <button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})">
+                        <i class="fas fa-key"></i> Join Room (Access Granted)
+                    </button>
+                `;
+            } else if (isPasswordProtected) {
+                // Password protected but no key
+                if (allowsKnocking) {
+                    headerClass += ' knock-available';
+                } else {
+                    headerClass += ' password-protected';
+                }
+                
+                actionButtons = `
+                    <button class="btn btn-primary btn-sm me-2" onclick="showPasswordModal(${room.id}, '${room.name.replace(/'/g, "\\'")}');">
                         <i class="fas fa-key"></i> Enter Password
                     </button>
                 `;
+                
                 // Add knock button if knocking is allowed
                 if (allowsKnocking) {
                     actionButtons += `
-                        <button class="btn btn-outline-primary btn-sm" onclick="console.log('Knock button clicked for room ${room.id}'); knockOnRoom(${room.id}, '${room.name.replace(/'/g, "\\'")}');">
+                        <button class="btn btn-outline-primary btn-sm" onclick="knockOnRoom(${room.id}, '${room.name.replace(/'/g, "\\'")}');">
                             <i class="fas fa-hand-paper"></i> Knock
                         </button>
                     `;
                 }
             } else {
+                // No password protection
                 actionButtons = `
-                    <button class="btn btn-success btn-sm" onclick="console.log('Join button clicked for room ${room.id}'); joinRoom(${room.id});">
+                    <button class="btn btn-success btn-sm" onclick="joinRoom(${room.id});">
                         <i class="fas fa-sign-in-alt"></i> Join Room
                     </button>
                 `;
@@ -106,6 +146,7 @@ function displayRooms(rooms) {
                                     ${room.name}
                                     ${isPasswordProtected ? '<i class="fas fa-lock ms-2" title="Password protected"></i>' : ''}
                                     ${allowsKnocking ? '<i class="fas fa-hand-paper ms-1" title="Knocking allowed"></i>' : ''}
+                                    ${hasKey ? '<i class="fas fa-key ms-1 text-success" title="You have access"></i>' : ''}
                                 </h5>
                                 <small class="opacity-75">${userCount}/${capacity} users</small>
                             </div>
@@ -126,15 +167,56 @@ function displayRooms(rooms) {
                                 Created: ${new Date(room.created_at).toLocaleDateString()}
                             </small>
                         </div>
+                        ${hasKey ? '<div class="mt-2"><span class="badge bg-success"><i class="fas fa-key"></i> Access Granted</span></div>' : ''}
                     </div>
                 </div>
             `;
         });
     }
     
-    console.log('Setting rooms HTML...'); // Debug line
+    console.log('Setting rooms HTML...');
     $('#roomsList').html(html);
 }
+
+// UPDATED: Enhanced joinRoom function with better room key handling
+window.joinRoom = function(roomId) {
+    console.log('joinRoom: Attempting to join room', roomId);
+    console.log('joinRoom: User has room key:', hasRoomKey(roomId));
+    
+    // Always try to join - let the server handle room key checking
+    $.ajax({
+        url: 'api/join_room.php',
+        method: 'POST',
+        data: { room_id: roomId },
+        dataType: 'json',
+        success: function(response) {
+            console.log('joinRoom: Response:', response);
+            if (response.status === 'success') {
+                console.log('joinRoom: Join successful');
+                if (response.used_room_key) {
+                    console.log('joinRoom: Room key was used');
+                    // Refresh room keys since the key was consumed
+                    loadUserRoomKeys();
+                }
+                window.location.href = 'room.php';
+            } else {
+                console.log('joinRoom: Join failed:', response.message);
+                // Check if password is required
+                if (response.message && response.message.toLowerCase().includes('password')) {
+                    console.log('joinRoom: Password required, showing modal');
+                    showPasswordModal(roomId, 'Room ' + roomId);
+                } else {
+                    // Some other error
+                    alert('Error: ' + response.message);
+                }
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('joinRoom: Error on attempt:', error, xhr.responseText);
+            alert('Error joining room: ' + error);
+        }
+    });
+};
 
 // Function to load online users
 function loadOnlineUsers() {
@@ -425,40 +507,6 @@ window.joinRoomWithPassword = function(roomId) {
     });
 };
 
-// Replace your existing joinRoom function with this smarter version
-
-window.joinRoom = function(roomId) {
-    console.log('joinRoom: Attempting to join room', roomId);
-    
-    // First try to join without password (in case user has room key or room is not protected)
-    $.ajax({
-        url: 'api/join_room.php',
-        method: 'POST',
-        data: { room_id: roomId },
-        dataType: 'json',
-        success: function(response) {
-            console.log('joinRoom: Initial attempt response:', response);
-            if (response.status === 'success') {
-                // Success! User can join (either no password or has room key)
-                window.location.href = 'room.php';
-            } else {
-                // Check if password is required
-                if (response.message && response.message.toLowerCase().includes('password')) {
-                    console.log('joinRoom: Password required, showing modal');
-                    showPasswordModal(roomId, 'Room ' + roomId);
-                } else {
-                    // Some other error
-                    alert('Error: ' + response.message);
-                }
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('joinRoom: Error on initial attempt:', error, xhr.responseText);
-            alert('Error joining room: ' + error);
-        }
-    });
-};
-
 // Function to knock on room
 window.knockOnRoom = function(roomId, roomName) {
     if (!confirm(`Send a knock request to "${roomName}"?`)) {
@@ -571,8 +619,7 @@ window.selectAvatar = function(avatar) {
     });
 };
 
-// Replace your checkForKnocks and displayKnockNotifications functions with these:
-
+// Knock checking functions
 function checkForKnocks() {
     console.log('checkForKnocks: Checking for knocks...');
     
@@ -675,7 +722,14 @@ window.respondToKnock = function(knockId, response) {
             console.log('Knock response result:', result);
             if (result.status === 'success') {
                 dismissKnock(knockId);
-                alert(response === 'accepted' ? 'Knock accepted! User can now join.' : 'Knock denied.');
+                
+                if (response === 'accepted') {
+                    alert('Knock accepted! User can now join.');
+                    // Refresh user room keys in case they were the knocker
+                    loadUserRoomKeys();
+                } else {
+                    alert('Knock denied.');
+                }
             } else {
                 alert('Error: ' + result.message);
             }
@@ -704,237 +758,7 @@ function repositionKnockNotifications() {
     });
 }
 
-// Test function you can call manually
-window.testKnockCheck = function() {
-    console.log('Manual knock check...');
-    checkForKnocks();
-};
-
-// Add this to your existing lounge.js file, don't replace the whole file
-
-// Update the displayRooms function to show knock buttons
-function displayRooms(rooms) {
-    let html = '';
-    
-    if (!Array.isArray(rooms) || rooms.length === 0) {
-        html = `
-            <div class="text-center py-5">
-                <i class="fas fa-door-closed fa-3x text-muted mb-3"></i>
-                <h4 class="text-muted">No rooms available</h4>
-                <p class="text-muted">Be the first to create a room!</p>
-            </div>
-        `;
-    } else {
-        rooms.forEach(room => {
-            const isPasswordProtected = room.has_password == 1;
-            const allowsKnocking = room.allow_knocking == 1;
-            const userCount = room.user_count || 0;
-            const capacity = room.capacity || 10;
-            
-            let headerClass = 'room-header';
-            if (isPasswordProtected && allowsKnocking) {
-                headerClass += ' knock-available';
-            } else if (isPasswordProtected) {
-                headerClass += ' password-protected';
-            }
-            
-            let actionButtons = '';
-            if (isPasswordProtected) {
-                actionButtons = `
-                    <button class="btn btn-primary btn-sm me-2" onclick="showPasswordModal(${room.id}, '${room.name}')">
-                        <i class="fas fa-key"></i> Enter Password
-                    </button>
-                `;
-                // Add knock button if knocking is allowed
-                if (allowsKnocking) {
-                    actionButtons += `
-                        <button class="btn btn-outline-primary btn-sm" onclick="knockOnRoom(${room.id}, '${room.name}')">
-                            <i class="fas fa-hand-paper"></i> Knock
-                        </button>
-                    `;
-                }
-            } else {
-                actionButtons = `
-                    <button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})">
-                        <i class="fas fa-sign-in-alt"></i> Join Room
-                    </button>
-                `;
-            }
-            
-            html += `
-                <div class="room-card">
-                    <div class="${headerClass}">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h5 class="mb-1">
-                                    ${room.name}
-                                    ${isPasswordProtected ? '<i class="fas fa-lock ms-2"></i>' : ''}
-                                    ${allowsKnocking ? '<i class="fas fa-hand-paper ms-1" title="Knocking allowed"></i>' : ''}
-                                </h5>
-                                <small class="opacity-75">${userCount}/${capacity} users</small>
-                            </div>
-                            <div class="text-end">
-                                ${actionButtons}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <p class="card-text text-muted mb-2">
-                            ${room.description || 'No description'}
-                        </p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">
-                                <i class="fas fa-user"></i> Host: ${room.host_name || 'Unknown'}
-                            </small>
-                            <small class="text-muted">
-                                Created: ${new Date(room.created_at).toLocaleDateString()}
-                            </small>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-    }
-    
-    $('#roomsList').html(html);
-}
-
-// Add these new functions to your existing lounge.js (keep your existing functions)
-
-// Function to knock on room
-window.knockOnRoom = function(roomId, roomName) {
-    console.log('Knocking on room:', roomId, roomName);
-    
-    if (!confirm(`Send a knock request to "${roomName}"?`)) {
-        return;
-    }
-    
-    $.ajax({
-        url: 'api/knock_room.php',
-        method: 'POST',
-        data: { room_id: roomId },
-        dataType: 'json',
-        success: function(response) {
-            console.log('Knock response:', response);
-            if (response.status === 'success') {
-                alert('Knock sent! The host will be notified.');
-            } else {
-                alert('Error: ' + response.message);
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Error knocking on room:', error, xhr.responseText);
-            alert('Error sending knock: ' + error);
-        }
-    });
-};
-
-// Function to check for knocks (add to your existing intervals)
-function checkForKnocks() {
-    $.ajax({
-        url: 'api/check_knocks.php',
-        method: 'GET',
-        dataType: 'json',
-        success: function(knocks) {
-            if (Array.isArray(knocks) && knocks.length > 0) {
-                console.log('Received knocks:', knocks);
-                displayKnockNotifications(knocks);
-            }
-        },
-        error: function(xhr, status, error) {
-            // Silently fail - user might not be a host
-            console.log('No knocks or not a host');
-        }
-    });
-}
-
-// Function to display knock notifications
-function displayKnockNotifications(knocks) {
-    knocks.forEach(knock => {
-        // Check if notification already exists
-        if ($(`#knock-${knock.id}`).length > 0) {
-            return;
-        }
-        
-        const userName = knock.username || knock.guest_name || 'Unknown User';
-        const avatar = knock.avatar || 'default_avatar.jpg';
-        
-        const notificationHtml = `
-            <div class="alert alert-info knock-notification" id="knock-${knock.id}" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 1050; max-width: 350px;">
-                <div class="d-flex align-items-center">
-                    <img src="images/${avatar}" width="40" height="40" class="rounded-circle me-3" alt="${userName}">
-                    <div class="flex-grow-1">
-                        <h6 class="mb-1">
-                            <i class="fas fa-hand-paper"></i> Knock Request
-                        </h6>
-                        <p class="mb-2">${userName} wants to join your room: <strong>${knock.room_name}</strong></p>
-                        <div>
-                            <button class="btn btn-success btn-sm me-2" onclick="respondToKnock(${knock.id}, 'accepted')">
-                                <i class="fas fa-check"></i> Accept
-                            </button>
-                            <button class="btn btn-danger btn-sm" onclick="respondToKnock(${knock.id}, 'denied')">
-                                <i class="fas fa-times"></i> Deny
-                            </button>
-                        </div>
-                    </div>
-                    <button type="button" class="btn-close" onclick="dismissKnock(${knock.id})"></button>
-                </div>
-            </div>
-        `;
-        
-        $('body').append(notificationHtml);
-        
-        // Auto-dismiss after 30 seconds
-        setTimeout(() => {
-            dismissKnock(knock.id);
-        }, 30000);
-    });
-}
-
-// Function to respond to knock
-window.respondToKnock = function(knockId, response) {
-    console.log('Responding to knock:', knockId, response);
-    
-    $.ajax({
-        url: 'api/respond_knocks.php',
-        method: 'POST',
-        data: {
-            knock_id: knockId,
-            response: response
-        },
-        dataType: 'json',
-        success: function(result) {
-            console.log('Response result:', result);
-            if (result.status === 'success') {
-                dismissKnock(knockId);
-                alert(response === 'accepted' ? 'Knock accepted!' : 'Knock denied');
-            } else {
-                alert('Error: ' + result.message);
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Error responding to knock:', error, xhr.responseText);
-            alert('Error responding to knock: ' + error);
-        }
-    });
-};
-
-// Function to dismiss knock notification
-window.dismissKnock = function(knockId) {
-    $(`#knock-${knockId}`).fadeOut(300, function() {
-        $(this).remove();
-    });
-};
-
-// Add knock checking to your existing ready function
-$(document).ready(function() {
-    // Keep your existing code and add this line:
-    setInterval(checkForKnocks, 3000);
-});
-
-// Add this to your lounge.js if the password modal isn't working
-
-// Update your showPasswordModal to be more user-friendly
+// Updated password modal function
 window.showPasswordModal = function(roomId, roomName) {
     console.log('showPasswordModal called:', roomId, roomName);
     
@@ -991,39 +815,14 @@ window.showPasswordModal = function(roomId, roomName) {
     });
 };
 
-// Also update your joinRoomWithPassword function to be more specific
-window.joinRoomWithPassword = function(roomId) {
-    const password = $('#roomPasswordInput').val();
-    
-    if (!password) {
-        alert('Please enter the password');
-        $('#roomPasswordInput').focus();
-        return;
-    }
-    
-    console.log('joinRoomWithPassword: Attempting with password');
-    
-    $.ajax({
-        url: 'api/join_room.php',
-        method: 'POST',
-        data: {
-            room_id: roomId,
-            password: password
-        },
-        dataType: 'json',
-        success: function(response) {
-            console.log('joinRoomWithPassword: Response:', response);
-            if (response.status === 'success') {
-                $('#passwordModal').modal('hide');
-                window.location.href = 'room.php';
-            } else {
-                alert('Error: ' + response.message);
-                $('#roomPasswordInput').val('').focus();
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('joinRoomWithPassword: Error:', error, xhr.responseText);
-            alert('Error joining room: ' + error);
-        }
-    });
+// Test function you can call manually
+window.testKnockCheck = function() {
+    console.log('Manual knock check...');
+    checkForKnocks();
+};
+
+// Test function for room keys
+window.testRoomKeys = function() {
+    console.log('Manual room keys check...');
+    loadUserRoomKeys();
 };
