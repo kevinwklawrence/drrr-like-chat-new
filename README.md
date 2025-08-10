@@ -6,7 +6,7 @@ A new drrr-like-chat project made from scratch, using HTML, CSS, JS, PHP, Ajax, 
 
 ©Lenn, 2025.
 
-# ![Example Image](/images/black/icon_alpha.png) FEATURES
+# ![Example Image](/images/orange/icon_fullmetal.png) FEATURES
 - Guest Login
 - User Login
 - Registration
@@ -22,7 +22,7 @@ A new drrr-like-chat project made from scratch, using HTML, CSS, JS, PHP, Ajax, 
 - Time-limited avatars
 - Event-limited avatars
 
-# PLANNED FEATURES
+# ![Example Image](/images/red/icon_red_cat.png) PLANNED FEATURES
 - Private messaging
 - Custom avatars for certain users
 - Avatar memory
@@ -40,7 +40,7 @@ A new drrr-like-chat project made from scratch, using HTML, CSS, JS, PHP, Ajax, 
 - "Dollars" karma system, can trade karma for titles, accessories, pets, avatars, etc
 
 
-# KNOWN ISSUES
+# ![Example Image](/images/black/icon_policeman.png) KNOWN ISSUES
 - Users and hosts not properly showing up on room listings
 - Room settings don't have option to turn off/on password and knocking
 - Deleted rooms don't kick all users properly
