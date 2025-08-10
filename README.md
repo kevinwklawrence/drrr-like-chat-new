@@ -40,7 +40,7 @@ A new drrr-like-chat project made from scratch, using HTML, CSS, JS, PHP, Ajax, 
 - "Dollars" karma system, can trade karma for titles, accessories, pets, avatars, etc
 
 
-# ![Example Image](/images/black/icon_policeman.png) KNOWN ISSUES
+# ![Example Image](/images/black/policeman2.png) KNOWN ISSUES
 - Users and hosts not properly showing up on room listings
 - Room settings don't have option to turn off/on password and knocking
 - Deleted rooms don't kick all users properly
