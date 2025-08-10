@@ -205,7 +205,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script>
         $('#registerForm').on('submit', function(e) {
             e.preventDefault();
-            console.log('Registration form submitted');
+            debugLog('Registration form submitted');
             
             // Client-side validation
             const password = $('#password').val();
@@ -226,7 +226,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 method: 'POST',
                 data: $(this).serialize(),
                 success: function(response) {
-                    console.log('Response from register.php:', response);
+                    debugLog('Response from register.php:', response);
                     try {
                         let res = JSON.parse(response);
                         if (res.status === 'success') {

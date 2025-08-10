@@ -153,7 +153,7 @@ function getAverageColor($img_path) {
                             $web_base_dir = 'images/';
                             $allowed_ext = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
                             $excluded_folders = ['staff', 'bg', 'icon']; // Add any folder names you want to exclude
-                            $priority_folders = ['default', 'special'];
+                            $priority_folders = ['default', 'time-limited'];
 
                             // Show priority folders first if they exist
                             foreach ($priority_folders as $folder) {

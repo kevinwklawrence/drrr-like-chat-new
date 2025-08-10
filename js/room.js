@@ -1,3 +1,58 @@
+// ===== DEBUG CONFIGURATION =====
+// Set to false for production, true for debugging
+const DEBUG_MODE = false;
+const SHOW_SENSITIVE_DATA = false;
+
+// Debug logging functions
+function debugLog(message, data = null) {
+    if (DEBUG_MODE) {
+        if (data !== null) {
+            debugLog(message, data);
+        } else {
+            debugLog(message);
+        }
+    }
+}
+
+function debugError(message, error = null) {
+    if (DEBUG_MODE) {
+        if (error !== null) {
+            console.error(message, error);
+        } else {
+            console.error(message);
+        }
+    }
+}
+
+function debugWarn(message, data = null) {
+    if (DEBUG_MODE) {
+        if (data !== null) {
+            console.warn(message, data);
+        } else {
+            console.warn(message);
+        }
+    }
+}
+
+function debugLog(message, data = null) {
+    if (DEBUG_MODE && SHOW_SENSITIVE_DATA) {
+        if (data !== null) {
+            debugLog('[SENSITIVE]', message, data);
+        } else {
+            debugLog('[SENSITIVE]', message);
+        }
+    }
+}
+
+// Critical errors always show (for production debugging)
+function criticalError(message, error = null) {
+    if (error !== null) {
+        console.error('[CRITICAL]', message, error);
+    } else {
+        console.error('[CRITICAL]', message);
+    }
+}
+
 // ===== GLOBAL VARIABLES =====
 // Kick Detection System
 let kickDetectionInterval;
@@ -31,7 +86,7 @@ function checkUserStatus() {
     }
     lastStatusCheck = now;
     
-    console.log('🔍 Checking user status...');
+    debugLog('🔍 Checking user status...');
     
     $.ajax({
         url: 'api/check_user_status.php',
@@ -39,7 +94,7 @@ function checkUserStatus() {
         dataType: 'json',
         timeout: 5000,
         success: function(response) {
-            console.log('📡 Status check result:', response);
+            debugLog('📡 Status check result:', response);
             consecutiveErrors = 0;
             
             switch(response.status) {
@@ -53,12 +108,12 @@ function checkUserStatus() {
                     handleRoomDeleted(response);
                     break;
                 case 'not_in_room':
-                    console.log('👤 User not in room, redirecting to lounge');
+                    debugLog('👤 User not in room, redirecting to lounge');
                     stopKickDetection();
                     window.location.href = 'lounge.php';
                     break;
                 case 'active':
-                    console.log('✅ User status: Active in', response.room_name);
+                    debugLog('✅ User status: Active in', response.room_name);
                     break;
                 case 'error':
                     console.error('❌ Server error:', response.message);
@@ -70,14 +125,14 @@ function checkUserStatus() {
             }
         },
         error: function(xhr, status, error) {
-            console.log('🔌 Status check failed:', { status, error, responseText: xhr.responseText });
+            debugLog('🔌 Status check failed:', { status, error, responseText: xhr.responseText });
             handleStatusCheckError();
         }
     });
 }
 
 function handleUserBanned(response) {
-    console.log('🚫 User has been BANNED:', response);
+    debugLog('🚫 User has been BANNED:', response);
     stopKickDetection();
     
     let banMessage = response.message || 'You have been banned from this room';
@@ -107,7 +162,7 @@ function handleUserBanned(response) {
 }
 
 function handleUserKicked(response) {
-    console.log('👢 User has been KICKED:', response);
+    debugLog('👢 User has been KICKED:', response);
     stopKickDetection();
     
     const message = response.message || 'You have been removed from this room';
@@ -117,7 +172,7 @@ function handleUserKicked(response) {
 }
 
 function handleRoomDeleted(response) {
-    console.log('🏗️ Room has been DELETED:', response);
+    debugLog('🏗️ Room has been DELETED:', response);
     stopKickDetection();
     
     const message = response.message || 'This room has been deleted';
@@ -201,7 +256,7 @@ function showKickModal(title, message, details, type) {
 }
 
 function handleKickModalClose() {
-    console.log('🏠 Redirecting to lounge...');
+    debugLog('🏠 Redirecting to lounge...');
     stopKickDetection();
     
     $.ajax({
@@ -215,7 +270,7 @@ function handleKickModalClose() {
 }
 
 function stopKickDetection() {
-    console.log('🛑 Stopping kick detection system');
+    debugLog('🛑 Stopping kick detection system');
     kickDetectionEnabled = false;
     
     if (kickDetectionInterval) {
@@ -227,11 +282,11 @@ function stopKickDetection() {
 // ===== ACTIVITY TRACKING FUNCTIONS =====
 function initializeActivityTracking() {
     if (activityTrackingEnabled) {
-        console.log('🔄 Activity tracking already initialized');
+        debugLog('🔄 Activity tracking already initialized');
         return;
     }
     
-    console.log('🔄 Initializing activity tracking system...');
+    debugLog('🔄 Initializing activity tracking system...');
     activityTrackingEnabled = true;
     
     if (activityInterval) {
@@ -257,11 +312,11 @@ function initializeActivityTracking() {
     setupActivityListeners();
     updateUserActivity('system_start');
     
-    console.log('✅ Activity tracking system initialized successfully');
+    debugLog('✅ Activity tracking system initialized successfully');
 }
 
 function setupActivityListeners() {
-    console.log('🎯 Setting up activity listeners...');
+    debugLog('🎯 Setting up activity listeners...');
     
     $(document).off('mousemove.activity keypress.activity scroll.activity click.activity');
     $(window).off('focus.activity');
@@ -292,13 +347,13 @@ function setupActivityListeners() {
         }
     });
     
-    console.log('✅ Activity listeners set up successfully');
+    debugLog('✅ Activity listeners set up successfully');
 }
 
 function updateUserActivity(activityType = 'general') {
     if (!activityTrackingEnabled) {
         if (activityDebugMode) {
-            console.log(`⚠️ Activity tracking disabled, skipping update: ${activityType}`);
+            debugLog(`⚠️ Activity tracking disabled, skipping update: ${activityType}`);
         }
         return;
     }
@@ -308,14 +363,14 @@ function updateUserActivity(activityType = 'general') {
     
     if (now - lastActivityUpdate < minInterval) {
         if (activityDebugMode && activityType !== 'heartbeat') {
-            console.log(`⏰ Activity update throttled: ${activityType} (${now - lastActivityUpdate}ms ago)`);
+            debugLog(`⏰ Activity update throttled: ${activityType} (${now - lastActivityUpdate}ms ago)`);
         }
         return;
     }
     
     lastActivityUpdate = now;
     
-    console.log(`📍 Updating activity: ${activityType}`);
+    debugLog(`📍 Updating activity: ${activityType}`);
     
     $.ajax({
         url: 'api/update_activity.php',
@@ -325,23 +380,23 @@ function updateUserActivity(activityType = 'general') {
         timeout: 5000,
         success: function(response) {
             if (response.status === 'success') {
-                console.log(`✅ Activity updated: ${activityType} at ${response.timestamp}`);
+                debugLog(`✅ Activity updated: ${activityType} at ${response.timestamp}`);
             } else if (response.status === 'not_in_room') {
-                console.log('❌ Not in room - stopping activity tracking');
+                debugLog('❌ Not in room - stopping activity tracking');
                 stopActivityTracking();
                 
                 if (typeof forceStatusCheck === 'function') {
                     forceStatusCheck();
                 }
             } else {
-                console.log(`⚠️ Activity update warning: ${response.message}`);
+                debugLog(`⚠️ Activity update warning: ${response.message}`);
             }
         },
         error: function(xhr, status, error) {
-            console.log(`⚠️ Activity update failed: ${status} - ${error}`);
+            debugLog(`⚠️ Activity update failed: ${status} - ${error}`);
             
             if (xhr.status === 404) {
-                console.log('💡 Tip: Make sure api/update_activity.php exists');
+                debugLog('💡 Tip: Make sure api/update_activity.php exists');
             }
         }
     });
@@ -349,11 +404,11 @@ function updateUserActivity(activityType = 'general') {
 
 function triggerDisconnectCheck() {
     if (!activityTrackingEnabled) {
-        console.log('⚠️ Activity tracking disabled, skipping disconnect check');
+        debugLog('⚠️ Activity tracking disabled, skipping disconnect check');
         return;
     }
     
-    console.log('🔍 Triggering disconnect check...');
+    debugLog('🔍 Triggering disconnect check...');
     
     $.ajax({
         url: 'api/check_disconnects.php',
@@ -362,11 +417,11 @@ function triggerDisconnectCheck() {
         timeout: 10000,
         success: function(response) {
             if (response.status === 'success') {
-                console.log('📊 Disconnect check completed:', response.summary);
+                debugLog('📊 Disconnect check completed:', response.summary);
                 
                 const summary = response.summary;
                 if (summary.users_disconnected > 0 || summary.hosts_transferred > 0 || summary.rooms_deleted > 0) {
-                    console.log(`👥 Changes: ${summary.users_disconnected} disconnected, ${summary.hosts_transferred} transfers, ${summary.rooms_deleted} deleted`);
+                    debugLog(`👥 Changes: ${summary.users_disconnected} disconnected, ${summary.hosts_transferred} transfers, ${summary.rooms_deleted} deleted`);
                     
                     setTimeout(() => {
                         loadUsers();
@@ -374,38 +429,38 @@ function triggerDisconnectCheck() {
                     }, 1000);
                 }
             } else {
-                console.log('❌ Disconnect check failed:', response.message);
+                debugLog('❌ Disconnect check failed:', response.message);
             }
         },
         error: function(xhr, status, error) {
-            console.log('⚠️ Disconnect check error:', error);
+            debugLog('⚠️ Disconnect check error:', error);
             
             if (xhr.status === 404) {
-                console.log('💡 Tip: Make sure api/check_disconnects.php exists');
+                debugLog('💡 Tip: Make sure api/check_disconnects.php exists');
             }
         }
     });
 }
 
 function stopActivityTracking() {
-    console.log('🛑 Stopping activity tracking system');
+    debugLog('🛑 Stopping activity tracking system');
     activityTrackingEnabled = false;
     
     if (activityInterval) {
         clearInterval(activityInterval);
         activityInterval = null;
-        console.log('- Stopped activity interval');
+        debugLog('- Stopped activity interval');
     }
     
     if (disconnectCheckInterval) {
         clearInterval(disconnectCheckInterval);
         disconnectCheckInterval = null;
-        console.log('- Stopped disconnect interval');
+        debugLog('- Stopped disconnect interval');
     }
     
     $(document).off('mousemove.activity keypress.activity scroll.activity click.activity');
     $(window).off('focus.activity');
-    console.log('- Removed activity listeners');
+    debugLog('- Removed activity listeners');
 }
 
 // ===== MESSAGE FUNCTIONS =====
@@ -418,7 +473,7 @@ function sendMessage() {
         return false;
     }
     
-    console.log('💬 Sending message:', message);
+    debugLog('💬 Sending message:', message);
     
     // Update activity immediately when sending message
     updateUserActivity('message_send');
@@ -460,13 +515,13 @@ function sendMessage() {
 }
 
 function loadMessages() {
-    console.log('Loading messages for roomId:', roomId);
+    debugLog('Loading messages for roomId:', roomId);
     $.ajax({
         url: 'api/get_messages.php',
         method: 'GET',
         data: { room_id: roomId },
         success: function(response) {
-            console.log('Response from api/get_messages.php:', response);
+            debugLog('Response from api/get_messages.php:', response);
             try {
                 let messages = JSON.parse(response);
                 let html = '';
@@ -550,13 +605,13 @@ function loadMessages() {
 
 // ===== USER MANAGEMENT FUNCTIONS =====
 function loadUsers() {
-    console.log('Loading users for roomId:', roomId);
+    debugLog('Loading users for roomId:', roomId);
     $.ajax({
         url: 'api/get_room_users.php',
         method: 'GET',
         data: { room_id: roomId },
         success: function(response) {
-            console.log('Response from api/get_room_users.php:', response);
+            debugLog('Response from api/get_room_users.php:', response);
             try {
                 let users = JSON.parse(response);
                 let html = '';
@@ -619,7 +674,7 @@ function loadUsers() {
 
 // ===== ROOM MANAGEMENT FUNCTIONS =====
 function showRoomSettings() {
-    console.log('Loading room settings for roomId:', roomId);
+    debugLog('Loading room settings for roomId:', roomId);
     
     $.ajax({
         url: 'api/get_room_settings.php',
@@ -660,10 +715,17 @@ function displayRoomSettingsModal(settings) {
                                 <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab">General</button>
                             </li>
                             <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">Security</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="appearance-tab" data-bs-toggle="tab" data-bs-target="#appearance" type="button" role="tab">Appearance</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
                                 <button class="nav-link" id="banlist-tab" data-bs-toggle="tab" data-bs-target="#banlist" type="button" role="tab">Banlist</button>
                             </li>
                         </ul>
                         <div class="tab-content" id="settingsTabsContent">
+                            <!-- General Settings -->
                             <div class="tab-pane fade show active" id="general" role="tabpanel">
                                 <form id="roomSettingsForm" class="mt-3">
                                     <div class="row">
@@ -681,35 +743,102 @@ function displayRoomSettingsModal(settings) {
                                                     <option value="50"${settings.capacity == 50 ? ' selected' : ''}>50</option>
                                                 </select>
                                             </div>
-                                            <div class="mb-3">
-                                                <label for="settingsPassword" class="form-label">Password</label>
-                                                <input type="password" class="form-control" id="settingsPassword" placeholder="Leave empty to keep current password">
-                                                <div class="form-text">Leave empty to keep current password, or enter new password to change it.</div>
-                                            </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="mb-3">
                                                 <label for="settingsDescription" class="form-label">Description</label>
                                                 <textarea class="form-control" id="settingsDescription" rows="3">${settings.description || ''}</textarea>
                                             </div>
-                                            <div class="mb-3">
-                                                <label for="settingsBackground" class="form-label">Background</label>
-                                                <select class="form-select" id="settingsBackground">
-                                                    <option value=""${!settings.background ? ' selected' : ''}>Default</option>
-                                                    <option value="images/background1.jpg"${settings.background === 'images/background1.jpg' ? ' selected' : ''}>Background 1</option>
-                                                    <option value="images/background2.jpg"${settings.background === 'images/background2.jpg' ? ' selected' : ''}>Background 2</option>
-                                                </select>
-                                            </div>
-                                            <div class="mb-3">
+                                           <div class="mb-3">
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="checkbox" id="settingsPermanent"${settings.permanent ? ' checked' : ''}>
-                                                    <label class="form-check-label" for="settingsPermanent">Permanent Room (Admin only)</label>
+                                                    <label class="form-check-label" for="settingsPermanent">
+                                                        <i class="fas fa-infinity"></i> Permanent Room (Admin only)
+                                                    </label>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </form>
                             </div>
+
+                            <!-- Security Settings -->
+                            <div class="tab-pane fade" id="security" role="tabpanel">
+                                <div class="mt-3">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="settingsHasPassword"${settings.has_password ? ' checked' : ''}>
+                                                    <label class="form-check-label" for="settingsHasPassword">
+                                                        <i class="fas fa-lock"></i> Password Protected
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3" id="passwordFieldSettings" style="display: ${settings.has_password ? 'block' : 'none'};">
+                                                <label for="settingsPassword" class="form-label">Room Password</label>
+                                                <input type="password" class="form-control" id="settingsPassword" placeholder="Leave empty to keep current password">
+                                                <div class="form-text">Leave empty to keep current password, or enter new password to change it.</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3" id="knockingFieldSettings" style="display: ${settings.has_password ? 'block' : 'none'};">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="settingsAllowKnocking"${settings.allow_knocking ? ' checked' : ''}>
+                                                    <label class="form-check-label" for="settingsAllowKnocking">
+                                                        <i class="fas fa-hand-paper"></i> Allow Knocking
+                                                    </label>
+                                                </div>
+                                                <small class="form-text text-muted">Let users request access when they don't know the password</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Appearance Settings -->
+                            <div class="tab-pane fade" id="appearance" role="tabpanel">
+                                <div class="mt-3">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="settingsTheme" class="form-label">Room Theme</label>
+                                                <select class="form-select" id="settingsTheme">
+                                                    <option value="default"${!settings.theme || settings.theme === 'default' ? ' selected' : ''}>Default Theme</option>
+                                                    <option value="dark"${settings.theme === 'dark' ? ' selected' : ''}>Dark Theme</option>
+                                                    <option value="neon"${settings.theme === 'neon' ? ' selected' : ''}>Neon Theme</option>
+                                                    <option value="minimal"${settings.theme === 'minimal' ? ' selected' : ''}>Minimal Theme</option>
+                                                    <option value="cyberpunk"${settings.theme === 'cyberpunk' ? ' selected' : ''}>Cyberpunk Theme</option>
+                                                </select>
+                                                <div class="form-text">Choose a visual theme for your room</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="settingsBackground" class="form-label">Background Image</label>
+                                                <select class="form-select" id="settingsBackground">
+                                                    <option value=""${!settings.background ? ' selected' : ''}>Default</option>
+                                                    <option value="images/background1.jpg"${settings.background === 'images/background1.jpg' ? ' selected' : ''}>Background 1</option>
+                                                    <option value="images/background2.jpg"${settings.background === 'images/background2.jpg' ? ' selected' : ''}>Background 2</option>
+                                                    <option value="images/bg/city.jpg"${settings.background === 'images/bg/city.jpg' ? ' selected' : ''}>City Night</option>
+                                                    <option value="images/bg/space.jpg"${settings.background === 'images/bg/space.jpg' ? ' selected' : ''}>Space</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Theme Preview</label>
+                                                <div id="themePreview" class="border rounded p-3" style="height: 150px; background: #f8f9fa;">
+                                                    <div class="preview-message">
+                                                        <strong>Theme Preview</strong><br>
+                                                        <small class="text-muted">Select a theme to see preview</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Banlist -->
                             <div class="tab-pane fade" id="banlist" role="tabpanel">
                                 <div class="mt-3">
                                     <h6>Banned Users</h6>
@@ -718,6 +847,10 @@ function displayRoomSettingsModal(settings) {
                                     </div>
                                 </div>
                             </div>
+
+                  
+
+
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -732,6 +865,9 @@ function displayRoomSettingsModal(settings) {
     $('#roomSettingsModal').remove();
     $('body').append(modalHtml);
     
+    // Set up event handlers for the new fields
+    setupRoomSettingsHandlers();
+    
     $('#banlist-tab').on('click', function() {
         loadBannedUsers();
     });
@@ -739,8 +875,82 @@ function displayRoomSettingsModal(settings) {
     $('#roomSettingsModal').modal('show');
 }
 
+function setupRoomSettingsHandlers() {
+    // Show/hide password field based on checkbox
+    $('#settingsHasPassword').on('change', function() {
+        if (this.checked) {
+            $('#passwordFieldSettings').show();
+            $('#knockingFieldSettings').show();
+        } else {
+            $('#passwordFieldSettings').hide();
+            $('#knockingFieldSettings').hide();
+            $('#settingsPassword').val('');
+            $('#settingsAllowKnocking').prop('checked', true);
+        }
+    });
+
+    // Theme preview handler
+    $('#settingsTheme').on('change', function() {
+        updateThemePreview($(this).val());
+    });
+
+    // Initialize theme preview
+    updateThemePreview($('#settingsTheme').val());
+}
+
+function updateThemePreview(theme) {
+    const preview = $('#themePreview');
+    let previewContent = '';
+    
+    switch(theme) {
+        case 'dark':
+            preview.css({
+                'background': 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
+                'color': '#ffffff',
+                'border': '1px solid #444'
+            });
+            previewContent = '<strong style="color: #bb86fc;">Dark Theme</strong><br><small style="color: #03dac6;">Modern dark interface</small>';
+            break;
+        case 'neon':
+            preview.css({
+                'background': 'linear-gradient(135deg, #0a0a0a 0%, #1a0a1a 100%)',
+                'color': '#ff00ff',
+                'border': '1px solid #ff00ff',
+                'box-shadow': '0 0 10px rgba(255,0,255,0.3)'
+            });
+            previewContent = '<strong style="color: #00ffff;">Neon Theme</strong><br><small style="color: #ff00ff;">Cyberpunk vibes</small>';
+            break;
+        case 'minimal':
+            preview.css({
+                'background': '#ffffff',
+                'color': '#333333',
+                'border': '1px solid #e0e0e0'
+            });
+            previewContent = '<strong>Minimal Theme</strong><br><small style="color: #666;">Clean and simple</small>';
+            break;
+        case 'cyberpunk':
+            preview.css({
+                'background': 'linear-gradient(135deg, #0f0f0f 0%, #1a0f1a 50%, #0f1a1a 100%)',
+                'color': '#00ff41',
+                'border': '1px solid #00ff41',
+                'box-shadow': '0 0 15px rgba(0,255,65,0.3)'
+            });
+            previewContent = '<strong style="color: #ff0080;">Cyberpunk Theme</strong><br><small style="color: #00ffff;">Matrix-style interface</small>';
+            break;
+        default:
+            preview.css({
+                'background': '#f8f9fa',
+                'color': '#333',
+                'border': '1px solid #dee2e6'
+            });
+            previewContent = '<strong>Default Theme</strong><br><small class="text-muted">Standard appearance</small>';
+    }
+    
+    preview.html(`<div class="preview-message">${previewContent}</div>`);
+}
+
 function loadBannedUsers() {
-    console.log('Loading banned users for room:', roomId);
+    debugLog('Loading banned users for room:', roomId);
     
     $.ajax({
         url: 'api/get_banned_users_simple.php',
@@ -748,7 +958,7 @@ function loadBannedUsers() {
         dataType: 'json',
         data: { room_id: roomId },
         success: function(response) {
-            console.log('Banned users response:', response);
+            debugLog('Banned users response:', response);
             
             let html = '';
             
@@ -821,7 +1031,7 @@ function unbanUser(userIdString, userName) {
             user_id_string: userIdString
         },
         success: function(response) {
-            console.log('Unban response:', response);
+            debugLog('Unban response:', response);
             
             let res = response;
             if (typeof response === 'string') {
@@ -855,7 +1065,10 @@ function saveRoomSettings() {
         description: $('#settingsDescription').val().trim(),
         capacity: $('#settingsCapacity').val(),
         background: $('#settingsBackground').val(),
+        theme: $('#settingsTheme').val(),
+        has_password: $('#settingsHasPassword').is(':checked') ? 1 : 0,
         password: $('#settingsPassword').val(),
+        allow_knocking: $('#settingsAllowKnocking').is(':checked') ? 1 : 0,
         permanent: $('#settingsPermanent').is(':checked') ? 1 : 0
     };
     
@@ -865,7 +1078,18 @@ function saveRoomSettings() {
         return;
     }
     
-    console.log('Saving room settings:', formData);
+    // Validate password settings
+    if (formData.has_password && !formData.password && !confirm('No password entered. Do you want to keep the current password?')) {
+        $('#settingsPassword').focus();
+        return;
+    }
+    
+    debugLog('Saving room settings:', formData);
+    
+    // Show loading state
+    const saveButton = $('#roomSettingsModal .btn-primary');
+    const originalText = saveButton.html();
+    saveButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Saving...');
     
     $.ajax({
         url: 'api/update_room.php',
@@ -877,24 +1101,65 @@ function saveRoomSettings() {
                 if (res.status === 'success') {
                     alert('Room settings updated successfully!');
                     $('#roomSettingsModal').modal('hide');
-                    location.reload();
+                    
+                    // Apply theme change immediately if theme was changed
+                    if (formData.theme && formData.theme !== 'default') {
+                        applyTheme(formData.theme);
+                    } else {
+                        // Reload page to remove any custom themes
+                        location.reload();
+                    }
                 } else {
                     alert('Error: ' + res.message);
                 }
             } catch (e) {
-                console.error('JSON parse error:', e, response);
+                criticalError('JSON parse error:', e);
                 alert('Invalid response from server');
             }
         },
         error: function(xhr, status, error) {
-            console.error('AJAX error in saveRoomSettings:', status, error, xhr.responseText);
+            criticalError('AJAX error in saveRoomSettings:', { status, error });
             alert('AJAX error: ' + error);
+        },
+        complete: function() {
+            saveButton.prop('disabled', false).html(originalText);
         }
     });
 }
 
+// Function to dynamically apply themes
+function applyTheme(themeName) {
+    debugLog('Applying theme:', themeName);
+    
+    // Remove any existing theme stylesheets
+    $('link[data-theme]').remove();
+    
+    if (themeName && themeName !== 'default') {
+        // Add new theme stylesheet
+        const themeLink = document.createElement('link');
+        themeLink.rel = 'stylesheet';
+        themeLink.href = `css/themes/${themeName}.css`;
+        themeLink.setAttribute('data-theme', themeName);
+        
+        // Add after the main stylesheet
+        const mainStylesheet = $('link[href*="style.css"]');
+        if (mainStylesheet.length > 0) {
+            mainStylesheet.after(themeLink);
+        } else {
+            $('head').append(themeLink);
+        }
+        
+        // Add theme class to body for additional styling hooks
+        $('body').removeClass('theme-default theme-dark theme-neon theme-minimal theme-cyberpunk')
+                .addClass(`theme-${themeName}`);
+    } else {
+        // Remove theme class from body
+        $('body').removeClass('theme-default theme-dark theme-neon theme-minimal theme-cyberpunk');
+    }
+}
+
 function leaveRoom() {
-    console.log('Leave room clicked for roomId:', roomId);
+    debugLog('Leave room clicked for roomId:', roomId);
     
     $.ajax({
         url: 'api/leave_room.php',
@@ -904,20 +1169,20 @@ function leaveRoom() {
             action: 'check_options'
         },
         success: function(response) {
-            console.log('Response from api/leave_room.php (check):', response);
+            debugLog('Response from api/leave_room.php (check):', response);
             try {
                 let res = JSON.parse(response);
-                console.log('Parsed response:', res);
+                debugLog('Parsed response:', res);
                 
                 if (res.status === 'host_leaving') {
-                    console.log('User is host, showing modal with other users:', res.other_users);
+                    debugLog('User is host, showing modal with other users:', res.other_users);
                     showHostLeavingModal(
                         res.other_users || [], 
                         res.show_transfer !== false, 
                         res.last_user === true
                     );
                 } else if (res.status === 'success') {
-                    console.log('Regular user leaving, redirecting to lounge');
+                    debugLog('Regular user leaving, redirecting to lounge');
                     window.location.href = 'lounge.php';
                 } else {
                     console.error('Error response:', res);
@@ -997,7 +1262,7 @@ function showHostLeavingModal(otherUsers, showTransfer, isLastUser) {
 
 function deleteRoom() {
     if (confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
-        console.log('🏗️ Deleting room...');
+        debugLog('🏗️ Deleting room...');
         
         $.ajax({
             url: 'api/leave_room.php',
@@ -1007,11 +1272,11 @@ function deleteRoom() {
                 action: 'delete_room'
             },
             success: function(response) {
-                console.log('🏗️ Delete room response:', response);
+                debugLog('🏗️ Delete room response:', response);
                 try {
                     let res = JSON.parse(response);
                     if (res.status === 'success') {
-                        console.log('✅ Room deleted, redirecting to lounge');
+                        debugLog('✅ Room deleted, redirecting to lounge');
                         stopKickDetection();
                         alert('Room deleted successfully');
                         window.location.href = 'lounge.php';
@@ -1039,7 +1304,7 @@ function transferHost() {
     }
     
     if (confirm('Are you sure you want to transfer host privileges and leave the room?')) {
-        console.log('👑 Transferring host to:', newHostId);
+        debugLog('👑 Transferring host to:', newHostId);
         
         $.ajax({
             url: 'api/leave_room.php',
@@ -1050,7 +1315,7 @@ function transferHost() {
                 new_host_user_id: newHostId
             },
             success: function(response) {
-                console.log('👑 Transfer host response:', response);
+                debugLog('👑 Transfer host response:', response);
                 try {
                     let res = JSON.parse(response);
                     if (res.status === 'success') {
@@ -1126,7 +1391,7 @@ function confirmBanUser(userIdString, userName) {
         return;
     }
     
-    console.log('🔨 Banning user:', userIdString, 'for:', duration, 'reason:', reason);
+    debugLog('🔨 Banning user:', userIdString, 'for:', duration, 'reason:', reason);
     
     const banButton = $('#banUserModal .btn-danger');
     const originalText = banButton.html();
@@ -1143,7 +1408,7 @@ function confirmBanUser(userIdString, userName) {
             reason: reason
         },
         success: function(response) {
-            console.log('🔨 Ban response:', response);
+            debugLog('🔨 Ban response:', response);
             
             let res = response;
             if (typeof response === 'string') {
@@ -1187,24 +1452,24 @@ function checkForKnocks() {
         return;
     }
     
-    console.log('checkForKnocks: Checking for knocks in room...');
+    debugLog('checkForKnocks: Checking for knocks in room...');
     
     $.ajax({
         url: 'api/check_knocks.php',
         method: 'GET',
         dataType: 'json',
         success: function(knocks) {
-            console.log('checkForKnocks: Received response:', knocks);
+            debugLog('checkForKnocks: Received response:', knocks);
             
             if (Array.isArray(knocks) && knocks.length > 0) {
-                console.log('checkForKnocks: Found', knocks.length, 'knocks');
+                debugLog('checkForKnocks: Found', knocks.length, 'knocks');
                 displayKnockNotifications(knocks);
             } else {
-                console.log('checkForKnocks: No knocks found');
+                debugLog('checkForKnocks: No knocks found');
             }
         },
         error: function(xhr, status, error) {
-            console.log('checkForKnocks: Error:', {
+            debugLog('checkForKnocks: Error:', {
                 status: status,
                 error: error,
                 responseText: xhr.responseText
@@ -1214,13 +1479,13 @@ function checkForKnocks() {
 }
 
 function displayKnockNotifications(knocks) {
-    console.log('displayKnockNotifications: Processing', knocks.length, 'knocks');
+    debugLog('displayKnockNotifications: Processing', knocks.length, 'knocks');
     
     knocks.forEach((knock, index) => {
-        console.log('Processing knock:', knock);
+        debugLog('Processing knock:', knock);
         
         if ($(`#knock-${knock.id}`).length > 0) {
-            console.log('Notification already exists for knock', knock.id);
+            debugLog('Notification already exists for knock', knock.id);
             return;
         }
         
@@ -1256,20 +1521,20 @@ function displayKnockNotifications(knocks) {
             </div>
         `;
         
-        console.log('Adding knock notification for knock', knock.id);
+        debugLog('Adding knock notification for knock', knock.id);
         $('body').append(notificationHtml);
         
         $(`#knock-${knock.id}`).hide().fadeIn(300);
         
         setTimeout(() => {
-            console.log('Auto-dismissing knock', knock.id);
+            debugLog('Auto-dismissing knock', knock.id);
             dismissKnock(knock.id);
         }, 45000);
     });
 }
 
 function respondToKnock(knockId, response) {
-    console.log('respondToKnock:', knockId, response);
+    debugLog('respondToKnock:', knockId, response);
     
     $.ajax({
         url: 'api/respond_knocks.php',
@@ -1280,7 +1545,7 @@ function respondToKnock(knockId, response) {
         },
         dataType: 'json',
         success: function(result) {
-            console.log('Knock response result:', result);
+            debugLog('Knock response result:', result);
             if (result.status === 'success') {
                 dismissKnock(knockId);
                 
@@ -1302,7 +1567,7 @@ function respondToKnock(knockId, response) {
 }
 
 function dismissKnock(knockId) {
-    console.log('dismissKnock:', knockId);
+    debugLog('dismissKnock:', knockId);
     $(`#knock-${knockId}`).fadeOut(300, function() {
         $(this).remove();
         repositionKnockNotifications();
@@ -1324,7 +1589,7 @@ function createTestUser() {
         method: 'POST',
         dataType: 'json',
         success: function(response) {
-            console.log('Create test user response:', response);
+            debugLog('Create test user response:', response);
             
             let res = response;
             if (typeof response === 'string') {
@@ -1355,7 +1620,7 @@ function createTestUser() {
 // ===== DEBUGGING/TESTING FUNCTIONS =====
 // Force immediate status check (for testing)
 function forceStatusCheck() {
-    console.log('🔍 Forcing immediate status check...');
+    debugLog('🔍 Forcing immediate status check...');
     userKickedModalShown = false;
     checkUserStatus();
 }
@@ -1373,21 +1638,21 @@ function showActivityStatus() {
         disconnectIntervalId: disconnectCheckInterval
     };
     
-    console.log('📊 Activity Tracking Status:');
-    console.log(`- System enabled: ${status.activityTrackingEnabled}`);
-    console.log(`- Activity tracking active: ${status.activityTrackingActive}`);
-    console.log(`- Disconnect checking active: ${status.disconnectCheckingActive}`);
-    console.log(`- Last activity update: ${status.lastActivityTime}`);
-    console.log(`- User currently active: ${status.userCurrentlyActive}`);
-    console.log(`- Activity interval ID: ${status.activityIntervalId}`);
-    console.log(`- Disconnect interval ID: ${status.disconnectIntervalId}`);
+    debugLog('📊 Activity Tracking Status:');
+    debugLog(`- System enabled: ${status.activityTrackingEnabled}`);
+    debugLog(`- Activity tracking active: ${status.activityTrackingActive}`);
+    debugLog(`- Disconnect checking active: ${status.disconnectCheckingActive}`);
+    debugLog(`- Last activity update: ${status.lastActivityTime}`);
+    debugLog(`- User currently active: ${status.userCurrentlyActive}`);
+    debugLog(`- Activity interval ID: ${status.activityIntervalId}`);
+    debugLog(`- Disconnect interval ID: ${status.disconnectIntervalId}`);
     
     return status;
 }
 
 // Force activity update (for testing)
 function forceActivityUpdate(type = 'manual_test') {
-    console.log('🔧 Forcing activity update...');
+    debugLog('🔧 Forcing activity update...');
     const oldThreshold = lastActivityUpdate;
     lastActivityUpdate = 0; // Reset throttle
     updateUserActivity(type);
@@ -1401,13 +1666,13 @@ function forceActivityUpdate(type = 'manual_test') {
 
 // Force disconnect check (for testing)
 function forceDisconnectCheck() {
-    console.log('🔧 Forcing disconnect check...');
+    debugLog('🔧 Forcing disconnect check...');
     triggerDisconnectCheck();
 }
 
 // Restart activity tracking (for testing)
 function restartActivityTracking() {
-    console.log('🔄 Restarting activity tracking...');
+    debugLog('🔄 Restarting activity tracking...');
     stopActivityTracking();
     setTimeout(() => {
         initializeActivityTracking();
@@ -1420,7 +1685,7 @@ function setUserInactive(minutes = 16) {
         return;
     }
     
-    console.log(`🧪 Setting user inactive for ${minutes} minutes...`);
+    debugLog(`🧪 Setting user inactive for ${minutes} minutes...`);
     
     $.ajax({
         url: 'api/set_user_inactive.php',
@@ -1432,7 +1697,7 @@ function setUserInactive(minutes = 16) {
         },
         dataType: 'json',
         success: function(response) {
-            console.log('Set inactive response:', response);
+            debugLog('Set inactive response:', response);
             if (response.status === 'success') {
                 alert(`You are now marked as inactive for ${minutes} minutes. The disconnect system should kick you out soon.`);
             } else {
@@ -1448,10 +1713,10 @@ function setUserInactive(minutes = 16) {
 
 // Comprehensive debug function
 function debugActivitySystem() {
-    console.log('🔍 Activity System Debug:');
+    debugLog('🔍 Activity System Debug:');
     showActivityStatus();
     
-    console.log('\n🧪 Testing API endpoints...');
+    debugLog('\n🧪 Testing API endpoints...');
     
     // Test activity update API
     $.ajax({
@@ -1459,10 +1724,10 @@ function debugActivitySystem() {
         method: 'POST',
         data: { activity_type: 'debug_test' },
         success: function(response) {
-            console.log('✅ update_activity.php working:', response);
+            debugLog('✅ update_activity.php working:', response);
         },
         error: function(xhr, status, error) {
-            console.log('❌ update_activity.php error:', status, error);
+            debugLog('❌ update_activity.php error:', status, error);
         }
     });
     
@@ -1471,26 +1736,26 @@ function debugActivitySystem() {
         url: 'api/check_disconnects.php',
         method: 'GET',
         success: function(response) {
-            console.log('✅ check_disconnects.php working:', response);
+            debugLog('✅ check_disconnects.php working:', response);
         },
         error: function(xhr, status, error) {
-            console.log('❌ check_disconnects.php error:', status, error);
+            debugLog('❌ check_disconnects.php error:', status, error);
         }
     });
 }
 
 // Test kick detection system
 function testKickDetection() {
-    console.log('🧪 Testing kick detection system...');
-    console.log('Kick detection enabled:', kickDetectionEnabled);
-    console.log('Modal shown:', userKickedModalShown);
-    console.log('Interval active:', !!kickDetectionInterval);
+    debugLog('🧪 Testing kick detection system...');
+    debugLog('Kick detection enabled:', kickDetectionEnabled);
+    debugLog('Modal shown:', userKickedModalShown);
+    debugLog('Interval active:', !!kickDetectionInterval);
     forceStatusCheck();
 }
 
 // Simulate various scenarios for testing
 function simulateBan() {
-    console.log('🎭 Simulating ban...');
+    debugLog('🎭 Simulating ban...');
     handleUserBanned({
         message: 'You have been banned for testing',
         ban_info: {
@@ -1503,14 +1768,14 @@ function simulateBan() {
 }
 
 function simulateKick() {
-    console.log('🎭 Simulating kick...');
+    debugLog('🎭 Simulating kick...');
     handleUserKicked({
         message: 'You have been kicked for testing'
     });
 }
 
 function simulateRoomDeletion() {
-    console.log('🎭 Simulating room deletion...');
+    debugLog('🎭 Simulating room deletion...');
     handleRoomDeleted({
         message: 'This room has been deleted for testing'
     });
@@ -1518,7 +1783,7 @@ function simulateRoomDeletion() {
 
 // ===== INITIALIZATION =====
 $(document).ready(function() {
-    console.log('🏠 Room loaded, roomId:', roomId);
+    debugLog('🏠 Room loaded, roomId:', roomId);
     
     if (!roomId) {
         console.error('❌ Invalid room ID, redirecting to lounge');
@@ -1561,17 +1826,17 @@ $(document).ready(function() {
     });
 
     // Initialize all systems
-    console.log('🛡️ Starting kick detection system...');
+    debugLog('🛡️ Starting kick detection system...');
     setTimeout(checkUserStatus, 500);
     kickDetectionInterval = setInterval(checkUserStatus, 2000);
     kickDetectionEnabled = true;
 
-    console.log('🔄 Starting activity tracking system...');
+    debugLog('🔄 Starting activity tracking system...');
     initializeActivityTracking();
 
     // Start knock checking if user is host
     if (isHost) {
-        console.log('🚪 User is host, starting knock checking...');
+        debugLog('🚪 User is host, starting knock checking...');
         setInterval(checkForKnocks, 3000);
         setTimeout(checkForKnocks, 1000);
     }
@@ -1584,7 +1849,7 @@ $(document).ready(function() {
     setInterval(loadMessages, 3000);
     setInterval(loadUsers, 5000);
     
-    console.log('✅ Room initialization complete');
+    debugLog('✅ Room initialization complete');
     
     // Make debugging functions globally available
     window.showActivityStatus = showActivityStatus;
@@ -1600,16 +1865,16 @@ $(document).ready(function() {
     window.forceStatusCheck = forceStatusCheck;
     
     // Log available debugging functions
-    console.log('\n🧪 Available debugging functions:');
-    console.log('- showActivityStatus() - Show current activity tracking status');
-    console.log('- forceActivityUpdate() - Force an activity update');
-    console.log('- forceDisconnectCheck() - Trigger disconnect check manually');
-    console.log('- restartActivityTracking() - Restart activity tracking system');
-    console.log('- setUserInactive(minutes) - Mark yourself inactive for testing');
-    console.log('- debugActivitySystem() - Comprehensive system debug');
-    console.log('- testKickDetection() - Test kick detection system');
-    console.log('- simulateBan() - Simulate being banned');
-    console.log('- simulateKick() - Simulate being kicked');
-    console.log('- simulateRoomDeletion() - Simulate room deletion');
-    console.log('- forceStatusCheck() - Force immediate status check');
+    debugLog('\n🧪 Available debugging functions:');
+    debugLog('- showActivityStatus() - Show current activity tracking status');
+    debugLog('- forceActivityUpdate() - Force an activity update');
+    debugLog('- forceDisconnectCheck() - Trigger disconnect check manually');
+    debugLog('- restartActivityTracking() - Restart activity tracking system');
+    debugLog('- setUserInactive(minutes) - Mark yourself inactive for testing');
+    debugLog('- debugActivitySystem() - Comprehensive system debug');
+    debugLog('- testKickDetection() - Test kick detection system');
+    debugLog('- simulateBan() - Simulate being banned');
+    debugLog('- simulateKick() - Simulate being kicked');
+    debugLog('- simulateRoomDeletion() - Simulate room deletion');
+    debugLog('- forceStatusCheck() - Force immediate status check');
 });

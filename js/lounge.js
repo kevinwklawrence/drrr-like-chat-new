@@ -1,5 +1,60 @@
+// ===== DEBUG CONFIGURATION =====
+// Set to false for production, true for debugging
+const DEBUG_MODE = false;
+const SHOW_SENSITIVE_DATA = false;
+
+// Debug logging functions
+function debugLog(message, data = null) {
+    if (DEBUG_MODE) {
+        if (data !== null) {
+            debugLog(message, data);
+        } else {
+            debugLog(message);
+        }
+    }
+}
+
+function debugError(message, error = null) {
+    if (DEBUG_MODE) {
+        if (error !== null) {
+            console.error(message, error);
+        } else {
+            console.error(message);
+        }
+    }
+}
+
+function debugWarn(message, data = null) {
+    if (DEBUG_MODE) {
+        if (data !== null) {
+            console.warn(message, data);
+        } else {
+            console.warn(message);
+        }
+    }
+}
+
+function debugLog(message, data = null) {
+    if (DEBUG_MODE && SHOW_SENSITIVE_DATA) {
+        if (data !== null) {
+            debugLog('[SENSITIVE]', message, data);
+        } else {
+            debugLog('[SENSITIVE]', message);
+        }
+    }
+}
+
+// Critical errors always show (for production debugging)
+function criticalError(message, error = null) {
+    if (error !== null) {
+        console.error('[CRITICAL]', message, error);
+    } else {
+        console.error('[CRITICAL]', message);
+    }
+}
+
 $(document).ready(function() {
-    console.log('Lounge loaded');
+    debugLog('Lounge loaded');
     
     // Store user's room keys globally
     let userRoomKeys = [];
@@ -18,17 +73,17 @@ $(document).ready(function() {
 
 // NEW: Function to load user's room keys
 function loadUserRoomKeys() {
-    console.log('Loading user room keys...');
+    debugLog('Loading user room keys...');
     $.ajax({
         url: 'api/check_user_room_keys.php',
         method: 'GET',
         dataType: 'json',
         success: function(keys) {
-            console.log('User room keys loaded:', keys);
+            debugLog('User room keys loaded:', keys);
             userRoomKeys = Array.isArray(keys) ? keys : [];
         },
         error: function(xhr, status, error) {
-            console.log('Error loading user room keys (this is normal if user has no keys):', error);
+            debugLog('Error loading user room keys (this is normal if user has no keys):', error);
             userRoomKeys = [];
         }
     });
@@ -41,14 +96,14 @@ function hasRoomKey(roomId) {
 
 // Function to load rooms
 function loadRooms() {
-    console.log('Loading rooms...');
+    debugLog('Loading rooms...');
     $.ajax({
         url: 'api/get_rooms.php',
         method: 'GET',
         dataType: 'json',
         success: function(rooms) {
-            console.log('Rooms loaded successfully:', rooms);
-            console.log('Number of rooms:', rooms.length);
+            debugLog('Rooms loaded successfully:', rooms);
+            debugLog('Number of rooms:', rooms.length);
             displayRooms(rooms);
         },
         error: function(xhr, status, error) {
@@ -71,7 +126,7 @@ function loadRooms() {
 
 // UPDATED: Display rooms with room key awareness
 function displayRooms(rooms) {
-    console.log('displayRooms called with:', rooms);
+    debugLog('displayRooms called with:', rooms);
     let html = '';
     
     if (!Array.isArray(rooms) || rooms.length === 0) {
@@ -84,7 +139,7 @@ function displayRooms(rooms) {
         `;
     } else {
         rooms.forEach(room => {
-            console.log('Processing room:', room);
+            debugLog('Processing room:', room);
             
             const isPasswordProtected = room.has_password == 1;
             const allowsKnocking = room.allow_knocking == 1;
@@ -92,7 +147,7 @@ function displayRooms(rooms) {
             const capacity = room.capacity || 10;
             const hasKey = hasRoomKey(room.id); // NEW: Check if user has room key
             
-            console.log(`Room ${room.id}: password=${isPasswordProtected}, knocking=${allowsKnocking}, hasKey=${hasKey}`);
+            debugLog(`Room ${room.id}: password=${isPasswordProtected}, knocking=${allowsKnocking}, hasKey=${hasKey}`);
             
             let headerClass = 'room-header';
             let actionButtons = '';
@@ -103,7 +158,7 @@ function displayRooms(rooms) {
                 headerClass += ' knock-available'; // Use a special styling to indicate access granted
                 actionButtons = `
                     <button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})">
-                        <i class="fas fa-key"></i> Join Room (Access Granted)
+                        <i class="fas fa-key"></i> Join Room 
                     </button>
                 `;
             } else if (isPasswordProtected) {
@@ -174,14 +229,14 @@ function displayRooms(rooms) {
         });
     }
     
-    console.log('Setting rooms HTML...');
+    debugLog('Setting rooms HTML...');
     $('#roomsList').html(html);
 }
 
 // UPDATED: Enhanced joinRoom function with better room key handling
 window.joinRoom = function(roomId) {
-    console.log('joinRoom: Attempting to join room', roomId);
-    console.log('joinRoom: User has room key:', hasRoomKey(roomId));
+    debugLog('joinRoom: Attempting to join room', roomId);
+    debugLog('joinRoom: User has room key:', hasRoomKey(roomId));
     
     // Always try to join - let the server handle room key checking
     $.ajax({
@@ -190,20 +245,20 @@ window.joinRoom = function(roomId) {
         data: { room_id: roomId },
         dataType: 'json',
         success: function(response) {
-            console.log('joinRoom: Response:', response);
+            debugLog('joinRoom: Response:', response);
             if (response.status === 'success') {
-                console.log('joinRoom: Join successful');
+                debugLog('joinRoom: Join successful');
                 if (response.used_room_key) {
-                    console.log('joinRoom: Room key was used');
+                    debugLog('joinRoom: Room key was used');
                     // Refresh room keys since the key was consumed
                     loadUserRoomKeys();
                 }
                 window.location.href = 'room.php';
             } else {
-                console.log('joinRoom: Join failed:', response.message);
+                debugLog('joinRoom: Join failed:', response.message);
                 // Check if password is required
                 if (response.message && response.message.toLowerCase().includes('password')) {
-                    console.log('joinRoom: Password required, showing modal');
+                    debugLog('joinRoom: Password required, showing modal');
                     showPasswordModal(roomId, 'Room ' + roomId);
                 } else {
                     // Some other error
@@ -621,24 +676,24 @@ window.selectAvatar = function(avatar) {
 
 // Knock checking functions
 function checkForKnocks() {
-    console.log('checkForKnocks: Checking for knocks...');
+    debugLog('checkForKnocks: Checking for knocks...');
     
     $.ajax({
         url: 'api/check_knocks.php',
         method: 'GET',
         dataType: 'json',
         success: function(knocks) {
-            console.log('checkForKnocks: Received response:', knocks);
+            debugLog('checkForKnocks: Received response:', knocks);
             
             if (Array.isArray(knocks) && knocks.length > 0) {
-                console.log('checkForKnocks: Found', knocks.length, 'knocks');
+                debugLog('checkForKnocks: Found', knocks.length, 'knocks');
                 displayKnockNotifications(knocks);
             } else {
-                console.log('checkForKnocks: No knocks found or empty response');
+                debugLog('checkForKnocks: No knocks found or empty response');
             }
         },
         error: function(xhr, status, error) {
-            console.log('checkForKnocks: Error occurred:', {
+            debugLog('checkForKnocks: Error occurred:', {
                 status: status,
                 error: error,
                 responseText: xhr.responseText
@@ -648,14 +703,14 @@ function checkForKnocks() {
 }
 
 function displayKnockNotifications(knocks) {
-    console.log('displayKnockNotifications: Processing', knocks.length, 'knocks');
+    debugLog('displayKnockNotifications: Processing', knocks.length, 'knocks');
     
     knocks.forEach((knock, index) => {
-        console.log('Processing knock:', knock);
+        debugLog('Processing knock:', knock);
         
         // Check if notification already exists
         if ($(`#knock-${knock.id}`).length > 0) {
-            console.log('Notification already exists for knock', knock.id);
+            debugLog('Notification already exists for knock', knock.id);
             return;
         }
         
@@ -692,7 +747,7 @@ function displayKnockNotifications(knocks) {
             </div>
         `;
         
-        console.log('Adding notification for knock', knock.id);
+        debugLog('Adding notification for knock', knock.id);
         $('body').append(notificationHtml);
         
         // Add entrance animation
@@ -700,7 +755,7 @@ function displayKnockNotifications(knocks) {
         
         // Auto-dismiss after 30 seconds
         setTimeout(() => {
-            console.log('Auto-dismissing knock', knock.id);
+            debugLog('Auto-dismissing knock', knock.id);
             dismissKnock(knock.id);
         }, 30000);
     });
@@ -708,7 +763,7 @@ function displayKnockNotifications(knocks) {
 
 // Make sure these functions are also available globally
 window.respondToKnock = function(knockId, response) {
-    console.log('respondToKnock:', knockId, response);
+    debugLog('respondToKnock:', knockId, response);
     
     $.ajax({
         url: 'api/respond_knocks.php',
@@ -719,7 +774,7 @@ window.respondToKnock = function(knockId, response) {
         },
         dataType: 'json',
         success: function(result) {
-            console.log('Knock response result:', result);
+            debugLog('Knock response result:', result);
             if (result.status === 'success') {
                 dismissKnock(knockId);
                 
@@ -742,7 +797,7 @@ window.respondToKnock = function(knockId, response) {
 };
 
 window.dismissKnock = function(knockId) {
-    console.log('dismissKnock:', knockId);
+    debugLog('dismissKnock:', knockId);
     $(`#knock-${knockId}`).fadeOut(300, function() {
         $(this).remove();
         // Reposition remaining notifications
@@ -760,7 +815,7 @@ function repositionKnockNotifications() {
 
 // Updated password modal function
 window.showPasswordModal = function(roomId, roomName) {
-    console.log('showPasswordModal called:', roomId, roomName);
+    debugLog('showPasswordModal called:', roomId, roomName);
     
     const modalHtml = `
         <div class="modal fade" id="passwordModal" tabindex="-1">
@@ -817,12 +872,12 @@ window.showPasswordModal = function(roomId, roomName) {
 
 // Test function you can call manually
 window.testKnockCheck = function() {
-    console.log('Manual knock check...');
+    debugLog('Manual knock check...');
     checkForKnocks();
 };
 
 // Test function for room keys
 window.testRoomKeys = function() {
-    console.log('Manual room keys check...');
+    debugLog('Manual room keys check...');
     loadUserRoomKeys();
 };

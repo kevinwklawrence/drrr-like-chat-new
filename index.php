@@ -23,7 +23,7 @@
                     <?php
                     $image_base_dir = __DIR__ . '/images';
                     $web_base_dir = 'images/';
-                    $priority_folders = ['default', 'special'];
+                    $priority_folders = ['default', 'time-limited'];
                     $allowed_ext = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
 
                     foreach ($priority_folders as $folder) {

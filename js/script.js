@@ -1,5 +1,60 @@
+// ===== DEBUG CONFIGURATION =====
+// Set to false for production, true for debugging
+const DEBUG_MODE = false;
+const SHOW_SENSITIVE_DATA = false;
+
+// Debug logging functions
+function debugLog(message, data = null) {
+    if (DEBUG_MODE) {
+        if (data !== null) {
+            debugLog(message, data);
+        } else {
+            debugLog(message);
+        }
+    }
+}
+
+function debugError(message, error = null) {
+    if (DEBUG_MODE) {
+        if (error !== null) {
+            console.error(message, error);
+        } else {
+            console.error(message);
+        }
+    }
+}
+
+function debugWarn(message, data = null) {
+    if (DEBUG_MODE) {
+        if (data !== null) {
+            console.warn(message, data);
+        } else {
+            console.warn(message);
+        }
+    }
+}
+
+function debugLog(message, data = null) {
+    if (DEBUG_MODE && SHOW_SENSITIVE_DATA) {
+        if (data !== null) {
+            debugLog('[SENSITIVE]', message, data);
+        } else {
+            debugLog('[SENSITIVE]', message);
+        }
+    }
+}
+
+// Critical errors always show (for production debugging)
+function criticalError(message, error = null) {
+    if (error !== null) {
+        console.error('[CRITICAL]', message, error);
+    } else {
+        console.error('[CRITICAL]', message);
+    }
+}
+
 $(document).ready(function() {
-    console.log('script.js loaded');
+    debugLog('script.js loaded');
 
     // Guest login
     $('.avatar').click(function() {
@@ -10,7 +65,7 @@ $(document).ready(function() {
 
     $('#guestLoginForm').submit(function(e) {
         e.preventDefault();
-        console.log('Guest login form submitted');
+        debugLog('Guest login form submitted');
         $.ajax({
             url: 'api/join_lounge.php',
             method: 'POST',
@@ -21,7 +76,7 @@ $(document).ready(function() {
             },
             dataType: 'json',
             success: function(res) {
-                console.log('Response from api/join_lounge.php:', res);
+                debugLog('Response from api/join_lounge.php:', res);
                 if (res.status === 'success') {
                     window.location.href = 'lounge.php';
                 } else {
@@ -38,7 +93,7 @@ $(document).ready(function() {
     // Member login
     $('#userLoginForm').submit(function(e) {
         e.preventDefault();
-        console.log('User login form submitted');
+        debugLog('User login form submitted');
         
         // Check if avatar is selected
         if (!$('#selectedAvatar').val()) {
@@ -58,7 +113,7 @@ $(document).ready(function() {
             },
             dataType: 'json',
             success: function(res) {
-                console.log('Response from api/login.php:', res);
+                debugLog('Response from api/login.php:', res);
                 if (res.status === 'success') {
                     window.location.href = 'lounge.php';
                 } else {
@@ -74,13 +129,13 @@ $(document).ready(function() {
 
     // Lounge functions
     function loadChatrooms() {
-        console.log('Loading chatrooms');
+        debugLog('Loading chatrooms');
         $.ajax({
             url: 'api/get_rooms.php',
             method: 'GET',
             dataType: 'json',
             success: function(rooms) {
-                console.log('Response from api/get_rooms.php:', rooms);
+                debugLog('Response from api/get_rooms.php:', rooms);
                 let html = '';
                 if (!Array.isArray(rooms)) {
                     console.error('Expected array from get_rooms, got:', rooms);
@@ -107,11 +162,11 @@ $(document).ready(function() {
     }
 
     window.joinRoom = function(roomId, hasPassword) {
-        console.log('Join room clicked: roomId=', roomId, 'hasPassword=', hasPassword);
+        debugLog('Join room clicked: roomId=', roomId, 'hasPassword=', hasPassword);
         if (hasPassword) {
             let password = prompt("Enter room password:");
             if (!password) {
-                console.log('Password prompt cancelled');
+                debugLog('Password prompt cancelled');
                 return;
             }
             $.ajax({
@@ -120,7 +175,7 @@ $(document).ready(function() {
                 data: { room_id: roomId, password: password },
                 dataType: 'json',
                 success: function(res) {
-                    console.log('Response from api/join_room.php:', res);
+                    debugLog('Response from api/join_room.php:', res);
                     if (res.status === 'success') {
                         window.location.href = `room.php?room_id=${roomId}`;
                     } else {
@@ -139,7 +194,7 @@ $(document).ready(function() {
                 data: { room_id: roomId },
                 dataType: 'json',
                 success: function(res) {
-                    console.log('Response from api/join_room.php:', res);
+                    debugLog('Response from api/join_room.php:', res);
                     if (res.status === 'success') {
                         window.location.href = `room.php?room_id=${roomId}`;
                     } else {
@@ -156,7 +211,7 @@ $(document).ready(function() {
 
     $('#createRoomForm').submit(function(e) {
         e.preventDefault();
-        console.log('Create room form submitted:', {
+        debugLog('Create room form submitted:', {
             name: $('#roomName').val(),
             description: $('#description').val(),
             background: $('#background').val(),
@@ -177,7 +232,7 @@ $(document).ready(function() {
             },
             dataType: 'json',
             success: function(res) {
-                console.log('Response from api/create_room.php:', res);
+                debugLog('Response from api/create_room.php:', res);
                 if (res.status === 'success') {
                     $('#createRoomModal').modal('hide');
                     $('#createRoomForm')[0].reset();
@@ -194,13 +249,13 @@ $(document).ready(function() {
     });
 
     window.logout = function() {
-        console.log('Logout button clicked');
+        debugLog('Logout button clicked');
         $.ajax({
             url: 'api/logout.php',
             method: 'POST',
             dataType: 'json',
             success: function(res) {
-                console.log('Response from api/logout.php:', res);
+                debugLog('Response from api/logout.php:', res);
                 if (res.status === 'success') {
                     window.location.href = 'index.php';
                 } else {

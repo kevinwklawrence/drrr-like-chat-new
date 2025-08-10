@@ -112,12 +112,13 @@ if (!empty($user_id_string)) {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        
         // Ensure roomId is set
         const roomId = <?php echo json_encode($room_id); ?>;
         const isAdmin = <?php echo isset($_SESSION['user']['is_admin']) && $_SESSION['user']['is_admin'] ? 'true' : 'false'; ?>;
         const isHost = <?php echo $is_host ? 'true' : 'false'; ?>;
         const currentUserIdString = <?php echo json_encode($_SESSION['user']['user_id'] ?? ''); ?>;
-        console.log('roomId set to:', roomId, 'isHost:', isHost, 'currentUserIdString:', currentUserIdString);
+        //console.log('roomId set to:', roomId, 'isHost:', isHost, 'currentUserIdString:', currentUserIdString);
         if (!roomId) {
             console.error('roomId is invalid, redirecting to lounge');
             window.location.href = 'lounge.php';

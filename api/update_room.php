@@ -1,4 +1,5 @@
 <?php
+// api/update_room.php - Enhanced version
 session_start();
 include '../db_connect.php';
 
@@ -18,6 +19,9 @@ $description = isset($_POST['description']) ? trim($_POST['description']) : '';
 $password = isset($_POST['password']) ? $_POST['password'] : '';
 $capacity = isset($_POST['capacity']) ? (int)$_POST['capacity'] : 0;
 $background = isset($_POST['background']) ? trim($_POST['background']) : '';
+$theme = isset($_POST['theme']) ? trim($_POST['theme']) : 'default';
+$has_password = isset($_POST['has_password']) ? (int)$_POST['has_password'] : 0;
+$allow_knocking = isset($_POST['allow_knocking']) ? (int)$_POST['allow_knocking'] : 1;
 $permanent = isset($_POST['permanent']) ? (int)$_POST['permanent'] : 0;
 
 if ($room_id <= 0 || empty($name) || $capacity <= 0) {
@@ -52,55 +56,155 @@ if ($result->num_rows === 0 || $result->fetch_assoc()['is_host'] != 1) {
 }
 $stmt->close();
 
-// Update room settings
-$hashed_password = null;
-if (!empty($password)) {
-    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-}
-
-// If password is empty, keep existing password (don't change it)
-if (empty($password)) {
-    $stmt = $conn->prepare("UPDATE chatrooms SET name = ?, description = ?, capacity = ?, background = ?, permanent = ? WHERE id = ?");
-    if (!$stmt) {
-        error_log("Prepare failed in update_room.php: " . $conn->error);
-        echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
-        exit;
+try {
+    $conn->begin_transaction();
+    
+    // Check what columns exist in chatrooms table and add missing ones
+    $columns_query = $conn->query("SHOW COLUMNS FROM chatrooms");
+    $existing_columns = [];
+    while ($row = $columns_query->fetch_assoc()) {
+        $existing_columns[] = $row['Field'];
     }
-    $stmt->bind_param("ssissi", $name, $description, $capacity, $background, $permanent, $room_id);
-} else {
-    $stmt = $conn->prepare("UPDATE chatrooms SET name = ?, description = ?, password = ?, capacity = ?, background = ?, permanent = ? WHERE id = ?");
-    if (!$stmt) {
-        error_log("Prepare failed in update_room.php: " . $conn->error);
-        echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
-        exit;
+    
+    // Add missing columns if they don't exist
+    if (!in_array('theme', $existing_columns)) {
+        $conn->query("ALTER TABLE chatrooms ADD COLUMN theme VARCHAR(50) DEFAULT 'default'");
+        error_log("Added theme column to chatrooms table");
     }
-    $stmt->bind_param("sssisii", $name, $description, $hashed_password, $capacity, $background, $permanent, $room_id);
-}
-
-if (!$stmt->execute()) {
-    error_log("Execute failed in update_room.php: " . $stmt->error);
-    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $stmt->error]);
-    $stmt->close();
-    exit;
-}
-$stmt->close();
-
-// Insert system message about room update
-$host_name = ($_SESSION['user']['type'] === 'user') ? $_SESSION['user']['username'] : $_SESSION['user']['name'];
-$system_message = "$host_name has updated the room settings.";
-$avatar = $_SESSION['user']['avatar'] ?? 'default_avatar.jpg';
-$user_id = ($_SESSION['user']['type'] === 'user') ? $_SESSION['user']['id'] : null;
-$guest_name = ($_SESSION['user']['type'] === 'guest') ? $_SESSION['user']['name'] : null;
-
-$stmt = $conn->prepare("INSERT INTO messages (room_id, user_id, guest_name, message, avatar, user_id_string, type) VALUES (?, ?, ?, ?, ?, ?, 'system')");
-if ($stmt) {
-    $stmt->bind_param("iissss", $room_id, $user_id, $guest_name, $system_message, $avatar, $user_id_string);
+    
+    if (!in_array('has_password', $existing_columns)) {
+        $conn->query("ALTER TABLE chatrooms ADD COLUMN has_password TINYINT(1) DEFAULT 0");
+        error_log("Added has_password column to chatrooms table");
+    }
+    
+    if (!in_array('allow_knocking', $existing_columns)) {
+        $conn->query("ALTER TABLE chatrooms ADD COLUMN allow_knocking TINYINT(1) DEFAULT 1");
+        error_log("Added allow_knocking column to chatrooms table");
+    }
+    
+    // Build the UPDATE query based on available fields
+    $update_fields = [];
+    $param_types = '';
+    $param_values = [];
+    
+    // Always update these core fields
+    $update_fields[] = 'name = ?';
+    $param_types .= 's';
+    $param_values[] = $name;
+    
+    $update_fields[] = 'description = ?';
+    $param_types .= 's';
+    $param_values[] = $description;
+    
+    $update_fields[] = 'capacity = ?';
+    $param_types .= 'i';
+    $param_values[] = $capacity;
+    
+    // Add optional fields
+    if (in_array('background', $existing_columns)) {
+        $update_fields[] = 'background = ?';
+        $param_types .= 's';
+        $param_values[] = $background;
+    }
+    
+    if (in_array('theme', $existing_columns)) {
+        $update_fields[] = 'theme = ?';
+        $param_types .= 's';
+        $param_values[] = $theme;
+    }
+    
+    if (in_array('has_password', $existing_columns)) {
+        $update_fields[] = 'has_password = ?';
+        $param_types .= 'i';
+        $param_values[] = $has_password;
+    }
+    
+    if (in_array('allow_knocking', $existing_columns)) {
+        $update_fields[] = 'allow_knocking = ?';
+        $param_types .= 'i';
+        $param_values[] = $allow_knocking;
+    }
+    
+    if (in_array('permanent', $existing_columns)) {
+        $update_fields[] = 'permanent = ?';
+        $param_types .= 'i';
+        $param_values[] = $permanent;
+    }
+    
+    // Handle password update separately if provided
+    $hashed_password = null;
+    if ($has_password && !empty($password)) {
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        if (in_array('password', $existing_columns)) {
+            $update_fields[] = 'password = ?';
+            $param_types .= 's';
+            $param_values[] = $hashed_password;
+        }
+    } elseif (!$has_password) {
+        // Clear password if has_password is unchecked
+        if (in_array('password', $existing_columns)) {
+            $update_fields[] = 'password = NULL';
+        }
+    }
+    
+    // Add room_id to parameters
+    $param_types .= 'i';
+    $param_values[] = $room_id;
+    
+    // Execute the update
+    $sql = "UPDATE chatrooms SET " . implode(', ', $update_fields) . " WHERE id = ?";
+    
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        throw new Exception('Prepare failed: ' . $conn->error);
+    }
+    
+    $stmt->bind_param($param_types, ...$param_values);
+    
     if (!$stmt->execute()) {
-        error_log("Execute failed for system message in update_room.php: " . $stmt->error);
+        throw new Exception('Execute failed: ' . $stmt->error);
     }
     $stmt->close();
+    
+    // Insert system message about room update
+    $host_name = ($_SESSION['user']['type'] === 'user') ? $_SESSION['user']['username'] : $_SESSION['user']['name'];
+    $system_message = "$host_name has updated the room settings.";
+    
+    // Add details about what changed
+    $changes = [];
+    if (!empty($theme) && $theme !== 'default') {
+        $changes[] = "theme changed to $theme";
+    }
+    if ($has_password) {
+        $changes[] = "password protection " . ($has_password ? "enabled" : "disabled");
+    }
+    if (!empty($changes)) {
+        $system_message .= " (" . implode(", ", $changes) . ")";
+    }
+    
+    $avatar = $_SESSION['user']['avatar'] ?? 'default_avatar.jpg';
+    $user_id = ($_SESSION['user']['type'] === 'user') ? $_SESSION['user']['id'] : null;
+    $guest_name = ($_SESSION['user']['type'] === 'guest') ? $_SESSION['user']['name'] : null;
+    
+    $stmt = $conn->prepare("INSERT INTO messages (room_id, user_id, guest_name, message, avatar, user_id_string, type) VALUES (?, ?, ?, ?, ?, ?, 'system')");
+    if ($stmt) {
+        $stmt->bind_param("iissss", $room_id, $user_id, $guest_name, $system_message, $avatar, $user_id_string);
+        if (!$stmt->execute()) {
+            error_log("Execute failed for system message in update_room.php: " . $stmt->error);
+        }
+        $stmt->close();
+    }
+    
+    $conn->commit();
+    
+    error_log("Room settings updated: room_id=$room_id, name=$name, theme=$theme, has_password=$has_password, allow_knocking=$allow_knocking, host=$host_name");
+    echo json_encode(['status' => 'success', 'message' => 'Room settings updated successfully']);
+    
+} catch (Exception $e) {
+    $conn->rollback();
+    error_log("Update room error: " . $e->getMessage());
+    echo json_encode(['status' => 'error', 'message' => 'Failed to update room settings: ' . $e->getMessage()]);
 }
 
-error_log("Room settings updated: room_id=$room_id, name=$name, permanent=$permanent, host=$host_name");
-echo json_encode(['status' => 'success', 'message' => 'Room settings updated successfully']);
+$conn->close();
 ?>

@@ -1,4 +1,5 @@
 <?php
+// api/get_room_settings.php - Updated version
 session_start();
 include '../db_connect.php';
 
@@ -43,8 +44,37 @@ if ($result->num_rows === 0 || $result->fetch_assoc()['is_host'] != 1) {
 }
 $stmt->close();
 
+// Check what columns exist in the chatrooms table
+$columns_query = $conn->query("SHOW COLUMNS FROM chatrooms");
+$available_columns = [];
+while ($row = $columns_query->fetch_assoc()) {
+    $available_columns[] = $row['Field'];
+}
+
+// Build the SELECT query based on available columns
+$select_fields = ['name', 'description', 'capacity'];
+
+// Add optional fields if they exist
+if (in_array('background', $available_columns)) {
+    $select_fields[] = 'background';
+}
+if (in_array('permanent', $available_columns)) {
+    $select_fields[] = 'permanent';
+}
+if (in_array('has_password', $available_columns)) {
+    $select_fields[] = 'has_password';
+}
+if (in_array('allow_knocking', $available_columns)) {
+    $select_fields[] = 'allow_knocking';
+}
+if (in_array('theme', $available_columns)) {
+    $select_fields[] = 'theme';
+}
+
+$sql = "SELECT " . implode(', ', $select_fields) . " FROM chatrooms WHERE id = ?";
+
 // Get room settings
-$stmt = $conn->prepare("SELECT name, description, capacity, background, permanent FROM chatrooms WHERE id = ?");
+$stmt = $conn->prepare($sql);
 if (!$stmt) {
     error_log("Prepare failed for room settings query in get_room_settings.php: " . $conn->error);
     echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
@@ -61,16 +91,21 @@ if ($result->num_rows === 0) {
 $room_settings = $result->fetch_assoc();
 $stmt->close();
 
+// Ensure all expected fields exist with default values
+$settings = [
+    'name' => $room_settings['name'],
+    'description' => $room_settings['description'] ?? '',
+    'capacity' => (int)$room_settings['capacity'],
+    'background' => $room_settings['background'] ?? '',
+    'permanent' => isset($room_settings['permanent']) ? (bool)$room_settings['permanent'] : false,
+    'has_password' => isset($room_settings['has_password']) ? (bool)$room_settings['has_password'] : false,
+    'allow_knocking' => isset($room_settings['allow_knocking']) ? (bool)$room_settings['allow_knocking'] : true,
+    'theme' => $room_settings['theme'] ?? 'default'
+];
+
 error_log("Retrieved room settings for room_id=$room_id");
 echo json_encode([
     'status' => 'success', 
-    'settings' => [
-        'name' => $room_settings['name'],
-        'description' => $room_settings['description'],
-        'capacity' => $room_settings['capacity'],
-        'background' => $room_settings['background'],
-        'permanent' => $room_settings['permanent'],
-        'has_password' => false // We don't return the actual password for security
-    ]
+    'settings' => $settings
 ]);
 ?>
