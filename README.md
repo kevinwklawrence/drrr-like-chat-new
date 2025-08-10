@@ -28,14 +28,17 @@ A new drrr-like-chat project made from scratch, using HTML, CSS, JS, PHP, Ajax, 
 - Room accessories (identifiers)
 - Website events (Holiday themes)
 - Message "attachments"
--  - Images
+   - Images
    - Drawings
    - Voice memos
    - Games
 - Room music/videos (embedded YouTube videos built into room)
-- Etc...
+- Titles, accessories, and pets
+- "Dollars" karma system, can trade karma for titles, accessories, pets, avatars, etc
+
 
 # KNOWN ISSUES
+- Users and hosts not properly showing up on room listings
 - Room settings don't have option to turn off/on password and knocking
 - Deleted rooms don't kick all users properly
 - Banned users not immediately being kicked from Room
