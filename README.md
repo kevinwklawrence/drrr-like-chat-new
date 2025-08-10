@@ -1,3 +1,6 @@
+
+![Example Image](/images/bg/logo.png)
+
 # ![Example Image](/images/staff/admin.png) DRRR-LIKE-CHAT-NEW
 A new drrr-like-chat project made from scratch, using HTML, CSS, JS, PHP, Ajax, and SQL. 
 
