@@ -1,5 +1,5 @@
 <?php
-// api/check_user_status.php
+// api/check_user_status.php - Enhanced version
 session_start();
 header('Content-Type: application/json');
 
@@ -20,19 +20,47 @@ if (empty($user_id_string)) {
 }
 
 try {
-    // Check if user is still in the room (not kicked/banned)
-    $stmt = $conn->prepare("SELECT id FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");
-    if (!$stmt) {
+    // FIRST: Check if the room still exists
+    $room_stmt = $conn->prepare("SELECT id, name FROM chatrooms WHERE id = ?");
+    if (!$room_stmt) {
         throw new Exception('Database error: ' . $conn->error);
     }
     
-    $stmt->bind_param("is", $room_id, $user_id_string);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    $room_stmt->bind_param("i", $room_id);
+    $room_stmt->execute();
+    $room_result = $room_stmt->get_result();
     
-    if ($result->num_rows === 0) {
+    if ($room_result->num_rows === 0) {
+        // Room has been deleted
+        $room_stmt->close();
+        
+        // Clean up session
+        unset($_SESSION['room_id']);
+        
+        echo json_encode([
+            'status' => 'room_deleted',
+            'message' => 'This room has been deleted',
+            'redirect_to' => 'lounge.php'
+        ]);
+        exit;
+    }
+    
+    $room_data = $room_result->fetch_assoc();
+    $room_stmt->close();
+    
+    // SECOND: Check if user is still in the room
+    $user_stmt = $conn->prepare("SELECT id FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");
+    if (!$user_stmt) {
+        throw new Exception('Database error: ' . $conn->error);
+    }
+    
+    $user_stmt->bind_param("is", $room_id, $user_id_string);
+    $user_stmt->execute();
+    $user_result = $user_stmt->get_result();
+    
+    if ($user_result->num_rows === 0) {
         // User is no longer in the room - check if they're banned
-        $stmt->close();
+        $user_stmt->close();
         
         $ban_status = checkUserBanStatus($conn, $room_id, $user_id_string);
         
@@ -41,22 +69,28 @@ try {
             echo json_encode([
                 'status' => 'banned',
                 'message' => 'You have been banned from this room',
-                'ban_info' => $ban_status
+                'ban_info' => $ban_status,
+                'room_name' => $room_data['name']
             ]);
         } else {
-            // User was kicked or left
+            // User was kicked or left normally
             echo json_encode([
                 'status' => 'removed',
-                'message' => 'You are no longer in this room'
+                'message' => 'You are no longer in this room',
+                'room_name' => $room_data['name']
             ]);
         }
         exit;
     }
     
-    $stmt->close();
+    $user_stmt->close();
     
-    // User is still in the room
-    echo json_encode(['status' => 'active']);
+    // User is still in the room and room exists
+    echo json_encode([
+        'status' => 'active',
+        'room_name' => $room_data['name'],
+        'timestamp' => time()
+    ]);
     
 } catch (Exception $e) {
     error_log("Check user status error: " . $e->getMessage());
@@ -100,7 +134,8 @@ function checkUserBanStatus($conn, $room_id, $user_id_string) {
                     'banned' => true,
                     'permanent' => true,
                     'reason' => $ban['reason'] ?? '',
-                    'banned_by' => $ban['banned_by'] ?? 'Unknown'
+                    'banned_by' => $ban['banned_by'] ?? 'Unknown',
+                    'banned_at' => isset($ban['banned_at']) ? date('Y-m-d H:i:s', $ban['banned_at']) : 'Unknown'
                 ];
             } else {
                 // Temporary ban - check if still valid
@@ -110,8 +145,10 @@ function checkUserBanStatus($conn, $room_id, $user_id_string) {
                         'banned' => true,
                         'permanent' => false,
                         'expires_in_minutes' => $remaining_minutes,
+                        'expires_at' => date('Y-m-d H:i:s', $ban['ban_until']),
                         'reason' => $ban['reason'] ?? '',
-                        'banned_by' => $ban['banned_by'] ?? 'Unknown'
+                        'banned_by' => $ban['banned_by'] ?? 'Unknown',
+                        'banned_at' => isset($ban['banned_at']) ? date('Y-m-d H:i:s', $ban['banned_at']) : 'Unknown'
                     ];
                 }
             }

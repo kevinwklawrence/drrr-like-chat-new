@@ -1,15 +1,52 @@
-let banCheckInterval;
-let userBannedModalShown = false;
+// Global variables for kick detection
+let kickDetectionInterval;
+let userKickedModalShown = false;
+let kickDetectionEnabled = true;
+let lastStatusCheck = 0;
+let consecutiveErrors = 0;
+// Activity tracking variables - IMPORTANT: Declare at global scope
+let activityInterval = null;
+let disconnectCheckInterval = null;
+let lastActivityUpdate = 0;
+let userIsActive = true;
+let activityTrackingEnabled = false;
+let activityDebugMode = true; // Set to false in production
+
 
 $(document).ready(function() {
-
-
-    // Start checking for bans every 3 seconds
-    banCheckInterval = setInterval(checkUserBanStatus, 3000);
+    console.log('🛡️ Starting enhanced kick detection system...');
     
-    // Also check immediately
-    setTimeout(checkUserBanStatus, 1000);
+    // Start checking immediately
+    setTimeout(checkUserStatus, 500);
+    
+    // Set up regular checking every 2 seconds (faster than before)
+    kickDetectionInterval = setInterval(checkUserStatus, 2000);
+    
+    // Also check when user sends a message (immediate feedback)
+    $(document).on('submit', '#messageForm', function() {
+        setTimeout(checkUserStatus, 100);
+    });
+    
+    // Check when user performs any significant action
+    $(document).on('click', 'button', function() {
+        if (!userKickedModalShown) {
+            setTimeout(checkUserStatus, 100);
+        }
 
+    console.log('🔄 Starting activity tracking system...');
+    
+    // Initialize activity tracking
+    initializeActivityTracking();
+    
+    // Start periodic disconnect checking (every 2 minutes)
+    disconnectCheckInterval = setInterval(triggerDisconnectCheck, 2 * 60 * 1000);
+    
+    // Track initial join activity
+    updateUserActivity('join');
+    
+    console.log('✅ Activity tracking system started');    
+    });
+    
     
 // ADD THIS PART:
     // Start knock checking if user is host
@@ -29,56 +66,526 @@ $(document).ready(function() {
     console.log('room.js loaded, roomId:', roomId);
 
     
-// Function to check if current user has been banned
-function checkUserBanStatus() {
-    // Don't check if we've already shown the ban modal
-    if (userBannedModalShown) {
+
+    // Initialize all activity tracking
+// Initialize activity tracking - called explicitly and safely
+function initializeActivityTracking() {
+    if (activityTrackingEnabled) {
+        console.log('🔄 Activity tracking already initialized');
         return;
     }
+    
+    console.log('🔄 Initializing activity tracking system...');
+    activityTrackingEnabled = true;
+    
+    // Clear any existing intervals first
+    if (activityInterval) {
+        clearInterval(activityInterval);
+    }
+    if (disconnectCheckInterval) {
+        clearInterval(disconnectCheckInterval);
+    }
+    
+    // Start activity heartbeat (every 30 seconds)
+    activityInterval = setInterval(() => {
+        if (userIsActive && activityTrackingEnabled) {
+            updateUserActivity('heartbeat');
+            userIsActive = false; // Reset until next activity
+        }
+    }, 30 * 1000);
+    
+    // Start disconnect checking (every 2 minutes)
+    disconnectCheckInterval = setInterval(() => {
+        if (activityTrackingEnabled) {
+            triggerDisconnectCheck();
+        }
+    }, 2 * 60 * 1000);
+    
+    // Set up activity event listeners
+    setupActivityListeners();
+    
+    // Track initial activity
+    updateUserActivity('system_start');
+    
+    console.log('✅ Activity tracking system initialized successfully');
+    console.log(`- Activity interval ID: ${activityInterval}`);
+    console.log(`- Disconnect interval ID: ${disconnectCheckInterval}`);
+    
+    // Initial status check
+    setTimeout(() => {
+        if (activityDebugMode) {
+            showActivityStatus();
+        }
+    }, 2000);
+}
+
+// Set up all activity event listeners
+function setupActivityListeners() {
+    console.log('🎯 Setting up activity listeners...');
+    
+    // Remove existing listeners first to prevent duplicates
+    $(document).off('mousemove.activity keypress.activity scroll.activity click.activity');
+    $(window).off('focus.activity');
+    
+    // Track user interaction with debouncing
+    let activityTimeout;
+    function markUserActive() {
+        userIsActive = true;
+        
+        clearTimeout(activityTimeout);
+        activityTimeout = setTimeout(() => {
+            if (activityTrackingEnabled) {
+                updateUserActivity('interaction');
+            }
+        }, 5000); // Debounce to every 5 seconds max
+    }
+    
+    // Activity event listeners with namespaces to avoid conflicts
+    $(document).on('mousemove.activity keypress.activity scroll.activity click.activity', markUserActive);
+    
+    // Track page visibility changes
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden && activityTrackingEnabled) {
+            updateUserActivity('page_focus');
+        }
+    });
+    
+    // Track window focus
+    $(window).on('focus.activity', function() {
+        if (activityTrackingEnabled) {
+            updateUserActivity('window_focus');
+        }
+    });
+    
+    console.log('✅ Activity listeners set up successfully');
+}
+
+// Enhanced update user activity function
+function updateUserActivity(activityType = 'general') {
+    if (!activityTrackingEnabled) {
+        if (activityDebugMode) {
+            console.log(`⚠️ Activity tracking disabled, skipping update: ${activityType}`);
+        }
+        return;
+    }
+    
+    // Prevent too frequent updates (max once per 3 seconds for non-heartbeat)
+    const now = Date.now();
+    const minInterval = activityType === 'heartbeat' ? 25000 : 3000;
+    
+    if (now - lastActivityUpdate < minInterval) {
+        if (activityDebugMode && activityType !== 'heartbeat') {
+            console.log(`⏰ Activity update throttled: ${activityType} (${now - lastActivityUpdate}ms ago)`);
+        }
+        return;
+    }
+    
+    lastActivityUpdate = now;
+    
+    console.log(`📍 Updating activity: ${activityType}`);
+    
+    $.ajax({
+        url: 'api/update_activity.php',
+        method: 'POST',
+        data: { activity_type: activityType },
+        dataType: 'json',
+        timeout: 5000,
+        success: function(response) {
+            if (response.status === 'success') {
+                console.log(`✅ Activity updated: ${activityType} at ${response.timestamp}`);
+            } else if (response.status === 'not_in_room') {
+                console.log('❌ Not in room - stopping activity tracking');
+                stopActivityTracking();
+                
+                // Trigger status check if available
+                if (typeof forceStatusCheck === 'function') {
+                    forceStatusCheck();
+                }
+            } else {
+                console.log(`⚠️ Activity update warning: ${response.message}`);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.log(`⚠️ Activity update failed: ${status} - ${error}`);
+            
+            // If we get a 404 or similar, the API might not exist
+            if (xhr.status === 404) {
+                console.log('💡 Tip: Make sure api/update_activity.php exists');
+            }
+        }
+    });
+}
+
+// Enhanced disconnect check trigger
+function triggerDisconnectCheck() {
+    if (!activityTrackingEnabled) {
+        console.log('⚠️ Activity tracking disabled, skipping disconnect check');
+        return;
+    }
+    
+    console.log('🔍 Triggering disconnect check...');
+    
+    $.ajax({
+        url: 'api/check_disconnects.php',
+        method: 'GET',
+        dataType: 'json',
+        timeout: 10000,
+        success: function(response) {
+            if (response.status === 'success') {
+                console.log('📊 Disconnect check completed:', response.summary);
+                
+                const summary = response.summary;
+                if (summary.users_disconnected > 0 || summary.hosts_transferred > 0 || summary.rooms_deleted > 0) {
+                    console.log(`👥 Changes: ${summary.users_disconnected} disconnected, ${summary.hosts_transferred} transfers, ${summary.rooms_deleted} deleted`);
+                    
+                    // Refresh room data to reflect changes
+                    setTimeout(() => {
+                        if (typeof loadUsers === 'function') loadUsers();
+                        if (typeof loadMessages === 'function') loadMessages();
+                    }, 1000);
+                }
+            } else {
+                console.log('❌ Disconnect check failed:', response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.log('⚠️ Disconnect check error:', error);
+            
+            if (xhr.status === 404) {
+                console.log('💡 Tip: Make sure api/check_disconnects.php exists');
+            }
+        }
+    });
+}
+
+// Enhanced stop activity tracking
+function stopActivityTracking() {
+    console.log('🛑 Stopping activity tracking system');
+    activityTrackingEnabled = false;
+    
+    if (activityInterval) {
+        clearInterval(activityInterval);
+        activityInterval = null;
+        console.log('- Stopped activity interval');
+    }
+    
+    if (disconnectCheckInterval) {
+        clearInterval(disconnectCheckInterval);
+        disconnectCheckInterval = null;
+        console.log('- Stopped disconnect interval');
+    }
+    
+    // Remove event listeners
+    $(document).off('mousemove.activity keypress.activity scroll.activity click.activity');
+    $(window).off('focus.activity');
+    console.log('- Removed activity listeners');
+}
+
+// Enhanced leave room function with activity cleanup
+const originalLeaveRoomActivity = window.leaveRoom;
+window.leaveRoom = function() {
+    console.log('🚪 User leaving room - cleaning up activity tracking');
+    stopActivityTracking();
+    
+    if (originalLeaveRoomActivity) {
+        originalLeaveRoomActivity();
+    }
+};
+
+// Enhanced send message with activity tracking
+const originalSendMessageActivity = window.sendMessage;
+window.sendMessage = function() {
+    // Update activity immediately when sending message
+    updateUserActivity('message_send');
+    
+    // Call original function
+    if (originalSendMessageActivity) {
+        return originalSendMessageActivity();
+    }
+    
+    // Fallback implementation
+    const messageInput = $('#message');
+    const message = messageInput.val().trim();
+    
+    if (!message) {
+        alert('Please enter a message');
+        return false;
+    }
+    
+    $.ajax({
+        url: 'api/send_message.php',
+        method: 'POST',
+        data: {
+            room_id: roomId,
+            message: message
+        },
+        success: function(response) {
+            try {
+                let res = JSON.parse(response);
+                if (res.status === 'success') {
+                    messageInput.val('');
+                    loadMessages();
+                    
+                    // Activity already updated above
+                } else {
+                    alert('Error: ' + res.message);
+                }
+            } catch (e) {
+                console.error('JSON parse error:', e, response);
+                alert('Invalid response from server');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error in sendMessage:', status, error, xhr.responseText);
+            alert('AJAX error: ' + error);
+        }
+    });
+    
+    return false;
+};
+
+// Enhanced activity status display
+function showActivityStatus() {
+    const status = {
+        activityTrackingEnabled: activityTrackingEnabled,
+        activityTrackingActive: !!activityInterval,
+        disconnectCheckingActive: !!disconnectCheckInterval,
+        lastActivityUpdate: lastActivityUpdate,
+        lastActivityTime: lastActivityUpdate ? new Date(lastActivityUpdate).toLocaleTimeString() : 'Never',
+        userCurrentlyActive: userIsActive,
+        activityIntervalId: activityInterval,
+        disconnectIntervalId: disconnectCheckInterval
+    };
+    
+    console.log('📊 Activity Tracking Status:');
+    console.log(`- System enabled: ${status.activityTrackingEnabled}`);
+    console.log(`- Activity tracking active: ${status.activityTrackingActive}`);
+    console.log(`- Disconnect checking active: ${status.disconnectCheckingActive}`);
+    console.log(`- Last activity update: ${status.lastActivityTime}`);
+    console.log(`- User currently active: ${status.userCurrentlyActive}`);
+    console.log(`- Activity interval ID: ${status.activityIntervalId}`);
+    console.log(`- Disconnect interval ID: ${status.disconnectIntervalId}`);
+    
+    return status;
+}
+
+// Manual functions for testing
+function forceActivityUpdate(type = 'manual_test') {
+    console.log('🔧 Forcing activity update...');
+    const oldThreshold = lastActivityUpdate;
+    lastActivityUpdate = 0; // Reset throttle
+    updateUserActivity(type);
+    // Restore throttle after a second
+    setTimeout(() => {
+        if (lastActivityUpdate === 0) {
+            lastActivityUpdate = oldThreshold;
+        }
+    }, 1000);
+}
+
+function forceDisconnectCheck() {
+    console.log('🔧 Forcing disconnect check...');
+    triggerDisconnectCheck();
+}
+
+function restartActivityTracking() {
+    console.log('🔄 Restarting activity tracking...');
+    stopActivityTracking();
+    setTimeout(() => {
+        initializeActivityTracking();
+    }, 1000);
+}
+
+// Disconnect warning system (optional - warn users before they get disconnected)
+let disconnectWarningShown = false;
+let warningCheckInterval;
+
+function startDisconnectWarning() {
+    // Check every minute if user might be close to disconnecting
+    warningCheckInterval = setInterval(() => {
+        const timeSinceLastActivity = Date.now() - lastActivityUpdate;
+        const minutesSinceActivity = timeSinceLastActivity / (1000 * 60);
+        
+        // Warn at 12 minutes (3 minutes before 15-minute timeout)
+        if (minutesSinceActivity >= 12 && !disconnectWarningShown) {
+            showDisconnectWarning();
+        }
+    }, 60 * 1000);
+}
+
+function showDisconnectWarning() {
+    disconnectWarningShown = true;
+    
+    // Create warning modal
+    const warningHtml = `
+        <div class="modal fade" id="inactivityWarningModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-warning">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title">
+                            <i class="fas fa-clock"></i> Inactivity Warning
+                        </h5>
+                    </div>
+                    <div class="modal-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-clock fa-3x text-warning"></i>
+                        </div>
+                        <h6>You've been inactive for a while</h6>
+                        <p>You'll be automatically disconnected in about 3 minutes if you don't interact with the room.</p>
+                        <div class="alert alert-info">
+                            <i class="fas fa-mouse"></i> Move your mouse, send a message, or click anywhere to stay connected.
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-center">
+                        <button type="button" class="btn btn-primary" onclick="dismissInactivityWarning()">
+                            <i class="fas fa-check"></i> I'm Still Here
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#inactivityWarningModal').remove();
+    $('body').append(warningHtml);
+    $('#inactivityWarningModal').modal('show');
+}
+
+function dismissInactivityWarning() {
+    $('#inactivityWarningModal').modal('hide');
+    updateUserActivity('warning_dismissed');
+    disconnectWarningShown = false;
+}
+
+// Make functions globally available
+window.initializeActivityTracking = initializeActivityTracking;
+window.updateUserActivity = updateUserActivity;
+window.triggerDisconnectCheck = triggerDisconnectCheck;
+window.stopActivityTracking = stopActivityTracking;
+window.showActivityStatus = showActivityStatus;
+window.forceActivityUpdate = forceActivityUpdate;
+window.forceDisconnectCheck = forceDisconnectCheck;
+window.restartActivityTracking = restartActivityTracking;
+
+// Debug helper
+window.debugActivitySystem = function() {
+    console.log('🔍 Activity System Debug:');
+    showActivityStatus();
+    
+    console.log('\n🧪 Testing API endpoints...');
+    
+    // Test activity update API
+    $.ajax({
+        url: 'api/update_activity.php',
+        method: 'POST',
+        data: { activity_type: 'debug_test' },
+        success: function(response) {
+            console.log('✅ update_activity.php working:', response);
+        },
+        error: function(xhr, status, error) {
+            console.log('❌ update_activity.php error:', status, error);
+        }
+    });
+    
+    // Test disconnect check API
+    $.ajax({
+        url: 'api/check_disconnects.php',
+        method: 'GET',
+        success: function(response) {
+            console.log('✅ check_disconnects.php working:', response);
+        },
+        error: function(xhr, status, error) {
+            console.log('❌ check_disconnects.php error:', status, error);
+        }
+    });
+};
+
+console.log('🎯 Enhanced activity tracking system loaded successfully');
+console.log('💡 Use showActivityStatus() to check system status');
+console.log('💡 Use restartActivityTracking() if system stops working');
+console.log('💡 Use debugActivitySystem() for comprehensive debugging');
+
+
+// Enhanced user status checking function
+function checkUserStatus() {
+    // Don't check if we've already been kicked
+    if (userKickedModalShown || !kickDetectionEnabled) {
+        return;
+    }
+    
+    // Prevent too frequent checks (max once per second)
+    const now = Date.now();
+    if (now - lastStatusCheck < 1000) {
+        return;
+    }
+    lastStatusCheck = now;
+    
+    console.log('🔍 Checking user status...');
     
     $.ajax({
         url: 'api/check_user_status.php',
         method: 'GET',
         dataType: 'json',
+        timeout: 5000, // 5 second timeout
         success: function(response) {
-            console.log('User status check:', response);
+            console.log('📡 Status check result:', response);
+            consecutiveErrors = 0; // Reset error counter on success
             
-            if (response.status === 'banned') {
-                handleUserBanned(response);
-            } else if (response.status === 'removed') {
-                handleUserRemoved(response);
-            } else if (response.status === 'not_in_room') {
-                // User is not in a room, redirect to lounge
-                window.location.href = 'lounge.php';
+            switch(response.status) {
+                case 'banned':
+                    handleUserBanned(response);
+                    break;
+                    
+                case 'removed':
+                    handleUserKicked(response);
+                    break;
+                    
+                case 'room_deleted':
+                    handleRoomDeleted(response);
+                    break;
+                    
+                case 'not_in_room':
+                    console.log('👤 User not in room, redirecting to lounge');
+                    stopKickDetection();
+                    window.location.href = 'lounge.php';
+                    break;
+                    
+                case 'active':
+                    // User is still active in room - all good
+                    console.log('✅ User status: Active in', response.room_name);
+                    break;
+                    
+                case 'error':
+                    console.error('❌ Server error:', response.message);
+                    handleStatusCheckError();
+                    break;
+                    
+                default:
+                    console.warn('⚠️ Unknown status:', response.status);
+                    break;
             }
-            // If status is 'active', user is still in room - continue normally
         },
         error: function(xhr, status, error) {
-            // Silently handle errors to avoid spamming console
-            console.log('Ban check error (this is normal if user leaves):', error);
+            console.log('🔌 Status check failed:', { status, error, responseText: xhr.responseText });
+            handleStatusCheckError();
         }
     });
 }
 
 // Handle when user has been banned
 function handleUserBanned(response) {
-    console.log('User has been banned:', response);
+    console.log('🚫 User has been BANNED:', response);
     
-    // Stop checking for more bans
-    userBannedModalShown = true;
-    if (banCheckInterval) {
-        clearInterval(banCheckInterval);
-    }
+    stopKickDetection();
     
-    // Prepare ban message
     let banMessage = response.message || 'You have been banned from this room';
     let banDetails = '';
     
     if (response.ban_info) {
         if (response.ban_info.permanent) {
-            banDetails = '<p><strong>This is a permanent ban.</strong></p>';
+            banDetails += '<div class="alert alert-danger"><strong>This is a PERMANENT ban.</strong></div>';
         } else if (response.ban_info.expires_in_minutes) {
-            banDetails = `<p><strong>Ban expires in ${response.ban_info.expires_in_minutes} minute${response.ban_info.expires_in_minutes !== 1 ? 's' : ''}.</strong></p>`;
+            banDetails += `<div class="alert alert-warning"><strong>Ban expires in ${response.ban_info.expires_in_minutes} minute${response.ban_info.expires_in_minutes !== 1 ? 's' : ''}.</strong></div>`;
         }
         
         if (response.ban_info.reason) {
@@ -88,52 +595,91 @@ function handleUserBanned(response) {
         if (response.ban_info.banned_by) {
             banDetails += `<p><strong>Banned by:</strong> ${response.ban_info.banned_by}</p>`;
         }
+        
+        if (response.ban_info.banned_at) {
+            banDetails += `<p><strong>Banned at:</strong> ${response.ban_info.banned_at}</p>`;
+        }
     }
     
-    // Show ban notification modal
-    showBanNotificationModal(banMessage, banDetails);
+    showKickModal('🚫 You Have Been Banned', banMessage, banDetails, 'danger');
 }
 
-// Handle when user has been removed (kicked but not banned)
-function handleUserRemoved(response) {
-    console.log('User has been removed from room:', response);
+// Handle when user has been kicked (but not banned)
+function handleUserKicked(response) {
+    console.log('👢 User has been KICKED:', response);
     
-    // Stop checking
-    userBannedModalShown = true;
-    if (banCheckInterval) {
-        clearInterval(banCheckInterval);
+    stopKickDetection();
+    
+    const message = response.message || 'You have been removed from this room';
+    const details = '<div class="alert alert-info">You can try to rejoin the room if it\'s still available.</div>';
+    
+    showKickModal('👢 Removed from Room', message, details, 'warning');
+}
+
+// Handle when room has been deleted
+function handleRoomDeleted(response) {
+    console.log('🏗️ Room has been DELETED:', response);
+    
+    stopKickDetection();
+    
+    const message = response.message || 'This room has been deleted';
+    const details = '<div class="alert alert-info">The room no longer exists. You will be redirected to the lounge.</div>';
+    
+    showKickModal('🏗️ Room Deleted', message, details, 'info');
+}
+
+// Handle status check errors
+function handleStatusCheckError() {
+    consecutiveErrors++;
+    
+    if (consecutiveErrors >= 3) {
+        console.warn('⚠️ Multiple consecutive errors, may have connection issues');
+        
+        // After 5 consecutive errors, assume something is wrong and redirect
+        if (consecutiveErrors >= 5) {
+            console.error('🔥 Too many errors, redirecting to lounge');
+            stopKickDetection();
+            alert('Connection lost. Redirecting to lounge.');
+            window.location.href = 'lounge.php';
+        }
     }
-    
-    // Show simple notification and redirect
-    alert(response.message || 'You have been removed from this room');
-    window.location.href = 'lounge.php';
 }
 
-// Show ban notification modal
-function showBanNotificationModal(message, details) {
+// Enhanced kick notification modal
+function showKickModal(title, message, details, type) {
+    userKickedModalShown = true;
+    
+    const typeColors = {
+        'danger': { bg: 'bg-danger', icon: 'fas fa-ban' },
+        'warning': { bg: 'bg-warning', icon: 'fas fa-exclamation-triangle' },
+        'info': { bg: 'bg-info', icon: 'fas fa-info-circle' }
+    };
+    
+    const typeConfig = typeColors[type] || typeColors['info'];
+    
     const modalHtml = `
-        <div class="modal fade" id="banNotificationModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal fade" id="kickNotificationModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
             <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content border-danger">
-                    <div class="modal-header bg-danger text-white">
+                <div class="modal-content border-${type}">
+                    <div class="modal-header ${typeConfig.bg} text-white">
                         <h5 class="modal-title">
-                            <i class="fas fa-ban"></i> You Have Been Banned
+                            <i class="${typeConfig.icon}"></i> ${title}
                         </h5>
                     </div>
                     <div class="modal-body text-center">
                         <div class="mb-3">
-                            <i class="fas fa-ban fa-3x text-danger"></i>
+                            <i class="${typeConfig.icon} fa-4x text-${type}"></i>
                         </div>
-                        <h6 class="text-danger">${message}</h6>
+                        <h6 class="text-${type} mb-3">${message}</h6>
                         ${details}
-                        <div class="alert alert-warning mt-3">
-                            <i class="fas fa-info-circle"></i>
-                            You will be redirected to the lounge.
+                        <div class="alert alert-light mt-3">
+                            <i class="fas fa-home"></i>
+                            <strong>You will be redirected to the lounge in <span id="redirectCountdown">8</span> seconds</strong>
                         </div>
                     </div>
                     <div class="modal-footer justify-content-center">
-                        <button type="button" class="btn btn-primary" onclick="handleBanModalClose()">
-                            <i class="fas fa-home"></i> Return to Lounge
+                        <button type="button" class="btn btn-primary" onclick="handleKickModalClose()">
+                            <i class="fas fa-home"></i> Go to Lounge Now
                         </button>
                     </div>
                 </div>
@@ -141,31 +687,61 @@ function showBanNotificationModal(message, details) {
         </div>
     `;
     
-    // Remove any existing ban modal
-    $('#banNotificationModal').remove();
+    // Remove any existing modal
+    $('#kickNotificationModal').remove();
     
     // Add modal to page
     $('body').append(modalHtml);
     
     // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('banNotificationModal'));
+    const modal = new bootstrap.Modal(document.getElementById('kickNotificationModal'));
     modal.show();
     
-    // Auto-redirect after 10 seconds if user doesn't click button
-    setTimeout(() => {
-        handleBanModalClose();
-    }, 10000);
+    // Countdown timer
+    let countdown = 8;
+    const countdownInterval = setInterval(() => {
+        countdown--;
+        $('#redirectCountdown').text(countdown);
+        
+        if (countdown <= 0) {
+            clearInterval(countdownInterval);
+            handleKickModalClose();
+        }
+    }, 1000);
+    
+    // Play notification sound if available
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.2);
+    } catch (e) {
+        console.log('Could not play notification sound:', e);
+    }
 }
 
-// Handle ban modal close
-function handleBanModalClose() {
+// Handle kick modal close
+function handleKickModalClose() {
+    console.log('🏠 Redirecting to lounge...');
+    
+    // Clear any intervals
+    stopKickDetection();
+    
     // Clear session room_id on server side
     $.ajax({
         url: 'api/leave_room.php',
         method: 'POST',
         data: { 
             room_id: roomId,
-            action: 'banned_user_cleanup'
+            action: 'kicked_user_cleanup'
         },
         complete: function() {
             // Always redirect regardless of response
@@ -174,46 +750,352 @@ function handleBanModalClose() {
     });
 }
 
-// Enhanced ban notification with sound (optional)
-function showBanNotificationWithSound(message, details) {
-    // Play notification sound if available
-    try {
-        const audio = new Audio('sounds/ban_notification.mp3'); // You'd need to add this sound file
-        audio.play().catch(e => console.log('Could not play ban sound:', e));
-    } catch (e) {
-        // Sound not available, continue without it
-    }
+// Stop kick detection
+function stopKickDetection() {
+    console.log('🛑 Stopping kick detection system');
+    kickDetectionEnabled = false;
     
-    showBanNotificationModal(message, details);
-}
-
-// Cleanup function to stop ban checking when leaving room normally
-function stopBanChecking() {
-    if (banCheckInterval) {
-        clearInterval(banCheckInterval);
-        banCheckInterval = null;
+    if (kickDetectionInterval) {
+        clearInterval(kickDetectionInterval);
+        kickDetectionInterval = null;
     }
 }
 
-// Override the existing leaveRoom function to stop ban checking
+// Enhanced leave room function
 const originalLeaveRoom = window.leaveRoom;
 window.leaveRoom = function() {
-    stopBanChecking();
+    console.log('🚪 User leaving room normally');
+    stopKickDetection();
     if (originalLeaveRoom) {
         originalLeaveRoom();
     }
 };
 
-// Make functions globally available for testing
-window.checkUserBanStatus = checkUserBanStatus;
-window.stopBanChecking = stopBanChecking;
-
-// Test function
-window.testBanDetection = function() {
-    console.log('Testing ban detection...');
-    checkUserBanStatus();
+// Force immediate status check (for testing)
+window.forceStatusCheck = function() {
+    console.log('🔍 Forcing immediate status check...');
+    userKickedModalShown = false;
+    checkUserStatus();
 };
 
+// Test functions for debugging
+window.testKickDetection = function() {
+    console.log('🧪 Testing kick detection system...');
+    console.log('Kick detection enabled:', kickDetectionEnabled);
+    console.log('Modal shown:', userKickedModalShown);
+    console.log('Interval active:', !!kickDetectionInterval);
+    forceStatusCheck();
+};
+
+window.simulateBan = function() {
+    console.log('🎭 Simulating ban...');
+    handleUserBanned({
+        message: 'You have been banned for testing',
+        ban_info: {
+            permanent: false,
+            expires_in_minutes: 5,
+            reason: 'Testing ban system',
+            banned_by: 'TestAdmin'
+        }
+    });
+};
+
+window.simulateKick = function() {
+    console.log('🎭 Simulating kick...');
+    handleUserKicked({
+        message: 'You have been kicked for testing'
+    });
+};
+
+window.simulateRoomDeletion = function() {
+    console.log('🎭 Simulating room deletion...');
+    handleRoomDeleted({
+        message: 'This room has been deleted for testing'
+    });
+};
+
+// Make functions globally available
+window.checkUserStatus = checkUserStatus;
+window.stopKickDetection = stopKickDetection;
+window.handleKickModalClose = handleKickModalClose;
+
+console.log('🎯 Enhanced kick detection system loaded successfully');
+
+
+// Add this to your existing js/room.js file - Enhanced ban/kick functions
+// This ensures immediate kicks when users are banned
+
+// Enhanced confirmBanUser function with immediate kick
+window.confirmBanUser = function(userIdString, userName) {
+    const duration = $('#banDuration').val();
+    const reason = $('#banReason').val().trim();
+    
+    const durationText = duration === 'permanent' ? 'permanently' : 
+                       duration == 300 ? 'for 5 minutes' :
+                       duration == 1800 ? 'for 30 minutes' : 'for ' + duration + ' seconds';
+    
+    if (!confirm('Are you sure you want to ban ' + userName + ' ' + durationText + '?')) {
+        return;
+    }
+    
+    console.log('🔨 Banning user:', userIdString, 'for:', duration, 'reason:', reason);
+    
+    // Show loading state
+    const banButton = $('#banUserModal .btn-danger');
+    const originalText = banButton.html();
+    banButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status"></span> Banning...');
+    
+    $.ajax({
+        url: 'api/ban_user_simple.php',
+        method: 'POST',
+        dataType: 'json',
+        data: {
+            room_id: roomId,
+            user_id_string: userIdString,
+            duration: duration,
+            reason: reason
+        },
+        success: function(response) {
+            console.log('🔨 Ban response:', response);
+            
+            let res = response;
+            if (typeof response === 'string') {
+                try {
+                    res = JSON.parse(response);
+                } catch (e) {
+                    console.error('JSON parse error:', e, response);
+                    alert('Invalid response from server');
+                    return;
+                }
+            }
+            
+            if (res.status === 'success') {
+                alert('User banned successfully ' + durationText + '!');
+                $('#banUserModal').modal('hide');
+                
+                // Immediately refresh users and messages
+                loadUsers();
+                loadMessages();
+                
+                // CRITICAL: Force immediate status checks for all connected users
+                // This ensures the banned user gets kicked immediately
+                console.log('🚀 Broadcasting immediate kick check...');
+                
+                // Small delay to ensure ban is processed server-side
+                setTimeout(() => {
+                    // Force our own status check to ensure we didn't ban ourselves
+                    if (typeof forceStatusCheck === 'function') {
+                        forceStatusCheck();
+                    }
+                }, 500);
+                
+            } else {
+                alert('Error: ' + res.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error in confirmBanUser:', status, error, xhr.responseText);
+            alert('AJAX error: ' + error);
+        },
+        complete: function() {
+            // Restore button state
+            banButton.prop('disabled', false).html(originalText);
+        }
+    });
+};
+
+// Enhanced room deletion with immediate kick notifications
+window.deleteRoom = function() {
+    if (confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
+        console.log('🏗️ Deleting room...');
+        
+        $.ajax({
+            url: 'api/leave_room.php',
+            method: 'POST',
+            data: { 
+                room_id: roomId,
+                action: 'delete_room'
+            },
+            success: function(response) {
+                console.log('🏗️ Delete room response:', response);
+                try {
+                    let res = JSON.parse(response);
+                    if (res.status === 'success') {
+                        // Room deleted successfully
+                        console.log('✅ Room deleted, redirecting to lounge');
+                        
+                        // Stop our kick detection since we're leaving intentionally
+                        if (typeof stopKickDetection === 'function') {
+                            stopKickDetection();
+                        }
+                        
+                        alert('Room deleted successfully');
+                        window.location.href = 'lounge.php';
+                    } else {
+                        alert('Error: ' + res.message);
+                    }
+                } catch (e) {
+                    console.error('JSON parse error:', e, response);
+                    alert('Invalid response from server');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX error in deleteRoom:', status, error, xhr.responseText);
+                alert('AJAX error: ' + error);
+            }
+        });
+    }
+};
+
+// Enhanced transfer host function
+window.transferHost = function() {
+    let newHostId = $('#newHostSelect').val();
+    if (!newHostId) {
+        alert('Please select a user to transfer host privileges to');
+        return;
+    }
+    
+    if (confirm('Are you sure you want to transfer host privileges and leave the room?')) {
+        console.log('👑 Transferring host to:', newHostId);
+        
+        $.ajax({
+            url: 'api/leave_room.php',
+            method: 'POST',
+            data: { 
+                room_id: roomId,
+                action: 'transfer_host',
+                new_host_user_id: newHostId
+            },
+            success: function(response) {
+                console.log('👑 Transfer host response:', response);
+                try {
+                    let res = JSON.parse(response);
+                    if (res.status === 'success') {
+                        // Stop kick detection since we're leaving intentionally
+                        if (typeof stopKickDetection === 'function') {
+                            stopKickDetection();
+                        }
+                        
+                        alert('Host privileges transferred successfully');
+                        window.location.href = 'lounge.php';
+                    } else {
+                        alert('Error: ' + res.message);
+                    }
+                } catch (e) {
+                    console.error('JSON parse error:', e, response);
+                    alert('Invalid response from server');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX error in transferHost:', status, error, xhr.responseText);
+                alert('AJAX error: ' + error);
+            }
+        });
+    }
+};
+
+// Enhanced message sending with status check
+const originalSendMessage = window.sendMessage;
+window.sendMessage = function() {
+    // Check if we're still in the room before sending
+    if (typeof checkUserStatus === 'function' && !userKickedModalShown) {
+        checkUserStatus();
+    }
+    
+    // Call original function
+    if (originalSendMessage) {
+        return originalSendMessage();
+    }
+    
+    // Fallback implementation
+    const messageInput = $('#message');
+    const message = messageInput.val().trim();
+    
+    if (!message) {
+        alert('Please enter a message');
+        return false;
+    }
+    
+    console.log('💬 Sending message:', message);
+    
+    $.ajax({
+        url: 'api/send_message.php',
+        method: 'POST',
+        data: {
+            room_id: roomId,
+            message: message
+        },
+        success: function(response) {
+            try {
+                let res = JSON.parse(response);
+                if (res.status === 'success') {
+                    messageInput.val('');
+                    loadMessages();
+                    
+                    // Check status after sending message
+                    setTimeout(() => {
+                        if (typeof forceStatusCheck === 'function') {
+                            forceStatusCheck();
+                        }
+                    }, 200);
+                } else {
+                    alert('Error: ' + res.message);
+                }
+            } catch (e) {
+                console.error('JSON parse error:', e, response);
+                alert('Invalid response from server');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error in sendMessage:', status, error, xhr.responseText);
+            
+            // If message sending fails, check if we're still in the room
+            if (typeof forceStatusCheck === 'function') {
+                forceStatusCheck();
+            }
+            
+            alert('AJAX error: ' + error);
+        }
+    });
+    
+    return false;
+};
+
+// Monitor for specific events that might indicate user removal
+$(document).ready(function() {
+    // Check status when page visibility changes (user switches tabs and comes back)
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden && typeof forceStatusCheck === 'function') {
+            setTimeout(forceStatusCheck, 100);
+        }
+    });
+    
+    // Check status when window gains focus
+    $(window).on('focus', function() {
+        if (typeof forceStatusCheck === 'function') {
+            setTimeout(forceStatusCheck, 100);
+        }
+    });
+    
+    console.log('🎯 Enhanced immediate kick system loaded');
+});
+
+// Debugging function to check system status
+window.debugKickSystem = function() {
+    console.log('🔍 Kick System Debug Info:');
+    console.log('- Kick detection enabled:', typeof kickDetectionEnabled !== 'undefined' ? kickDetectionEnabled : 'Not loaded');
+    console.log('- User kicked modal shown:', typeof userKickedModalShown !== 'undefined' ? userKickedModalShown : 'Not loaded');
+    console.log('- Interval active:', typeof kickDetectionInterval !== 'undefined' ? !!kickDetectionInterval : 'Not loaded');
+    console.log('- Room ID:', typeof roomId !== 'undefined' ? roomId : 'Not defined');
+    console.log('- Current user:', typeof currentUserIdString !== 'undefined' ? currentUserIdString : 'Not defined');
+    
+    if (typeof forceStatusCheck === 'function') {
+        console.log('🚀 Running immediate status check...');
+        forceStatusCheck();
+    } else {
+        console.log('❌ forceStatusCheck function not available');
+    }
+};
 
     // Function to show room settings
     window.showRoomSettings = function() {

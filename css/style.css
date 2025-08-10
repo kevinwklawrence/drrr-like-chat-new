@@ -258,22 +258,3 @@ body {
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-/* Center avatars horizontally and wrap to next line if needed */
-#avatarSelection {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 12px; /* space between avatars */
-}
-
-#avatarSelection .avatar {
-    display: inline-block;
-    margin: 6px 0;
-    /* Optionally set a fixed size for avatars */
-    width: 64px;
-    height: 64px;
-    object-fit: cover;
-    border-radius: 50%;
-    border: 2px solid #eee;
-    cursor: pointer;
-}
