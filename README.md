@@ -16,10 +16,23 @@ A new drrr-like-chat project made from scratch, using HTML, CSS, JS, PHP, Ajax, 
 - Room settings/Kick/Ban
 - Knocking
 - Change avatar in lounge
+- Time-limited avatars
+- Event-limited avatars
 
 # PLANNED FEATURES
 - Private messaging
-- Custom icons for certain users
+- Custom avatars for certain users
+- Avatar memory
+- Message effects (Wiggly, disappearing, etc)
+- Message lifespans (temporary message mode)
+- Room accessories (identifiers)
+- Website events (Holiday themes)
+- Message "attachments"
+-  - Images
+   - Drawings
+   - Voice memos
+   - Games
+- Room music/videos (embedded YouTube videos built into room)
 - Etc...
 
 # KNOWN ISSUES
