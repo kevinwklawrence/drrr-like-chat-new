@@ -1,9 +1,9 @@
-# DRRR-LIKE-CHAT-NEW
+# ![Example Image](/images/staff/admin.png) DRRR-LIKE-CHAT-NEW
 A new drrr-like-chat project made from scratch, using HTML, CSS, JS, PHP, Ajax, and SQL. 
 
 ©Lenn, 2025.
 
-# ![Example Image](/images/icon_alpha.png) FEATURES
+# ![Example Image](/images/black/icon_alpha.png) FEATURES
 - Guest Login
 - User Login
 - Registration
