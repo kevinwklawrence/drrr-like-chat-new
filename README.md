@@ -3,7 +3,7 @@ A new drrr-like-chat project made from scratch, using HTML, CSS, JS, PHP, Ajax, 
 
 ©Lenn, 2025.
 
-# FEATURES
+# ![Example Image](/images/icon_alpha.png) FEATURES
 - Guest Login
 - User Login
 - Registration
