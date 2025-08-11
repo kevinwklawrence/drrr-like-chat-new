@@ -64,14 +64,60 @@
 
                     <div class="col-lg-6">
                         <!-- Color Selection -->
+                         <div class="avatar-selection-card">
+                            <div class="mb-4">
+                                <label for="guestName" class="form-label">
+                                    <i class="fas fa-user"></i> Display Name
+                                </label>
+                                <input type="text" 
+                                       class="form-control form-control-lg" 
+                                       id="guestName" 
+                                       placeholder="Enter your display name"
+                                       required 
+                                       maxlength="30">
+                                <div class="form-text text-muted">This is how others will see you in chat</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label class="form-label">
+                                    <i class="fas fa-image"></i> Selected Avatar
+                                </label>
+                                <div class="selected-preview-row mb-4">
+    <div class="selected-avatar-preview">
+        <div id="selectedAvatarPreview" style="display: none;">
+            <img id="selectedAvatarImg" src="" width="58" height="58" class="avatar-sel" style="border-color: #007bff !important;">
+            <p class="mt-2 mb-0 small text-muted">Avatar selected</p>
+        </div>
+        <div id="noAvatarSelected">
+            <div class="text-muted">
+                <i class="fas fa-image fa-2x mb-2"></i>
+                <p class="mb-0 small">No avatar selected</p>
+            </div>
+        </div>
+    </div>
+    <div class="selected-color-preview">
+        <div class="preview-circle color-black" id="selectedColorPreview"></div>
+        <div>
+            <strong id="selectedColorName">Black</strong> - Your message bubble color
+        </div>
+    </div>
+</div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-sign-in-alt"></i> Enter Lounge
+                                </button>
+                            </div>
+                        </div>
                         <div class="color-selection-section">
                             <div class="d-flex justify-content-between align-items-center">
                                 <label class="form-label">
                                     <i class="fas fa-palette"></i> Choose Your Chat Color
                                 </label>
-                                <button type="button" class="reset-btn" onclick="resetColorToDefault()">
+                               <!-- <button type="button" class="reset-btn" onclick="resetColorToDefault()">
                                     <i class="fas fa-undo"></i> Reset
-                                </button>
+                                </button>-->
                             </div>
                             
                             <div class="color-grid">
@@ -137,65 +183,15 @@
                                 </div>
                             </div>
                             
-                            <div class="selected-color-preview">
-                                <div class="preview-circle color-black" id="selectedColorPreview"></div>
-                                <div>
-                                    <strong id="selectedColorName">Black</strong> - Your message bubble color
-                                </div>
-                            </div>
+                           <input type="hidden" id="selectedColor" name="color" value="black">
                             
-                            <input type="hidden" id="selectedColor" name="color" value="black">
                             
-                            <div class="form-text text-muted mt-2">
-                                <i class="fas fa-info-circle"></i> This color will be used for your chat messages
-                            </div>
+                            
                         </div>
                     </div>
                 </div>
 
-                <div class="row">
-                    <!-- User Info -->
-                    <div class="col-lg-6">
-                        <div class="avatar-selection-card">
-                            <div class="mb-4">
-                                <label for="guestName" class="form-label">
-                                    <i class="fas fa-user"></i> Display Name
-                                </label>
-                                <input type="text" 
-                                       class="form-control form-control-lg" 
-                                       id="guestName" 
-                                       placeholder="Enter your display name"
-                                       required 
-                                       maxlength="30">
-                                <div class="form-text text-muted">This is how others will see you in chat</div>
-                            </div>
-                            
-                            <div class="mb-4">
-                                <label class="form-label">
-                                    <i class="fas fa-image"></i> Selected Avatar
-                                </label>
-                                <div class="selected-avatar-preview">
-                                    <div id="selectedAvatarPreview" style="display: none;">
-                                        <img id="selectedAvatarImg" src="" width="58" height="58" class="avatar-sel" style="border-color: #007bff !important;">
-                                        <p class="mt-2 mb-0 small text-muted">Avatar selected</p>
-                                    </div>
-                                    <div id="noAvatarSelected" >
-                                        <div class="text-muted">
-                                            <i class="fas fa-image fa-2x mb-2"></i>
-                                            <p class="mb-0 small">No avatar selected</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-sign-in-alt"></i> Enter Lounge
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                
             </form>
             
             <!-- Links Section -->

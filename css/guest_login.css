@@ -4,6 +4,17 @@ body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
         }
+
+        .selected-preview-row {
+    display: flex;
+    align-items: center;
+    gap: 24px; /* space between avatar and color preview */
+}
+
+.selected-avatar-preview,
+.selected-color-preview {
+    margin-bottom: 0;
+}
         
         .container-fluid {
             background-color: #1a1a1a;
@@ -50,7 +61,7 @@ body {
         }
         
         .avatar-container {
-            max-height: 400px;
+            max-height: 500px;
             overflow-y: auto;
             border: 2px solid #404040;
             border-radius: 10px;
@@ -178,7 +189,9 @@ body {
             border-radius: 8px;
             padding: 15px;
             text-align: center;
-            margin-bottom: 20px;
+            /* margin-bottom: 20px; */
+            height: 125px;
+            width: 147px;
         }
         
         .text-muted {
@@ -195,12 +208,12 @@ body {
 
         .color-option {
             position: relative;
-            width: 70px;
-            height: 70px;
-            border-radius: 12px;
-            border: 3px solid transparent;
+            width: 58px;
+            height: 58px;
+            border-radius: 4px;
+            border: 2px solid #ffffff40;
             cursor: pointer;
-            transition: all 0.3s ease;
+            /* transition: all 0.1s ease; */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -210,22 +223,24 @@ body {
         }
 
         .color-option:hover {
-            transform: translateY(-3px);
+            /*transform: translateY(-3px);*/
             box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-            border-color: rgba(255,255,255,0.3);
+            box-shadow: 0 0 2px rgba(25, 42, 199, 0.925);
+            border-color: rgba(33, 49, 196, 0.925);
         }
 
         .color-option.selected {
             border-color: #fff;
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 8px 25px rgba(255,255,255,0.2);
+            /*transform: translateY(-3px) scale(1.05);*/
+            box-shadow: 0 0 2px rgba(26, 49, 255, 0.925);
+            border-color: rgba(4, 29, 253, 0.925);
         }
 
         .color-option .color-name {
-            background: rgba(0,0,0,0.7);
+            background: rgb(0 0 0 / 50%);
             color: white;
-            padding: 3px 6px;
-            border-radius: 6px;
+            padding: 1px 6px;
+            border-radius: 4px;
             font-size: 0.7rem;
             font-weight: 600;
             text-shadow: 0 1px 2px rgba(0,0,0,0.8);
@@ -258,7 +273,7 @@ body {
         .color-blue { background: linear-gradient(135deg, #8cc9ff 0%, #74b9ff 25%, #74b9ff 50%, #0984e3 75%, #4d94f0 100%); }
         .color-purple { background: linear-gradient(135deg, #8a7edb 0%, #667eea 25%, #667eea 50%, #764ba2 75%, #9d7bb5 100%); }
         .color-pink { background: linear-gradient(135deg, #f5a3ff 0%, #f093fb 25%, #f093fb 50%, #f5576c 75%, #ff6b7a 100%); }
-        .color-cyan { background: linear-gradient(135deg, #7cb9ff 0%, #4facfe 25%, #4facfe 50%, #00f2fe 75%, #4dfaff 100%); }
+        .color-cyan {background: linear-gradient(135deg, #7cb9ff 0%, #4facfe 25%, #4facfe 50%, #00f2fe 75%, #4dfaff 100%);}
         .color-mint { background: linear-gradient(135deg, #c5f5f2 0%, #a8edea 25%, #a8edea 50%, #fed6e3 75%, #ffdeeb 100%); }
         .color-orange { background: linear-gradient(135deg, #fff4db 0%, #ffecd2 25%, #ffecd2 50%, #fcb69f 75%, #ffc4aa 100%); }
         .color-lavender { background: linear-gradient(135deg, #b599db 0%, #a18cd1 25%, #a18cd1 50%, #fbc2eb 75%, #ffccf0 100%); }
@@ -277,16 +292,18 @@ body {
             border-radius: 8px;
             padding: 15px;
             text-align: center;
-            margin-top: 15px;
+            /* margin-top: 15px; */
+            height: 125px;
+            width:460px;
         }
 
         .preview-circle {
             width: 50px;
             height: 50px;
-            border-radius: 50%;
+            border-radius: 4px;
             margin: 0 auto 8px;
             border: 3px solid rgba(255,255,255,0.3);
-            background-size: 200% 200%;
+            background-size: 100% 100%;
         }
 
         .reset-btn {
@@ -353,6 +370,16 @@ body {
             .login-container {
                 padding: 20px 15px;
             }
+            .selected-color-preview {
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            /* margin-top: 15px; */
+            height: 125px;
+            width:220px;
+        }
         }
         
         .links-section {

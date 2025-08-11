@@ -143,6 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
     <link href="css/member_login.css" rel="stylesheet">
+    <link href="css/lounge.css" rel="stylesheet">
 </head>
 <body>
     <div class="container-fluid">
