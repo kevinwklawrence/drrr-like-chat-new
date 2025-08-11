@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
     $selected_avatar = $_POST['avatar'] ?? ''; // Allow empty avatar selection
+    $selected_color = $_POST['color'] ?? 'blue'; // Default to blue if not provided
 
     if (empty($username) || empty($password)) {
         error_log("Missing username or password in login.php");
@@ -27,8 +28,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Updated query to include custom_av and avatar_memory
-    $stmt = $conn->prepare("SELECT id, username, user_id, email, password, is_admin, avatar, custom_av, avatar_memory FROM users WHERE username = ?");
+    // Validate color selection
+    $valid_colors = [
+        'black', 'blue', 'purple', 'pink', 'cyan', 'mint', 'orange', 
+        'lavender', 'peach', 'green', 'yellow', 'red', 'teal', 
+        'indigo', 'emerald', 'rose'
+    ];
+
+    if (!in_array($selected_color, $valid_colors)) {
+        $selected_color = 'blue'; // Fallback to blue for invalid colors
+    }
+
+    // Updated query to include custom_av, avatar_memory, and color
+    $stmt = $conn->prepare("SELECT id, username, user_id, email, password, is_admin, avatar, custom_av, avatar_memory, color FROM users WHERE username = ?");
     if (!$stmt) {
         error_log("Prepare failed in login.php: " . $conn->error);
         echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
@@ -68,7 +80,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             
-            // Update user's avatar and avatar_memory in database if needed
+            // Determine final color - prioritize user selection, then saved color, then default
+            $final_color = $selected_color;
+            if (empty($selected_color) || $selected_color === 'blue') {
+                // If no color selected or default blue, check if user has a saved color
+                if (!empty($user['color']) && in_array($user['color'], $valid_colors)) {
+                    $final_color = $user['color'];
+                }
+            }
+            
+            // Update user's avatar, avatar_memory, and color in database if needed
             $updates_needed = [];
             $update_params = [];
             $param_types = '';
@@ -87,6 +108,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $param_types .= 's';
             }
             
+            // Update color if it's different
+            if ($final_color !== $user['color']) {
+                $updates_needed[] = 'color = ?';
+                $update_params[] = $final_color;
+                $param_types .= 's';
+            }
+            
             // Perform database update if needed
             if (!empty($updates_needed)) {
                 $update_sql = "UPDATE users SET " . implode(', ', $updates_needed) . " WHERE id = ?";
@@ -97,8 +125,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($update_stmt) {
                     $update_stmt->bind_param($param_types, ...$update_params);
                     if ($update_stmt->execute()) {
-                        error_log("Updated user data: avatar=$final_avatar" . ($should_update_avatar_memory ? ", avatar_memory=$selected_avatar" : "") . " for user: $username");
-                        $user['avatar'] = $final_avatar; // Update local variable
+                        error_log("Updated user data: avatar=$final_avatar, color=$final_color" . ($should_update_avatar_memory ? ", avatar_memory=$selected_avatar" : "") . " for user: $username");
+                        $user['avatar'] = $final_avatar;
+                        $user['color'] = $final_color;
                     } else {
                         error_log("Failed to update user data: " . $update_stmt->error);
                     }
@@ -106,20 +135,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             
-            // Create user session with final avatar
+            // Create user session with final avatar and color
             $_SESSION['user'] = [
                 'type' => 'user',
                 'id' => $user['id'],
                 'username' => $user['username'],
-                'user_id' => $user['user_id'],  // This is crucial for the host system!
+                'user_id' => $user['user_id'],
                 'email' => $user['email'],
                 'is_admin' => $user['is_admin'],
-                'avatar' => $final_avatar, // Use the determined final avatar
+                'avatar' => $final_avatar,
+                'color' => $final_color,
                 'ip' => $_SERVER['REMOTE_ADDR']
             ];
             
-            // Debug log to ensure user_id is set
-            error_log("User logged in with user_id: " . ($user['user_id'] ?? 'NULL') . ", final_avatar: " . $final_avatar);
+            error_log("User logged in with user_id: " . ($user['user_id'] ?? 'NULL') . ", final_avatar: $final_avatar, final_color: $final_color");
             
             echo json_encode(['status' => 'success']);
         } else {
@@ -143,6 +172,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
     <link href="css/member_login.css" rel="stylesheet">
+    <link href="css/guest_login.css" rel="stylesheet">
     <link href="css/lounge.css" rel="stylesheet">
 </head>
 <body>
@@ -158,22 +188,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <form id="userLoginForm">
                 <div class="row">
-                    <div class="col-lg-8">
+                    <!-- Avatar Selection -->
+                    <div class="col-lg-6">
                         <div class="login-section">
                             <h5 class="mb-3"><i class="fas fa-images"></i> Choose Your Avatar (Optional)</h5>
                             
-                           <!-- <div class="avatar-optional-notice">
-                                <i class="fas fa-info-circle"></i>
-                                <strong>Avatar Selection is Optional!</strong><br>
-                                If you don't select an avatar, we'll use your custom avatar, previously selected avatar, or a default one.
-                            </div>-->
-                            
                             <div class="avatar-controls">
-                               <!-- <div class="quick-login-section">
-                                    <h6 class="mb-2"><i class="fas fa-zap"></i> Quick Login</h6>
-                                    
-                                </div>-->
-                                
                                 <div class="row mb-3">
                                     <div class="col-md-6">
                                         <label for="avatarSort" class="form-label">Filter by Color</label>
@@ -193,15 +213,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="col-md-6">
                                         <label class="form-label">Avatar Actions</label>
                                         <div class="d-flex gap-2">
-                                            <!--<button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSelection()">
-                                                <i class="fas fa-times"></i> Clear
-                                            </button>-->
                                             <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="skipAvatarSelection()">
-                                        <i class="fas fa-fast-forward"></i> Use Saved/Custom
-                                    </button>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="randomAvatar()">
-                                        <i class="fas fa-random"></i> Random
-                                    </button>
+                                                <i class="fas fa-fast-forward"></i> Use Saved/Custom
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="randomAvatar()">
+                                                <i class="fas fa-random"></i> Random
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -226,7 +243,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         
                                         echo '<div class="avatar-group" data-group="' . strtolower($folder) . '">';
                                         echo '<h6><i class="fas fa-star"></i> ' . ucfirst($folder) . ' Avatars <span class="avatar-count">' . $folder_count . '</span></h6>';
-                                        echo '<div class="d-flex flex-wrap">';
+                                        echo '<div class="d-flex flex-wrap  ms-4">';
                                         
                                         foreach ($folder_avatars as $img_path) {
                                             $img_file = basename($img_path);
@@ -251,7 +268,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     
                                     echo '<div class="avatar-group" data-group="' . strtolower($color_name) . '">';
                                     echo '<h6><i class="fas fa-folder"></i> ' . ucfirst($color_name) . ' Avatars <span class="avatar-count">' . $folder_count . '</span></h6>';
-                                    echo '<div class="d-flex flex-wrap">';
+                                    echo '<div class="d-flex flex-wrap  ms-4">';
                                     
                                     foreach ($folder_avatars as $img_path) {
                                         $img_file = basename($img_path);
@@ -277,63 +294,135 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         </div>
                     </div>
-                    <!-- Login Credentials -->
-                    <div class="col-lg-4">
-                        <div class="login-section">
-                            <h5 class="mb-3"><i class="fas fa-sign-in-alt"></i> Account Login</h5>
-                            
-                            <div class="mb-4">
-                                <label for="username" class="form-label">
-                                    <i class="fas fa-user"></i> Username
-                                </label>
-                                <input type="text" 
-                                       class="form-control form-control-lg" 
-                                       id="username" 
-                                       name="username" 
-                                       placeholder="Enter your username"
-                                       required>
-                            </div>
-                            
-                            <div class="mb-4">
-                                <label for="password" class="form-label">
-                                    <i class="fas fa-lock"></i> Password
-                                </label>
-                                <input type="password" 
-                                       class="form-control form-control-lg" 
-                                       id="password" 
-                                       name="password" 
-                                       placeholder="Enter your password"
-                                       required>
-                            </div>
-                            
-                            <div class="mb-4">
-                                <label class="form-label"><i class="fas fa-image"></i> Selected Avatar</label>
-                                <div class="selected-avatar-preview">
-                                    <div id="selectedAvatarPreview" style="display: none;">
-                                        <img id="selectedAvatarImg" src="" width="58" height="58" class="avatar-sel" style="border-color: #007bff !important;">
-                                        <p class="mt-2 mb-0 small text-muted">Current selection</p>
-                                    </div>
-                                    <div id="noAvatarSelected">
-                                        <div class="text-muted">
-                                            <i class="fas fa-magic fa-2x mb-2"></i>
-                                            <p class="mb-0 small">Using saved/custom avatar</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-sign-in-alt"></i> Login
-                                </button>
-                            </div>
+                    <!-- Login Credentials and Color Selection -->
+<div class="col-lg-4">
+    <div class="login-section">
+        <h5 class="mb-3"><i class="fas fa-sign-in-alt"></i> Account Login</h5>
+        
+        <div class="mb-4">
+            <label for="username" class="form-label">
+                <i class="fas fa-user"></i> Username
+            </label>
+            <input type="text" 
+                   class="form-control form-control-lg" 
+                   id="username" 
+                   name="username" 
+                   placeholder="Enter your username"
+                   required>
+        </div>
+        
+        <div class="mb-4">
+            <label for="password" class="form-label">
+                <i class="fas fa-lock"></i> Password
+            </label>
+            <input type="password" 
+                   class="form-control form-control-lg" 
+                   id="password" 
+                   name="password" 
+                   placeholder="Enter your password"
+                   required>
+        </div>
+        
+        <div class="mb-4">
+            <label class="form-label"><i class="fas fa-image"></i> Selected Avatar</label>
+            <div class="selected-preview-row mb-4">
+                <div class="selected-avatar-preview">
+                    <div id="selectedAvatarPreview" style="display: none;">
+                        <img id="selectedAvatarImg" src="" width="58" height="58" class="avatar-sel" style="border-color: #007bff !important;">
+                        <p class="mt-2 mb-0 small text-muted">Current selection</p>
+                    </div>
+                    <div id="noAvatarSelected">
+                        <div class="text-muted">
+                            <i class="fas fa-magic fa-2x mb-2"></i>
+                            <p class="mb-0 small">Using saved/custom avatar</p>
                         </div>
                     </div>
-                    
-                    <!-- Avatar Selection -->
-                    
                 </div>
-            </form>
+                <div class="selected-color-preview">
+                    <div class="preview-circle color-blue" id="selectedColorPreview"></div>
+                    <div>
+                        <strong id="selectedColorName">Blue</strong> - Your message bubble color
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </button>
+        </div>
+    </div>
+    
+    <!-- ADDED: Color Selection Section -->
+    <div class="color-selection-section">
+        <div class="d-flex justify-content-between align-items-center">
+            <label class="form-label">
+                <i class="fas fa-palette"></i> Choose Your Chat Color
+            </label>
+        </div>
+        
+        <div class="color-grid">
+            <!-- Default: Blue -->
+            <div class="color-option color-blue selected" data-color="blue" onclick="selectColor('blue', this)">
+                <div class="color-name">Blue</div>
+                <div class="selected-indicator"><i class="fas fa-check"></i></div>
+            </div>
+            
+            <div class="color-option color-purple" data-color="purple" onclick="selectColor('purple', this)">
+                <div class="color-name">Purple</div>
+                <div class="selected-indicator"><i class="fas fa-check"></i></div>
+            </div>
+            
+            <div class="color-option color-pink" data-color="pink" onclick="selectColor('pink', this)">
+                <div class="color-name">Pink</div>
+                <div class="selected-indicator"><i class="fas fa-check"></i></div>
+            </div>
+            
+            <div class="color-option color-cyan" data-color="cyan" onclick="selectColor('cyan', this)">
+                <div class="color-name">Cyan</div>
+                <div class="selected-indicator"><i class="fas fa-check"></i></div>
+            </div>
+            
+            <div class="color-option color-mint" data-color="mint" onclick="selectColor('mint', this)">
+                <div class="color-name">Mint</div>
+                <div class="selected-indicator"><i class="fas fa-check"></i></div>
+            </div>
+            
+            <div class="color-option color-orange" data-color="orange" onclick="selectColor('orange', this)">
+                <div class="color-name">Orange</div>
+                <div class="selected-indicator"><i class="fas fa-check"></i></div>
+            </div>
+            
+            <div class="color-option color-green" data-color="green" onclick="selectColor('green', this)">
+                <div class="color-name">Green</div>
+                <div class="selected-indicator"><i class="fas fa-check"></i></div>
+            </div>
+            
+            <div class="color-option color-red" data-color="red" onclick="selectColor('red', this)">
+                <div class="color-name">Red</div>
+                <div class="selected-indicator"><i class="fas fa-check"></i></div>
+            </div>
+            
+            <div class="color-option color-yellow" data-color="yellow" onclick="selectColor('yellow', this)">
+                <div class="color-name">Yellow</div>
+                <div class="selected-indicator"><i class="fas fa-check"></i></div>
+            </div>
+            
+            <div class="color-option color-teal" data-color="teal" onclick="selectColor('teal', this)">
+                <div class="color-name">Teal</div>
+                <div class="selected-indicator"><i class="fas fa-check"></i></div>
+            </div>
+            
+            <div class="color-option color-indigo" data-color="indigo" onclick="selectColor('indigo', this)">
+                <div class="color-name">Indigo</div>
+                <div class="selected-indicator"><i class="fas fa-check"></i></div>
+            </div>
+        </div>
+        
+        <input type="hidden" id="selectedColor" name="color" value="blue">
+    </div>
+</div>
             
             <!-- Links Section -->
             <div class="links-section">
@@ -351,18 +440,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <p class="text-center text-muted mt-4">
                     <small>By joining as a member, you agree to our <a href="terms.php" class="text-white">Terms of Service</a> and <a href="privacy.php" class="text-white">Privacy Policy</a>. ©Lenn, 2025.</small>
                 </p>    
-                
-                </div>
+            </div>
         </div>
     </div>
     
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Replace the JavaScript section in login.php with this updated version
+        // Replace the JavaScript section in login.php with this updated version:
 
 $(document).ready(function() {
     updateAvatarStats();
+    
+    // Initialize color selection
+    selectColor('blue', document.querySelector('[data-color="blue"]'));
     
     // Avatar selection handling
     $(document).on('click', '.avatar', function() {
@@ -385,13 +476,14 @@ $(document).ready(function() {
         filterAvatars();
     });
 
-    // Form submission - UPDATED to allow no avatar selection and use correct default
+    // Form submission - UPDATED to include color
     $('#userLoginForm').submit(function(e) {
         e.preventDefault();
         
         const username = $('#username').val().trim();
         const password = $('#password').val();
         const selectedAvatar = $('#selectedAvatar').val(); // Allow empty
+        const selectedColor = $('#selectedColor').val(); // ADDED: Get selected color
         
         if (!username || !password) {
             alert('Please enter both username and password');
@@ -409,7 +501,8 @@ $(document).ready(function() {
             data: {
                 username: username,
                 password: password,
-                avatar: selectedAvatar, // This can now be empty
+                avatar: selectedAvatar, // This can be empty
+                color: selectedColor, // ADDED: Include color in submission
                 type: 'user'
             },
             dataType: 'json',
@@ -429,6 +522,27 @@ $(document).ready(function() {
         });
     });
 });
+
+// ADDED: Color selection functions
+function selectColor(colorName, element) {
+    // Remove selected class from all options
+    document.querySelectorAll('.color-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+    
+    // Add selected class to clicked option
+    element.classList.add('selected');
+    
+    // Update hidden input
+    document.getElementById('selectedColor').value = colorName;
+    
+    // Update preview
+    const preview = document.getElementById('selectedColorPreview');
+    preview.className = `preview-circle color-${colorName}`;
+    
+    // Update color name
+    document.getElementById('selectedColorName').textContent = colorName.charAt(0).toUpperCase() + colorName.slice(1);
+}
 
 function filterAvatars() {
     const selectedGroup = $('#avatarSort').val();

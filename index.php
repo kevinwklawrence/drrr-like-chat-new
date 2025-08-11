@@ -42,7 +42,7 @@
                                     if (is_dir($folder_path)) {
                                         echo '<div class="avatar-section">';
                                         echo '<h6><i class="fas fa-star"></i> ' . ucfirst($folder) . ' Avatars</h6>';
-                                        echo '<div class="d-flex flex-wrap">';
+                                        echo '<div class="d-flex flex-wrap ms-4">';
                                         foreach (glob($folder_path . '/*.{png,jpg,jpeg,gif,webp}', GLOB_BRACE) as $img_path) {
                                             $img_file = basename($img_path);
                                             $ext = strtolower(pathinfo($img_file, PATHINFO_EXTENSION));
@@ -217,94 +217,95 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        $(document).ready(function() {
-            // Initialize color selection
-            selectColor('black', document.querySelector('[data-color="black"]'));
-            
-            // Avatar selection handling
-            $('.avatar').click(function() {
-                $('.avatar').removeClass('selected');
-                $(this).addClass('selected');
-                
-                const avatarPath = $(this).data('avatar');
-                $('#selectedAvatar').val(avatarPath);
-                
-                // Update preview
-                $('#selectedAvatarImg').attr('src', $(this).attr('src'));
-                $('#selectedAvatarPreview').show();
-                $('#noAvatarSelected').hide();
-            });
+        // Updated JavaScript section for index.php (guest login)
+$(document).ready(function() {
+    // Initialize color selection
+    selectColor('black', document.querySelector('[data-color="black"]'));
+    
+    // Avatar selection handling
+    $('.avatar').click(function() {
+        $('.avatar').removeClass('selected');
+        $(this).addClass('selected');
+        
+        const avatarPath = $(this).data('avatar');
+        $('#selectedAvatar').val(avatarPath);
+        
+        // Update preview
+        $('#selectedAvatarImg').attr('src', $(this).attr('src'));
+        $('#selectedAvatarPreview').show();
+        $('#noAvatarSelected').hide();
+    });
 
-            // Form submission
-            $('#guestLoginForm').submit(function(e) {
-                e.preventDefault();
-                
-                const guestName = $('#guestName').val().trim();
-                const selectedAvatar = $('#selectedAvatar').val();
-                const selectedColor = $('#selectedColor').val();
-                
-                if (!guestName) {
-                    alert('Please enter your display name');
-                    $('#guestName').focus();
-                    return;
-                }
-                
-                // Show loading state
-                const submitBtn = $('button[type="submit"]');
-                const originalText = submitBtn.html();
-                submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Joining...');
-                
-                $.ajax({
-                    url: 'api/join_lounge.php',
-                    method: 'POST',
-                    data: {
-                        guest_name: guestName,
-                        avatar: selectedAvatar,
-                        color: selectedColor,
-                        type: 'guest'
-                    },
-                    dataType: 'json',
-                    success: function(res) {
-                        if (res.status === 'success') {
-                            window.location.href = 'lounge.php';
-                        } else {
-                            alert('Error: ' + (res.message || 'Unknown error'));
-                            submitBtn.prop('disabled', false).html(originalText);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('AJAX error:', status, error);
-                        alert('Connection error: ' + error);
-                        submitBtn.prop('disabled', false).html(originalText);
-                    }
-                });
-            });
-        });
-
-        // Color selection functions
-        function selectColor(colorName, element) {
-            // Remove selected class from all options
-            document.querySelectorAll('.color-option').forEach(option => {
-                option.classList.remove('selected');
-            });
-            
-            // Add selected class to clicked option
-            element.classList.add('selected');
-            
-            // Update hidden input
-            document.getElementById('selectedColor').value = colorName;
-            
-            // Update preview
-            const preview = document.getElementById('selectedColorPreview');
-            preview.className = `preview-circle color-${colorName}`;
-            
-            // Update color name
-            document.getElementById('selectedColorName').textContent = colorName.charAt(0).toUpperCase() + colorName.slice(1);
+    // Form submission - UPDATED to include color
+    $('#guestLoginForm').submit(function(e) {
+        e.preventDefault();
+        
+        const guestName = $('#guestName').val().trim();
+        const selectedAvatar = $('#selectedAvatar').val();
+        const selectedColor = $('#selectedColor').val(); // Get selected color
+        
+        if (!guestName) {
+            alert('Please enter your display name');
+            $('#guestName').focus();
+            return;
         }
         
-        function resetColorToDefault() {
-            selectColor('black', document.querySelector('[data-color="black"]'));
-        }
+        // Show loading state
+        const submitBtn = $('button[type="submit"]');
+        const originalText = submitBtn.html();
+        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Joining...');
+        
+        $.ajax({
+            url: 'api/join_lounge.php',
+            method: 'POST',
+            data: {
+                guest_name: guestName,
+                avatar: selectedAvatar,
+                color: selectedColor, // Include color in the request
+                type: 'guest'
+            },
+            dataType: 'json',
+            success: function(res) {
+                if (res.status === 'success') {
+                    window.location.href = 'lounge.php';
+                } else {
+                    alert('Error: ' + (res.message || 'Unknown error'));
+                    submitBtn.prop('disabled', false).html(originalText);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX error:', status, error);
+                alert('Connection error: ' + error);
+                submitBtn.prop('disabled', false).html(originalText);
+            }
+        });
+    });
+});
+
+// Color selection functions
+function selectColor(colorName, element) {
+    // Remove selected class from all options
+    document.querySelectorAll('.color-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+    
+    // Add selected class to clicked option
+    element.classList.add('selected');
+    
+    // Update hidden input
+    document.getElementById('selectedColor').value = colorName;
+    
+    // Update preview
+    const preview = document.getElementById('selectedColorPreview');
+    preview.className = `preview-circle color-${colorName}`;
+    
+    // Update color name
+    document.getElementById('selectedColorName').textContent = colorName.charAt(0).toUpperCase() + colorName.slice(1);
+}
+
+function resetColorToDefault() {
+    selectColor('black', document.querySelector('[data-color="black"]'));
+}
     </script>
     <script src="js/script.js"></script>
 </body>

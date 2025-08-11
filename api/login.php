@@ -11,13 +11,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// IMPORTANT: Replace the entire POST handler section in login.php (lines ~20-80) with this:
-
 // Handle POST request for login
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
     $selected_avatar = $_POST['avatar'] ?? ''; // Allow empty avatar selection
+    $selected_color = $_POST['color'] ?? ''; // ADDED: Handle color selection
 
     if (empty($username) || empty($password)) {
         error_log("Missing username or password in login.php");
@@ -25,12 +24,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // UPDATED: Remove old default avatar fallback - let the new logic handle it
-    // The old line: if (empty($selected_avatar)) { $selected_avatar = 'u0.png'; }
-    // is now removed because we handle fallbacks in the new avatar priority system
+    // ADDED: Validate color selection
+    $valid_colors = [
+        'black', 'blue', 'purple', 'pink', 'cyan', 'mint', 'orange', 
+        'lavender', 'peach', 'green', 'yellow', 'red', 'teal', 
+        'indigo', 'emerald', 'rose'
+    ];
 
-    // Updated query to include custom_av and avatar_memory
-    $stmt = $conn->prepare("SELECT id, username, user_id, email, password, is_admin, avatar, custom_av, avatar_memory FROM users WHERE username = ?");
+    // Updated query to include color
+    $stmt = $conn->prepare("SELECT id, username, user_id, email, password, is_admin, avatar, custom_av, avatar_memory, color FROM users WHERE username = ?");
     if (!$stmt) {
         error_log("Prepare failed in login.php: " . $conn->error);
         echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
@@ -44,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $result->fetch_assoc();
         if (password_verify($password, $user['password'])) {
             
-            // NEW: Determine the final avatar based on priority
+            // Determine the final avatar based on priority
             $final_avatar = null;
             $should_update_avatar_memory = false;
             
@@ -64,13 +66,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $final_avatar = $user['avatar_memory'];
                     error_log("Using remembered avatar: {$user['avatar_memory']} for user: $username");
                 } else {
-                    // UPDATED: Use correct default fallback path
+                    // Default fallback
                     $final_avatar = 'default/u0.png';
                     error_log("Using default avatar for user: $username");
                 }
             }
+
+            // ADDED: Determine the final color based on priority
+            $final_color = null;
+            $should_update_color = false;
             
-            // Update user's avatar and avatar_memory in database if needed
+            if (!empty($selected_color) && in_array($selected_color, $valid_colors)) {
+                // User selected a color - use it
+                $final_color = $selected_color;
+                $should_update_color = true;
+                error_log("User selected color: $selected_color");
+            } else {
+                // No color selected - use saved color or default
+                if (!empty($user['color']) && in_array($user['color'], $valid_colors)) {
+                    $final_color = $user['color'];
+                    error_log("Using saved color: {$user['color']} for user: $username");
+                } else {
+                    $final_color = 'blue'; // Default color
+                    $should_update_color = true;
+                    error_log("Using default color for user: $username");
+                }
+            }
+            
+            // Update user's avatar, avatar_memory, and color in database if needed
             $updates_needed = [];
             $update_params = [];
             $param_types = '';
@@ -88,6 +111,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $update_params[] = $selected_avatar;
                 $param_types .= 's';
             }
+
+            // ADDED: Update color if it changed
+            if ($final_color !== $user['color'] || $should_update_color) {
+                $updates_needed[] = 'color = ?';
+                $update_params[] = $final_color;
+                $param_types .= 's';
+            }
             
             // Perform database update if needed
             if (!empty($updates_needed)) {
@@ -99,8 +129,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($update_stmt) {
                     $update_stmt->bind_param($param_types, ...$update_params);
                     if ($update_stmt->execute()) {
-                        error_log("Updated user data: avatar=$final_avatar" . ($should_update_avatar_memory ? ", avatar_memory=$selected_avatar" : "") . " for user: $username");
+                        error_log("Updated user data: avatar=$final_avatar, color=$final_color" . ($should_update_avatar_memory ? ", avatar_memory=$selected_avatar" : "") . " for user: $username");
                         $user['avatar'] = $final_avatar; // Update local variable
+                        $user['color'] = $final_color; // Update local variable
                     } else {
                         error_log("Failed to update user data: " . $update_stmt->error);
                     }
@@ -108,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             
-            // Create user session with final avatar
+            // UPDATED: Create user session with final avatar and color
             $_SESSION['user'] = [
                 'type' => 'user',
                 'id' => $user['id'],
@@ -117,11 +148,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'email' => $user['email'],
                 'is_admin' => $user['is_admin'],
                 'avatar' => $final_avatar, // Use the determined final avatar
+                'color' => $final_color, // ADDED: Store color in session
                 'ip' => $_SERVER['REMOTE_ADDR']
             ];
             
-            // Debug log to ensure user_id is set
-            error_log("User logged in with user_id: " . ($user['user_id'] ?? 'NULL') . ", final_avatar: " . $final_avatar);
+            // ADDED: Update global_users table with color
+            try {
+                $stmt = $conn->prepare("INSERT INTO global_users (user_id_string, username, guest_name, avatar, guest_avatar, color, is_admin, ip_address) VALUES (?, ?, NULL, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE username = VALUES(username), avatar = VALUES(avatar), guest_avatar = VALUES(guest_avatar), color = VALUES(color), is_admin = VALUES(is_admin), ip_address = VALUES(ip_address), last_activity = CURRENT_TIMESTAMP");
+                
+                if ($stmt) {
+                    $stmt->bind_param("sssssis", $user['user_id'], $user['username'], $final_avatar, $final_avatar, $final_color, $user['is_admin'], $_SERVER['REMOTE_ADDR']);
+                    $stmt->execute();
+                    $stmt->close();
+                    error_log("User stored in global_users with color: $final_color");
+                }
+            } catch (Exception $e) {
+                error_log("Failed to store user in global_users: " . $e->getMessage());
+            }
+            
+            // Debug log to ensure user_id and color are set
+            error_log("User logged in with user_id: " . ($user['user_id'] ?? 'NULL') . ", final_avatar: " . $final_avatar . ", final_color: " . $final_color);
             
             echo json_encode(['status' => 'success']);
         } else {
