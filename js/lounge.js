@@ -22,11 +22,11 @@ $(document).ready(function() {
     loadRoomsWithUsers();
     loadOnlineUsers();
     
-    // Set up auto-refresh
-    setInterval(loadRoomsWithUsers, 5000);
-    setInterval(loadOnlineUsers, 10000);
+    // Set up auto-refresh with longer intervals to reduce jarring updates
+    setInterval(loadRoomsWithUsers, 15000); // Increased from 5000 to 15000 (15 seconds)
+    setInterval(loadOnlineUsers, 30000); // Increased from 10000 to 30000 (30 seconds)
     setInterval(checkForKnocks, 3000);
-    setInterval(loadUserRoomKeys, 30000);
+    setInterval(loadUserRoomKeys, 60000); // Increased from 30000 to 60000 (60 seconds)
 });
 
 // Function to load user's room keys
@@ -55,6 +55,12 @@ function hasRoomKey(roomId) {
 // Main function to load rooms with their users
 function loadRoomsWithUsers() {
     debugLog('Loading rooms with users...');
+    
+    // Add subtle loading indicator
+    if ($('#roomsList .room-card-enhanced').length > 0) {
+        $('#roomsList').addClass('updating');
+    }
+    
     $.ajax({
         url: 'api/get_rooms.php',
         method: 'GET',
@@ -83,6 +89,11 @@ function loadRoomsWithUsers() {
                         const validRooms = roomsWithUsers.filter(r => r !== undefined);
                         debugLog('All rooms processed, displaying:', validRooms);
                         displayRoomsWithUsers(validRooms);
+                        
+                        // Remove loading indicator
+                        setTimeout(() => {
+                            $('#roomsList').removeClass('updating');
+                        }, 300);
                     }
                 });
             });
@@ -90,6 +101,7 @@ function loadRoomsWithUsers() {
         },
         error: function(xhr, status, error) {
             console.error('Error loading rooms:', error);
+            $('#roomsList').removeClass('updating');
             $('#roomsList').html(`
                 <div class="alert alert-danger" style="background: #2a2a2a; border: 1px solid #d32f2f; color: #f44336;">
                     <h5>Error loading rooms</h5>
@@ -169,7 +181,7 @@ function loadUsersForRoom(room, callback) {
     });
 }
 
-// Function to display rooms with users
+// Function to display rooms with users in 2-column layout
 function displayRoomsWithUsers(rooms) {
     debugLog('displayRoomsWithUsers called with:', rooms);
     let html = '';
@@ -183,7 +195,10 @@ function displayRoomsWithUsers(rooms) {
             </div>
         `;
     } else {
-        rooms.forEach(room => {
+        // Start with Bootstrap row
+        html += '<div class="row">';
+        
+        rooms.forEach((room, index) => {
             debugLog('Processing room for display:', room);
             
             const isPasswordProtected = parseInt(room.has_password) === 1;
@@ -265,7 +280,7 @@ function displayRoomsWithUsers(rooms) {
                 `;
             }
             
-            // Build users list
+            // Build users list in 2-column layout
             let usersHtml = '';
             if (regularUsers.length > 0) {
                 debugLog(`Building users HTML for ${regularUsers.length} users:`, regularUsers);
@@ -273,10 +288,10 @@ function displayRoomsWithUsers(rooms) {
                 usersHtml = `
                     <div class="room-users">
                         <h6><i class="fas fa-users"></i> Users (${regularUsers.length})</h6>
-                        <div class="users-grid">
+                        <div class="users-grid-two-column">
                 `;
                 
-                // Show first 8 users
+                // Show first 8 users in 2-column layout
                 regularUsers.slice(0, 8).forEach(user => {
                     const userAvatar = user.avatar || user.user_avatar || user.guest_avatar || 'default_avatar.jpg';
                     const userName = user.display_name || user.username || user.guest_name || 'Unknown';
@@ -296,7 +311,7 @@ function displayRoomsWithUsers(rooms) {
                 });
                 
                 if (regularUsers.length > 8) {
-                    usersHtml += `<div class="text-muted small">+ ${regularUsers.length - 8} more users</div>`;
+                    usersHtml += `<div class="text-muted small users-more-indicator">+ ${regularUsers.length - 8} more users</div>`;
                 }
                 
                 usersHtml += `
@@ -312,48 +327,64 @@ function displayRoomsWithUsers(rooms) {
                 `;
             }
             
+            // Each room card takes up half width (col-lg-6) for 2-column layout
             html += `
-                <div class="room-card-enhanced">
-                    <div class="${headerClass}">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div class="room-title-section">
-                                <h5 class="room-title">
-                                    ${room.name}
-                                    ${isPasswordProtected ? '<i class="fas fa-lock" title="Password protected"></i>' : ''}
-                                    ${allowsKnocking ? '<i class="fas fa-hand-paper" title="Knocking allowed"></i>' : ''}
-                                    ${hasKey ? '<i class="fas fa-key" title="You have access"></i>' : ''}
-                                </h5>
-                                <div class="room-meta">
-                                    <span class="capacity-info">${userCount}/${capacity} users</span>
-                                    <span class="created-info">Created: ${new Date(room.created_at).toLocaleDateString()}</span>
+                <div class="col-lg-6 col-12 room-card-wrapper">
+                    <div class="room-card-enhanced">
+                        <div class="${headerClass}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="room-title-section">
+                                    <h5 class="room-title">
+                                        ${room.name}
+                                        ${isPasswordProtected ? '<i class="fas fa-lock" title="Password protected"></i>' : ''}
+                                        ${allowsKnocking ? '<i class="fas fa-hand-paper" title="Knocking allowed"></i>' : ''}
+                                        ${hasKey ? '<i class="fas fa-key" title="You have access"></i>' : ''}
+                                    </h5>
+                                    <div class="room-meta">
+                                        <span class="capacity-info">${userCount}/${capacity} users</span>
+                                    </div>
+                                    ${hasKey ? '<div class="mt-1"><span class="badge bg-success"><i class="fas fa-key"></i> Access Granted</span></div>' : ''}
                                 </div>
-                                ${hasKey ? '<div class="mt-1"><span class="badge bg-success"><i class="fas fa-key"></i> Access Granted</span></div>' : ''}
-                            </div>
-                            <div class="action-buttons">
-                                ${actionButtons}
+                                <div class="action-buttons">
+                                    ${actionButtons}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="room-content">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <div class="room-description">
-                                    <p>${room.description || 'No description'}</p>
-                                </div>
-                                ${usersHtml}
+                        <div class="room-content">
+                            <div class="room-description">
+                                <p>${room.description || 'No description'}</p>
                             </div>
-                            <div class="col-md-4">
-                                ${hostHtml}
+                            <div class="row">
+                                <div class="col-12">
+                                    ${usersHtml}
+                                </div>
+                                <div class="col-12 mt-3">
+                                    ${hostHtml}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             `;
         });
+        
+        // Close the Bootstrap row
+        html += '</div>';
     }
     
     debugLog('Setting rooms HTML...');
-    $('#roomsList').html(html);
+    
+    // Smooth update - fade out, change content, fade in
+    const $roomsList = $('#roomsList');
+    if ($roomsList.children().length > 0) {
+        $roomsList.addClass('fade-transition');
+        setTimeout(() => {
+            $roomsList.html(html);
+            $roomsList.removeClass('fade-transition');
+        }, 150);
+    } else {
+        $roomsList.html(html);
+    }
 }
 
 // Enhanced joinRoom function

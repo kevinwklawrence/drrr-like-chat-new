@@ -7,14 +7,24 @@
     margin-bottom: 25px;
     overflow: hidden;
     background: #696969;
-    max-width: 900px; /* Limit maximum width */
-    margin-left: auto;
-    margin-right: auto;
+    height: fit-content; /* Ensure cards adjust to content */
 }
 
 .room-card-enhanced:hover {
     transform: translateY(-5px);
     box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+}
+
+/* Room Card Wrapper for 2-column layout */
+.room-card-wrapper {
+    margin-bottom: 25px;
+    display: flex;
+    flex-direction: column;
+}
+
+.room-card-wrapper .room-card-enhanced {
+    margin-bottom: 0;
+    flex: 1;
 }
 
 /* Enhanced Room Header */
@@ -48,7 +58,7 @@
 }
 
 .room-header-enhanced.knock-available::after {
-    content: 'â—';
+    content: '◉';
     position: absolute;
     top: 15px;
     right: 25px;
@@ -74,7 +84,7 @@
 }
 
 .room-title {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     font-weight: 600;
     margin-bottom: 8px;
     line-height: 1.2;
@@ -83,10 +93,10 @@
 .room-meta {
     display: flex;
     align-items: center;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     opacity: 0.9;
     flex-wrap: wrap;
-    gap: 15px;
+    gap: 12px;
 }
 
 .capacity-info {
@@ -95,20 +105,10 @@
     gap: 5px;
 }
 
-.capacity-info::before {
-    /*content: 'ðŸ‘¥';*/
-    font-size: 14px;
-}
-
 .created-info {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-}
-
-.created-info::before {
-   /* content: 'ðŸ“…';*/
-    font-size: 12px;
 }
 
 /* Action Buttons */
@@ -118,11 +118,12 @@
 }
 
 .action-buttons .btn {
-    margin-left: 8px;
+    margin-left: 6px;
     border-radius: 20px;
-    padding: 8px 16px;
+    padding: 6px 14px;
     font-weight: 500;
     transition: all 0.2s ease;
+    font-size: 0.9rem;
 }
 
 .action-buttons .btn:hover {
@@ -132,29 +133,30 @@
 
 /* Room Content */
 .room-content {
-    padding: 25px;
+    padding: 20px;
     background: #313131;
 }
 
 .room-description {
-    padding: 15px;
+    padding: 12px;
     background: rgba(103, 126, 234, 0.05);
     border-radius: 12px;
     border: 2px solid #5f748f;
-    margin-bottom:1em;
+    margin-bottom: 15px;
 }
 
 .room-description p {
-    font-size: 0.95rem;
-    line-height: 1.5;
-    color: #555;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: #ddd;
+    margin: 0;
 }
 
 /* Host Section */
 .room-host {
     background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%);
-    border-radius: 15px;
-    padding: 20px;
+    border-radius: 12px;
+    padding: 15px;
     border: 2px solid rgba(255, 193, 7, 0.2);
     position: relative;
 }
@@ -167,7 +169,7 @@
     right: -1px;
     bottom: -1px;
     background: linear-gradient(45deg, #ffc107, #ff9800);
-    border-radius: 15px;
+    border-radius: 12px;
     z-index: -1;
     opacity: 0.1;
 }
@@ -175,56 +177,74 @@
 .room-host h6 {
     color: #f57c00;
     font-weight: 600;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
+    font-size: 0.9rem;
 }
 
 .room-host .fw-bold {
     color: #ffffff;
-    font-size: 1rem;
+    font-size: 0.95rem;
 }
 
 /* Users Section */
 .room-users {
     background: rgba(103, 126, 234, 0.05);
-    border-radius: 15px;
-    padding: 20px;
+    border-radius: 12px;
+    padding: 15px;
     border: 1px solid rgba(103, 126, 234, 0.1);
 }
 
 .room-users h6 {
     color: #667eea;
     font-weight: 600;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
+    font-size: 0.9rem;
 }
 
-.users-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+/* NEW: 2-Column Users Grid */
+.users-grid-two-column {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+    align-items: start;
 }
 
+/* Handle odd number of users - make the "more users" indicator span both columns */
+.users-more-indicator {
+    grid-column: 1 / -1;
+    text-align: center;
+    margin-top: 4px;
+    padding: 4px 8px;
+    background: rgba(103, 126, 234, 0.1);
+    border-radius: 8px;
+}
+
+/* User Item Styles for 2-column layout */
 .user-item-mini {
     background: rgb(89 89 89 / 0%);
-    border-radius: 25px;
-    padding: 8px 12px;
+    border-radius: 20px;
+    padding: 6px 10px;
     transition: all 0.2s ease;
     border: 1px solid rgba(103, 126, 234, 0.1);
+    min-height: 36px;
+    display: flex;
+    align-items: center;
 }
 
 .user-item-mini:hover {
     background: rgb(157 148 207 / 11%);
-    transform: translateX(5px);
+    transform: translateX(3px);
     box-shadow: 0 2px 8px rgba(103, 126, 234, 0.2);
 }
 
 .user-info {
     flex: 1;
     min-width: 0;
-    color:white;
+    color: white;
 }
 
 .user-name {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 500;
     color: #ffffff;
     margin-bottom: 2px;
@@ -235,21 +255,21 @@
 
 .user-badges {
     display: flex;
-    gap: 4px;
+    gap: 3px;
     flex-wrap: wrap;
 }
 
 /* Badge Styles */
 .badge-xs {
-    font-size: 0.65rem;
-    padding: 2px 6px;
-    border-radius: 8px;
+    font-size: 0.6rem;
+    padding: 1px 5px;
+    border-radius: 6px;
 }
 
 .badge-sm {
-    font-size: 0.75rem;
-    padding: 3px 8px;
-    border-radius: 10px;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 8px;
 }
 
 /* Avatar Improvements */
@@ -260,8 +280,8 @@
 
 .room-host .rounded-circle {
     border-color: rgba(255, 193, 7, 0.6);
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
 }
 
 /* Empty States */
@@ -269,7 +289,7 @@
     font-style: italic;
     color: #999 !important;
     text-align: center;
-    padding: 20px;
+    padding: 15px;
     background: rgba(0,0,0,0.02);
     border-radius: 10px;
     border: 2px dashed rgba(103, 126, 234, 0.2);
@@ -279,17 +299,45 @@
     font-style: italic;
     color: #999 !important;
     text-align: center;
-    padding: 15px;
+    padding: 12px;
     background: rgba(0,0,0,0.02);
-    border-radius: 10px;
+    border-radius: 8px;
     border: 2px dashed rgba(255, 193, 7, 0.3);
 }
 
+/* Smooth Transition Effects for Updates */
+.fade-transition {
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+}
+
+#roomsList.updating {
+    position: relative;
+}
+
+#roomsList.updating::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.1);
+    z-index: 10;
+    pointer-events: none;
+    opacity: 0;
+    animation: subtle-pulse 2s ease-in-out infinite;
+}
+
+@keyframes subtle-pulse {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 0.3; }
+}
+
 /* Responsive Design */
-@media (max-width: 992px) {
+@media (max-width: 1200px) {
     .room-card-enhanced {
         margin-bottom: 20px;
-        max-width: none;
     }
     
     .room-header-enhanced {
@@ -297,7 +345,14 @@
     }
     
     .room-content {
-        padding: 20px;
+        padding: 15px;
+    }
+}
+
+@media (max-width: 992px) {
+    /* Stack rooms in single column on medium screens */
+    .room-card-wrapper {
+        margin-bottom: 20px;
     }
     
     .room-title {
@@ -305,24 +360,29 @@
     }
     
     .room-meta {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         gap: 10px;
     }
     
     .action-buttons {
-        margin-top: 15px;
+        margin-top: 12px;
     }
     
     .action-buttons .btn {
         margin-left: 0;
-        margin-right: 8px;
-        margin-bottom: 8px;
+        margin-right: 6px;
+        margin-bottom: 6px;
+    }
+    
+    /* Keep 2-column user layout on medium screens */
+    .users-grid-two-column {
+        gap: 6px 10px;
     }
 }
 
 @media (max-width: 768px) {
     .room-header-enhanced {
-        padding: 15px;
+        padding: 12px 15px;
     }
     
     .room-header-enhanced .d-flex {
@@ -332,29 +392,51 @@
     
     .action-buttons {
         width: 100%;
-        margin-top: 15px;
+        margin-top: 12px;
     }
     
     .action-buttons .btn {
         width: 100%;
-        margin: 0 0 8px 0;
+        margin: 0 0 6px 0;
     }
     
     .room-content {
-        padding: 15px;
-    }
-    
-    .room-content .row > .col-md-8,
-    .room-content .row > .col-md-4 {
-        margin-bottom: 20px;
+        padding: 12px;
     }
     
     .user-item-mini {
-        padding: 10px 15px;
+        padding: 8px 12px;
     }
     
-    .users-grid {
-        gap: 10px;
+    /* Switch to single column for users on mobile */
+    .users-grid-two-column {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .users-more-indicator {
+        grid-column: 1;
+    }
+}
+
+@media (max-width: 576px) {
+    .room-title {
+        font-size: 1.1rem;
+    }
+    
+    .room-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .user-name {
+        font-size: 0.8rem;
+    }
+    
+    .badge-xs {
+        font-size: 0.55rem;
+        padding: 1px 4px;
     }
 }
 
@@ -377,12 +459,12 @@
 .room-card-enhanced.loading .action-buttons .btn::after {
     content: '';
     position: absolute;
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     top: 50%;
     left: 50%;
-    margin-left: -8px;
-    margin-top: -8px;
+    margin-left: -7px;
+    margin-top: -7px;
     border: 2px solid transparent;
     border-top: 2px solid currentColor;
     border-radius: 50%;
@@ -398,8 +480,8 @@
 /* Enhanced Icon Styles */
 .room-title i {
     opacity: 0.8;
-    margin-left: 8px;
-    font-size: 0.9em;
+    margin-left: 6px;
+    font-size: 0.85em;
 }
 
 .room-title .fa-lock {
@@ -418,8 +500,8 @@
 
 @keyframes wave {
     0%, 100% { transform: rotate(0deg); }
-    25% { transform: rotate(10deg); }
-    75% { transform: rotate(-10deg); }
+    25% { transform: rotate(8deg); }
+    75% { transform: rotate(-8deg); }
 }
 
 /* Access Granted Badge */
@@ -427,27 +509,20 @@
     background: linear-gradient(45deg, #4caf50, #8bc34a) !important;
     color: white;
     font-weight: 500;
-    padding: 6px 12px;
-    border-radius: 15px;
+    padding: 4px 10px;
+    border-radius: 12px;
     box-shadow: 0 2px 6px rgba(76, 175, 80, 0.3);
+    font-size: 0.75rem;
 }
 
 .badge.bg-success .fa-key {
-    margin-right: 5px;
+    margin-right: 4px;
     text-shadow: none;
 }
 
 /* Improved Visual Hierarchy */
 .room-content .row {
     align-items: flex-start;
-}
-
-.room-content .col-md-8 {
-    padding-right: 30px;
-}
-
-.room-content .col-md-4 {
-    padding-left: 15px;
 }
 
 /* Subtle Animations */
@@ -458,7 +533,7 @@
 @keyframes slideInUp {
     from {
         opacity: 0;
-        transform: translateY(30px);
+        transform: translateY(20px);
     }
     to {
         opacity: 1;
@@ -467,11 +542,10 @@
 }
 
 /* Stagger animation for multiple cards */
-.room-card-enhanced:nth-child(1) { animation-delay: 0.1s; }
-.room-card-enhanced:nth-child(2) { animation-delay: 0.2s; }
-.room-card-enhanced:nth-child(3) { animation-delay: 0.3s; }
-.room-card-enhanced:nth-child(4) { animation-delay: 0.4s; }
-.room-card-enhanced:nth-child(5) { animation-delay: 0.5s; }
+.room-card-enhanced:nth-child(1) .room-card-enhanced { animation-delay: 0.05s; }
+.room-card-enhanced:nth-child(2) .room-card-enhanced { animation-delay: 0.1s; }
+.room-card-enhanced:nth-child(3) .room-card-enhanced { animation-delay: 0.15s; }
+.room-card-enhanced:nth-child(4) .room-card-enhanced { animation-delay: 0.2s; }
 
 /* Focus and Accessibility */
 .action-buttons .btn:focus {
@@ -482,6 +556,21 @@
 .user-item-mini:focus-within {
     outline: 2px solid #667eea;
     outline-offset: 2px;
+}
+
+/* Equal height cards in 2-column layout */
+.row .room-card-wrapper {
+    display: flex;
+}
+
+.row .room-card-wrapper .room-card-enhanced {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.row .room-card-wrapper .room-content {
+    flex: 1;
 }
 
 /* Print Styles */
@@ -499,5 +588,9 @@
     .room-header-enhanced {
         background: #f5f5f5 !important;
         color: #333 !important;
+    }
+    
+    .users-grid-two-column {
+        grid-template-columns: 1fr 1fr;
     }
 }

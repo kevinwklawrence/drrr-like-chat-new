@@ -16,8 +16,8 @@ $room_id = (int)$_SESSION['room_id'];
 $fake_ip = '192.168.1.' . rand(100, 200);
 $fake_user_id = 'TEST_' . substr(md5($fake_ip . time()), 0, 12);
 $fake_name = 'TestUser' . rand(0000, 9999);
-$test_avatars = ['m1.png', 'm2.png', 'm3.png', 'm4.png', 'm5.png', 'm6.png', 'm7.png', 'f1.png', 'f2.png', 'f3.png', 'f4.png', 'f5.png', 'f6.png', 'f7.png'];
-$fake_avatar = $test_avatars[array_rand($test_avatars)];
+$test_avatars =  ['m1.png', 'm2.png', 'm3.png', 'm4.png', 'm5.png', 'm6.png', 'm7.png', 'f1.png', 'f2.png', 'f3.png', 'f4.png', 'f5.png', 'f6.png', 'f7.png'];
+$fake_avatar = '/default//' . $test_avatars[array_rand($test_avatars)];
 
 try {
     $conn->begin_transaction();
