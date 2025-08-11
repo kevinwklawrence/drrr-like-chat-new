@@ -33,13 +33,6 @@ function criticalError(message, error = null) {
 }
 
 // ===== GLOBAL VARIABLES =====
-// User color management
-let userColorMap = new Map();
-let availableColors = [
-    'user-color-1', 'user-color-2', 'user-color-3', 'user-color-4', 'user-color-5',
-    'user-color-6', 'user-color-7', 'user-color-8', 'user-color-9', 'user-color-10'
-];
-let colorIndex = 0;
 
 // Kick Detection System
 let kickDetectionInterval;
@@ -59,28 +52,6 @@ let activityTrackingEnabled = false;
 let lastScrollTop = 0;
 let lastMessageCount = 0;
 let userIsScrolling = false;
-
-// ===== USER COLOR MANAGEMENT =====
-function getUserColor(userIdString) {
-    if (!userColorMap.has(userIdString)) {
-        // Assign a color based on hash for consistency
-        const hash = hashCode(userIdString);
-        const colorClass = availableColors[Math.abs(hash) % availableColors.length];
-        userColorMap.set(userIdString, colorClass);
-        debugLog(`Assigned color ${colorClass} to user ${userIdString}`);
-    }
-    return userColorMap.get(userIdString);
-}
-
-function hashCode(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32bit integer
-    }
-    return hash;
-}
 
 // ===== MESSAGE FUNCTIONS =====
 function sendMessage() {
@@ -188,6 +159,33 @@ function loadMessages() {
     });
 }
 
+// ===== UPDATED USER COLOR MANAGEMENT =====
+// Remove the old hash-based system and replace with database-driven colors
+
+// REMOVE/REPLACE these old variables:
+// let userColorMap = new Map();
+// let availableColors = ['user-color-1', 'user-color-2', etc...];
+// let colorIndex = 0;
+
+// NEW: Simple function to get user color from message/user data
+function getUserColor(msg) {
+    // Try to get color from message data (for messages)
+    if (msg && msg.color) {
+        return `user-color-${msg.color}`;
+    }
+    
+    // Try to get color from user object (for user lists)
+    if (msg && msg.user_color) {
+        return `user-color-${msg.user_color}`;
+    }
+    
+    // Fallback to blue if no color is specified
+    return 'user-color-blue';
+}
+
+// REMOVE the old hashCode function - no longer needed
+
+// UPDATED: renderMessage function to use new color system
 function renderMessage(msg) {
     const avatar = msg.avatar || msg.guest_avatar || 'default_avatar.jpg';
     const name = msg.username || msg.guest_name || 'Unknown';
@@ -203,8 +201,8 @@ function renderMessage(msg) {
         `;
     }
     
-    // Get user color class
-    const userColorClass = getUserColor(userIdString);
+    // Get user color class from message data
+    const userColorClass = getUserColor(msg);
     
     // Format timestamp
     const timestamp = new Date(msg.timestamp).toLocaleTimeString([], {
@@ -212,16 +210,18 @@ function renderMessage(msg) {
         minute: '2-digit'
     });
     
-    // Build badges
     let badges = '';
-    if (msg.is_admin) {
-        badges += '<span class="user-badge badge-admin"><i class="fas fa-shield-alt"></i> Admin</span>';
-    }
-    if (msg.user_id) {
-        badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle"></i> Verified</span>';
-    } else {
-        badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
-    }
+if (msg.is_admin) {
+    badges += '<span class="user-badge badge-admin"><i class="fas fa-shield-alt"></i> Admin</span>';
+}
+if (msg.is_host) {
+    badges += '<span class="user-badge badge-host"><i class="fas fa-crown"></i> Host</span>';
+}
+if (msg.user_id && !msg.is_admin) {
+    badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle"></i> Verified</span>';
+} else if (!msg.user_id) {
+    badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
+}
     
     // Admin IP display
     let adminInfo = '';
@@ -234,13 +234,60 @@ function renderMessage(msg) {
             <img src="images/${avatar}" class="message-avatar" alt="${name}'s avatar">
             <div class="message-bubble ${userColorClass}">
                 <div class="message-header">
-                    <div class="message-author">${name}</div>
+                    <div class="message-header-left">
+                        <div class="message-author">${name}</div>
+                        ${badges ? `<div class="message-badges">${badges}</div>` : ''}
+                    </div>
                     <div class="message-time">${timestamp}</div>
                 </div>
                 <div class="message-content">${msg.message}</div>
-                ${badges ? `<div class="message-badges">${badges}</div>` : ''}
                 ${adminInfo}
             </div>
+        </div>
+    `;
+}
+
+// UPDATED: renderUser function to use new color system  
+function renderUser(user) {
+    const avatar = user.avatar || user.guest_avatar || 'default_avatar.jpg';
+    const name = user.display_name || user.username || user.guest_name || 'Unknown';
+    const userIdString = user.user_id_string || 'unknown';
+    
+    let badges = '';
+if (user.is_admin) {
+    badges += '<span class="user-badge badge-admin"><i class="fas fa-shield-alt"></i> Admin</span>';
+}
+if (user.is_host) {
+    badges += '<span class="user-badge badge-host"><i class="fas fa-crown"></i> Host</span>';
+}
+if (user.user_id && !user.is_admin) {
+    badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle"></i> Verified</span>';
+} else if (!user.user_id) {
+    badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
+}
+    
+    // Build actions for hosts/admins
+    let actions = '';
+    if ((isHost || isAdmin) && !user.is_host && !user.is_admin) { //&& userIdString !== currentUserIdString) {
+        actions = `
+            <div class="user-actions">
+                <button class="btn btn-ban-user" onclick="showBanModal('${userIdString}', '${name.replace(/'/g, "\\'")}')">
+                    <i class="fas fa-ban"></i> Ban
+                </button>
+            </div>
+        `;
+    }
+    
+    return `
+        <div class="user-item">
+            <div class="user-info-row">
+                <img src="images/${avatar}" class="user-avatar" alt="${name}'s avatar">
+                <div class="user-details">
+                    <div class="user-name">${name}</div>
+                    <div class="user-badges-row">${badges}</div>
+                </div>
+            </div>
+            ${actions}
         </div>
     `;
 }
@@ -291,50 +338,6 @@ function loadUsers() {
     });
 }
 
-function renderUser(user) {
-    const avatar = user.avatar || user.guest_avatar || 'default_avatar.jpg';
-    const name = user.display_name || user.username || user.guest_name || 'Unknown';
-    const userIdString = user.user_id_string || 'unknown';
-    
-    // Build badges
-    let badges = '';
-    if (user.is_host) {
-        badges += '<span class="user-badge badge-host"><i class="fas fa-crown"></i> Host</span>';
-    }
-    if (user.is_admin) {
-        badges += '<span class="user-badge badge-admin"><i class="fas fa-shield-alt"></i> Admin</span>';
-    }
-    if (user.user_type === 'registered' || user.user_id) {
-        badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle"></i> Verified</span>';
-    } else {
-        badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
-    }
-    
-    // Build actions for hosts/admins
-    let actions = '';
-    if ((isHost || isAdmin) && !user.is_host && userIdString !== currentUserIdString) {
-        actions = `
-            <div class="user-actions">
-                <button class="btn btn-ban-user" onclick="showBanModal('${userIdString}', '${name.replace(/'/g, "\\'")}')">
-                    <i class="fas fa-ban"></i> Ban
-                </button>
-            </div>
-        `;
-    }
-    
-    return `
-        <div class="user-item">
-            <div class="user-info-row">
-                <img src="images/${avatar}" class="user-avatar" alt="${name}'s avatar">
-                <div class="user-details">
-                    <div class="user-name">${name}</div>
-                    <div class="user-badges-row">${badges}</div>
-                </div>
-            </div>
-            ${actions}
-        </div>
-    `;
-}
 
 // ===== KICK DETECTION FUNCTIONS =====
 function checkUserStatus() {

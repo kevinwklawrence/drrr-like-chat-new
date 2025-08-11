@@ -513,7 +513,7 @@ error_log("User registered with avatar and avatar_memory set to: $default_avatar
             </div>
             <div>
                 <p class="text-center text-muted mt-4">
-                    <small>By joining as a guest, you agree to our <a href="terms.php" class="text-white">Terms of Service</a> and <a href="privacy.php" class="text-white">Privacy Policy</a>. ©Lenn, 2025.</small>
+                    <small>By registering, you agree to our <a href="terms.php" class="text-white">Terms of Service</a> and <a href="privacy.php" class="text-white">Privacy Policy</a>. ©Lenn, 2025.</small>
                 </p>    
                 
                 </div>

@@ -346,7 +346,7 @@ if (!empty($user_id_string)) {
                     <!-- Online Users -->
                     <div class="card online-users-card">
                         <div class="card-header">
-                            <i class="fas fa-users"></i> Online Users
+                            <i class="fas fa-users"></i> Active Users
                         </div>
                         <div class="card-body" id="onlineUsersList">
                             <div class="text-center">

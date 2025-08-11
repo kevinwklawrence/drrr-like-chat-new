@@ -308,7 +308,7 @@
 /* Smooth Transition Effects for Updates */
 .fade-transition {
     opacity: 0.6;
-    transition: opacity 0.3s ease;
+    /*transition: opacity 0.3s ease;*/
 }
 
 #roomsList.updating {
@@ -525,10 +525,10 @@
     align-items: flex-start;
 }
 
-/* Subtle Animations */
+/* Subtle Animations 
 .room-card-enhanced {
     animation: slideInUp 0.4s ease-out;
-}
+}*/
 
 @keyframes slideInUp {
     from {
