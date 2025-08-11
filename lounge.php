@@ -34,106 +34,287 @@ if (!empty($user_id_string)) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
+    <link href="css/lounge.css" rel="stylesheet">
     <style>
         body {
-          /*  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-           */ min-height: 100vh;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+        
+        .container-fluid {
+            background-color: #1a1a1a;
+            min-height: 100vh;
+            padding: 20px;
         }
         
         .lounge-container {
-            background: rgba(230, 230, 230, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            margin: 20px 0;
+            background: #222;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 0 auto;
+            max-width: 1400px;
         }
         
         .user-profile-card {
-            /*background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
-            */
-            background: rgb(47 47 47);
-            color: white;
-            border-radius: 15px;
+            background: #2a2a2a;
+            border: 1px solid #404040;
+            border-radius: 8px;
             padding: 20px;
             margin-bottom: 20px;
+            color: #e0e0e0;
         }
         
         .avatar-selector {
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.2s ease;
+            border: 2px solid #555;
+            width: 60px;
+            height: 60px;
+            border-radius: 4px;
         }
         
         .avatar-selector:hover {
-            transform: scale(1.1);
+            border-color: #777;
+            transform: scale(1.05);
         }
         
-        .room-card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
-            margin-bottom: 15px;
+        .online-users-card {
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #2a2a2a;
+            overflow: hidden;
         }
         
-        .room-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        .online-users-card .card-header {
+            background: #333;
+            border-bottom: 1px solid #404040;
+            color: #e0e0e0;
+            padding: 12px 16px;
+            font-weight: 500;
         }
         
-        .room-header {
-            background: rgb(47 47 47);
-            color: white;
-            border-radius: 15px 15px 0 0;
-            padding: 15px 20px;
+        .online-users-card .card-body {
+            padding: 16px;
+            max-height: 300px;
+            overflow-y: auto;
+            background: #2a2a2a;
         }
         
-        .password-protected {
-            background: linear-gradient(45deg, #fa709a 0%, #fee140 100%);
+        .lounge-header {
+            background: #2a2a2a;
+            border: 1px solid #404040;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
         }
         
-        .knock-available {
-            background: linear-gradient(45deg, #a8edea 0%, #fed6e3 100%);
-            color: #333;
+        .lounge-title {
+            color: #ffffff;
+            font-weight: 600;
+            margin: 0;
         }
         
         .create-room-btn {
-            background: linear-gradient(45deg, #ff9a9e 0%, #fecfef 100%);
-            border: none;
-            border-radius: 15px;
-            padding: 15px 30px;
-            font-weight: bold;
-            transition: all 0.3s ease;
+            background: #28a745;
+            border: 1px solid #28a745;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-weight: 500;
+            color: white;
+            transition: all 0.2s ease;
         }
         
         .create-room-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            background: #218838;
+            border-color: #218838;
+            color: white;
         }
         
-        .knock-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1050;
-            max-width: 350px;
+        .logout-btn {
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border: 1px solid #dc3545;
+            color: #dc3545;
+            background: transparent;
+        }
+        
+        .logout-btn:hover {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .refresh-btn {
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-weight: normal;
+            transition: all 0.2s ease;
+        }
+        
+        .rooms-section-header {
+            background: #2a2a2a;
+            border: 1px solid #404040;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+        }
+        
+        .rooms-section-title {
+            color: #ffffff;
+            font-weight: 500;
+            margin: 0;
+        }
+        
+        .change-avatar-btn {
+            background: #333;
+            border: 1px solid #555;
+            color: #e0e0e0;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-weight: normal;
+            transition: all 0.2s ease;
+        }
+        
+        .change-avatar-btn:hover {
+            background: #404040;
+            border-color: #666;
+            color: #e0e0e0;
+        }
+        
+        /* Dark scrollbar */
+        .online-users-card .card-body::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .online-users-card .card-body::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        
+        .online-users-card .card-body::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 3px;
+        }
+        
+        .online-users-card .card-body::-webkit-scrollbar-thumb:hover {
+            background: #666;
+        }
+        
+        /* Form controls dark theme */
+        .form-control, .form-select {
+            background: #333 !important;
+            border: 1px solid #555 !important;
+            color: #fff !important;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            background: #333 !important;
+            border-color: #777 !important;
+            color: #fff !important;
+            box-shadow: 0 0 0 0.2rem rgba(255,255,255,0.1) !important;
+        }
+        
+        /* Modal dark theme */
+        .modal-content {
+            background: #2a2a2a !important;
+            border: 1px solid #444 !important;
+            color: #fff !important;
+        }
+        
+        .modal-header {
+            border-bottom: 1px solid #444 !important;
+        }
+        
+        .modal-footer {
+            border-top: 1px solid #444 !important;
+        }
+        
+        .btn-close {
+            filter: invert(1) !important;
+        }
+        
+        /* Loading spinner dark */
+        .loading-spinner {
+            border: 2px solid #333;
+            border-top-color: #666;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 992px) {
+            .lounge-header .d-flex {
+                flex-direction: column;
+                gap: 15px;
+                align-items: center !important;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container-fluid {
+                padding: 10px;
+            }
+            
+            .lounge-container {
+                padding: 15px;
+            }
+            
+            .rooms-section-header .d-flex {
+                flex-direction: column;
+                gap: 10px;
+                align-items: center !important;
+            }
+            
+            .refresh-btn {
+                width: 100%;
+            }
+        }
+        
+        /* Alert styling for dark theme */
+        .alert-danger {
+            background: #2a2a2a !important;
+            border: 1px solid #d32f2f !important;
+            color: #f44336 !important;
+        }
+        
+        /* Text colors */
+        .text-muted {
+            color: #666 !important;
+        }
+        
+        /* Badge dark styling */
+        .badge {
+            font-weight: normal;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="lounge-container p-4">
+    <div class="container-fluid">
+        <div class="lounge-container">
             <!-- Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="display-4 fw-bold text-dark">
-                    <i class="fas fa-comments"></i> Lounge
-                </h1>
-                <div>
-                    <button class="btn btn-success me-3" onclick="showCreateRoomModal()">
-                        <i class="fas fa-plus"></i> Create Room
-                    </button>
-                    <a href="logout.php" class="btn btn-outline-danger">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </a>
+            <div class="lounge-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="lounge-title h3">
+                        <i class="fas fa-comments"></i> Chat Lounge
+                    </h1>
+                    <div>
+                        <button class="btn create-room-btn me-3" onclick="showCreateRoomModal()">
+                            <i class="fas fa-plus"></i> Create Room
+                        </button>
+                        <a href="logout.php" class="btn logout-btn">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
                 </div>
             </div>
             
@@ -143,45 +324,56 @@ if (!empty($user_id_string)) {
                     <div class="user-profile-card">
                         <div class="text-center mb-3">
                             <img src="images/<?php echo htmlspecialchars($avatar); ?>" 
-                                 width="58" 
                                  class="avatar-selector" 
                                  id="currentAvatar" 
                                  onclick="showAvatarSelector()"
                                  alt="Your avatar">
-                            <h5 class="mt-2 mb-0"><?php echo htmlspecialchars($guest_name ?? $username ?? 'User'); ?></h5>
-                            <small class="opacity-75">
-                                <?php echo $_SESSION['user']['type'] === 'guest' ? 'Guest User' : 'Registered User'; ?>
-                                <?php if ($is_admin): ?>
-                                    <br><span class="badge bg-light text-dark">Admin</span>
-                                <?php endif; ?>
-                            </small>
+                            <div class="mt-3">
+                                <h5 class="mb-1"><?php echo htmlspecialchars($guest_name ?? $username ?? 'User'); ?></h5>
+                                <small class="text-muted">
+                                    <?php echo $_SESSION['user']['type'] === 'guest' ? 'Guest User' : 'Registered User'; ?>
+                                    <?php if ($is_admin): ?>
+                                        <br><span class="badge bg-danger">Admin</span>
+                                    <?php endif; ?>
+                                </small>
+                            </div>
                         </div>
-                        <button class="btn btn-light btn-sm w-100" onclick="showAvatarSelector()">
+                        <button class="btn change-avatar-btn w-100" onclick="showAvatarSelector()">
                             <i class="fas fa-user-edit"></i> Change Avatar
                         </button>
                     </div>
                     
                     <!-- Online Users -->
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-dark text-white">
+                    <div class="card online-users-card">
+                        <div class="card-header">
                             <i class="fas fa-users"></i> Online Users
                         </div>
                         <div class="card-body" id="onlineUsersList">
-                            <p class="text-muted">Loading...</p>
+                            <div class="text-center">
+                                <div class="loading-spinner me-2"></div>
+                                <span class="text-muted">Loading users...</span>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Rooms List -->
                 <div class="col-lg-9">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h3 class="text-dark"><i class="fas fa-door-open"></i> Available Rooms</h3>
-                        <button class="btn btn-outline-primary" onclick="loadRooms()">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
+                    <div class="rooms-section-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h3 class="rooms-section-title">
+                                <i class="fas fa-door-open"></i> Available Rooms
+                            </h3>
+                            <button class="btn btn-outline-secondary refresh-btn" onclick="loadRoomsWithUsers()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
                     </div>
                     <div id="roomsList">
-                        <p class="text-center text-muted">Loading rooms...</p>
+                        <div class="text-center py-5">
+                            <div class="loading-spinner mb-3" style="width: 30px; height: 30px;"></div>
+                            <p class="text-muted">Loading rooms...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -195,9 +387,10 @@ if (!empty($user_id_string)) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const currentUser = <?php echo json_encode($_SESSION['user']); ?>;
-        debugLog('Current user:', currentUser);
+        console.log('Current user:', currentUser);
     </script>
     
+    <!-- Include the fixed lounge.js -->
     <script src="js/lounge.js"></script>
 </body>
 </html>

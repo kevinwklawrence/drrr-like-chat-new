@@ -1,55 +1,13 @@
 // ===== DEBUG CONFIGURATION =====
-// Set to false for production, true for debugging
 const DEBUG_MODE = false;
-const SHOW_SENSITIVE_DATA = false;
-
-// Debug logging functions
-function debugLog(message, data = null) {
-    if (DEBUG_MODE) {
-        if (data !== null) {
-            debugLog(message, data);
-        } else {
-            debugLog(message);
-        }
-    }
-}
-
-function debugError(message, error = null) {
-    if (DEBUG_MODE) {
-        if (error !== null) {
-            console.error(message, error);
-        } else {
-            console.error(message);
-        }
-    }
-}
-
-function debugWarn(message, data = null) {
-    if (DEBUG_MODE) {
-        if (data !== null) {
-            console.warn(message, data);
-        } else {
-            console.warn(message);
-        }
-    }
-}
 
 function debugLog(message, data = null) {
-    if (DEBUG_MODE && SHOW_SENSITIVE_DATA) {
+    if (DEBUG_MODE) {
         if (data !== null) {
-            debugLog('[SENSITIVE]', message, data);
+            console.log('[LOUNGE]', message, data);
         } else {
-            debugLog('[SENSITIVE]', message);
+            console.log('[LOUNGE]', message);
         }
-    }
-}
-
-// Critical errors always show (for production debugging)
-function criticalError(message, error = null) {
-    if (error !== null) {
-        console.error('[CRITICAL]', message, error);
-    } else {
-        console.error('[CRITICAL]', message);
     }
 }
 
@@ -60,18 +18,18 @@ $(document).ready(function() {
     let userRoomKeys = [];
     
     // Load initial data
-    loadUserRoomKeys(); // Load this first
-    loadRooms();
+    loadUserRoomKeys();
+    loadRoomsWithUsers();
     loadOnlineUsers();
     
     // Set up auto-refresh
-    setInterval(loadRooms, 5000);
+    setInterval(loadRoomsWithUsers, 5000);
     setInterval(loadOnlineUsers, 10000);
     setInterval(checkForKnocks, 3000);
-    setInterval(loadUserRoomKeys, 30000); // Refresh room keys every 30 seconds
+    setInterval(loadUserRoomKeys, 30000);
 });
 
-// NEW: Function to load user's room keys
+// Function to load user's room keys
 function loadUserRoomKeys() {
     debugLog('Loading user room keys...');
     $.ajax({
@@ -83,7 +41,7 @@ function loadUserRoomKeys() {
             userRoomKeys = Array.isArray(keys) ? keys : [];
         },
         error: function(xhr, status, error) {
-            debugLog('Error loading user room keys (this is normal if user has no keys):', error);
+            debugLog('Error loading user room keys:', error);
             userRoomKeys = [];
         }
     });
@@ -94,75 +52,160 @@ function hasRoomKey(roomId) {
     return userRoomKeys.includes(parseInt(roomId));
 }
 
-// Function to load rooms
-function loadRooms() {
-    debugLog('Loading rooms...');
+// Main function to load rooms with their users
+function loadRoomsWithUsers() {
+    debugLog('Loading rooms with users...');
     $.ajax({
         url: 'api/get_rooms.php',
         method: 'GET',
         dataType: 'json',
         success: function(rooms) {
-            debugLog('Rooms loaded successfully:', rooms);
-            debugLog('Number of rooms:', rooms.length);
-            displayRooms(rooms);
+            debugLog('Rooms loaded:', rooms);
+            
+            if (!Array.isArray(rooms) || rooms.length === 0) {
+                displayRoomsWithUsers([]);
+                return;
+            }
+            
+            // Load users for each room
+            let completedRooms = 0;
+            let roomsWithUsers = [];
+            
+            rooms.forEach((room, index) => {
+                loadUsersForRoom(room, (roomWithUsers) => {
+                    roomsWithUsers[index] = roomWithUsers;
+                    completedRooms++;
+                    
+                    debugLog(`Room ${room.id} users loaded:`, roomWithUsers);
+                    
+                    if (completedRooms === rooms.length) {
+                        // Filter out undefined entries and display
+                        const validRooms = roomsWithUsers.filter(r => r !== undefined);
+                        debugLog('All rooms processed, displaying:', validRooms);
+                        displayRoomsWithUsers(validRooms);
+                    }
+                });
+            });
+            
         },
         error: function(xhr, status, error) {
-            console.error('Error loading rooms:');
-            console.error('Status:', status);
-            console.error('Error:', error);
-            console.error('Response:', xhr.responseText);
-            
+            console.error('Error loading rooms:', error);
             $('#roomsList').html(`
-                <div class="alert alert-danger">
+                <div class="alert alert-danger" style="background: #2a2a2a; border: 1px solid #d32f2f; color: #f44336;">
                     <h5>Error loading rooms</h5>
-                    <p>Status: ${status}</p>
                     <p>Error: ${error}</p>
-                    <p>Response: ${xhr.responseText}</p>
                 </div>
             `);
         }
     });
 }
 
-// UPDATED: Display rooms with room key awareness
-function displayRooms(rooms) {
-    debugLog('displayRooms called with:', rooms);
+// Function to load users for a specific room
+function loadUsersForRoom(room, callback) {
+    debugLog(`Loading users for room ${room.id}...`);
+    
+    $.ajax({
+        url: 'api/get_room_users.php',
+        method: 'GET',
+        data: { room_id: room.id },
+        dataType: 'json',
+        success: function(users) {
+            debugLog(`Raw users data for room ${room.id}:`, users);
+            
+            try {
+                // Parse users if it's a string
+                let parsedUsers = users;
+                if (typeof users === 'string') {
+                    parsedUsers = JSON.parse(users);
+                }
+                
+                // Ensure we have an array
+                if (!Array.isArray(parsedUsers)) {
+                    parsedUsers = [];
+                }
+                
+                // Separate host and regular users
+                const host = parsedUsers.find(user => parseInt(user.is_host) === 1) || null;
+                const regularUsers = parsedUsers.filter(user => parseInt(user.is_host) !== 1);
+                
+                debugLog(`Room ${room.id} processed:`, {
+                    total: parsedUsers.length,
+                    host: host ? (host.display_name || host.username || host.guest_name) : 'None',
+                    regularUsers: regularUsers.length
+                });
+                
+                // Add user data to room object
+                const roomWithUsers = {
+                    ...room,
+                    users: parsedUsers,
+                    host: host,
+                    regularUsers: regularUsers,
+                    user_count: parsedUsers.length
+                };
+                
+                callback(roomWithUsers);
+                
+            } catch (e) {
+                console.error(`Error parsing users for room ${room.id}:`, e, users);
+                callback({
+                    ...room,
+                    users: [],
+                    host: null,
+                    regularUsers: [],
+                    user_count: 0
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error(`Error loading users for room ${room.id}:`, error);
+            callback({
+                ...room,
+                users: [],
+                host: null,
+                regularUsers: [],
+                user_count: 0
+            });
+        }
+    });
+}
+
+// Function to display rooms with users
+function displayRoomsWithUsers(rooms) {
+    debugLog('displayRoomsWithUsers called with:', rooms);
     let html = '';
     
     if (!Array.isArray(rooms) || rooms.length === 0) {
         html = `
-            <div class="text-center py-5">
-                <i class="fas fa-door-closed fa-3x text-muted mb-3"></i>
-                <h4 class="text-muted">No rooms available</h4>
-                <p class="text-muted">Be the first to create a room!</p>
+            <div class="text-center py-5" style="color: #ccc;">
+                <i class="fas fa-door-closed fa-3x mb-3" style="color: #555;"></i>
+                <h4 style="color: #aaa;">No rooms available</h4>
+                <p style="color: #777;">Be the first to create a room!</p>
             </div>
         `;
     } else {
         rooms.forEach(room => {
-            debugLog('Processing room:', room);
+            debugLog('Processing room for display:', room);
             
-            const isPasswordProtected = room.has_password == 1;
-            const allowsKnocking = room.allow_knocking == 1;
+            const isPasswordProtected = parseInt(room.has_password) === 1;
+            const allowsKnocking = parseInt(room.allow_knocking) === 1;
             const userCount = room.user_count || 0;
             const capacity = room.capacity || 10;
-            const hasKey = hasRoomKey(room.id); // NEW: Check if user has room key
+            const hasKey = hasRoomKey(room.id);
+            const host = room.host;
+            const regularUsers = room.regularUsers || [];
             
-            debugLog(`Room ${room.id}: password=${isPasswordProtected}, knocking=${allowsKnocking}, hasKey=${hasKey}`);
-            
-            let headerClass = 'room-header';
+            let headerClass = 'room-header-enhanced';
             let actionButtons = '';
             
-            // NEW: Logic that accounts for room keys
+            // Room access logic
             if (isPasswordProtected && hasKey) {
-                // User has a room key - can join directly
-                headerClass += ' knock-available'; // Use a special styling to indicate access granted
+                headerClass += ' has-access';
                 actionButtons = `
                     <button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})">
                         <i class="fas fa-key"></i> Join Room 
                     </button>
                 `;
             } else if (isPasswordProtected) {
-                // Password protected but no key
                 if (allowsKnocking) {
                     headerClass += ' knock-available';
                 } else {
@@ -175,7 +218,6 @@ function displayRooms(rooms) {
                     </button>
                 `;
                 
-                // Add knock button if knocking is allowed
                 if (allowsKnocking) {
                     actionButtons += `
                         <button class="btn btn-outline-primary btn-sm" onclick="knockOnRoom(${room.id}, '${room.name.replace(/'/g, "\\'")}');">
@@ -184,7 +226,6 @@ function displayRooms(rooms) {
                     `;
                 }
             } else {
-                // No password protection
                 actionButtons = `
                     <button class="btn btn-success btn-sm" onclick="joinRoom(${room.id});">
                         <i class="fas fa-sign-in-alt"></i> Join Room
@@ -192,37 +233,119 @@ function displayRooms(rooms) {
                 `;
             }
             
-            html += `
-                <div class="room-card">
-                    <div class="${headerClass}">
-                        <div class="d-flex justify-content-between align-items-center">
+            // Build host section
+            let hostHtml = '';
+            if (host) {
+                const hostAvatar = host.avatar || host.user_avatar || host.guest_avatar || 'default_avatar.jpg';
+                const hostName = host.display_name || host.username || host.guest_name || 'Unknown Host';
+                
+                debugLog(`Building host HTML for ${hostName}:`, host);
+                
+                hostHtml = `
+                    <div class="room-host">
+                        <h6><i class="fas fa-crown"></i> Host</h6>
+                        <div class="d-flex align-items-center">
+                            <img src="images/${hostAvatar}" width="32" height="32" class="me-2" alt="${hostName}">
                             <div>
-                                <h5 class="mb-1">
-                                    ${room.name}
-                                    ${isPasswordProtected ? '<i class="fas fa-lock ms-2" title="Password protected"></i>' : ''}
-                                    ${allowsKnocking ? '<i class="fas fa-hand-paper ms-1" title="Knocking allowed"></i>' : ''}
-                                    ${hasKey ? '<i class="fas fa-key ms-1 text-success" title="You have access"></i>' : ''}
-                                </h5>
-                                <small class="opacity-75">${userCount}/${capacity} users</small>
+                                <div class="fw-bold">${hostName}</div>
+                                <div class="user-badges">
+                                    ${parseInt(host.is_admin) === 1 ? '<span class="badge bg-danger badge-sm">Admin</span>' : ''}
+                                    ${host.user_type === 'registered' || host.user_id ? '<span class="badge bg-success badge-sm">Verified</span>' : '<span class="badge bg-secondary badge-sm">Guest</span>'}
+                                </div>
                             </div>
-                            <div class="text-end">
+                        </div>
+                    </div>
+                `;
+            } else {
+                hostHtml = `
+                    <div class="room-host">
+                        <h6><i class="fas fa-crown"></i> Host</h6>
+                        <div class="text-muted">No host available</div>
+                    </div>
+                `;
+            }
+            
+            // Build users list
+            let usersHtml = '';
+            if (regularUsers.length > 0) {
+                debugLog(`Building users HTML for ${regularUsers.length} users:`, regularUsers);
+                
+                usersHtml = `
+                    <div class="room-users">
+                        <h6><i class="fas fa-users"></i> Users (${regularUsers.length})</h6>
+                        <div class="users-grid">
+                `;
+                
+                // Show first 8 users
+                regularUsers.slice(0, 8).forEach(user => {
+                    const userAvatar = user.avatar || user.user_avatar || user.guest_avatar || 'default_avatar.jpg';
+                    const userName = user.display_name || user.username || user.guest_name || 'Unknown';
+                    
+                    usersHtml += `
+                        <div class="user-item-mini d-flex align-items-center">
+                            <img src="images/${userAvatar}" width="24" height="24" class="me-2" alt="${userName}">
+                            <div class="user-info">
+                                <div class="user-name">${userName}</div>
+                                <div class="user-badges">
+                                    ${parseInt(user.is_admin) === 1 ? '<span class="badge bg-danger badge-xs">Admin</span>' : ''}
+                                    ${user.user_type === 'registered' || user.user_id ? '<span class="badge bg-success badge-xs">Verified</span>' : '<span class="badge bg-secondary badge-xs">Guest</span>'}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                if (regularUsers.length > 8) {
+                    usersHtml += `<div class="text-muted small">+ ${regularUsers.length - 8} more users</div>`;
+                }
+                
+                usersHtml += `
+                        </div>
+                    </div>
+                `;
+            } else {
+                usersHtml = `
+                    <div class="room-users">
+                        <h6><i class="fas fa-users"></i> Users (0)</h6>
+                        <div class="text-muted small">No other users in room</div>
+                    </div>
+                `;
+            }
+            
+            html += `
+                <div class="room-card-enhanced">
+                    <div class="${headerClass}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="room-title-section">
+                                <h5 class="room-title">
+                                    ${room.name}
+                                    ${isPasswordProtected ? '<i class="fas fa-lock" title="Password protected"></i>' : ''}
+                                    ${allowsKnocking ? '<i class="fas fa-hand-paper" title="Knocking allowed"></i>' : ''}
+                                    ${hasKey ? '<i class="fas fa-key" title="You have access"></i>' : ''}
+                                </h5>
+                                <div class="room-meta">
+                                    <span class="capacity-info">${userCount}/${capacity} users</span>
+                                    <span class="created-info">Created: ${new Date(room.created_at).toLocaleDateString()}</span>
+                                </div>
+                                ${hasKey ? '<div class="mt-1"><span class="badge bg-success"><i class="fas fa-key"></i> Access Granted</span></div>' : ''}
+                            </div>
+                            <div class="action-buttons">
                                 ${actionButtons}
                             </div>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <p class="card-text text-muted mb-2">
-                            ${room.description || 'No description'}
-                        </p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">
-                                <i class="fas fa-user"></i> Host: ${room.host_name || 'Unknown'}
-                            </small>
-                            <small class="text-muted">
-                                Created: ${new Date(room.created_at).toLocaleDateString()}
-                            </small>
+                    <div class="room-content">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="room-description">
+                                    <p>${room.description || 'No description'}</p>
+                                </div>
+                                ${usersHtml}
+                            </div>
+                            <div class="col-md-4">
+                                ${hostHtml}
+                            </div>
                         </div>
-                        ${hasKey ? '<div class="mt-2"><span class="badge bg-success"><i class="fas fa-key"></i> Access Granted</span></div>' : ''}
                     </div>
                 </div>
             `;
@@ -233,41 +356,31 @@ function displayRooms(rooms) {
     $('#roomsList').html(html);
 }
 
-// UPDATED: Enhanced joinRoom function with better room key handling
+// Enhanced joinRoom function
 window.joinRoom = function(roomId) {
     debugLog('joinRoom: Attempting to join room', roomId);
-    debugLog('joinRoom: User has room key:', hasRoomKey(roomId));
     
-    // Always try to join - let the server handle room key checking
     $.ajax({
         url: 'api/join_room.php',
         method: 'POST',
         data: { room_id: roomId },
         dataType: 'json',
         success: function(response) {
-            debugLog('joinRoom: Response:', response);
             if (response.status === 'success') {
-                debugLog('joinRoom: Join successful');
                 if (response.used_room_key) {
-                    debugLog('joinRoom: Room key was used');
-                    // Refresh room keys since the key was consumed
                     loadUserRoomKeys();
                 }
                 window.location.href = 'room.php';
             } else {
-                debugLog('joinRoom: Join failed:', response.message);
-                // Check if password is required
                 if (response.message && response.message.toLowerCase().includes('password')) {
-                    debugLog('joinRoom: Password required, showing modal');
                     showPasswordModal(roomId, 'Room ' + roomId);
                 } else {
-                    // Some other error
                     alert('Error: ' + response.message);
                 }
             }
         },
         error: function(xhr, status, error) {
-            console.error('joinRoom: Error on attempt:', error, xhr.responseText);
+            console.error('joinRoom error:', error);
             alert('Error joining room: ' + error);
         }
     });
@@ -293,7 +406,7 @@ function displayOnlineUsers(users) {
     let html = '';
     
     if (!Array.isArray(users) || users.length === 0) {
-        html = '<p class="text-muted">No users online</p>';
+        html = '<p style="color: #666;">No users online</p>';
     } else {
         users.forEach(user => {
             const name = user.username || user.guest_name || 'Unknown';
@@ -301,9 +414,9 @@ function displayOnlineUsers(users) {
             
             html += `
                 <div class="d-flex align-items-center mb-2">
-                    <img src="images/${avatar}" width="30" height="30" class="me-2" alt="${name}">
+                    <img src="images/${avatar}" width="30" height="30" class="me-2" alt="${name}" style="border-radius: 4px;">
                     <div>
-                        <small class="fw-bold">${name}</small>
+                        <small class="fw-bold" style="color: #fff;">${name}</small>
                         ${user.is_admin ? '<br><span class="badge bg-danger badge-sm">Admin</span>' : ''}
                     </div>
                 </div>
@@ -314,217 +427,49 @@ function displayOnlineUsers(users) {
     $('#onlineUsersList').html(html);
 }
 
-// Function to show unified room access modal (password + knock)
-window.showRoomAccessModal = function(roomId, roomName, allowsKnocking) {
-    let knockOption = '';
-    if (allowsKnocking) {
-        knockOption = `
-            <div class="text-center my-3">
-                <p class="text-muted">Or</p>
-                <button type="button" class="btn btn-outline-primary w-100" onclick="knockOnRoom(${roomId}, '${roomName}'); $('#roomAccessModal').modal('hide');">
-                    <i class="fas fa-hand-paper"></i> Request Access (Knock)
-                </button>
-            </div>
-        `;
-    }
-    
+// Password modal function
+window.showPasswordModal = function(roomId, roomName) {
     const modalHtml = `
-        <div class="modal fade" id="roomAccessModal" tabindex="-1">
+        <div class="modal fade" id="passwordModal" tabindex="-1">
             <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
+                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
+                    <div class="modal-header" style="border-bottom: 1px solid #444;">
                         <h5 class="modal-title">
-                            <i class="fas fa-lock"></i> Access Protected Room
+                            <i class="fas fa-key"></i> Password Required
                         </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
                     </div>
                     <div class="modal-body">
-                        <h6 class="mb-3">${roomName}</h6>
-                        <p class="text-muted mb-3">This room is password protected. Enter the password to join:</p>
-                        
+                        <p>Enter the password for <strong>${roomName}</strong>:</p>
                         <div class="mb-3">
-                            <label for="roomPasswordInput" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="roomPasswordInput" placeholder="Enter room password">
+                            <input type="password" class="form-control" id="roomPasswordInput" placeholder="Room password" 
+                                   style="background: #333; border: 1px solid #555; color: #fff;">
                         </div>
-                        
-                        <button type="button" class="btn btn-primary w-100" onclick="joinRoomWithPassword(${roomId})">
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid #444;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="joinRoomWithPassword(${roomId})">
                             <i class="fas fa-sign-in-alt"></i> Join Room
                         </button>
-                        
-                        ${knockOption}
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     </div>
                 </div>
             </div>
         </div>
     `;
     
-    $('#roomAccessModal').remove();
+    $('#passwordModal').remove();
     $('body').append(modalHtml);
-    $('#roomAccessModal').modal('show');
     
-    // Focus on password input
-    $('#roomAccessModal').on('shown.bs.modal', function() {
+    const modal = new bootstrap.Modal(document.getElementById('passwordModal'));
+    modal.show();
+    
+    $('#passwordModal').on('shown.bs.modal', function() {
         $('#roomPasswordInput').focus();
     });
     
-    // Handle Enter key
     $('#roomPasswordInput').on('keypress', function(e) {
         if (e.which === 13) {
             joinRoomWithPassword(roomId);
-        }
-    });
-};
-
-// Function to show create room modal
-window.showCreateRoomModal = function() {
-    const modalHtml = `
-        <div class="modal fade" id="createRoomModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title">
-                            <i class="fas fa-plus-circle"></i> Create New Room
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="createRoomForm">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="roomName" class="form-label">Room Name</label>
-                                        <input type="text" class="form-control" id="roomName" required maxlength="50">
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label for="roomCapacity" class="form-label">Capacity</label>
-                                        <select class="form-select" id="roomCapacity" required>
-                                            <option value="5">5 users</option>
-                                            <option value="10" selected>10 users</option>
-                                            <option value="20">20 users</option>
-                                            <option value="50">50 users</option>
-                                        </select>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label for="roomBackground" class="form-label">Background</label>
-                                        <select class="form-select" id="roomBackground">
-                                            <option value="">Default</option>
-                                            <option value="images/background1.jpg">Background 1</option>
-                                            <option value="images/background2.jpg">Background 2</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="roomDescription" class="form-label">Description</label>
-                                        <textarea class="form-control" id="roomDescription" rows="3" maxlength="200"></textarea>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="hasPassword">
-                                            <label class="form-check-label" for="hasPassword">
-                                                <i class="fas fa-lock"></i> Password Protected
-                                            </label>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="mb-3" id="passwordField" style="display: none;">
-                                        <label for="roomPassword" class="form-label">Password</label>
-                                        <input type="password" class="form-control" id="roomPassword">
-                                    </div>
-                                    
-                                    <div class="mb-3" id="knockingField" style="display: none;">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="allowKnocking" checked>
-                                            <label class="form-check-label" for="allowKnocking">
-                                                <i class="fas fa-hand-paper"></i> Allow Knocking
-                                            </label>
-                                        </div>
-                                        <small class="form-text text-muted">Let users request access when they don't know the password</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" onclick="createRoom()">
-                            <i class="fas fa-plus"></i> Create Room
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Remove existing modal and add new one
-    $('#createRoomModal').remove();
-    $('body').append(modalHtml);
-    
-    // Show/hide password and knocking fields
-    $('#hasPassword').on('change', function() {
-        if (this.checked) {
-            $('#passwordField').show();
-            $('#knockingField').show();
-        } else {
-            $('#passwordField').hide();
-            $('#knockingField').hide();
-            $('#roomPassword').val('');
-            $('#allowKnocking').prop('checked', true);
-        }
-    });
-    
-    // Show modal
-    $('#createRoomModal').modal('show');
-};
-
-// Function to create room
-window.createRoom = function() {
-    const formData = {
-        name: $('#roomName').val().trim(),
-        description: $('#roomDescription').val().trim(),
-        capacity: $('#roomCapacity').val(),
-        background: $('#roomBackground').val(),
-        has_password: $('#hasPassword').is(':checked') ? 1 : 0,
-        password: $('#hasPassword').is(':checked') ? $('#roomPassword').val() : '',
-        allow_knocking: $('#allowKnocking').is(':checked') ? 1 : 0
-    };
-    
-    if (!formData.name) {
-        alert('Room name is required');
-        return;
-    }
-    
-    if (formData.has_password && !formData.password) {
-        alert('Password is required when password protection is enabled');
-        return;
-    }
-    
-    $.ajax({
-        url: 'api/create_room.php',
-        method: 'POST',
-        data: formData,
-        dataType: 'json',
-        success: function(response) {
-            if (response.status === 'success') {
-                $('#createRoomModal').modal('hide');
-                alert('Room created successfully!');
-                
-                // Join the newly created room
-                window.location.href = 'room.php';
-            } else {
-                alert('Error: ' + response.message);
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Error creating room:', error);
-            alert('Error creating room: ' + error);
         }
     });
 };
@@ -562,7 +507,141 @@ window.joinRoomWithPassword = function(roomId) {
     });
 };
 
-// Function to knock on room
+// Create room modal
+window.showCreateRoomModal = function() {
+    const modalHtml = `
+        <div class="modal fade" id="createRoomModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
+                    <div class="modal-header" style="background: #333; border-bottom: 1px solid #444;">
+                        <h5 class="modal-title">
+                            <i class="fas fa-plus-circle"></i> Create New Room
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="createRoomForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="roomName" class="form-label">Room Name</label>
+                                        <input type="text" class="form-control" id="roomName" required maxlength="50" 
+                                               style="background: #333; border: 1px solid #555; color: #fff;">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="roomCapacity" class="form-label">Capacity</label>
+                                        <select class="form-select" id="roomCapacity" required 
+                                                style="background: #333; border: 1px solid #555; color: #fff;">
+                                            <option value="5">5 users</option>
+                                            <option value="10" selected>10 users</option>
+                                            <option value="20">20 users</option>
+                                            <option value="50">50 users</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="roomDescription" class="form-label">Description</label>
+                                        <textarea class="form-control" id="roomDescription" rows="3" maxlength="200" 
+                                                  style="background: #333; border: 1px solid #555; color: #fff;"></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="hasPassword">
+                                            <label class="form-check-label" for="hasPassword">
+                                                <i class="fas fa-lock"></i> Password Protected
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3" id="passwordField" style="display: none;">
+                                        <label for="roomPassword" class="form-label">Password</label>
+                                        <input type="password" class="form-control" id="roomPassword" 
+                                               style="background: #333; border: 1px solid #555; color: #fff;">
+                                    </div>
+                                    <div class="mb-3" id="knockingField" style="display: none;">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="allowKnocking" checked>
+                                            <label class="form-check-label" for="allowKnocking">
+                                                <i class="fas fa-hand-paper"></i> Allow Knocking
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid #444;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="createRoom()">
+                            <i class="fas fa-plus"></i> Create Room
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#createRoomModal').remove();
+    $('body').append(modalHtml);
+    
+    $('#hasPassword').on('change', function() {
+        if (this.checked) {
+            $('#passwordField').show();
+            $('#knockingField').show();
+        } else {
+            $('#passwordField').hide();
+            $('#knockingField').hide();
+            $('#roomPassword').val('');
+            $('#allowKnocking').prop('checked', true);
+        }
+    });
+    
+    $('#createRoomModal').modal('show');
+};
+
+// Create room function
+window.createRoom = function() {
+    const formData = {
+        name: $('#roomName').val().trim(),
+        description: $('#roomDescription').val().trim(),
+        capacity: $('#roomCapacity').val(),
+        has_password: $('#hasPassword').is(':checked') ? 1 : 0,
+        password: $('#hasPassword').is(':checked') ? $('#roomPassword').val() : '',
+        allow_knocking: $('#allowKnocking').is(':checked') ? 1 : 0
+    };
+    
+    if (!formData.name) {
+        alert('Room name is required');
+        return;
+    }
+    
+    if (formData.has_password && !formData.password) {
+        alert('Password is required when password protection is enabled');
+        return;
+    }
+    
+    $.ajax({
+        url: 'api/create_room.php',
+        method: 'POST',
+        data: formData,
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                $('#createRoomModal').modal('hide');
+                alert('Room created successfully!');
+                window.location.href = 'room.php';
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error creating room:', error);
+            alert('Error creating room: ' + error);
+        }
+    });
+};
+
+// Knock system (simplified)
 window.knockOnRoom = function(roomId, roomName) {
     if (!confirm(`Send a knock request to "${roomName}"?`)) {
         return;
@@ -587,7 +666,64 @@ window.knockOnRoom = function(roomId, roomName) {
     });
 };
 
-// Function to show avatar selector
+// Knock checking (simplified)
+function checkForKnocks() {
+    $.ajax({
+        url: 'api/check_knocks.php',
+        method: 'GET',
+        dataType: 'json',
+        success: function(knocks) {
+            if (Array.isArray(knocks) && knocks.length > 0) {
+                // Simple knock notifications - could be enhanced
+                knocks.forEach(knock => {
+                    if ($(`#knock-${knock.id}`).length === 0) {
+                        showKnockNotification(knock);
+                    }
+                });
+            }
+        },
+        error: function() {
+            // Silently fail
+        }
+    });
+}
+
+function showKnockNotification(knock) {
+    // Simple knock notification - you can enhance this
+    const userName = knock.username || knock.guest_name || 'Unknown User';
+    const roomName = knock.room_name || 'Unknown Room';
+    
+    if (confirm(`${userName} wants to join ${roomName}. Accept?`)) {
+        respondToKnock(knock.id, 'accepted');
+    } else {
+        respondToKnock(knock.id, 'denied');
+    }
+}
+
+window.respondToKnock = function(knockId, response) {
+    $.ajax({
+        url: 'api/respond_knocks.php',
+        method: 'POST',
+        data: {
+            knock_id: knockId,
+            response: response
+        },
+        dataType: 'json',
+        success: function(result) {
+            if (result.status === 'success') {
+                if (response === 'accepted') {
+                    alert('Knock accepted! User can now join.');
+                    loadUserRoomKeys();
+                }
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error responding to knock:', error);
+        }
+    });
+};
+
+// Avatar selector
 window.showAvatarSelector = function() {
     $.ajax({
         url: 'api/get_avatars.php',
@@ -603,7 +739,6 @@ window.showAvatarSelector = function() {
     });
 };
 
-// Function to show avatar modal
 function showAvatarModal(avatars) {
     let avatarHtml = '';
     
@@ -613,9 +748,9 @@ function showAvatarModal(avatars) {
                 <div class="col-2 text-center mb-3">
                     <img src="images/${avatar}" 
                          width="60" height="60" 
-                         class="rounded-circle avatar-option" 
+                         class="avatar-option" 
                          onclick="selectAvatar('${avatar}')"
-                         style="cursor: pointer; border: 2px solid transparent;"
+                         style="cursor: pointer; border: 2px solid transparent; border-radius: 4px;"
                          onmouseover="this.style.border='2px solid #007bff'"
                          onmouseout="this.style.border='2px solid transparent'"
                          alt="Avatar option">
@@ -627,12 +762,12 @@ function showAvatarModal(avatars) {
     const modalHtml = `
         <div class="modal fade" id="avatarModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
+                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
+                    <div class="modal-header" style="border-bottom: 1px solid #444;">
                         <h5 class="modal-title">
                             <i class="fas fa-user-circle"></i> Choose Your Avatar
                         </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
                     </div>
                     <div class="modal-body">
                         <div class="row">
@@ -649,7 +784,6 @@ function showAvatarModal(avatars) {
     $('#avatarModal').modal('show');
 }
 
-// Function to select avatar
 window.selectAvatar = function(avatar) {
     $.ajax({
         url: 'api/update_avatar.php',
@@ -660,8 +794,6 @@ window.selectAvatar = function(avatar) {
             if (response.status === 'success') {
                 $('#currentAvatar').attr('src', 'images/' + avatar);
                 $('#avatarModal').modal('hide');
-                
-                // Update session
                 currentUser.avatar = avatar;
             } else {
                 alert('Error: ' + response.message);
@@ -672,212 +804,4 @@ window.selectAvatar = function(avatar) {
             alert('Error updating avatar: ' + error);
         }
     });
-};
-
-// Knock checking functions
-function checkForKnocks() {
-    debugLog('checkForKnocks: Checking for knocks...');
-    
-    $.ajax({
-        url: 'api/check_knocks.php',
-        method: 'GET',
-        dataType: 'json',
-        success: function(knocks) {
-            debugLog('checkForKnocks: Received response:', knocks);
-            
-            if (Array.isArray(knocks) && knocks.length > 0) {
-                debugLog('checkForKnocks: Found', knocks.length, 'knocks');
-                displayKnockNotifications(knocks);
-            } else {
-                debugLog('checkForKnocks: No knocks found or empty response');
-            }
-        },
-        error: function(xhr, status, error) {
-            debugLog('checkForKnocks: Error occurred:', {
-                status: status,
-                error: error,
-                responseText: xhr.responseText
-            });
-        }
-    });
-}
-
-function displayKnockNotifications(knocks) {
-    debugLog('displayKnockNotifications: Processing', knocks.length, 'knocks');
-    
-    knocks.forEach((knock, index) => {
-        debugLog('Processing knock:', knock);
-        
-        // Check if notification already exists
-        if ($(`#knock-${knock.id}`).length > 0) {
-            debugLog('Notification already exists for knock', knock.id);
-            return;
-        }
-        
-        const userName = knock.username || knock.guest_name || 'Unknown User';
-        const avatar = knock.avatar || 'default_avatar.jpg';
-        const roomName = knock.room_name || 'Unknown Room';
-        
-        // Calculate position for multiple notifications
-        const topPosition = 20 + (index * 130); // Stack notifications
-        
-        const notificationHtml = `
-            <div class="alert alert-info knock-notification" 
-                 id="knock-${knock.id}" 
-                 role="alert" 
-                 style="position: fixed; top: ${topPosition}px; right: 20px; z-index: 1060; max-width: 400px; min-width: 350px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
-                <div class="d-flex align-items-center">
-                    <img src="images/${avatar}" width="40" height="40" class="rounded-circle me-3" alt="${userName}">
-                    <div class="flex-grow-1">
-                        <h6 class="mb-1">
-                            <i class="fas fa-hand-paper"></i> Knock Request
-                        </h6>
-                        <p class="mb-2"><strong>${userName}</strong> wants to join <strong>${roomName}</strong></p>
-                        <div>
-                            <button class="btn btn-success btn-sm me-2" onclick="respondToKnock(${knock.id}, 'accepted')">
-                                <i class="fas fa-check"></i> Accept
-                            </button>
-                            <button class="btn btn-danger btn-sm" onclick="respondToKnock(${knock.id}, 'denied')">
-                                <i class="fas fa-times"></i> Deny
-                            </button>
-                        </div>
-                    </div>
-                    <button type="button" class="btn-close" onclick="dismissKnock(${knock.id})"></button>
-                </div>
-            </div>
-        `;
-        
-        debugLog('Adding notification for knock', knock.id);
-        $('body').append(notificationHtml);
-        
-        // Add entrance animation
-        $(`#knock-${knock.id}`).hide().fadeIn(300);
-        
-        // Auto-dismiss after 30 seconds
-        setTimeout(() => {
-            debugLog('Auto-dismissing knock', knock.id);
-            dismissKnock(knock.id);
-        }, 30000);
-    });
-}
-
-// Make sure these functions are also available globally
-window.respondToKnock = function(knockId, response) {
-    debugLog('respondToKnock:', knockId, response);
-    
-    $.ajax({
-        url: 'api/respond_knocks.php',
-        method: 'POST',
-        data: {
-            knock_id: knockId,
-            response: response
-        },
-        dataType: 'json',
-        success: function(result) {
-            debugLog('Knock response result:', result);
-            if (result.status === 'success') {
-                dismissKnock(knockId);
-                
-                if (response === 'accepted') {
-                    alert('Knock accepted! User can now join.');
-                    // Refresh user room keys in case they were the knocker
-                    loadUserRoomKeys();
-                } else {
-                    alert('Knock denied.');
-                }
-            } else {
-                alert('Error: ' + result.message);
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Error responding to knock:', error, xhr.responseText);
-            alert('Error responding to knock: ' + error);
-        }
-    });
-};
-
-window.dismissKnock = function(knockId) {
-    debugLog('dismissKnock:', knockId);
-    $(`#knock-${knockId}`).fadeOut(300, function() {
-        $(this).remove();
-        // Reposition remaining notifications
-        repositionKnockNotifications();
-    });
-};
-
-function repositionKnockNotifications() {
-    $('.knock-notification').each(function(index) {
-        $(this).animate({
-            top: (20 + (index * 130)) + 'px'
-        }, 200);
-    });
-}
-
-// Updated password modal function
-window.showPasswordModal = function(roomId, roomName) {
-    debugLog('showPasswordModal called:', roomId, roomName);
-    
-    const modalHtml = `
-        <div class="modal fade" id="passwordModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="fas fa-key"></i> Password Required
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Enter the password for <strong>${roomName}</strong>:</p>
-                        <div class="mb-3">
-                            <input type="password" class="form-control" id="roomPasswordInput" placeholder="Room password">
-                        </div>
-                        <div class="text-muted small">
-                            <i class="fas fa-info-circle"></i> If your knock request was accepted, you should be able to join without entering the password.
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" onclick="joinRoomWithPassword(${roomId})">
-                            <i class="fas fa-sign-in-alt"></i> Join Room
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Remove existing modal
-    $('#passwordModal').remove();
-    
-    // Add new modal
-    $('body').append(modalHtml);
-    
-    // Show modal using Bootstrap 5 API
-    const modal = new bootstrap.Modal(document.getElementById('passwordModal'));
-    modal.show();
-    
-    // Focus on password input when modal is shown
-    $('#passwordModal').on('shown.bs.modal', function() {
-        $('#roomPasswordInput').focus();
-    });
-    
-    // Handle Enter key
-    $('#roomPasswordInput').on('keypress', function(e) {
-        if (e.which === 13) {
-            joinRoomWithPassword(roomId);
-        }
-    });
-};
-
-// Test function you can call manually
-window.testKnockCheck = function() {
-    debugLog('Manual knock check...');
-    checkForKnocks();
-};
-
-// Test function for room keys
-window.testRoomKeys = function() {
-    debugLog('Manual room keys check...');
-    loadUserRoomKeys();
 };
