@@ -7,9 +7,9 @@ const SHOW_SENSITIVE_DATA = false;
 function debugLog(message, data = null) {
     if (DEBUG_MODE) {
         if (data !== null) {
-            console.log('[ROOM]', message, data);
+            debugLog(message, data);
         } else {
-            console.log('[ROOM]', message);
+            debugLog(message);
         }
     }
 }
@@ -17,13 +17,34 @@ function debugLog(message, data = null) {
 function debugError(message, error = null) {
     if (DEBUG_MODE) {
         if (error !== null) {
-            console.error('[ROOM]', message, error);
+            console.error(message, error);
         } else {
-            console.error('[ROOM]', message);
+            console.error(message);
         }
     }
 }
 
+function debugWarn(message, data = null) {
+    if (DEBUG_MODE) {
+        if (data !== null) {
+            console.warn(message, data);
+        } else {
+            console.warn(message);
+        }
+    }
+}
+
+function debugLog(message, data = null) {
+    if (DEBUG_MODE && SHOW_SENSITIVE_DATA) {
+        if (data !== null) {
+            debugLog('[SENSITIVE]', message, data);
+        } else {
+            debugLog('[SENSITIVE]', message);
+        }
+    }
+}
+
+// Critical errors always show (for production debugging)
 function criticalError(message, error = null) {
     if (error !== null) {
         console.error('[CRITICAL]', message, error);
@@ -33,14 +54,6 @@ function criticalError(message, error = null) {
 }
 
 // ===== GLOBAL VARIABLES =====
-// User color management
-let userColorMap = new Map();
-let availableColors = [
-    'user-color-1', 'user-color-2', 'user-color-3', 'user-color-4', 'user-color-5',
-    'user-color-6', 'user-color-7', 'user-color-8', 'user-color-9', 'user-color-10'
-];
-let colorIndex = 0;
-
 // Kick Detection System
 let kickDetectionInterval;
 let userKickedModalShown = false;
@@ -54,287 +67,12 @@ let disconnectCheckInterval = null;
 let lastActivityUpdate = 0;
 let userIsActive = true;
 let activityTrackingEnabled = false;
+let activityDebugMode = false;
 
 // Message System
 let lastScrollTop = 0;
 let lastMessageCount = 0;
 let userIsScrolling = false;
-
-// ===== USER COLOR MANAGEMENT =====
-function getUserColor(userIdString) {
-    if (!userColorMap.has(userIdString)) {
-        // Assign a color based on hash for consistency
-        const hash = hashCode(userIdString);
-        const colorClass = availableColors[Math.abs(hash) % availableColors.length];
-        userColorMap.set(userIdString, colorClass);
-        debugLog(`Assigned color ${colorClass} to user ${userIdString}`);
-    }
-    return userColorMap.get(userIdString);
-}
-
-function hashCode(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32bit integer
-    }
-    return hash;
-}
-
-// ===== MESSAGE FUNCTIONS =====
-function sendMessage() {
-    const messageInput = $('#message');
-    const message = messageInput.val().trim();
-    
-    if (!message) {
-        messageInput.focus();
-        return false;
-    }
-    
-    debugLog('💬 Sending message:', message);
-    
-    // Show sending state
-    const sendBtn = $('.btn-send-message');
-    const originalText = sendBtn.html();
-    sendBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
-    
-    // Update activity immediately when sending message
-    updateUserActivity('message_send');
-    
-    $.ajax({
-        url: 'api/send_message.php',
-        method: 'POST',
-        data: {
-            room_id: roomId,
-            message: message
-        },
-        success: function(response) {
-            try {
-                let res = JSON.parse(response);
-                if (res.status === 'success') {
-                    messageInput.val('');
-                    loadMessages();
-                    
-                    setTimeout(() => {
-                        checkUserStatus();
-                    }, 200);
-                } else {
-                    alert('Error: ' + res.message);
-                }
-            } catch (e) {
-                console.error('JSON parse error:', e, response);
-                alert('Invalid response from server');
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('AJAX error in sendMessage:', status, error, xhr.responseText);
-            checkUserStatus();
-            alert('AJAX error: ' + error);
-        },
-        complete: function() {
-            sendBtn.prop('disabled', false).html(originalText);
-            messageInput.focus();
-        }
-    });
-    
-    return false;
-}
-
-function loadMessages() {
-    debugLog('Loading messages for roomId:', roomId);
-    $.ajax({
-        url: 'api/get_messages.php',
-        method: 'GET',
-        data: { room_id: roomId },
-        success: function(response) {
-            debugLog('Response from api/get_messages.php:', response);
-            try {
-                let messages = JSON.parse(response);
-                let html = '';
-                
-                if (!Array.isArray(messages)) {
-                    console.error('Expected array from get_messages, got:', messages);
-                    html = '<div class="empty-chat"><i class="fas fa-exclamation-triangle"></i><h5>Error loading messages</h5><p>Please try refreshing the page</p></div>';
-                } else if (messages.length === 0) {
-                    html = '<div class="empty-chat"><i class="fas fa-comments"></i><h5>No messages yet</h5><p>Start the conversation!</p></div>';
-                } else {
-                    messages.forEach(msg => {
-                        html += renderMessage(msg);
-                    });
-                }
-                
-                const chatbox = $('#chatbox');
-                const isAtBottom = chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20;
-                const newMessageCount = messages.length;
-                
-                chatbox.html(html);
-                
-                // Auto-scroll to bottom for new messages or if user was at bottom
-                if (isAtBottom || (newMessageCount > lastMessageCount && !userIsScrolling)) {
-                    chatbox.scrollTop(chatbox[0].scrollHeight);
-                }
-                
-                lastMessageCount = newMessageCount;
-            } catch (e) {
-                console.error('JSON parse error:', e, response);
-                $('#chatbox').html('<div class="empty-chat"><i class="fas fa-exclamation-triangle"></i><h5>Error loading messages</h5><p>Failed to parse server response</p></div>');
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('AJAX error in loadMessages:', status, error, xhr.responseText);
-            $('#chatbox').html('<div class="empty-chat"><i class="fas fa-wifi"></i><h5>Connection Error</h5><p>Failed to load messages. Check your connection.</p></div>');
-        }
-    });
-}
-
-function renderMessage(msg) {
-    const avatar = msg.avatar || msg.guest_avatar || 'default_avatar.jpg';
-    const name = msg.username || msg.guest_name || 'Unknown';
-    const userIdString = msg.user_id_string || msg.user_id || 'unknown';
-    
-    // Handle system messages
-    if (msg.type === 'system' || msg.is_system) {
-        return `
-            <div class="system-message">
-                <img src="images/${avatar}" alt="System">
-                <span>${msg.message}</span>
-            </div>
-        `;
-    }
-    
-    // Get user color class
-    const userColorClass = getUserColor(userIdString);
-    
-    // Format timestamp
-    const timestamp = new Date(msg.timestamp).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-    
-    // Build badges
-    let badges = '';
-    if (msg.is_admin) {
-        badges += '<span class="user-badge badge-admin"><i class="fas fa-shield-alt"></i> Admin</span>';
-    }
-    if (msg.user_id) {
-        badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle"></i> Verified</span>';
-    } else {
-        badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
-    }
-    
-    // Admin IP display
-    let adminInfo = '';
-    if (isAdmin && msg.ip_address) {
-        adminInfo = `<div class="admin-info"><small class="text-muted">IP: ${msg.ip_address}</small></div>`;
-    }
-    
-    return `
-        <div class="chat-message">
-            <img src="images/${avatar}" class="message-avatar" alt="${name}'s avatar">
-            <div class="message-bubble ${userColorClass}">
-                <div class="message-header">
-                    <div class="message-author">${name}</div>
-                    <div class="message-time">${timestamp}</div>
-                </div>
-                <div class="message-content">${msg.message}</div>
-                ${badges ? `<div class="message-badges">${badges}</div>` : ''}
-                ${adminInfo}
-            </div>
-        </div>
-    `;
-}
-
-// ===== USER MANAGEMENT FUNCTIONS =====
-function loadUsers() {
-    debugLog('Loading users for roomId:', roomId);
-    $.ajax({
-        url: 'api/get_room_users.php',
-        method: 'GET',
-        data: { room_id: roomId },
-        success: function(response) {
-            debugLog('Response from api/get_room_users.php:', response);
-            try {
-                let users = JSON.parse(response);
-                let html = '';
-                
-                if (!Array.isArray(users)) {
-                    console.error('Expected array from get_room_users, got:', users);
-                    html = '<div class="empty-users"><i class="fas fa-exclamation-triangle"></i><p>Error loading users</p></div>';
-                } else if (users.length === 0) {
-                    html = '<div class="empty-users"><i class="fas fa-users"></i><p>No users in room</p></div>';
-                } else {
-                    // Sort users: hosts first, then by name
-                    users.sort((a, b) => {
-                        if (a.is_host && !b.is_host) return -1;
-                        if (!a.is_host && b.is_host) return 1;
-                        const nameA = a.display_name || a.username || a.guest_name || 'Unknown';
-                        const nameB = b.display_name || b.username || b.guest_name || 'Unknown';
-                        return nameA.localeCompare(nameB);
-                    });
-                    
-                    users.forEach(user => {
-                        html += renderUser(user);
-                    });
-                }
-                
-                $('#userList').html(html);
-            } catch (e) {
-                console.error('JSON parse error:', e, response);
-                $('#userList').html('<div class="empty-users"><i class="fas fa-exclamation-triangle"></i><p>Error loading users</p></div>');
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('AJAX error in loadUsers:', status, error, xhr.responseText);
-            $('#userList').html('<div class="empty-users"><i class="fas fa-wifi"></i><p>Connection error</p></div>');
-        }
-    });
-}
-
-function renderUser(user) {
-    const avatar = user.avatar || user.guest_avatar || 'default_avatar.jpg';
-    const name = user.display_name || user.username || user.guest_name || 'Unknown';
-    const userIdString = user.user_id_string || 'unknown';
-    
-    // Build badges
-    let badges = '';
-    if (user.is_host) {
-        badges += '<span class="user-badge badge-host"><i class="fas fa-crown"></i> Host</span>';
-    }
-    if (user.is_admin) {
-        badges += '<span class="user-badge badge-admin"><i class="fas fa-shield-alt"></i> Admin</span>';
-    }
-    if (user.user_type === 'registered' || user.user_id) {
-        badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle"></i> Verified</span>';
-    } else {
-        badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
-    }
-    
-    // Build actions for hosts/admins
-    let actions = '';
-    if ((isHost || isAdmin) && !user.is_host && userIdString !== currentUserIdString) {
-        actions = `
-            <div class="user-actions">
-                <button class="btn btn-ban-user" onclick="showBanModal('${userIdString}', '${name.replace(/'/g, "\\'")}')">
-                    <i class="fas fa-ban"></i> Ban
-                </button>
-            </div>
-        `;
-    }
-    
-    return `
-        <div class="user-item">
-            <div class="user-info-row">
-                <img src="images/${avatar}" class="user-avatar" alt="${name}'s avatar">
-                <div class="user-details">
-                    <div class="user-name">${name}</div>
-                    <div class="user-badges-row">${badges}</div>
-                </div>
-            </div>
-            ${actions}
-        </div>
-    `;
-}
 
 // ===== KICK DETECTION FUNCTIONS =====
 function checkUserStatus() {
@@ -410,6 +148,14 @@ function handleUserBanned(response) {
         if (response.ban_info.reason) {
             banDetails += `<p><strong>Reason:</strong> ${response.ban_info.reason}</p>`;
         }
+        
+        if (response.ban_info.banned_by) {
+            banDetails += `<p><strong>Banned by:</strong> ${response.ban_info.banned_by}</p>`;
+        }
+        
+        if (response.ban_info.banned_at) {
+            banDetails += `<p><strong>Banned at:</strong> ${response.ban_info.banned_at}</p>`;
+        }
     }
     
     showKickModal('🚫 You Have Been Banned', banMessage, banDetails, 'danger');
@@ -464,7 +210,7 @@ function showKickModal(title, message, details, type) {
     const modalHtml = `
         <div class="modal fade" id="kickNotificationModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
             <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content border-${type}" style="background: #2a2a2a; color: #e0e0e0;">
+                <div class="modal-content border-${type}">
                     <div class="modal-header ${typeConfig.bg} text-white">
                         <h5 class="modal-title">
                             <i class="${typeConfig.icon}"></i> ${title}
@@ -476,12 +222,12 @@ function showKickModal(title, message, details, type) {
                         </div>
                         <h6 class="text-${type} mb-3">${message}</h6>
                         ${details}
-                        <div class="alert alert-light mt-3" style="background: #333; border-color: #555; color: #e0e0e0;">
+                        <div class="alert alert-light mt-3">
                             <i class="fas fa-home"></i>
                             <strong>You will be redirected to the lounge in <span id="redirectCountdown">8</span> seconds</strong>
                         </div>
                     </div>
-                    <div class="modal-footer justify-content-center" style="border-top: 1px solid #444;">
+                    <div class="modal-footer justify-content-center">
                         <button type="button" class="btn btn-primary" onclick="handleKickModalClose()">
                             <i class="fas fa-home"></i> Go to Lounge Now
                         </button>
@@ -606,6 +352,9 @@ function setupActivityListeners() {
 
 function updateUserActivity(activityType = 'general') {
     if (!activityTrackingEnabled) {
+        if (activityDebugMode) {
+            debugLog(`⚠️ Activity tracking disabled, skipping update: ${activityType}`);
+        }
         return;
     }
     
@@ -613,6 +362,9 @@ function updateUserActivity(activityType = 'general') {
     const minInterval = activityType === 'heartbeat' ? 25000 : 3000;
     
     if (now - lastActivityUpdate < minInterval) {
+        if (activityDebugMode && activityType !== 'heartbeat') {
+            debugLog(`⏰ Activity update throttled: ${activityType} (${now - lastActivityUpdate}ms ago)`);
+        }
         return;
     }
     
@@ -628,7 +380,7 @@ function updateUserActivity(activityType = 'general') {
         timeout: 5000,
         success: function(response) {
             if (response.status === 'success') {
-                debugLog(`✅ Activity updated: ${activityType}`);
+                debugLog(`✅ Activity updated: ${activityType} at ${response.timestamp}`);
             } else if (response.status === 'not_in_room') {
                 debugLog('❌ Not in room - stopping activity tracking');
                 stopActivityTracking();
@@ -636,16 +388,23 @@ function updateUserActivity(activityType = 'general') {
                 if (typeof forceStatusCheck === 'function') {
                     forceStatusCheck();
                 }
+            } else {
+                debugLog(`⚠️ Activity update warning: ${response.message}`);
             }
         },
         error: function(xhr, status, error) {
             debugLog(`⚠️ Activity update failed: ${status} - ${error}`);
+            
+            if (xhr.status === 404) {
+                debugLog('💡 Tip: Make sure api/update_activity.php exists');
+            }
         }
     });
 }
 
 function triggerDisconnectCheck() {
     if (!activityTrackingEnabled) {
+        debugLog('⚠️ Activity tracking disabled, skipping disconnect check');
         return;
     }
     
@@ -662,17 +421,23 @@ function triggerDisconnectCheck() {
                 
                 const summary = response.summary;
                 if (summary.users_disconnected > 0 || summary.hosts_transferred > 0 || summary.rooms_deleted > 0) {
-                    debugLog(`👥 Changes detected, refreshing UI`);
+                    debugLog(`👥 Changes: ${summary.users_disconnected} disconnected, ${summary.hosts_transferred} transfers, ${summary.rooms_deleted} deleted`);
                     
                     setTimeout(() => {
                         loadUsers();
                         loadMessages();
                     }, 1000);
                 }
+            } else {
+                debugLog('❌ Disconnect check failed:', response.message);
             }
         },
         error: function(xhr, status, error) {
             debugLog('⚠️ Disconnect check error:', error);
+            
+            if (xhr.status === 404) {
+                debugLog('💡 Tip: Make sure api/check_disconnects.php exists');
+            }
         }
     });
 }
@@ -684,15 +449,227 @@ function stopActivityTracking() {
     if (activityInterval) {
         clearInterval(activityInterval);
         activityInterval = null;
+        debugLog('- Stopped activity interval');
     }
     
     if (disconnectCheckInterval) {
         clearInterval(disconnectCheckInterval);
         disconnectCheckInterval = null;
+        debugLog('- Stopped disconnect interval');
     }
     
     $(document).off('mousemove.activity keypress.activity scroll.activity click.activity');
     $(window).off('focus.activity');
+    debugLog('- Removed activity listeners');
+}
+
+// ===== MESSAGE FUNCTIONS =====
+function sendMessage() {
+    const messageInput = $('#message');
+    const message = messageInput.val().trim();
+    
+    if (!message) {
+        alert('Please enter a message');
+        return false;
+    }
+    
+    debugLog('💬 Sending message:', message);
+    
+    // Update activity immediately when sending message
+    updateUserActivity('message_send');
+    
+    $.ajax({
+        url: 'api/send_message.php',
+        method: 'POST',
+        data: {
+            room_id: roomId,
+            message: message
+        },
+        success: function(response) {
+            try {
+                let res = JSON.parse(response);
+                if (res.status === 'success') {
+                    messageInput.val('');
+                    loadMessages();
+                    
+                    setTimeout(() => {
+                        checkUserStatus();
+                    }, 200);
+                } else {
+                    alert('Error: ' + res.message);
+                }
+            } catch (e) {
+                console.error('JSON parse error:', e, response);
+                alert('Invalid response from server');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error in sendMessage:', status, error, xhr.responseText);
+            
+            checkUserStatus();
+            alert('AJAX error: ' + error);
+        }
+    });
+    
+    return false;
+}
+
+function loadMessages() {
+    debugLog('Loading messages for roomId:', roomId);
+    $.ajax({
+        url: 'api/get_messages.php',
+        method: 'GET',
+        data: { room_id: roomId },
+        success: function(response) {
+            debugLog('Response from api/get_messages.php:', response);
+            try {
+                let messages = JSON.parse(response);
+                let html = '';
+                if (!Array.isArray(messages)) {
+                    console.error('Expected array from get_messages, got:', messages);
+                    html = '<p>Error loading messages.</p>';
+                } else if (messages.length === 0) {
+                    html = '<p class="text-muted text-center">No messages yet. Start the conversation!</p>';
+                } else {
+                    messages.forEach(msg => {
+                        const avatar = msg.avatar || msg.guest_avatar || 'default_avatar.jpg';
+                        const name = msg.username || msg.guest_name || 'Unknown';
+                        
+                        if (msg.type === 'system' || msg.is_system) {
+                            html += `
+                                <div class="chat-message system-message text-center my-2">
+                                    <img src="images/${avatar}" width="20" height="20" class="me-1" alt="System">
+                                    <span class="text-muted">${msg.message}</span>
+                                </div>
+                            `;
+                        } else {
+                            html += `
+                                <div class="chat-message mb-2">
+                                    <div class="d-flex align-items-start">
+                                        <img src="images/${avatar}" width="48" class="me-2" alt="${name}'s avatar">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center mb-1">
+                                                <strong class="me-2">${name}</strong>
+                            `;
+                            
+                            if (msg.is_admin) {
+                                html += '<span class="badge bg-danger badge-sm me-1">Staff</span>';
+                            }
+                            if (msg.user_id) {
+                                html += '<span class="badge bg-success badge-sm me-1">Verified</span>';
+                            } else {
+                                html += '<span class="badge bg-secondary badge-sm me-1">Guest</span>';
+                            }
+                            
+                            html += `
+                                                <small class="text-muted">${new Date(msg.timestamp).toLocaleTimeString()}</small>
+                                            </div>
+                                            <div class="message-content">${msg.message}</div>
+                            `;
+                            
+                            if (isAdmin && msg.ip_address) {
+                                html += `<small class="text-muted">IP: ${msg.ip_address}</small>`;
+                            }
+                            
+                            html += `
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+                }
+                
+                const chatbox = $('#chatbox');
+                const isAtBottom = chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 10;
+                const newMessageCount = messages.length;
+                
+                chatbox.html(html);
+                
+                if (isAtBottom || (newMessageCount > lastMessageCount && !userIsScrolling)) {
+                    chatbox.scrollTop(chatbox[0].scrollHeight);
+                }
+                
+                lastMessageCount = newMessageCount;
+            } catch (e) {
+                console.error('JSON parse error:', e, response);
+                $('#chatbox').html('<p class="text-danger">Error loading messages</p>');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error in loadMessages:', status, error, xhr.responseText);
+            $('#chatbox').html('<p class="text-danger">Failed to load messages</p>');
+        }
+    });
+}
+
+// ===== USER MANAGEMENT FUNCTIONS =====
+function loadUsers() {
+    debugLog('Loading users for roomId:', roomId);
+    $.ajax({
+        url: 'api/get_room_users.php',
+        method: 'GET',
+        data: { room_id: roomId },
+        success: function(response) {
+            debugLog('Response from api/get_room_users.php:', response);
+            try {
+                let users = JSON.parse(response);
+                let html = '';
+                if (!Array.isArray(users)) {
+                    console.error('Expected array from get_room_users, got:', users);
+                    html = '<p>Error loading users.</p>';
+                } else if (users.length === 0) {
+                    html = '<p class="text-muted">No users in room.</p>';
+                } else {
+                    users.forEach(user => {
+                        const avatar = user.avatar || user.guest_avatar || 'default_avatar.jpg';
+                        const name = user.display_name || user.username || user.guest_name || 'Unknown';
+                        
+                        html += `
+                            <div class="user-item mb-3 p-2 border rounded">
+                                <div class="d-flex align-items-center">
+                                    <img src="images/${avatar}" width="40" height="40" class="me-2" alt="${name}'s avatar">
+                                    <div class="flex-grow-1">
+                                        <div class="fw-bold">${name}</div>
+                                        <div class="d-flex flex-wrap gap-1">
+                        `;
+                        
+                        if (user.is_host) {
+                            html += '<span class="badge bg-primary">Host</span>';
+                        }
+                        if (user.is_admin) {
+                            html += '<span class="badge bg-danger">Admin</span>';
+                        }
+                        if (user.user_type === 'registered') {
+                            html += '<span class="badge bg-success">Verified</span>';
+                        } else {
+                            html += '<span class="badge bg-secondary">Guest</span>';
+                        }
+                        
+                        html += '</div></div>';
+                        
+                        if ((isHost || isAdmin) && !user.is_host && user.user_id_string !== currentUserIdString) {
+                            html += `
+                                <button class="btn btn-sm btn-outline-danger" onclick="showBanModal('${user.user_id_string}', '${name.replace(/'/g, "\\'")}')">
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                            `;
+                        }
+                        
+                        html += '</div></div>';
+                    });
+                }
+                $('#userList').html(html);
+            } catch (e) {
+                console.error('JSON parse error:', e, response);
+                $('#userList').html('<p class="text-danger">Error loading users</p>');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error in loadUsers:', status, error, xhr.responseText);
+            $('#userList').html('<p class="text-danger">Failed to load users</p>');
+        }
+    });
 }
 
 // ===== ROOM MANAGEMENT FUNCTIONS =====
@@ -727,12 +704,10 @@ function displayRoomSettingsModal(settings) {
     const modalHtml = `
         <div class="modal fade" id="roomSettingsModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
-                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
-                    <div class="modal-header" style="background: #333; border-bottom: 1px solid #444;">
-                        <h5 class="modal-title">
-                            <i class="fas fa-cog"></i> Room Settings
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-cog"></i> Room Settings</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
                         <ul class="nav nav-tabs" id="settingsTabs" role="tablist">
@@ -741,6 +716,9 @@ function displayRoomSettingsModal(settings) {
                             </li>
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">Security</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="appearance-tab" data-bs-toggle="tab" data-bs-target="#appearance" type="button" role="tab">Appearance</button>
                             </li>
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" id="banlist-tab" data-bs-toggle="tab" data-bs-target="#banlist" type="button" role="tab">Banlist</button>
@@ -754,11 +732,11 @@ function displayRoomSettingsModal(settings) {
                                         <div class="col-md-6">
                                             <div class="mb-3">
                                                 <label for="settingsRoomName" class="form-label">Room Name</label>
-                                                <input type="text" class="form-control" id="settingsRoomName" value="${settings.name}" required style="background: #333; border: 1px solid #555; color: #fff;">
+                                                <input type="text" class="form-control" id="settingsRoomName" value="${settings.name}" required>
                                             </div>
                                             <div class="mb-3">
                                                 <label for="settingsCapacity" class="form-label">Capacity</label>
-                                                <select class="form-select" id="settingsCapacity" required style="background: #333; border: 1px solid #555; color: #fff;">
+                                                <select class="form-select" id="settingsCapacity" required>
                                                     <option value="5"${settings.capacity == 5 ? ' selected' : ''}>5</option>
                                                     <option value="10"${settings.capacity == 10 ? ' selected' : ''}>10</option>
                                                     <option value="20"${settings.capacity == 20 ? ' selected' : ''}>20</option>
@@ -769,7 +747,15 @@ function displayRoomSettingsModal(settings) {
                                         <div class="col-md-6">
                                             <div class="mb-3">
                                                 <label for="settingsDescription" class="form-label">Description</label>
-                                                <textarea class="form-control" id="settingsDescription" rows="3" style="background: #333; border: 1px solid #555; color: #fff;">${settings.description || ''}</textarea>
+                                                <textarea class="form-control" id="settingsDescription" rows="3">${settings.description || ''}</textarea>
+                                            </div>
+                                           <div class="mb-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="settingsPermanent"${settings.permanent ? ' checked' : ''}>
+                                                    <label class="form-check-label" for="settingsPermanent">
+                                                        <i class="fas fa-infinity"></i> Permanent Room (Admin only)
+                                                    </label>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -791,8 +777,8 @@ function displayRoomSettingsModal(settings) {
                                             </div>
                                             <div class="mb-3" id="passwordFieldSettings" style="display: ${settings.has_password ? 'block' : 'none'};">
                                                 <label for="settingsPassword" class="form-label">Room Password</label>
-                                                <input type="password" class="form-control" id="settingsPassword" placeholder="Leave empty to keep current password" style="background: #333; border: 1px solid #555; color: #fff;">
-                                                <div class="form-text text-muted">Leave empty to keep current password, or enter new password to change it.</div>
+                                                <input type="password" class="form-control" id="settingsPassword" placeholder="Leave empty to keep current password">
+                                                <div class="form-text">Leave empty to keep current password, or enter new password to change it.</div>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
@@ -810,6 +796,48 @@ function displayRoomSettingsModal(settings) {
                                 </div>
                             </div>
 
+                            <!-- Appearance Settings -->
+                            <div class="tab-pane fade" id="appearance" role="tabpanel">
+                                <div class="mt-3">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="settingsTheme" class="form-label">Room Theme</label>
+                                                <select class="form-select" id="settingsTheme">
+                                                    <option value="default"${!settings.theme || settings.theme === 'default' ? ' selected' : ''}>Default Theme</option>
+                                                    <option value="dark"${settings.theme === 'dark' ? ' selected' : ''}>Dark Theme</option>
+                                                    <option value="neon"${settings.theme === 'neon' ? ' selected' : ''}>Neon Theme</option>
+                                                    <option value="minimal"${settings.theme === 'minimal' ? ' selected' : ''}>Minimal Theme</option>
+                                                    <option value="cyberpunk"${settings.theme === 'cyberpunk' ? ' selected' : ''}>Cyberpunk Theme</option>
+                                                </select>
+                                                <div class="form-text">Choose a visual theme for your room</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="settingsBackground" class="form-label">Background Image</label>
+                                                <select class="form-select" id="settingsBackground">
+                                                    <option value=""${!settings.background ? ' selected' : ''}>Default</option>
+                                                    <option value="images/background1.jpg"${settings.background === 'images/background1.jpg' ? ' selected' : ''}>Background 1</option>
+                                                    <option value="images/background2.jpg"${settings.background === 'images/background2.jpg' ? ' selected' : ''}>Background 2</option>
+                                                    <option value="images/bg/city.jpg"${settings.background === 'images/bg/city.jpg' ? ' selected' : ''}>City Night</option>
+                                                    <option value="images/bg/space.jpg"${settings.background === 'images/bg/space.jpg' ? ' selected' : ''}>Space</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Theme Preview</label>
+                                                <div id="themePreview" class="border rounded p-3" style="height: 150px; background: #f8f9fa;">
+                                                    <div class="preview-message">
+                                                        <strong>Theme Preview</strong><br>
+                                                        <small class="text-muted">Select a theme to see preview</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Banlist -->
                             <div class="tab-pane fade" id="banlist" role="tabpanel">
                                 <div class="mt-3">
@@ -819,9 +847,13 @@ function displayRoomSettingsModal(settings) {
                                     </div>
                                 </div>
                             </div>
+
+                  
+
+
                         </div>
                     </div>
-                    <div class="modal-footer" style="border-top: 1px solid #444;">
+                    <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="button" class="btn btn-primary" onclick="saveRoomSettings()"><i class="fas fa-save"></i> Save Settings</button>
                     </div>
@@ -833,7 +865,7 @@ function displayRoomSettingsModal(settings) {
     $('#roomSettingsModal').remove();
     $('body').append(modalHtml);
     
-    // Set up event handlers
+    // Set up event handlers for the new fields
     setupRoomSettingsHandlers();
     
     $('#banlist-tab').on('click', function() {
@@ -856,6 +888,65 @@ function setupRoomSettingsHandlers() {
             $('#settingsAllowKnocking').prop('checked', true);
         }
     });
+
+    // Theme preview handler
+    $('#settingsTheme').on('change', function() {
+        updateThemePreview($(this).val());
+    });
+
+    // Initialize theme preview
+    updateThemePreview($('#settingsTheme').val());
+}
+
+function updateThemePreview(theme) {
+    const preview = $('#themePreview');
+    let previewContent = '';
+    
+    switch(theme) {
+        case 'dark':
+            preview.css({
+                'background': 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
+                'color': '#ffffff',
+                'border': '1px solid #444'
+            });
+            previewContent = '<strong style="color: #bb86fc;">Dark Theme</strong><br><small style="color: #03dac6;">Modern dark interface</small>';
+            break;
+        case 'neon':
+            preview.css({
+                'background': 'linear-gradient(135deg, #0a0a0a 0%, #1a0a1a 100%)',
+                'color': '#ff00ff',
+                'border': '1px solid #ff00ff',
+                'box-shadow': '0 0 10px rgba(255,0,255,0.3)'
+            });
+            previewContent = '<strong style="color: #00ffff;">Neon Theme</strong><br><small style="color: #ff00ff;">Cyberpunk vibes</small>';
+            break;
+        case 'minimal':
+            preview.css({
+                'background': '#ffffff',
+                'color': '#333333',
+                'border': '1px solid #e0e0e0'
+            });
+            previewContent = '<strong>Minimal Theme</strong><br><small style="color: #666;">Clean and simple</small>';
+            break;
+        case 'cyberpunk':
+            preview.css({
+                'background': 'linear-gradient(135deg, #0f0f0f 0%, #1a0f1a 50%, #0f1a1a 100%)',
+                'color': '#00ff41',
+                'border': '1px solid #00ff41',
+                'box-shadow': '0 0 15px rgba(0,255,65,0.3)'
+            });
+            previewContent = '<strong style="color: #ff0080;">Cyberpunk Theme</strong><br><small style="color: #00ffff;">Matrix-style interface</small>';
+            break;
+        default:
+            preview.css({
+                'background': '#f8f9fa',
+                'color': '#333',
+                'border': '1px solid #dee2e6'
+            });
+            previewContent = '<strong>Default Theme</strong><br><small class="text-muted">Standard appearance</small>';
+    }
+    
+    preview.html(`<div class="preview-message">${previewContent}</div>`);
 }
 
 function loadBannedUsers() {
@@ -872,7 +963,12 @@ function loadBannedUsers() {
             let html = '';
             
             if (!Array.isArray(response)) {
-                html = '<p class="text-danger">Error loading banned users.</p>';
+                console.error('Expected array, got:', typeof response, response);
+                if (response && response.status && response.message) {
+                    html = '<p class="text-danger">Error: ' + response.message + '</p>';
+                } else {
+                    html = '<p class="text-danger">Invalid response format from server.</p>';
+                }
             } else {
                 if (response.length === 0) {
                     html = '<p class="text-muted">No banned users.</p>';
@@ -884,16 +980,17 @@ function loadBannedUsers() {
                         const reason = ban.reason || 'No reason provided';
                         
                         html += `
-                            <div class="card mb-2" style="background: #333; border: 1px solid #555;">
+                            <div class="card mb-2">
                                 <div class="card-body p-3">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
-                                            <strong style="color: #fff;">${name}</strong> 
+                                            <strong>${name}</strong> 
                                             <span class="badge ${banType === 'Permanent' ? 'bg-danger' : 'bg-warning'}">${banType}</span>
                                             <br>
                                             <small class="text-muted">
                                                 Expires: ${expiry}<br>
-                                                Reason: ${reason}
+                                                Reason: ${reason}<br>
+                                                User ID: ${ban.user_id_string}
                                             </small>
                                         </div>
                                         <button class="btn btn-sm btn-outline-success" onclick="unbanUser('${ban.user_id_string}', '${name.replace(/'/g, "\\'")}')">
@@ -910,8 +1007,12 @@ function loadBannedUsers() {
             $('#bannedUsersList').html(html);
         },
         error: function(xhr, status, error) {
-            console.error('AJAX error in loadBannedUsers:', status, error);
-            $('#bannedUsersList').html('<p class="text-danger">Error loading banned users.</p>');
+            console.error('AJAX error in loadBannedUsers:', status, error, xhr.responseText);
+            let errorMsg = 'Error loading banned users.';
+            if (xhr.responseText) {
+                errorMsg += ' Server response: ' + xhr.responseText;
+            }
+            $('#bannedUsersList').html('<p class="text-danger">' + errorMsg + '</p>');
         }
     });
 }
@@ -930,15 +1031,28 @@ function unbanUser(userIdString, userName) {
             user_id_string: userIdString
         },
         success: function(response) {
-            if (response.status === 'success') {
+            debugLog('Unban response:', response);
+            
+            let res = response;
+            if (typeof response === 'string') {
+                try {
+                    res = JSON.parse(response);
+                } catch (e) {
+                    console.error('JSON parse error:', e, response);
+                    alert('Invalid response from server');
+                    return;
+                }
+            }
+            
+            if (res.status === 'success') {
                 alert(userName + ' has been unbanned successfully!');
                 loadBannedUsers();
             } else {
-                alert('Error: ' + response.message);
+                alert('Error: ' + res.message);
             }
         },
         error: function(xhr, status, error) {
-            console.error('AJAX error in unbanUser:', status, error);
+            console.error('AJAX error in unbanUser:', status, error, xhr.responseText);
             alert('AJAX error: ' + error);
         }
     });
@@ -950,9 +1064,12 @@ function saveRoomSettings() {
         name: $('#settingsRoomName').val().trim(),
         description: $('#settingsDescription').val().trim(),
         capacity: $('#settingsCapacity').val(),
+        background: $('#settingsBackground').val(),
+        theme: $('#settingsTheme').val(),
         has_password: $('#settingsHasPassword').is(':checked') ? 1 : 0,
         password: $('#settingsPassword').val(),
-        allow_knocking: $('#settingsAllowKnocking').is(':checked') ? 1 : 0
+        allow_knocking: $('#settingsAllowKnocking').is(':checked') ? 1 : 0,
+        permanent: $('#settingsPermanent').is(':checked') ? 1 : 0
     };
     
     if (!formData.name) {
@@ -960,6 +1077,14 @@ function saveRoomSettings() {
         $('#settingsRoomName').focus();
         return;
     }
+    
+    // Validate password settings
+    if (formData.has_password && !formData.password && !confirm('No password entered. Do you want to keep the current password?')) {
+        $('#settingsPassword').focus();
+        return;
+    }
+    
+    debugLog('Saving room settings:', formData);
     
     // Show loading state
     const saveButton = $('#roomSettingsModal .btn-primary');
@@ -976,23 +1101,61 @@ function saveRoomSettings() {
                 if (res.status === 'success') {
                     alert('Room settings updated successfully!');
                     $('#roomSettingsModal').modal('hide');
-                    location.reload(); // Reload to reflect changes
+                    
+                    // Apply theme change immediately if theme was changed
+                    if (formData.theme && formData.theme !== 'default') {
+                        applyTheme(formData.theme);
+                    } else {
+                        // Reload page to remove any custom themes
+                        location.reload();
+                    }
                 } else {
                     alert('Error: ' + res.message);
                 }
             } catch (e) {
-                console.error('JSON parse error:', e);
+                criticalError('JSON parse error:', e);
                 alert('Invalid response from server');
             }
         },
         error: function(xhr, status, error) {
-            console.error('AJAX error in saveRoomSettings:', status, error);
+            criticalError('AJAX error in saveRoomSettings:', { status, error });
             alert('AJAX error: ' + error);
         },
         complete: function() {
             saveButton.prop('disabled', false).html(originalText);
         }
     });
+}
+
+// Function to dynamically apply themes
+function applyTheme(themeName) {
+    debugLog('Applying theme:', themeName);
+    
+    // Remove any existing theme stylesheets
+    $('link[data-theme]').remove();
+    
+    if (themeName && themeName !== 'default') {
+        // Add new theme stylesheet
+        const themeLink = document.createElement('link');
+        themeLink.rel = 'stylesheet';
+        themeLink.href = `css/themes/${themeName}.css`;
+        themeLink.setAttribute('data-theme', themeName);
+        
+        // Add after the main stylesheet
+        const mainStylesheet = $('link[href*="style.css"]');
+        if (mainStylesheet.length > 0) {
+            mainStylesheet.after(themeLink);
+        } else {
+            $('head').append(themeLink);
+        }
+        
+        // Add theme class to body for additional styling hooks
+        $('body').removeClass('theme-default theme-dark theme-neon theme-minimal theme-cyberpunk')
+                .addClass(`theme-${themeName}`);
+    } else {
+        // Remove theme class from body
+        $('body').removeClass('theme-default theme-dark theme-neon theme-minimal theme-cyberpunk');
+    }
 }
 
 function leaveRoom() {
@@ -1009,16 +1172,20 @@ function leaveRoom() {
             debugLog('Response from api/leave_room.php (check):', response);
             try {
                 let res = JSON.parse(response);
+                debugLog('Parsed response:', res);
                 
                 if (res.status === 'host_leaving') {
+                    debugLog('User is host, showing modal with other users:', res.other_users);
                     showHostLeavingModal(
                         res.other_users || [], 
                         res.show_transfer !== false, 
                         res.last_user === true
                     );
                 } else if (res.status === 'success') {
+                    debugLog('Regular user leaving, redirecting to lounge');
                     window.location.href = 'lounge.php';
                 } else {
+                    console.error('Error response:', res);
                     alert('Error: ' + res.message);
                 }
             } catch (e) {
@@ -1031,13 +1198,16 @@ function leaveRoom() {
             }
         },
         error: function(xhr, status, error) {
-            console.error('AJAX error in leaveRoom:', status, error);
+            console.error('AJAX error in leaveRoom:', status, error, 'Response:', xhr.responseText);
             alert('AJAX error: ' + error);
         }
     });
 }
 
 function showHostLeavingModal(otherUsers, showTransfer, isLastUser) {
+    if (showTransfer === undefined) showTransfer = true;
+    if (isLastUser === undefined) isLastUser = false;
+    
     let userOptions = '';
     let transferSection = '';
     
@@ -1050,7 +1220,7 @@ function showHostLeavingModal(otherUsers, showTransfer, isLastUser) {
         transferSection = `
             <div class="mb-3">
                 <label for="newHostSelect" class="form-label">Or transfer host privileges to:</label>
-                <select class="form-select mb-2" id="newHostSelect" style="background: #333; border: 1px solid #555; color: #fff;">
+                <select class="form-select mb-2" id="newHostSelect">
                     <option value="">Select new host...</option>
                     ${userOptions}
                 </select>
@@ -1062,8 +1232,8 @@ function showHostLeavingModal(otherUsers, showTransfer, isLastUser) {
     let modalHtml = `
         <div class="modal fade" id="hostLeavingModal" tabindex="-1">
             <div class="modal-dialog">
-                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
-                    <div class="modal-header" style="border-bottom: 1px solid #444;">
+                <div class="modal-content">
+                    <div class="modal-header">
                         <h5 class="modal-title">${isLastUser ? 'Last User in Room' : 'You are the Host'}</h5>
                     </div>
                     <div class="modal-body">
@@ -1077,7 +1247,7 @@ function showHostLeavingModal(otherUsers, showTransfer, isLastUser) {
                             ${transferSection}
                         </div>
                     </div>
-                    <div class="modal-footer" style="border-top: 1px solid #444;">
+                    <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     </div>
                 </div>
@@ -1092,6 +1262,8 @@ function showHostLeavingModal(otherUsers, showTransfer, isLastUser) {
 
 function deleteRoom() {
     if (confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
+        debugLog('🏗️ Deleting room...');
+        
         $.ajax({
             url: 'api/leave_room.php',
             method: 'POST',
@@ -1100,9 +1272,11 @@ function deleteRoom() {
                 action: 'delete_room'
             },
             success: function(response) {
+                debugLog('🏗️ Delete room response:', response);
                 try {
                     let res = JSON.parse(response);
                     if (res.status === 'success') {
+                        debugLog('✅ Room deleted, redirecting to lounge');
                         stopKickDetection();
                         alert('Room deleted successfully');
                         window.location.href = 'lounge.php';
@@ -1115,7 +1289,7 @@ function deleteRoom() {
                 }
             },
             error: function(xhr, status, error) {
-                console.error('AJAX error in deleteRoom:', status, error);
+                console.error('AJAX error in deleteRoom:', status, error, xhr.responseText);
                 alert('AJAX error: ' + error);
             }
         });
@@ -1130,6 +1304,8 @@ function transferHost() {
     }
     
     if (confirm('Are you sure you want to transfer host privileges and leave the room?')) {
+        debugLog('👑 Transferring host to:', newHostId);
+        
         $.ajax({
             url: 'api/leave_room.php',
             method: 'POST',
@@ -1139,6 +1315,7 @@ function transferHost() {
                 new_host_user_id: newHostId
             },
             success: function(response) {
+                debugLog('👑 Transfer host response:', response);
                 try {
                     let res = JSON.parse(response);
                     if (res.status === 'success') {
@@ -1154,7 +1331,7 @@ function transferHost() {
                 }
             },
             error: function(xhr, status, error) {
-                console.error('AJAX error in transferHost:', status, error);
+                console.error('AJAX error in transferHost:', status, error, xhr.responseText);
                 alert('AJAX error: ' + error);
             }
         });
@@ -1166,16 +1343,16 @@ function showBanModal(userIdString, userName) {
     const modalHtml = `
         <div class="modal fade" id="banUserModal" tabindex="-1">
             <div class="modal-dialog">
-                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
-                    <div class="modal-header" style="border-bottom: 1px solid #444;">
+                <div class="modal-content">
+                    <div class="modal-header">
                         <h5 class="modal-title"><i class="fas fa-ban"></i> Ban User</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
                         <p>You are about to ban <strong>${userName}</strong> from this room.</p>
                         <div class="mb-3">
                             <label for="banDuration" class="form-label">Ban Duration</label>
-                            <select class="form-select" id="banDuration" required style="background: #333; border: 1px solid #555; color: #fff;">
+                            <select class="form-select" id="banDuration" required>
                                 <option value="300">5 minutes</option>
                                 <option value="1800">30 minutes</option>
                                 <option value="permanent">Permanent</option>
@@ -1183,10 +1360,10 @@ function showBanModal(userIdString, userName) {
                         </div>
                         <div class="mb-3">
                             <label for="banReason" class="form-label">Reason (optional)</label>
-                            <input type="text" class="form-control" id="banReason" placeholder="Enter reason for ban" style="background: #333; border: 1px solid #555; color: #fff;">
+                            <input type="text" class="form-control" id="banReason" placeholder="Enter reason for ban">
                         </div>
                     </div>
-                    <div class="modal-footer" style="border-top: 1px solid #444;">
+                    <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="button" class="btn btn-danger" onclick="confirmBanUser('${userIdString}', '${userName.replace(/'/g, "\\'")}')">
                             <i class="fas fa-ban"></i> Ban User
@@ -1214,6 +1391,8 @@ function confirmBanUser(userIdString, userName) {
         return;
     }
     
+    debugLog('🔨 Banning user:', userIdString, 'for:', duration, 'reason:', reason);
+    
     const banButton = $('#banUserModal .btn-danger');
     const originalText = banButton.html();
     banButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status"></span> Banning...');
@@ -1229,7 +1408,20 @@ function confirmBanUser(userIdString, userName) {
             reason: reason
         },
         success: function(response) {
-            if (response.status === 'success') {
+            debugLog('🔨 Ban response:', response);
+            
+            let res = response;
+            if (typeof response === 'string') {
+                try {
+                    res = JSON.parse(response);
+                } catch (e) {
+                    console.error('JSON parse error:', e, response);
+                    alert('Invalid response from server');
+                    return;
+                }
+            }
+            
+            if (res.status === 'success') {
                 alert('User banned successfully ' + durationText + '!');
                 $('#banUserModal').modal('hide');
                 
@@ -1241,11 +1433,11 @@ function confirmBanUser(userIdString, userName) {
                 }, 500);
                 
             } else {
-                alert('Error: ' + response.message);
+                alert('Error: ' + res.message);
             }
         },
         error: function(xhr, status, error) {
-            console.error('AJAX error in confirmBanUser:', status, error);
+            console.error('AJAX error in confirmBanUser:', status, error, xhr.responseText);
             alert('AJAX error: ' + error);
         },
         complete: function() {
@@ -1260,43 +1452,61 @@ function checkForKnocks() {
         return;
     }
     
+    debugLog('checkForKnocks: Checking for knocks in room...');
+    
     $.ajax({
         url: 'api/check_knocks.php',
         method: 'GET',
         dataType: 'json',
         success: function(knocks) {
+            debugLog('checkForKnocks: Received response:', knocks);
+            
             if (Array.isArray(knocks) && knocks.length > 0) {
+                debugLog('checkForKnocks: Found', knocks.length, 'knocks');
                 displayKnockNotifications(knocks);
+            } else {
+                debugLog('checkForKnocks: No knocks found');
             }
         },
         error: function(xhr, status, error) {
-            // Silently fail for knock checks
+            debugLog('checkForKnocks: Error:', {
+                status: status,
+                error: error,
+                responseText: xhr.responseText
+            });
         }
     });
 }
 
 function displayKnockNotifications(knocks) {
+    debugLog('displayKnockNotifications: Processing', knocks.length, 'knocks');
+    
     knocks.forEach((knock, index) => {
+        debugLog('Processing knock:', knock);
+        
         if ($(`#knock-${knock.id}`).length > 0) {
-            return; // Already displayed
+            debugLog('Notification already exists for knock', knock.id);
+            return;
         }
         
         const userName = knock.username || knock.guest_name || 'Unknown User';
         const avatar = knock.avatar || 'default_avatar.jpg';
+        const roomName = knock.room_name || 'This Room';
+        
         const topPosition = 20 + (index * 140);
         
         const notificationHtml = `
             <div class="alert alert-info knock-notification" 
                  id="knock-${knock.id}" 
                  role="alert" 
-                 style="position: fixed; top: ${topPosition}px; right: 20px; z-index: 1070; max-width: 400px; background: #2a2a2a; border: 1px solid #404040; color: #e0e0e0;">
+                 style="position: fixed; top: ${topPosition}px; right: 20px; z-index: 1070; max-width: 400px; min-width: 350px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); border-left: 4px solid #007bff; background: rgba(255,255,255,0.98);">
                 <div class="d-flex align-items-center">
-                    <img src="images/${avatar}" width="40" height="40" class="rounded-circle me-3" alt="${userName}" style="border: 2px solid #007bff;">
+                    <img src="images/${avatar}" width="40" height="40" class="rounded-circle me-3" alt="${userName}" style="border: 2px solid #fff;">
                     <div class="flex-grow-1">
-                        <h6 class="mb-1" style="color: #e0e0e0;">
+                        <h6 class="mb-1" style="color: #333;">
                             <i class="fas fa-hand-paper text-primary"></i> Knock Request
                         </h6>
-                        <p class="mb-2" style="color: #ccc;"><strong>${userName}</strong> wants to join this room</p>
+                        <p class="mb-2" style="color: #555;"><strong>${userName}</strong> wants to join this room</p>
                         <div>
                             <button class="btn btn-success btn-sm me-2" onclick="respondToKnock(${knock.id}, 'accepted')">
                                 <i class="fas fa-check"></i> Accept
@@ -1306,22 +1516,26 @@ function displayKnockNotifications(knocks) {
                             </button>
                         </div>
                     </div>
-                    <button type="button" class="btn-close" onclick="dismissKnock(${knock.id})" style="filter: invert(1);"></button>
+                    <button type="button" class="btn-close" onclick="dismissKnock(${knock.id})" style="color: #333;"></button>
                 </div>
             </div>
         `;
         
+        debugLog('Adding knock notification for knock', knock.id);
         $('body').append(notificationHtml);
+        
         $(`#knock-${knock.id}`).hide().fadeIn(300);
         
-        // Auto-dismiss after 45 seconds
         setTimeout(() => {
+            debugLog('Auto-dismissing knock', knock.id);
             dismissKnock(knock.id);
         }, 45000);
     });
 }
 
 function respondToKnock(knockId, response) {
+    debugLog('respondToKnock:', knockId, response);
+    
     $.ajax({
         url: 'api/respond_knocks.php',
         method: 'POST',
@@ -1331,8 +1545,10 @@ function respondToKnock(knockId, response) {
         },
         dataType: 'json',
         success: function(result) {
+            debugLog('Knock response result:', result);
             if (result.status === 'success') {
                 dismissKnock(knockId);
+                
                 loadMessages();
                 
                 const message = response === 'accepted' ? 
@@ -1344,15 +1560,25 @@ function respondToKnock(knockId, response) {
             }
         },
         error: function(xhr, status, error) {
-            console.error('Error responding to knock:', error);
+            console.error('Error responding to knock:', error, xhr.responseText);
             alert('Error responding to knock: ' + error);
         }
     });
 }
 
 function dismissKnock(knockId) {
+    debugLog('dismissKnock:', knockId);
     $(`#knock-${knockId}`).fadeOut(300, function() {
         $(this).remove();
+        repositionKnockNotifications();
+    });
+}
+
+function repositionKnockNotifications() {
+    $('.knock-notification').each(function(index) {
+        $(this).animate({
+            top: (20 + (index * 140)) + 'px'
+        }, 200);
     });
 }
 
@@ -1363,18 +1589,195 @@ function createTestUser() {
         method: 'POST',
         dataType: 'json',
         success: function(response) {
-            if (response.status === 'success') {
-                alert('Test user created: ' + response.user.name);
+            debugLog('Create test user response:', response);
+            
+            let res = response;
+            if (typeof response === 'string') {
+                try {
+                    res = JSON.parse(response);
+                } catch (e) {
+                    console.error('JSON parse error:', e, response);
+                    alert('Invalid response from server');
+                    return;
+                }
+            }
+            
+            if (res.status === 'success') {
+                alert('Test user created: ' + res.user.name);
                 loadUsers();
                 loadMessages();
+            } else {
+                alert('Error: ' + res.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error in createTestUser:', status, error, xhr.responseText);
+            alert('AJAX error: ' + error);
+        }
+    });
+}
+
+// ===== DEBUGGING/TESTING FUNCTIONS =====
+// Force immediate status check (for testing)
+function forceStatusCheck() {
+    debugLog('🔍 Forcing immediate status check...');
+    userKickedModalShown = false;
+    checkUserStatus();
+}
+
+// Show activity status for debugging
+function showActivityStatus() {
+    const status = {
+        activityTrackingEnabled: activityTrackingEnabled,
+        activityTrackingActive: !!activityInterval,
+        disconnectCheckingActive: !!disconnectCheckInterval,
+        lastActivityUpdate: lastActivityUpdate,
+        lastActivityTime: lastActivityUpdate ? new Date(lastActivityUpdate).toLocaleTimeString() : 'Never',
+        userCurrentlyActive: userIsActive,
+        activityIntervalId: activityInterval,
+        disconnectIntervalId: disconnectCheckInterval
+    };
+    
+    debugLog('📊 Activity Tracking Status:');
+    debugLog(`- System enabled: ${status.activityTrackingEnabled}`);
+    debugLog(`- Activity tracking active: ${status.activityTrackingActive}`);
+    debugLog(`- Disconnect checking active: ${status.disconnectCheckingActive}`);
+    debugLog(`- Last activity update: ${status.lastActivityTime}`);
+    debugLog(`- User currently active: ${status.userCurrentlyActive}`);
+    debugLog(`- Activity interval ID: ${status.activityIntervalId}`);
+    debugLog(`- Disconnect interval ID: ${status.disconnectIntervalId}`);
+    
+    return status;
+}
+
+// Force activity update (for testing)
+function forceActivityUpdate(type = 'manual_test') {
+    debugLog('🔧 Forcing activity update...');
+    const oldThreshold = lastActivityUpdate;
+    lastActivityUpdate = 0; // Reset throttle
+    updateUserActivity(type);
+    // Restore throttle after a second
+    setTimeout(() => {
+        if (lastActivityUpdate === 0) {
+            lastActivityUpdate = oldThreshold;
+        }
+    }, 1000);
+}
+
+// Force disconnect check (for testing)
+function forceDisconnectCheck() {
+    debugLog('🔧 Forcing disconnect check...');
+    triggerDisconnectCheck();
+}
+
+// Restart activity tracking (for testing)
+function restartActivityTracking() {
+    debugLog('🔄 Restarting activity tracking...');
+    stopActivityTracking();
+    setTimeout(() => {
+        initializeActivityTracking();
+    }, 1000);
+}
+
+// Set user inactive for testing
+function setUserInactive(minutes = 16) {
+    if (!confirm(`Set yourself inactive for ${minutes} minutes? This will test the disconnect system.`)) {
+        return;
+    }
+    
+    debugLog(`🧪 Setting user inactive for ${minutes} minutes...`);
+    
+    $.ajax({
+        url: 'api/set_user_inactive.php',
+        method: 'POST',
+        data: {
+            room_id: roomId,
+            user_id_string: currentUserIdString,
+            minutes: minutes
+        },
+        dataType: 'json',
+        success: function(response) {
+            debugLog('Set inactive response:', response);
+            if (response.status === 'success') {
+                alert(`You are now marked as inactive for ${minutes} minutes. The disconnect system should kick you out soon.`);
             } else {
                 alert('Error: ' + response.message);
             }
         },
         error: function(xhr, status, error) {
-            console.error('AJAX error in createTestUser:', status, error);
-            alert('AJAX error: ' + error);
+            console.error('Error setting user inactive:', error);
+            alert('Error: ' + error);
         }
+    });
+}
+
+// Comprehensive debug function
+function debugActivitySystem() {
+    debugLog('🔍 Activity System Debug:');
+    showActivityStatus();
+    
+    debugLog('\n🧪 Testing API endpoints...');
+    
+    // Test activity update API
+    $.ajax({
+        url: 'api/update_activity.php',
+        method: 'POST',
+        data: { activity_type: 'debug_test' },
+        success: function(response) {
+            debugLog('✅ update_activity.php working:', response);
+        },
+        error: function(xhr, status, error) {
+            debugLog('❌ update_activity.php error:', status, error);
+        }
+    });
+    
+    // Test disconnect check API
+    $.ajax({
+        url: 'api/check_disconnects.php',
+        method: 'GET',
+        success: function(response) {
+            debugLog('✅ check_disconnects.php working:', response);
+        },
+        error: function(xhr, status, error) {
+            debugLog('❌ check_disconnects.php error:', status, error);
+        }
+    });
+}
+
+// Test kick detection system
+function testKickDetection() {
+    debugLog('🧪 Testing kick detection system...');
+    debugLog('Kick detection enabled:', kickDetectionEnabled);
+    debugLog('Modal shown:', userKickedModalShown);
+    debugLog('Interval active:', !!kickDetectionInterval);
+    forceStatusCheck();
+}
+
+// Simulate various scenarios for testing
+function simulateBan() {
+    debugLog('🎭 Simulating ban...');
+    handleUserBanned({
+        message: 'You have been banned for testing',
+        ban_info: {
+            permanent: false,
+            expires_in_minutes: 5,
+            reason: 'Testing ban system',
+            banned_by: 'TestAdmin'
+        }
+    });
+}
+
+function simulateKick() {
+    debugLog('🎭 Simulating kick...');
+    handleUserKicked({
+        message: 'You have been kicked for testing'
+    });
+}
+
+function simulateRoomDeletion() {
+    debugLog('🎭 Simulating room deletion...');
+    handleRoomDeleted({
+        message: 'This room has been deleted for testing'
     });
 }
 
@@ -1403,7 +1806,6 @@ $(document).ready(function() {
         }
     });
 
-    // Scroll detection for auto-scroll behavior
     $(document).on('scroll', '#chatbox', function() {
         userIsScrolling = true;
         setTimeout(function() {
@@ -1447,8 +1849,32 @@ $(document).ready(function() {
     setInterval(loadMessages, 3000);
     setInterval(loadUsers, 5000);
     
-    // Focus message input
-    $('#message').focus();
-    
     debugLog('✅ Room initialization complete');
+    
+    // Make debugging functions globally available
+    window.showActivityStatus = showActivityStatus;
+    window.forceActivityUpdate = forceActivityUpdate;
+    window.forceDisconnectCheck = forceDisconnectCheck;
+    window.restartActivityTracking = restartActivityTracking;
+    window.setUserInactive = setUserInactive;
+    window.debugActivitySystem = debugActivitySystem;
+    window.testKickDetection = testKickDetection;
+    window.simulateBan = simulateBan;
+    window.simulateKick = simulateKick;
+    window.simulateRoomDeletion = simulateRoomDeletion;
+    window.forceStatusCheck = forceStatusCheck;
+    
+    // Log available debugging functions
+    debugLog('\n🧪 Available debugging functions:');
+    debugLog('- showActivityStatus() - Show current activity tracking status');
+    debugLog('- forceActivityUpdate() - Force an activity update');
+    debugLog('- forceDisconnectCheck() - Trigger disconnect check manually');
+    debugLog('- restartActivityTracking() - Restart activity tracking system');
+    debugLog('- setUserInactive(minutes) - Mark yourself inactive for testing');
+    debugLog('- debugActivitySystem() - Comprehensive system debug');
+    debugLog('- testKickDetection() - Test kick detection system');
+    debugLog('- simulateBan() - Simulate being banned');
+    debugLog('- simulateKick() - Simulate being kicked');
+    debugLog('- simulateRoomDeletion() - Simulate room deletion');
+    debugLog('- forceStatusCheck() - Force immediate status check');
 });
