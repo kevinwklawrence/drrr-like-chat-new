@@ -55,7 +55,7 @@ if (!empty($user_id_string)) {
             border-radius: 8px;
             padding: 20px;
             margin: 0 auto;
-            max-width: 1400px;
+            max-width: 1200px;
         }
         
         .user-profile-card {

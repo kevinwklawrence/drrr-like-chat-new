@@ -31,9 +31,11 @@
             border-radius: 15px;
             padding: 40px;
             margin: 0 auto;
-            max-width: 900px;
+            max-width: 1200px;
             width: 100%;
             box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            padding-bottom: 10px;
+            padding-bottom: 10px;
         }
         
         .login-header {
@@ -60,7 +62,7 @@
         }
         
         .avatar-container {
-            max-height: 400px;
+            max-height: 500px;
             overflow-y: auto;
             border: 2px solid #404040;
             border-radius: 10px;
@@ -122,9 +124,13 @@
         .avatar-section h6 {
             color: #007bff;
             font-weight: 600;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #404040;
-            padding-bottom: 5px;
+            margin-bottom: 15px;
+            padding: 8px 12px;
+            background: #333;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .form-control, .form-select {
@@ -269,7 +275,7 @@
                                 <?php
                                 $image_base_dir = __DIR__ . '/images';
                                 $web_base_dir = 'images/';
-                                $priority_folders = ['default', 'time-limited'];
+                                $priority_folders = ['time-limited', 'default'];
                                 $allowed_ext = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
 
                                 foreach ($priority_folders as $folder) {
@@ -356,7 +362,12 @@
                     </a>
                 </div>
             </div>
-        </div>
+            <div>
+                <p class="text-center text-muted mt-4">
+                    <small>By joining as a guest, you agree to our <a href="terms.php" class="text-white">Terms of Service</a> and <a href="privacy.php" class="text-white">Privacy Policy</a>. ©Lenn, 2025.</small>
+                </p>    
+                
+                </div>
     </div>
     
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -390,11 +401,11 @@
                     return;
                 }
                 
-                if (!selectedAvatar) {
+              /*  if (!selectedAvatar) {
                     alert('Please select an avatar');
                     $('.avatar-container')[0].scrollIntoView({ behavior: 'smooth' });
                     return;
-                }
+                }*/
                 
                 // Show loading state
                 const submitBtn = $('button[type="submit"]');

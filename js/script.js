@@ -90,42 +90,40 @@ $(document).ready(function() {
         });
     });
 
-    // Member login
-    $('#userLoginForm').submit(function(e) {
-        e.preventDefault();
-        debugLog('User login form submitted');
-        
-        // Check if avatar is selected
-        if (!$('#selectedAvatar').val()) {
-            //alert('Please select an avatar');
-            $('#selectedAvatar').val("u0.png")
-            return;
-        }
-        
-        $.ajax({
-            url: 'api/login.php',
-            method: 'POST',
-            data: {
-                username: $('#username').val(),
-                password: $('#password').val(),
-                avatar: $('#selectedAvatar').val(),
-                type: 'user'
-            },
-            dataType: 'json',
-            success: function(res) {
-                debugLog('Response from api/login.php:', res);
-                if (res.status === 'success') {
-                    window.location.href = 'lounge.php';
-                } else {
-                    alert('Error: ' + (res.message || 'Unknown error'));
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('AJAX error in userLogin:', status, error, 'Response:', xhr.responseText);
-                alert('AJAX error: ' + error + ' (Response: ' + xhr.responseText + ')');
+    // Replace the member login section in js/script.js with this updated version
+
+// Member login
+$('#userLoginForm').submit(function(e) {
+    e.preventDefault();
+    debugLog('User login form submitted');
+    
+    // UPDATED: Remove the forced default avatar assignment
+    // Allow empty avatar selection - server will handle fallback logic
+    
+    $.ajax({
+        url: 'api/login.php',
+        method: 'POST',
+        data: {
+            username: $('#username').val(),
+            password: $('#password').val(),
+            avatar: $('#selectedAvatar').val(), // Can be empty
+            type: 'user'
+        },
+        dataType: 'json',
+        success: function(res) {
+            debugLog('Response from api/login.php:', res);
+            if (res.status === 'success') {
+                window.location.href = 'lounge.php';
+            } else {
+                alert('Error: ' + (res.message || 'Unknown error'));
             }
-        });
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error in userLogin:', status, error, 'Response:', xhr.responseText);
+            alert('AJAX error: ' + error + ' (Response: ' + xhr.responseText + ')');
+        }
     });
+});
 
     // Lounge functions
     function loadChatrooms() {

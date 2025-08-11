@@ -110,30 +110,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Hash password
-    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-    
-    // Default avatar for new users
-    $default_avatar = 'm1.png';
+    // Replace this section in register.php (around line 85-95)
 
-    // Insert new user into database
-    $stmt = $conn->prepare("INSERT INTO users (username, email, password, user_id, avatar, is_admin) VALUES (?, ?, ?, ?, ?, 0)");
-    if (!$stmt) {
-        error_log("Prepare failed for user insert in register.php: " . $conn->error);
-        echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
-        exit;
-    }
-    
-    $stmt->bind_param("sssss", $username, $email, $hashed_password, $user_id_string, $default_avatar);
-    if (!$stmt->execute()) {
-        error_log("Execute failed for user insert in register.php: " . $stmt->error);
-        echo json_encode(['status' => 'error', 'message' => 'Registration failed: ' . $stmt->error]);
-        $stmt->close();
-        exit;
-    }
-    
-    $new_user_db_id = $conn->insert_id;
+// Hash password
+$hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+// UPDATED: Use new default avatar path
+$default_avatar = 'default/u0.png';
+
+// Insert new user into database with avatar_memory initialization
+$stmt = $conn->prepare("INSERT INTO users (username, email, password, user_id, avatar, avatar_memory, is_admin) VALUES (?, ?, ?, ?, ?, ?, 0)");
+if (!$stmt) {
+    error_log("Prepare failed for user insert in register.php: " . $conn->error);
+    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
+    exit;
+}
+
+$stmt->bind_param("ssssss", $username, $email, $hashed_password, $user_id_string, $default_avatar, $default_avatar);
+if (!$stmt->execute()) {
+    error_log("Execute failed for user insert in register.php: " . $stmt->error);
+    echo json_encode(['status' => 'error', 'message' => 'Registration failed: ' . $stmt->error]);
     $stmt->close();
+    exit;
+}
+
+$new_user_db_id = $conn->insert_id;
+$stmt->close();
+
+error_log("User registered with avatar and avatar_memory set to: $default_avatar");
 
     // Create session for newly registered user
     $_SESSION['user'] = [
@@ -185,9 +189,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: 15px;
             padding: 40px;
             margin: 0 auto;
-            max-width: 800px;
+            max-width: 1200px;
             width: 100%;
             box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            padding-bottom: 10px;
         }
         
         .register-header {
@@ -506,6 +511,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </a>
                 </div>
             </div>
+            <div>
+                <p class="text-center text-muted mt-4">
+                    <small>By joining as a guest, you agree to our <a href="terms.php" class="text-white">Terms of Service</a> and <a href="privacy.php" class="text-white">Privacy Policy</a>. ©Lenn, 2025.</small>
+                </p>    
+                
+                </div>
         </div>
     </div>
     

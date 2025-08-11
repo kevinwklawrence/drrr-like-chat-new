@@ -11,6 +11,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// Replace this section in api/join_lounge.php (around line 15-20):
+
 $guest_name = $_POST['guest_name'] ?? '';
 $avatar = $_POST['avatar'] ?? '';
 
@@ -19,8 +21,9 @@ if (empty($guest_name)) {
     exit;
 }
 
+// UPDATED: Use correct default avatar path
 if (empty($avatar)) {
-    $avatar = 'u0.png'; // Default avatar if none selected
+    $avatar = 'default/u0.png'; // Updated default avatar path
 }
 
 // Generate encrypted user_id for guest using their IP address
