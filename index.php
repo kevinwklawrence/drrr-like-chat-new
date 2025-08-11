@@ -1,3 +1,6 @@
+<?php
+// This is the updated index.php with color selection integrated
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,250 +10,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
-    <link href="css/lounge.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #1a1a1a;
-            color: #e0e0e0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-        }
-        
-        .container-fluid {
-            background-color: #1a1a1a;
-            min-height: 100vh;
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .login-container {
-            background: #222;
-            border: 1px solid #333;
-            border-radius: 15px;
-            padding: 40px;
-            margin: 0 auto;
-            max-width: 1200px;
-            width: 100%;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-            padding-bottom: 10px;
-            padding-bottom: 10px;
-        }
-        
-        .login-header {
-            background: #2a2a2a;
-            border: 1px solid #404040;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        
-        .login-title {
-            color: #ffffff;
-            font-weight: 600;
-            margin: 0;
-        }
-        
-        .avatar-selection-card {
-            background: #2a2a2a;
-            border: 1px solid #404040;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .avatar-container {
-            max-height: 500px;
-            overflow-y: auto;
-            border: 2px solid #404040;
-            border-radius: 10px;
-            padding: 15px;
-            background: #1a1a1a;
-            margin-bottom: 20px;
-        }
-        
-        .avatar-container::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .avatar-container::-webkit-scrollbar-track {
-            background: #1a1a1a;
-        }
-        
-        .avatar-container::-webkit-scrollbar-thumb {
-            background: #555;
-            border-radius: 3px;
-        }
-        
-        .avatar-container::-webkit-scrollbar-thumb:hover {
-            background: #666;
-        }
-        
-        .avatar {
-            width: 60px;
-            height: 60px;
-            cursor: pointer;
-            margin: 2px;
-            border: 1px solid #555;
-            border-radius: 4px;
-            transition: all 0.1s ease;
-        }
-        
-        .avatar:hover {
-            border-color: #007bff;
-            box-shadow: 0 0 15px rgba(0, 123, 255, 0.5);
-        }
-        
-        .avatar.selected {
-            border: 2px solid #007bff;
-            box-shadow: 0 0 15px rgba(0, 123, 255, 0.5);
-        }
-
-        .avatar-sel {
-            width: 60px;
-            height: 60px;
-            margin: 2px;
-            border: 1px solid #555;
-            border-radius: 4px;
-            transition: all 0.1s ease;
-        }
-        
-        .avatar-section {
-            margin-bottom: 20px;
-        }
-        
-        .avatar-section h6 {
-            color: #007bff;
-            font-weight: 600;
-            margin-bottom: 15px;
-            padding: 8px 12px;
-            background: #333;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .form-control, .form-select {
-            background: #333 !important;
-            border: 1px solid #555 !important;
-            color: #fff !important;
-            border-radius: 8px;
-        }
-        
-        .form-control:focus, .form-select:focus {
-            background: #333 !important;
-            border-color: #777 !important;
-            color: #fff !important;
-            box-shadow: 0 0 0 0.2rem rgba(255,255,255,0.1) !important;
-        }
-        
-        .btn-primary {
-            background: #28a745;
-            border: 1px solid #28a745;
-            border-radius: 8px;
-            padding: 12px 20px;
-            font-weight: 500;
-            color: white;
-            transition: all 0.2s ease;
-        }
-        
-        .btn-primary:hover {
-            background: #218838;
-            border-color: #218838;
-            color: white;
-            transform: translateY(-1px);
-        }
-        
-        .btn-outline-light {
-            border: 1px solid #555;
-            color: #e0e0e0;
-            border-radius: 8px;
-            padding: 8px 16px;
-            font-weight: normal;
-            transition: all 0.2s ease;
-        }
-        
-        .btn-outline-light:hover {
-            background: #404040;
-            border-color: #666;
-            color: #e0e0e0;
-        }
-        
-        .form-label {
-            color: #e0e0e0;
-            font-weight: 500;
-        }
-        
-        .selected-avatar-preview {
-            background: #333;
-            border: 1px solid #555;
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        
-        .text-muted {
-            color: #666 !important;
-        }
-        
-        /* Mobile optimizations */
-        @media (max-width: 768px) {
-            .container-fluid {
-                padding: 10px;
-            }
-            
-            .login-container {
-                padding: 30px 20px;
-                margin: 10px;
-                border-radius: 10px;
-            }
-            
-            .avatar-container {
-                max-height: 300px;
-                padding: 10px;
-            }
-            
-            .avatar {
-                width: 50px;
-                height: 50px;
-                margin: 3px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .avatar {
-                width: 45px;
-                height: 45px;
-                margin: 6px;
-            }
-            
-            .login-container {
-                padding: 20px 15px;
-            }
-        }
-        
-        .links-section {
-            background: #2a2a2a;
-            border: 1px solid #404040;
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-        }
-        
-        .links-section a {
-            color: #007bff;
-            text-decoration: none;
-        }
-        
-        .links-section a:hover {
-            color: #0056b3;
-            text-decoration: underline;
-        }
-    </style>
+    <link href="css/guest_login.css" rel="stylesheet">
 </head>
 <body>
     <div class="container-fluid">
@@ -265,8 +25,7 @@
             
             <form id="guestLoginForm">
                 <div class="row">
-
-                <div class="col-lg-8">
+                    <div class="col-lg-6">
                         <div class="avatar-selection-card">
                             <label class="form-label mb-3">
                                 <i class="fas fa-images"></i> Choose Your Avatar
@@ -303,8 +62,100 @@
                         </div>
                     </div>
 
+                    <div class="col-lg-6">
+                        <!-- Color Selection -->
+                        <div class="color-selection-section">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label">
+                                    <i class="fas fa-palette"></i> Choose Your Chat Color
+                                </label>
+                                <button type="button" class="reset-btn" onclick="resetColorToDefault()">
+                                    <i class="fas fa-undo"></i> Reset
+                                </button>
+                            </div>
+                            
+                            <div class="color-grid">
+                                <!-- Default: Black -->
+                                <div class="color-option color-black selected" data-color="black" onclick="selectColor('black', this)">
+                                    <div class="color-name">Black</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-blue" data-color="blue" onclick="selectColor('blue', this)">
+                                    <div class="color-name">Blue</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-purple" data-color="purple" onclick="selectColor('purple', this)">
+                                    <div class="color-name">Purple</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-pink" data-color="pink" onclick="selectColor('pink', this)">
+                                    <div class="color-name">Pink</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-cyan" data-color="cyan" onclick="selectColor('cyan', this)">
+                                    <div class="color-name">Cyan</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-mint" data-color="mint" onclick="selectColor('mint', this)">
+                                    <div class="color-name">Mint</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-orange" data-color="orange" onclick="selectColor('orange', this)">
+                                    <div class="color-name">Orange</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-green" data-color="green" onclick="selectColor('green', this)">
+                                    <div class="color-name">Green</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-red" data-color="red" onclick="selectColor('red', this)">
+                                    <div class="color-name">Red</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-yellow" data-color="yellow" onclick="selectColor('yellow', this)">
+                                    <div class="color-name">Yellow</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-teal" data-color="teal" onclick="selectColor('teal', this)">
+                                    <div class="color-name">Teal</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-indigo" data-color="indigo" onclick="selectColor('indigo', this)">
+                                    <div class="color-name">Indigo</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                            </div>
+                            
+                            <div class="selected-color-preview">
+                                <div class="preview-circle color-black" id="selectedColorPreview"></div>
+                                <div>
+                                    <strong id="selectedColorName">Black</strong> - Your message bubble color
+                                </div>
+                            </div>
+                            
+                            <input type="hidden" id="selectedColor" name="color" value="black">
+                            
+                            <div class="form-text text-muted mt-2">
+                                <i class="fas fa-info-circle"></i> This color will be used for your chat messages
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
                     <!-- User Info -->
-                    <div class="col-lg-4">
+                    <div class="col-lg-6">
                         <div class="avatar-selection-card">
                             <div class="mb-4">
                                 <label for="guestName" class="form-label">
@@ -344,9 +195,6 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Avatar Selection -->
-                    
                 </div>
             </form>
             
@@ -374,6 +222,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         $(document).ready(function() {
+            // Initialize color selection
+            selectColor('black', document.querySelector('[data-color="black"]'));
+            
             // Avatar selection handling
             $('.avatar').click(function() {
                 $('.avatar').removeClass('selected');
@@ -394,18 +245,13 @@
                 
                 const guestName = $('#guestName').val().trim();
                 const selectedAvatar = $('#selectedAvatar').val();
+                const selectedColor = $('#selectedColor').val();
                 
                 if (!guestName) {
                     alert('Please enter your display name');
                     $('#guestName').focus();
                     return;
                 }
-                
-              /*  if (!selectedAvatar) {
-                    alert('Please select an avatar');
-                    $('.avatar-container')[0].scrollIntoView({ behavior: 'smooth' });
-                    return;
-                }*/
                 
                 // Show loading state
                 const submitBtn = $('button[type="submit"]');
@@ -418,6 +264,7 @@
                     data: {
                         guest_name: guestName,
                         avatar: selectedAvatar,
+                        color: selectedColor,
                         type: 'guest'
                     },
                     dataType: 'json',
@@ -437,6 +284,31 @@
                 });
             });
         });
+
+        // Color selection functions
+        function selectColor(colorName, element) {
+            // Remove selected class from all options
+            document.querySelectorAll('.color-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked option
+            element.classList.add('selected');
+            
+            // Update hidden input
+            document.getElementById('selectedColor').value = colorName;
+            
+            // Update preview
+            const preview = document.getElementById('selectedColorPreview');
+            preview.className = `preview-circle color-${colorName}`;
+            
+            // Update color name
+            document.getElementById('selectedColorName').textContent = colorName.charAt(0).toUpperCase() + colorName.slice(1);
+        }
+        
+        function resetColorToDefault() {
+            selectColor('black', document.querySelector('[data-color="black"]'));
+        }
     </script>
     <script src="js/script.js"></script>
 </body>
