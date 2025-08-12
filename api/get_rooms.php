@@ -55,6 +55,25 @@ try {
             'created_at' => $row['created_at'],
             'permanent' => 0
         ];
+
+        if ($user_count === 0) {
+    $url = 'http://localhost/api/cleanup_rooms.php'; // Replace with the actual API URL
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true); // Use POST if required by the API
+    // Add any necessary headers or data
+    // curl_setopt($ch, CURLOPT_POSTFIELDS, []);
+    // curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer your_token']);
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    // Optional: Check response
+    if ($response === false) {
+        error_log('Failed to call cleanup_rooms.api');
+    } else {
+        error_log('cleanup_rooms.api called successfully: ' . $response);
+    }
+}
         
         // Debug log to verify the data
         error_log("Room {$row['id']} ({$row['name']}): has_password = {$row['has_password']}");

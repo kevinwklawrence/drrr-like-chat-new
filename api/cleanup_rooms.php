@@ -60,7 +60,7 @@ foreach ($empty_rooms as $room) {
         $current_time = time();
         $seconds_empty = $current_time - $last_activity_time;
 
-        if ($seconds_empty >= 30) {
+        if ($seconds_empty >= 1) {
             // Delete the room (with proper foreign key handling)
             
             // First delete all users (should be none, but just in case)

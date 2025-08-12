@@ -17,6 +17,15 @@ if (file_exists('db_connect.php')) {
                 $stmt->close();
             }
         }
+        // Remove user from all rooms
+        if (!empty($user_id_string)) {
+            $stmt = $conn->prepare("DELETE FROM global_users WHERE user_id_string = ?");
+            if ($stmt) {
+                $stmt->bind_param("s", $user_id_string);
+                $stmt->execute();
+                $stmt->close();
+            }
+        }
     }
 }
 

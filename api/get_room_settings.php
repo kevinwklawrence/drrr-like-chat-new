@@ -1,5 +1,5 @@
 <?php
-// api/get_room_settings.php - Updated version
+// api/get_room_settings.php - Updated version with YouTube support
 session_start();
 include '../db_connect.php';
 
@@ -70,6 +70,9 @@ if (in_array('allow_knocking', $available_columns)) {
 if (in_array('theme', $available_columns)) {
     $select_fields[] = 'theme';
 }
+if (in_array('youtube_enabled', $available_columns)) {
+    $select_fields[] = 'youtube_enabled';
+}
 
 $sql = "SELECT " . implode(', ', $select_fields) . " FROM chatrooms WHERE id = ?";
 
@@ -100,10 +103,11 @@ $settings = [
     'permanent' => isset($room_settings['permanent']) ? (bool)$room_settings['permanent'] : false,
     'has_password' => isset($room_settings['has_password']) ? (bool)$room_settings['has_password'] : false,
     'allow_knocking' => isset($room_settings['allow_knocking']) ? (bool)$room_settings['allow_knocking'] : true,
-    'theme' => $room_settings['theme'] ?? 'default'
+    'theme' => $room_settings['theme'] ?? 'default',
+    'youtube_enabled' => isset($room_settings['youtube_enabled']) ? (bool)$room_settings['youtube_enabled'] : false
 ];
 
-error_log("Retrieved room settings for room_id=$room_id");
+error_log("Retrieved room settings for room_id=$room_id, youtube_enabled=" . ($settings['youtube_enabled'] ? 'true' : 'false'));
 echo json_encode([
     'status' => 'success', 
     'settings' => $settings

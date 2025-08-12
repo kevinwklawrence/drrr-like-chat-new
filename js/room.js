@@ -1,9 +1,7 @@
 // ===== DEBUG CONFIGURATION =====
-// Set to false for production, true for debugging
 const DEBUG_MODE = false;
 const SHOW_SENSITIVE_DATA = false;
 
-// Debug logging functions
 function debugLog(message, data = null) {
     if (DEBUG_MODE) {
         if (data !== null) {
@@ -53,6 +51,20 @@ let lastScrollTop = 0;
 let lastMessageCount = 0;
 let userIsScrolling = false;
 
+// YouTube Player System
+let youtubePlayer = null;
+let youtubePlayerReady = false;
+let youtubeEnabled = false;
+let isYoutubeHost = false;
+let playerHidden = false;
+let lastSyncToken = null;
+let playerSyncInterval = null;
+let queueUpdateInterval = null;
+let currentVideoData = null;
+let playerQueue = [];
+let playerSuggestions = [];
+let youtubeAPIReady = false;
+
 // ===== MESSAGE FUNCTIONS =====
 function sendMessage() {
     const messageInput = $('#message');
@@ -65,12 +77,10 @@ function sendMessage() {
     
     debugLog('💬 Sending message:', message);
     
-    // Show sending state
     const sendBtn = $('.btn-send-message');
     const originalText = sendBtn.html();
     sendBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
     
-    // Update activity immediately when sending message
     updateUserActivity('message_send');
     
     $.ajax({
@@ -141,7 +151,6 @@ function loadMessages() {
                 
                 chatbox.html(html);
                 
-                // Auto-scroll to bottom for new messages or if user was at bottom
                 if (isAtBottom || (newMessageCount > lastMessageCount && !userIsScrolling)) {
                     chatbox.scrollTop(chatbox[0].scrollHeight);
                 }
@@ -159,39 +168,23 @@ function loadMessages() {
     });
 }
 
-// ===== UPDATED USER COLOR MANAGEMENT =====
-// Remove the old hash-based system and replace with database-driven colors
-
-// REMOVE/REPLACE these old variables:
-// let userColorMap = new Map();
-// let availableColors = ['user-color-1', 'user-color-2', etc...];
-// let colorIndex = 0;
-
-// NEW: Simple function to get user color from message/user data
 function getUserColor(msg) {
-    // Try to get color from message data (for messages)
     if (msg && msg.color) {
         return `user-color-${msg.color}`;
     }
     
-    // Try to get color from user object (for user lists)
     if (msg && msg.user_color) {
         return `user-color-${msg.user_color}`;
     }
     
-    // Fallback to blue if no color is specified
     return 'user-color-blue';
 }
 
-// REMOVE the old hashCode function - no longer needed
-
-// UPDATED: renderMessage function to use new color system
 function renderMessage(msg) {
     const avatar = msg.avatar || msg.guest_avatar || 'default_avatar.jpg';
     const name = msg.username || msg.guest_name || 'Unknown';
     const userIdString = msg.user_id_string || msg.user_id || 'unknown';
     
-    // Handle system messages
     if (msg.type === 'system' || msg.is_system) {
         return `
             <div class="system-message">
@@ -201,29 +194,26 @@ function renderMessage(msg) {
         `;
     }
     
-    // Get user color class from message data
     const userColorClass = getUserColor(msg);
     
-    // Format timestamp
     const timestamp = new Date(msg.timestamp).toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit'
     });
     
     let badges = '';
-if (msg.is_admin) {
-    badges += '<span class="user-badge badge-admin"><i class="fas fa-shield-alt"></i> Admin</span>';
-}
-if (msg.is_host) {
-    badges += '<span class="user-badge badge-host"><i class="fas fa-crown"></i> Host</span>';
-}
-if (msg.user_id && !msg.is_admin) {
-    badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle"></i> Verified</span>';
-} else if (!msg.user_id) {
-    badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
-}
+    if (msg.is_admin) {
+        badges += '<span class="user-badge badge-admin"><i class="fas fa-shield-alt"></i> Admin</span>';
+    }
+    if (msg.is_host) {
+        badges += '<span class="user-badge badge-host"><i class="fas fa-crown"></i> Host</span>';
+    }
+    if (msg.user_id && !msg.is_admin) {
+        badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle"></i> Verified</span>';
+    } else if (!msg.user_id) {
+        badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
+    }
     
-    // Admin IP display
     let adminInfo = '';
     if (isAdmin && msg.ip_address) {
         adminInfo = `<div class="admin-info"><small class="text-muted">IP: ${msg.ip_address}</small></div>`;
@@ -247,51 +237,6 @@ if (msg.user_id && !msg.is_admin) {
     `;
 }
 
-// UPDATED: renderUser function to use new color system  
-function renderUser(user) {
-    const avatar = user.avatar || user.guest_avatar || 'default_avatar.jpg';
-    const name = user.display_name || user.username || user.guest_name || 'Unknown';
-    const userIdString = user.user_id_string || 'unknown';
-    
-    let badges = '';
-if (user.is_admin) {
-    badges += '<span class="user-badge badge-admin"><i class="fas fa-shield-alt"></i> Admin</span>';
-}
-if (user.is_host) {
-    badges += '<span class="user-badge badge-host"><i class="fas fa-crown"></i> Host</span>';
-}
-if (user.user_id && !user.is_admin) {
-    badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle"></i> Verified</span>';
-} else if (!user.user_id) {
-    badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
-}
-    
-    // Build actions for hosts/admins
-    let actions = '';
-    if ((isHost || isAdmin) && !user.is_host && !user.is_admin) { //&& userIdString !== currentUserIdString) {
-        actions = `
-            <div class="user-actions">
-                <button class="btn btn-ban-user" onclick="showBanModal('${userIdString}', '${name.replace(/'/g, "\\'")}')">
-                    <i class="fas fa-ban"></i> Ban
-                </button>
-            </div>
-        `;
-    }
-    
-    return `
-        <div class="user-item">
-            <div class="user-info-row">
-                <img src="images/${avatar}" class="user-avatar" alt="${name}'s avatar">
-                <div class="user-details">
-                    <div class="user-name">${name}</div>
-                    <div class="user-badges-row">${badges}</div>
-                </div>
-            </div>
-            ${actions}
-        </div>
-    `;
-}
-
 // ===== USER MANAGEMENT FUNCTIONS =====
 function loadUsers() {
     debugLog('Loading users for roomId:', roomId);
@@ -311,7 +256,6 @@ function loadUsers() {
                 } else if (users.length === 0) {
                     html = '<div class="empty-users"><i class="fas fa-users"></i><p>No users in room</p></div>';
                 } else {
-                    // Sort users: hosts first, then by name
                     users.sort((a, b) => {
                         if (a.is_host && !b.is_host) return -1;
                         if (!a.is_host && b.is_host) return 1;
@@ -338,6 +282,636 @@ function loadUsers() {
     });
 }
 
+function renderUser(user) {
+    const avatar = user.avatar || user.guest_avatar || 'default_avatar.jpg';
+    const name = user.display_name || user.username || user.guest_name || 'Unknown';
+    const userIdString = user.user_id_string || 'unknown';
+    
+    let badges = '';
+    if (user.is_admin) {
+        badges += '<span class="user-badge badge-admin"><i class="fas fa-shield-alt"></i> Admin</span>';
+    }
+    if (user.is_host) {
+        badges += '<span class="user-badge badge-host"><i class="fas fa-crown"></i> Host</span>';
+    }
+    if (user.user_id && !user.is_admin) {
+        badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle"></i> Verified</span>';
+    } else if (!user.user_id) {
+        badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
+    }
+    
+    let actions = '';
+    if ((isHost || isAdmin) && !user.is_host && !user.is_admin) {
+        actions = `
+            <div class="user-actions">
+                <button class="btn btn-ban-user" onclick="showBanModal('${userIdString}', '${name.replace(/'/g, "\\'")}')">
+                    <i class="fas fa-ban"></i> Ban
+                </button>
+            </div>
+        `;
+    }
+    
+    return `
+        <div class="user-item">
+            <div class="user-info-row">
+                <img src="images/${avatar}" class="user-avatar" alt="${name}'s avatar">
+                <div class="user-details">
+                    <div class="user-name">${name}</div>
+                    <div class="user-badges-row">${badges}</div>
+                </div>
+            </div>
+            ${actions}
+        </div>
+    `;
+}
+
+// ===== YOUTUBE PLAYER SYSTEM =====
+
+function loadYouTubeAPI() {
+    if (window.YT && window.YT.Player) {
+        youtubeAPIReady = true;
+        initializeYouTubePlayer();
+        return;
+    }
+    
+    debugLog('🎬 Loading YouTube IFrame API...');
+    
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+}
+
+function initializeYouTubePlayer() {
+    if (!youtubeAPIReady || !youtubeEnabled) {
+        debugLog('🎬 Cannot initialize player: API ready =', youtubeAPIReady, ', enabled =', youtubeEnabled);
+        return;
+    }
+    
+    debugLog('🎬 Initializing YouTube player...');
+    
+    youtubePlayer = new YT.Player('youtube-player', {
+        height: '280',
+        width: '100%',
+        playerVars: {
+            'playsinline': 1,
+            'controls': isHost ? 1 : 0,
+            'disablekb': isHost ? 0 : 1,
+            'fs': 1,
+            'rel': 0,
+            'showinfo': 0,
+            'modestbranding': 1
+        },
+        events: {
+            'onReady': onYouTubePlayerReady,
+            'onStateChange': onYouTubePlayerStateChange
+        }
+    });
+}
+
+function onYouTubePlayerReady(event) {
+    debugLog('🎬 YouTube player ready');
+    youtubePlayerReady = true;
+    
+    startPlayerSync();
+    startQueueUpdates();
+    syncPlayerState();
+}
+
+function onYouTubePlayerStateChange(event) {
+    debugLog('🎬 Player state changed:', event.data);
+    
+    if (isHost && youtubePlayerReady) {
+        const currentTime = youtubePlayer.getCurrentTime();
+        const videoId = getCurrentVideoId();
+        
+        switch (event.data) {
+            case YT.PlayerState.PLAYING:
+                updatePlayerSync(videoId, currentTime, true);
+                break;
+            case YT.PlayerState.PAUSED:
+                updatePlayerSync(videoId, currentTime, false);
+                break;
+            case YT.PlayerState.ENDED:
+                if (isHost) {
+                    skipToNextVideo();
+                }
+                break;
+        }
+    }
+}
+
+function startPlayerSync() {
+    if (playerSyncInterval) {
+        clearInterval(playerSyncInterval);
+    }
+    
+    playerSyncInterval = setInterval(syncPlayerState, 2000);
+    debugLog('🔄 Started player sync');
+}
+
+function syncPlayerState() {
+    if (!youtubeEnabled || !youtubePlayerReady) {
+        return;
+    }
+    
+    $.ajax({
+        url: 'api/youtube_sync.php',
+        method: 'GET',
+        data: { action: 'get_sync' },
+        dataType: 'json',
+        timeout: 5000,
+        success: function(response) {
+            if (response.status === 'success') {
+                const sync = response.sync_data;
+                
+                if (!sync.enabled) {
+                    return;
+                }
+                
+                if (sync.sync_token !== lastSyncToken) {
+                    debugLog('🔄 Syncing player state:', sync);
+                    lastSyncToken = sync.sync_token;
+                    
+                    if (sync.video_id) {
+                        const currentVideoId = getCurrentVideoId();
+                        
+                        if (currentVideoId !== sync.video_id) {
+                            youtubePlayer.loadVideoById({
+                                videoId: sync.video_id,
+                                startSeconds: sync.current_time
+                            });
+                        } else {
+                            const currentTime = youtubePlayer.getCurrentTime();
+                            const timeDiff = Math.abs(currentTime - sync.current_time);
+                            
+                            if (timeDiff > 3) {
+                                youtubePlayer.seekTo(sync.current_time, true);
+                            }
+                        }
+                        
+                        if (sync.is_playing && youtubePlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
+                            youtubePlayer.playVideo();
+                        } else if (!sync.is_playing && youtubePlayer.getPlayerState() === YT.PlayerState.PLAYING) {
+                            youtubePlayer.pauseVideo();
+                        }
+                    } else {
+                        if (youtubePlayer.getPlayerState() !== YT.PlayerState.CUED) {
+                            youtubePlayer.stopVideo();
+                        }
+                    }
+                }
+            }
+        },
+        error: function(xhr, status, error) {
+            debugLog('⚠️ Sync error:', error);
+        }
+    });
+}
+
+function updatePlayerSync(videoId, currentTime, isPlaying) {
+    if (!isHost || !youtubeEnabled) {
+        return;
+    }
+    
+    $.ajax({
+        url: 'api/youtube_sync.php',
+        method: 'POST',
+        data: {
+            action: 'update_time',
+            video_id: videoId,
+            current_time: currentTime,
+            is_playing: isPlaying ? 1 : 0
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                lastSyncToken = response.sync_token;
+                debugLog('🔄 Updated player sync');
+            }
+        },
+        error: function(xhr, status, error) {
+            debugLog('⚠️ Sync update error:', error);
+        }
+    });
+}
+
+function startQueueUpdates() {
+    if (queueUpdateInterval) {
+        clearInterval(queueUpdateInterval);
+    }
+    
+    queueUpdateInterval = setInterval(updateQueue, 3000);
+    updateQueue();
+    debugLog('📋 Started queue updates');
+}
+
+function updateQueue() {
+    if (!youtubeEnabled) {
+        return;
+    }
+    
+    $.ajax({
+        url: 'api/youtube_queue.php',
+        method: 'GET',
+        data: { action: 'get' },
+        dataType: 'json',
+        timeout: 5000,
+        success: function(response) {
+            if (response.status === 'success') {
+                playerQueue = response.data.queue || [];
+                playerSuggestions = response.data.suggestions || [];
+                currentVideoData = response.data.current_playing;
+                
+                renderQueue();
+                renderSuggestions();
+                updateVideoInfo();
+            }
+        },
+        error: function(xhr, status, error) {
+            debugLog('⚠️ Queue update error:', error);
+        }
+    });
+}
+
+function renderQueue() {
+    const container = $('#youtube-queue-list');
+    let html = '';
+    
+    if (playerQueue.length === 0) {
+        html = `
+            <div class="youtube-empty-state">
+                <i class="fas fa-list"></i>
+                <h6>Queue is empty</h6>
+                <p>Videos will appear here when added to the queue</p>
+            </div>
+        `;
+    } else {
+        playerQueue.forEach((video, index) => {
+            const isPlaying = currentVideoData && currentVideoData.id === video.id;
+            const actions = isHost ? `
+                <div class="youtube-queue-item-actions">
+                    <button class="btn btn-queue-remove" onclick="removeFromQueue(${video.id})" title="Remove">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            ` : '';
+            
+            html += `
+                <div class="youtube-queue-item ${isPlaying ? 'playing' : ''}">
+                    <div class="youtube-queue-item-content">
+                        <img src="${video.video_thumbnail}" class="youtube-queue-item-thumb" alt="Thumbnail" onerror="this.src='https://img.youtube.com/vi/${video.video_id}/default.jpg'">
+                        <div class="youtube-queue-item-details">
+                            <div class="youtube-queue-item-title">${video.video_title}</div>
+                            <div class="youtube-queue-item-meta">
+                                Added by ${video.suggested_by_name} • #${index + 1} in queue
+                            </div>
+                            ${actions}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    container.html(html);
+}
+
+function renderSuggestions() {
+    const container = $('#youtube-suggestions-list');
+    let html = '';
+    
+    if (playerSuggestions.length === 0) {
+        html = `
+            <div class="youtube-empty-state">
+                <i class="fas fa-lightbulb"></i>
+                <h6>No suggestions</h6>
+                <p>Video suggestions from users will appear here</p>
+            </div>
+        `;
+    } else {
+        playerSuggestions.forEach(video => {
+            const actions = isHost ? `
+                <div class="youtube-queue-item-actions">
+                    <button class="btn btn-queue-approve" onclick="approveVideo(${video.id})" title="Add to Queue">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="btn btn-queue-deny" onclick="denyVideo(${video.id})" title="Deny">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            ` : '';
+            
+            html += `
+                <div class="youtube-queue-item suggestion">
+                    <div class="youtube-queue-item-content">
+                        <img src="${video.video_thumbnail}" class="youtube-queue-item-thumb" alt="Thumbnail" onerror="this.src='https://img.youtube.com/vi/${video.video_id}/default.jpg'">
+                        <div class="youtube-queue-item-details">
+                            <div class="youtube-queue-item-title">${video.video_title}</div>
+                            <div class="youtube-queue-item-meta">
+                                Suggested by ${video.suggested_by_name}
+                            </div>
+                            ${actions}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    container.html(html);
+}
+
+function updateVideoInfo() {
+    const infoContainer = $('#youtube-video-info');
+    
+    if (currentVideoData) {
+        infoContainer.html(`
+            <div class="youtube-video-title">${currentVideoData.video_title}</div>
+            <div class="youtube-video-meta">
+                <span>Added by ${currentVideoData.suggested_by_name}</span>
+                <span>•</span>
+                <span>Now Playing</span>
+            </div>
+        `);
+    } else {
+        infoContainer.html(`
+            <div class="youtube-video-title">No video playing</div>
+            <div class="youtube-video-meta">
+                <span>Select a video or add one to the queue</span>
+            </div>
+        `);
+    }
+}
+
+function suggestVideo() {
+    const input = $('#youtube-suggest-input');
+    const url = input.val().trim();
+    
+    if (!url) {
+        alert('Please enter a YouTube URL or video ID');
+        return;
+    }
+    
+    const button = $('#youtube-suggest-btn');
+    const originalText = button.html();
+    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Suggesting...');
+    
+    $.ajax({
+        url: 'api/youtube_queue.php',
+        method: 'POST',
+        data: {
+            action: 'suggest',
+            video_url: url
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                input.val('');
+                updateQueue();
+                showToast('Video suggested successfully!', 'success');
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Suggest video error:', error);
+            alert('Error suggesting video: ' + error);
+        },
+        complete: function() {
+            button.prop('disabled', false).html(originalText);
+        }
+    });
+}
+
+function approveVideo(suggestionId) {
+    $.ajax({
+        url: 'api/youtube_queue.php',
+        method: 'POST',
+        data: {
+            action: 'approve',
+            suggestion_id: suggestionId
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                updateQueue();
+                showToast('Video approved and added to queue!', 'success');
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Approve video error:', error);
+            alert('Error approving video: ' + error);
+        }
+    });
+}
+
+function denyVideo(suggestionId) {
+    $.ajax({
+        url: 'api/youtube_queue.php',
+        method: 'POST',
+        data: {
+            action: 'deny',
+            suggestion_id: suggestionId
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                updateQueue();
+                showToast('Video suggestion denied', 'info');
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Deny video error:', error);
+            alert('Error denying video: ' + error);
+        }
+    });
+}
+
+function removeFromQueue(queueId) {
+    if (!confirm('Remove this video from the queue?')) {
+        return;
+    }
+    
+    $.ajax({
+        url: 'api/youtube_queue.php',
+        method: 'POST',
+        data: {
+            action: 'remove',
+            queue_id: queueId
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                updateQueue();
+                showToast('Video removed from queue', 'info');
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Remove video error:', error);
+            alert('Error removing video: ' + error);
+        }
+    });
+}
+
+function playVideo() {
+    if (!isHost || !youtubePlayerReady) return;
+    
+    const currentTime = youtubePlayer.getCurrentTime();
+    
+    $.ajax({
+        url: 'api/youtube_player.php',
+        method: 'POST',
+        data: {
+            action: 'resume',
+            current_time: currentTime
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                debugLog('🎬 Video resumed');
+            }
+        }
+    });
+}
+
+function pauseVideo() {
+    if (!isHost || !youtubePlayerReady) return;
+    
+    const currentTime = youtubePlayer.getCurrentTime();
+    
+    $.ajax({
+        url: 'api/youtube_player.php',
+        method: 'POST',
+        data: {
+            action: 'pause',
+            current_time: currentTime
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                debugLog('🎬 Video paused');
+            }
+        }
+    });
+}
+
+function skipToNextVideo() {
+    if (!isHost) return;
+    
+    $.ajax({
+        url: 'api/youtube_player.php',
+        method: 'POST',
+        data: { action: 'skip' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                debugLog('🎬 Skipped to next video');
+                updateQueue();
+            } else {
+                showToast(response.message || 'No more videos in queue', 'info');
+            }
+        }
+    });
+}
+
+function stopVideo() {
+    if (!isHost) return;
+    
+    $.ajax({
+        url: 'api/youtube_player.php',
+        method: 'POST',
+        data: { action: 'stop' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                debugLog('🎬 Video stopped');
+            }
+        }
+    });
+}
+
+function togglePlayerVisibility() {
+    const container = $('.youtube-player-container');
+    const toggle = $('.youtube-player-toggle');
+    
+    if (container.hasClass('user-hidden')) {
+        container.removeClass('user-hidden');
+        toggle.removeClass('hidden-player').html('<i class="fas fa-video-slash"></i>').attr('title', 'Hide Player');
+        playerHidden = false;
+        
+        if (youtubePlayerReady) {
+            syncPlayerState();
+        }
+    } else {
+        container.addClass('user-hidden');
+        toggle.addClass('hidden-player').html('<i class="fas fa-video"></i>').attr('title', 'Show Player');
+        playerHidden = true;
+    }
+    
+    localStorage.setItem(`youtube_hidden_${roomId}`, playerHidden);
+}
+
+function getCurrentVideoId() {
+    if (!youtubePlayer || !youtubePlayerReady) {
+        return null;
+    }
+    
+    try {
+        const url = youtubePlayer.getVideoUrl();
+        const match = url.match(/[?&]v=([^&]+)/);
+        return match ? match[1] : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function showToast(message, type = 'info') {
+    const toast = $(`
+        <div class="alert alert-${type} alert-dismissible fade show" 
+             style="position: fixed; top: 70px; right: 20px; z-index: 1060; min-width: 300px;">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('body').append(toast);
+    
+    setTimeout(() => {
+        toast.alert('close');
+    }, 4000);
+}
+
+function stopYouTubePlayer() {
+    debugLog('🛑 Stopping YouTube player system');
+    
+    if (playerSyncInterval) {
+        clearInterval(playerSyncInterval);
+        playerSyncInterval = null;
+    }
+    
+    if (queueUpdateInterval) {
+        clearInterval(queueUpdateInterval);
+        queueUpdateInterval = null;
+    }
+    
+    if (youtubePlayer && youtubePlayerReady) {
+        try {
+            youtubePlayer.stopVideo();
+        } catch (e) {
+            debugLog('Error stopping YouTube player:', e);
+        }
+    }
+    
+    youtubeEnabled = false;
+    youtubePlayerReady = false;
+}
 
 // ===== KICK DETECTION FUNCTIONS =====
 function checkUserStatus() {
@@ -727,6 +1301,8 @@ function showRoomSettings() {
 }
 
 function displayRoomSettingsModal(settings) {
+    console.log('Displaying room settings modal with:', settings); // Debug log
+    
     const modalHtml = `
         <div class="modal fade" id="roomSettingsModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
@@ -738,17 +1314,25 @@ function displayRoomSettingsModal(settings) {
                         <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
                     </div>
                     <div class="modal-body">
-                        <ul class="nav nav-tabs" id="settingsTabs" role="tablist">
+                        <ul class="nav nav-tabs" id="settingsTabs" role="tablist" style="border-bottom: 1px solid #444;">
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab">General</button>
+                                <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab" style="color: #fff; background: transparent; border: none;">General</button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">Security</button>
+                                <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab" style="color: #fff; background: transparent; border: none;">Security</button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="banlist-tab" data-bs-toggle="tab" data-bs-target="#banlist" type="button" role="tab">Banlist</button>
+                                <button class="nav-link" id="youtube-tab" data-bs-toggle="tab" data-bs-target="#youtube" type="button" role="tab" style="color: #fff; background: transparent; border: none;">
+                                    <i class="fab fa-youtube text-danger"></i> YouTube Player
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="banlist-tab" data-bs-toggle="tab" data-bs-target="#banlist" type="button" role="tab" style="color: #fff; background: transparent; border: none;">
+                                    <i class="fas fa-ban"></i> Banlist
+                                </button>
                             </li>
                         </ul>
+                        
                         <div class="tab-content" id="settingsTabsContent">
                             <!-- General Settings -->
                             <div class="tab-pane fade show active" id="general" role="tabpanel">
@@ -813,12 +1397,40 @@ function displayRoomSettingsModal(settings) {
                                 </div>
                             </div>
 
+                            <!-- YouTube Player Settings -->
+                            <div class="tab-pane fade" id="youtube" role="tabpanel">
+                                <div class="mt-3">
+                                    <div class="mb-4">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="settingsYouTubeEnabled"${settings.youtube_enabled ? ' checked' : ''}>
+                                            <label class="form-check-label" for="settingsYouTubeEnabled">
+                                                <i class="fab fa-youtube text-danger"></i> <strong>Enable YouTube Player</strong>
+                                            </label>
+                                        </div>
+                                        <small class="form-text text-muted">Allow synchronized video playback for all users in the room</small>
+                                    </div>
+                                    
+                                    <div id="youtubePlayerInfo" style="display: ${settings.youtube_enabled ? 'block' : 'none'};">
+                                        <div class="alert" style="background: rgba(13, 110, 253, 0.1); border: 1px solid rgba(13, 110, 253, 0.3); color: #b3d4fc; border-radius: 8px;">
+                                            <h6><i class="fas fa-info-circle"></i> YouTube Player Features:</h6>
+                                            <ul class="mb-0" style="padding-left: 1.2rem;">
+                                                <li><strong>Host Controls:</strong> Only hosts can control playback (play, pause, skip, stop)</li>
+                                                <li><strong>Video Suggestions:</strong> Users can suggest videos for host approval</li>
+                                                <li><strong>Queue System:</strong> Approved videos are queued for continuous playback</li>
+                                                <li><strong>Individual Toggle:</strong> Users can hide the player locally if they want</li>
+                                                <li><strong>Real-time Sync:</strong> All users see the same video at the same time</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Banlist -->
                             <div class="tab-pane fade" id="banlist" role="tabpanel">
                                 <div class="mt-3">
-                                    <h6>Banned Users</h6>
+                                    <h6><i class="fas fa-ban"></i> Banned Users</h6>
                                     <div id="bannedUsersList">
-                                        <p>Loading banned users...</p>
+                                        <p class="text-muted">Loading banned users...</p>
                                     </div>
                                 </div>
                             </div>
@@ -833,21 +1445,23 @@ function displayRoomSettingsModal(settings) {
         </div>
     `;
     
+    // Remove any existing modal
     $('#roomSettingsModal').remove();
     $('body').append(modalHtml);
     
     // Set up event handlers
     setupRoomSettingsHandlers();
     
+    // Set up banlist tab click handler
     $('#banlist-tab').on('click', function() {
         loadBannedUsers();
     });
     
+    // Show the modal
     $('#roomSettingsModal').modal('show');
 }
 
 function setupRoomSettingsHandlers() {
-    // Show/hide password field based on checkbox
     $('#settingsHasPassword').on('change', function() {
         if (this.checked) {
             $('#passwordFieldSettings').show();
@@ -857,6 +1471,14 @@ function setupRoomSettingsHandlers() {
             $('#knockingFieldSettings').hide();
             $('#settingsPassword').val('');
             $('#settingsAllowKnocking').prop('checked', true);
+        }
+    });
+    
+    $('#settingsYouTubeEnabled').on('change', function() {
+        if (this.checked) {
+            $('#youtubePlayerInfo').show();
+        } else {
+            $('#youtubePlayerInfo').hide();
         }
     });
 }
@@ -882,7 +1504,7 @@ function loadBannedUsers() {
                 } else {
                     response.forEach((ban) => {
                         const name = ban.username || ban.guest_name || 'Unknown User';
-                        const banType = ban.ban_until === null || ban.ban_until === '' ? 'Permanent' : 'Temporary';
+                        const banType = ban.is_permanent ? 'Permanent' : 'Temporary';
                         const expiry = ban.ban_until ? new Date(ban.ban_until).toLocaleString() : 'Never';
                         const reason = ban.reason || 'No reason provided';
                         
@@ -935,7 +1557,7 @@ function unbanUser(userIdString, userName) {
         success: function(response) {
             if (response.status === 'success') {
                 alert(userName + ' has been unbanned successfully!');
-                loadBannedUsers();
+                loadBannedUsers(); // Reload the list
             } else {
                 alert('Error: ' + response.message);
             }
@@ -955,7 +1577,8 @@ function saveRoomSettings() {
         capacity: $('#settingsCapacity').val(),
         has_password: $('#settingsHasPassword').is(':checked') ? 1 : 0,
         password: $('#settingsPassword').val(),
-        allow_knocking: $('#settingsAllowKnocking').is(':checked') ? 1 : 0
+        allow_knocking: $('#settingsAllowKnocking').is(':checked') ? 1 : 0,
+        youtube_enabled: $('#settingsYouTubeEnabled').is(':checked') ? 1 : 0
     };
     
     if (!formData.name) {
@@ -964,7 +1587,6 @@ function saveRoomSettings() {
         return;
     }
     
-    // Show loading state
     const saveButton = $('#roomSettingsModal .btn-primary');
     const originalText = saveButton.html();
     saveButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Saving...');
@@ -979,7 +1601,16 @@ function saveRoomSettings() {
                 if (res.status === 'success') {
                     alert('Room settings updated successfully!');
                     $('#roomSettingsModal').modal('hide');
-                    location.reload(); // Reload to reflect changes
+                    
+                    const newYouTubeState = formData.youtube_enabled === 1;
+                    if (newYouTubeState !== youtubeEnabled) {
+                        showToast('YouTube player setting changed. Refreshing room...', 'info');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2000);
+                    } else {
+                        location.reload();
+                    }
                 } else {
                     alert('Error: ' + res.message);
                 }
@@ -1406,7 +2037,20 @@ $(document).ready(function() {
         }
     });
 
-    // Scroll detection for auto-scroll behavior
+    $(document).on('submit', '#youtube-suggest-form', function(e) {
+        e.preventDefault();
+        suggestVideo();
+        return false;
+    });
+
+    $(document).on('keypress', '#youtube-suggest-input', function(e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            suggestVideo();
+            return false;
+        }
+    });
+
     $(document).on('scroll', '#chatbox', function() {
         userIsScrolling = true;
         setTimeout(function() {
@@ -1426,13 +2070,38 @@ $(document).ready(function() {
         setTimeout(checkUserStatus, 100);
     });
 
-    // Initialize all systems
-    debugLog('🛡️ Starting kick detection system...');
+    // Initialize YouTube player if enabled
+    if (typeof youtubeEnabledGlobal !== 'undefined' && youtubeEnabledGlobal) {
+        debugLog('🎬 YouTube enabled for this room');
+        youtubeEnabled = true;
+        isYoutubeHost = isHost;
+        
+        const savedHidden = localStorage.getItem(`youtube_hidden_${roomId}`);
+        if (savedHidden === 'true') {
+            $('.youtube-player-container').addClass('user-hidden');
+            $('.youtube-player-toggle').addClass('hidden-player').html('<i class="fas fa-video"></i>').attr('title', 'Show Player');
+            playerHidden = true;
+        }
+        
+        // Set up YouTube API ready callback
+        window.onYouTubeIframeAPIReady = function() {
+            youtubeAPIReady = true;
+            initializeYouTubePlayer();
+        };
+        
+        loadYouTubeAPI();
+        $('.youtube-player-container').addClass('enabled');
+        $('.youtube-player-toggle').show();
+    } else {
+        debugLog('🎬 YouTube not enabled for this room');
+        youtubeEnabled = false;
+    }
+
+    // Initialize other systems
     setTimeout(checkUserStatus, 500);
     kickDetectionInterval = setInterval(checkUserStatus, 2000);
     kickDetectionEnabled = true;
 
-    debugLog('🔄 Starting activity tracking system...');
     initializeActivityTracking();
 
     // Start knock checking if user is host
@@ -1442,16 +2111,19 @@ $(document).ready(function() {
         setTimeout(checkForKnocks, 1000);
     }
 
-    // Initial load
     loadMessages();
     loadUsers();
     
-    // Set up regular updates
     setInterval(loadMessages, 500);
     setInterval(loadUsers, 500);
     
-    // Focus message input
     $('#message').focus();
     
     debugLog('✅ Room initialization complete');
+});
+
+$(window).on('beforeunload', function() {
+    stopYouTubePlayer();
+    stopActivityTracking();
+    stopKickDetection();
 });

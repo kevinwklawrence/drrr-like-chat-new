@@ -522,7 +522,7 @@ function displayOnlineUsers(users) {
             
             html += `
                 <div class="d-flex align-items-center mb-2">
-                    <img src="images/${avatar}" width="30" height="30" class="me-2" alt="${name}" style="border-radius: 4px;">
+                    <img src="images/${avatar}" width="30" height="30" class="me-2" alt="${name}" style="border-radius: 2px;">
                     <div style="flex-grow: 1;">
                         <small class="fw-bold" style="color: #fff;">${name}</small>
                         <div>

@@ -23,6 +23,7 @@ $theme = isset($_POST['theme']) ? trim($_POST['theme']) : 'default';
 $has_password = isset($_POST['has_password']) ? (int)$_POST['has_password'] : 0;
 $allow_knocking = isset($_POST['allow_knocking']) ? (int)$_POST['allow_knocking'] : 1;
 $permanent = isset($_POST['permanent']) ? (int)$_POST['permanent'] : 0;
+$youtube_enabled = isset($_POST['youtube_enabled']) ? (int)$_POST['youtube_enabled'] : 0;
 
 if ($room_id <= 0 || empty($name) || $capacity <= 0) {
     error_log("Invalid input in update_room.php: room_id=$room_id, name=$name, capacity=$capacity");
@@ -82,6 +83,32 @@ try {
         error_log("Added allow_knocking column to chatrooms table");
     }
     
+    // Add YouTube columns if they don't exist
+    if (!in_array('youtube_enabled', $existing_columns)) {
+        $conn->query("ALTER TABLE chatrooms ADD COLUMN youtube_enabled TINYINT(1) DEFAULT 0");
+        error_log("Added youtube_enabled column to chatrooms table");
+    }
+    
+    if (!in_array('youtube_current_video', $existing_columns)) {
+        $conn->query("ALTER TABLE chatrooms ADD COLUMN youtube_current_video VARCHAR(255) DEFAULT NULL");
+        error_log("Added youtube_current_video column to chatrooms table");
+    }
+    
+    if (!in_array('youtube_current_time', $existing_columns)) {
+        $conn->query("ALTER TABLE chatrooms ADD COLUMN youtube_current_time INT DEFAULT 0");
+        error_log("Added youtube_current_time column to chatrooms table");
+    }
+    
+    if (!in_array('youtube_is_playing', $existing_columns)) {
+        $conn->query("ALTER TABLE chatrooms ADD COLUMN youtube_is_playing TINYINT(1) DEFAULT 0");
+        error_log("Added youtube_is_playing column to chatrooms table");
+    }
+    
+    if (!in_array('youtube_last_updated', $existing_columns)) {
+        $conn->query("ALTER TABLE chatrooms ADD COLUMN youtube_last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+        error_log("Added youtube_last_updated column to chatrooms table");
+    }
+    
     // Build the UPDATE query based on available fields
     $update_fields = [];
     $param_types = '';
@@ -131,6 +158,12 @@ try {
         $param_values[] = $permanent;
     }
     
+    if (in_array('youtube_enabled', $existing_columns)) {
+        $update_fields[] = 'youtube_enabled = ?';
+        $param_types .= 'i';
+        $param_values[] = $youtube_enabled;
+    }
+    
     // Handle password update separately if provided
     $hashed_password = null;
     if ($has_password && !empty($password)) {
@@ -166,6 +199,38 @@ try {
     }
     $stmt->close();
     
+    // If YouTube was disabled, clean up player state
+    if (!$youtube_enabled && in_array('youtube_enabled', $existing_columns)) {
+        $cleanup_stmt = $conn->prepare("
+            UPDATE chatrooms 
+            SET youtube_current_video = NULL, 
+                youtube_current_time = 0, 
+                youtube_is_playing = 0
+            WHERE id = ?
+        ");
+        if ($cleanup_stmt) {
+            $cleanup_stmt->bind_param("i", $room_id);
+            $cleanup_stmt->execute();
+            $cleanup_stmt->close();
+        }
+        
+        // Clean up sync table
+        $sync_cleanup = $conn->prepare("DELETE FROM room_player_sync WHERE room_id = ?");
+        if ($sync_cleanup) {
+            $sync_cleanup->bind_param("i", $room_id);
+            $sync_cleanup->execute();
+            $sync_cleanup->close();
+        }
+        
+        // Clean up queue
+        $queue_cleanup = $conn->prepare("DELETE FROM room_queue WHERE room_id = ?");
+        if ($queue_cleanup) {
+            $queue_cleanup->bind_param("i", $room_id);
+            $queue_cleanup->execute();
+            $queue_cleanup->close();
+        }
+    }
+    
     // Insert system message about room update
     $host_name = ($_SESSION['user']['type'] === 'user') ? $_SESSION['user']['username'] : $_SESSION['user']['name'];
     $system_message = "$host_name has updated the room settings.";
@@ -177,6 +242,9 @@ try {
     }
     if ($has_password) {
         $changes[] = "password protection " . ($has_password ? "enabled" : "disabled");
+    }
+    if ($youtube_enabled) {
+        $changes[] = "YouTube player enabled";
     }
     if (!empty($changes)) {
         $system_message .= " (" . implode(", ", $changes) . ")";
@@ -197,7 +265,7 @@ try {
     
     $conn->commit();
     
-    error_log("Room settings updated: room_id=$room_id, name=$name, theme=$theme, has_password=$has_password, allow_knocking=$allow_knocking, host=$host_name");
+    error_log("Room settings updated: room_id=$room_id, name=$name, theme=$theme, has_password=$has_password, allow_knocking=$allow_knocking, youtube_enabled=$youtube_enabled, host=$host_name");
     echo json_encode(['status' => 'success', 'message' => 'Room settings updated successfully']);
     
 } catch (Exception $e) {

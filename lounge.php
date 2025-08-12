@@ -39,7 +39,7 @@ if (!empty($user_id_string)) {
     <link href="css/style.css" rel="stylesheet">
     <link href="css/lounge.css" rel="stylesheet">
     <link href="css/profile_editor.css" rel="stylesheet">
-     <link href="profile_editor_colors.css" rel="stylesheet">
+     <link href="css/profile_editor_colors.css" rel="stylesheet">
     <style>
         body {
             background-color: #1a1a1a;

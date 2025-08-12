@@ -14,7 +14,8 @@ include 'db_connect.php';
 $room_id = (int)$_SESSION['room_id'];
 error_log("room_id in room.php: $room_id"); // Debug
 
-$stmt = $conn->prepare("SELECT name, background FROM chatrooms WHERE id = ?");
+// Get room data including YouTube settings
+$stmt = $conn->prepare("SELECT name, background, youtube_enabled FROM chatrooms WHERE id = ?");
 if (!$stmt) {
     error_log("Prepare failed in room.php: " . $conn->error);
     header("Location: lounge.php");
@@ -47,6 +48,9 @@ if (!empty($user_id_string)) {
         $stmt->close();
     }
 }
+
+// Get YouTube enabled status
+$youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enabled'] : false;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -70,6 +74,11 @@ if (!empty($user_id_string)) {
                     <?php if ($is_host): ?>
                         <span class="host-badge">
                             <i class="fas fa-crown"></i> Host
+                        </span>
+                    <?php endif; ?>
+                    <?php if ($youtube_enabled): ?>
+                        <span class="badge bg-danger ms-2">
+                            <i class="fab fa-youtube"></i> YouTube Enabled
                         </span>
                     <?php endif; ?>
                 </div>
@@ -131,6 +140,108 @@ if (!empty($user_id_string)) {
                 </div>
             </div>
         </div>
+        
+        <!-- YouTube Player Section (shown when enabled) -->
+        <?php if ($youtube_enabled): ?>
+        <div class="youtube-player-container enabled" id="youtube-player-container">
+            <!-- Player Header -->
+            <div class="youtube-player-header">
+                <div class="youtube-player-title">
+                    <i class="fab fa-youtube text-danger"></i>
+                    <span>YouTube Player</span>
+                </div>
+                <?php if ($is_host): ?>
+                <div class="youtube-player-controls">
+                    <button class="btn btn-youtube-control" onclick="playVideo()" title="Play">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <button class="btn btn-youtube-control" onclick="pauseVideo()" title="Pause">
+                        <i class="fas fa-pause"></i>
+                    </button>
+                    <button class="btn btn-youtube-control" onclick="skipToNextVideo()" title="Skip">
+                        <i class="fas fa-step-forward"></i>
+                    </button>
+                    <button class="btn btn-youtube-control btn-danger" onclick="stopVideo()" title="Stop">
+                        <i class="fas fa-stop"></i>
+                    </button>
+                </div>
+                <?php endif; ?>
+            </div>
+            
+            <!-- Player Wrapper -->
+            <div class="youtube-player-wrapper">
+                <!-- Video Section -->
+                <div class="youtube-video-section">
+                    <div id="youtube-player"></div>
+                    <div class="youtube-video-info" id="youtube-video-info">
+                        <div class="youtube-video-title">No video playing</div>
+                        <div class="youtube-video-meta">
+                            <span>Select a video or add one to the queue</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Queue Section -->
+                <div class="youtube-queue-section">
+                    <!-- Queue Tabs -->
+                    <ul class="nav nav-tabs youtube-queue-tabs" id="youtube-queue-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="queue-tab" data-bs-toggle="tab" data-bs-target="#youtube-queue-pane" type="button" role="tab">
+                                <i class="fas fa-list"></i> Queue
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="suggestions-tab" data-bs-toggle="tab" data-bs-target="#youtube-suggestions-pane" type="button" role="tab">
+                                <i class="fas fa-lightbulb"></i> Suggestions
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <!-- Queue Content -->
+                    <div class="tab-content" id="youtube-queue-content">
+                        <!-- Queue List -->
+                        <div class="tab-pane fade show active" id="youtube-queue-pane" role="tabpanel">
+                            <div class="youtube-queue-content" id="youtube-queue-list">
+                                <div class="youtube-loading">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    Loading queue...
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Suggestions List -->
+                        <div class="tab-pane fade" id="youtube-suggestions-pane" role="tabpanel">
+                            <div class="youtube-queue-content" id="youtube-suggestions-list">
+                                <div class="youtube-loading">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    Loading suggestions...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Suggest Form -->
+                    <div class="youtube-suggest-form">
+                        <form id="youtube-suggest-form">
+                            <input type="text" 
+                                   class="form-control youtube-suggest-input" 
+                                   id="youtube-suggest-input" 
+                                   placeholder="YouTube URL or Video ID..." 
+                                   required>
+                            <button type="submit" class="btn btn-suggest-video" id="youtube-suggest-btn">
+                                <i class="fas fa-plus"></i> Suggest Video
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- YouTube Player Toggle Button -->
+        <button class="btn youtube-player-toggle" onclick="togglePlayerVisibility()" title="Hide Player">
+            <i class="fas fa-video-slash"></i>
+        </button>
+        <?php endif; ?>
     </div>
     
     <!-- Knock notifications will appear here -->
@@ -139,16 +250,24 @@ if (!empty($user_id_string)) {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Ensure roomId is set
+        // Global variables
         const roomId = <?php echo json_encode($room_id); ?>;
         const isAdmin = <?php echo isset($_SESSION['user']['is_admin']) && $_SESSION['user']['is_admin'] ? 'true' : 'false'; ?>;
         const isHost = <?php echo $is_host ? 'true' : 'false'; ?>;
         const currentUserIdString = <?php echo json_encode($_SESSION['user']['user_id'] ?? ''); ?>;
+        const youtubeEnabledGlobal = <?php echo $youtube_enabled ? 'true' : 'false'; ?>;
         
         if (!roomId) {
             console.error('roomId is invalid, redirecting to lounge');
             window.location.href = 'lounge.php';
         }
+        
+        // YouTube API callback
+        window.onYouTubeIframeAPIReady = function() {
+            if (typeof initializeYouTubePlayer === 'function') {
+                initializeYouTubePlayer();
+            }
+        };
     </script>
     <script src="js/room.js"></script>
 </body>

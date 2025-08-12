@@ -12,7 +12,7 @@ include '../db_connect.php';
 
 try {
     // Define inactive threshold: users inactive for more than 2 minutes
-    $inactive_threshold = 2; // minutes
+    $inactive_threshold = 15; // minutes
     
     // First, get count of users that will be cleaned up for logging
     $count_stmt = $conn->prepare("SELECT COUNT(*) as inactive_count FROM global_users WHERE last_activity < DATE_SUB(NOW(), INTERVAL ? MINUTE)");

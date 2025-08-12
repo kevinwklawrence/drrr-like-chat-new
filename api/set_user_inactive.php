@@ -4,7 +4,7 @@ session_start();
 header('Content-Type: application/json');
 
 // Security: Only allow this in development or for admins
-$TESTING_ENABLED = true; // Set to false in production
+$TESTING_ENABLED = false; // Set to false in production
 $REQUIRE_ADMIN = false; // Set to true to require admin privileges
 
 if (!$TESTING_ENABLED) {
