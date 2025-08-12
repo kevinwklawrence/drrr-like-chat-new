@@ -8,7 +8,6 @@ if (!isset($_SESSION['user'])) {
 
 include 'db_connect.php';
 
-// Add user to global_users table and update their activity
 $user_id_string = $_SESSION['user']['user_id'] ?? '';
 $username = $_SESSION['user']['username'] ?? null;
 $guest_name = $_SESSION['user']['name'] ?? null;
@@ -16,10 +15,14 @@ $avatar = $_SESSION['user']['avatar'] ?? 'default_avatar.jpg';
 $is_admin = $_SESSION['user']['is_admin'] ?? 0;
 $ip_address = $_SERVER['REMOTE_ADDR'];
 
+// ADD this line after the existing variables:
+$color = $_SESSION['user']['color'] ?? 'black';
+
+// FIXED: Include color field in the global_users INSERT/UPDATE
 if (!empty($user_id_string)) {
-    $stmt = $conn->prepare("INSERT INTO global_users (user_id_string, username, guest_name, avatar, guest_avatar, is_admin, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE username = VALUES(username), guest_name = VALUES(guest_name), avatar = VALUES(avatar), guest_avatar = VALUES(guest_avatar), is_admin = VALUES(is_admin), ip_address = VALUES(ip_address), last_activity = CURRENT_TIMESTAMP");
+    $stmt = $conn->prepare("INSERT INTO global_users (user_id_string, username, guest_name, avatar, guest_avatar, is_admin, ip_address, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE username = VALUES(username), guest_name = VALUES(guest_name), avatar = VALUES(avatar), guest_avatar = VALUES(guest_avatar), is_admin = VALUES(is_admin), ip_address = VALUES(ip_address), color = VALUES(color), last_activity = CURRENT_TIMESTAMP");
     if ($stmt) {
-        $stmt->bind_param("sssssis", $user_id_string, $username, $guest_name, $avatar, $avatar, $is_admin, $ip_address);
+        $stmt->bind_param("sssssiss", $user_id_string, $username, $guest_name, $avatar, $avatar, $is_admin, $ip_address, $color);
         $stmt->execute();
         $stmt->close();
     }
@@ -35,6 +38,8 @@ if (!empty($user_id_string)) {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
     <link href="css/lounge.css" rel="stylesheet">
+    <link href="css/profile_editor.css" rel="stylesheet">
+     <link href="profile_editor_colors.css" rel="stylesheet">
     <style>
         body {
             background-color: #1a1a1a;
@@ -386,9 +391,11 @@ if (!empty($user_id_string)) {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const currentUser = <?php echo json_encode($_SESSION['user']); ?>;
-        console.log('Current user:', currentUser);
-    </script>
+    const currentUser = <?php echo json_encode(array_merge($_SESSION['user'], [
+        'color' => $color
+    ])); ?>;
+    console.log('Current user:', currentUser);
+</script>
     
     <!-- Include the fixed lounge.js -->
     <script src="js/lounge.js"></script>

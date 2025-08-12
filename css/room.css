@@ -143,7 +143,8 @@
             margin-left: 70px;
             position: relative;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            border: 4px solid rgb(255 255 255 / 25%);
+            /*border: var(--user-border-color);*/
+            border: 4px solid rgb(255 255 255);
             width: fit-content;
             max-width: calc(100% - 60px);
             box-sizing: border-box;
@@ -159,7 +160,8 @@
             height: 0;
             border-style: solid;
             border-width: 8px 8px 8px 0;
-            border-color: transparent var(--user-tail-color) transparent transparent;
+            border-color: #ffffff00 #ffffff transparent transparent;
+           /* border-color: transparent var(--user-tail-color) transparent transparent;*/
             filter: drop-shadow(-1px 0 1px rgba(0,0,0,0.1));
         }
         
@@ -506,6 +508,13 @@
 
 /* Blue - Default */
 /*BLUE GLOSS 1*/
+.user-color-black { 
+    --user-gradient: linear-gradient(to bottom, rgba(46,46,46,1) 0%,rgba(43,43,43,1) 10%,rgba(39,39,39,1) 25%,rgba(40,40,40,1) 37%,rgba(40,40,40,1) 50%,rgba(35,35,35,1) 51%,rgba(43,43,43,1) 83%,rgba(46,46,46,1) 100%);
+    --user-tail-color: #ffffff; 
+    --user-text-color: #ffffff; 
+    --user-border-color: #60afff; 
+}
+
 .user-color-blue { 
     --user-gradient: linear-gradient(to bottom, rgba(119,198,251,1) 0%,rgba(109,182,241,1) 10%,rgba(89,158,227,1) 25%,rgba(89,159,233,1) 37%,rgba(87,160,239,1) 50%,rgba(55,143,231,1) 51%,rgba(103,196,243,1) 83%,rgba(124,233,252,1) 100%);
     --user-tail-color: #c8ebff; 

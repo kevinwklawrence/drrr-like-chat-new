@@ -1447,8 +1447,8 @@ $(document).ready(function() {
     loadUsers();
     
     // Set up regular updates
-    setInterval(loadMessages, 3000);
-    setInterval(loadUsers, 5000);
+    setInterval(loadMessages, 500);
+    setInterval(loadUsers, 500);
     
     // Focus message input
     $('#message').focus();

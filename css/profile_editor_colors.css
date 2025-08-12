@@ -1,0 +1,42 @@
+.color-black { background: linear-gradient(135deg, #2c3e50 0%, #34495e 25%, #2c3e50 50%, #1a252f 75%, #2c3e50 100%); }
+        .color-blue { background: linear-gradient(135deg, #8cc9ff 0%, #74b9ff 25%, #74b9ff 50%, #0984e3 75%, #4d94f0 100%); }
+        .color-purple { background: linear-gradient(135deg, #8a7edb 0%, #667eea 25%, #667eea 50%, #764ba2 75%, #9d7bb5 100%); }
+        .color-pink { background: linear-gradient(135deg, #f5a3ff 0%, #f093fb 25%, #f093fb 50%, #f5576c 75%, #ff6b7a 100%); }
+        .color-cyan { background: linear-gradient(135deg, #7cb9ff 0%, #4facfe 25%, #4facfe 50%, #00f2fe 75%, #4dfaff 100%); }
+        .color-mint { background: linear-gradient(135deg, #c5f5f2 0%, #a8edea 25%, #a8edea 50%, #fed6e3 75%, #ffdeeb 100%); }
+        .color-orange { background: linear-gradient(135deg, #fff4db 0%, #ffecd2 25%, #ffecd2 50%, #fcb69f 75%, #ffc4aa 100%); }
+        .color-lavender { background: linear-gradient(135deg, #b599db 0%, #a18cd1 25%, #a18cd1 50%, #fbc2eb 75%, #ffccf0 100%); }
+        .color-peach { background: linear-gradient(135deg, #fde0d4 0%, #fad0c4 25%, #fad0c4 50%, #ffd1ff 75%, #ffdaff 100%); }
+        .color-green { background: linear-gradient(135deg, #97fcc0 0%, #84fab0 25%, #84fab0 50%, #8fd3f4 75%, #a3dcf7 100%); }
+        .color-yellow { background: linear-gradient(135deg, #fff2b7 0%, #ffeaa7 25%, #ffeaa7 50%, #fab1a0 75%, #ffc1ad 100%); }
+        .color-red { background: linear-gradient(135deg, #ff8a8a 0%, #ff6b6b 25%, #ff6b6b 50%, #e55353 75%, #ff7575 100%); }
+        .color-teal { background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 25%, #38bdf8 50%, #0891b2 75%, #22d3ee 100%); }
+        .color-indigo { background: linear-gradient(135deg, #a5b4fc 0%, #818cf8 25%, #818cf8 50%, #6366f1 75%, #8b5cf6 100%); }
+        .color-emerald { background: linear-gradient(135deg, #86efac 0%, #4ade80 25%, #4ade80 50%, #22c55e 75%, #34d399 100%); }
+        .color-rose { background: linear-gradient(135deg, #fda4af 0%, #fb7185 25%, #fb7185 50%, #f43f5e 75%, #ff8fa3 100%); }
+        
+        /* User color classes for message previews */
+        .user-color-black { --user-gradient: linear-gradient(to bottom, #2c3e50 0%, #34495e 25%, #2c3e50 50%, #1a252f 75%, #2c3e50 100%); --user-text-color: #ffffff; }
+        .user-color-blue { --user-gradient: linear-gradient(to bottom, #8cc9ff 0%, #74b9ff 25%, #74b9ff 50%, #0984e3 75%, #4d94f0 100%); --user-text-color: #ffffff; }
+        .user-color-purple { --user-gradient: linear-gradient(to bottom, #8a7edb 0%, #667eea 25%, #667eea 50%, #764ba2 75%, #9d7bb5 100%); --user-text-color: #ffffff; }
+        .user-color-pink { --user-gradient: linear-gradient(to bottom, #f5a3ff 0%, #f093fb 25%, #f093fb 50%, #f5576c 75%, #ff6b7a 100%); --user-text-color: #ffffff; }
+        .user-color-cyan { --user-gradient: linear-gradient(to bottom, #7cb9ff 0%, #4facfe 25%, #4facfe 50%, #00f2fe 75%, #4dfaff 100%); --user-text-color: #000000; }
+        .user-color-mint { --user-gradient: linear-gradient(to bottom, #c5f5f2 0%, #a8edea 25%, #a8edea 50%, #fed6e3 75%, #ffdeeb 100%); --user-text-color: #333333; }
+        .user-color-orange { --user-gradient: linear-gradient(to bottom, #fff4db 0%, #ffecd2 25%, #ffecd2 50%, #fcb69f 75%, #ffc4aa 100%); --user-text-color: #333333; }
+        .user-color-lavender { --user-gradient: linear-gradient(to bottom, #b599db 0%, #a18cd1 25%, #a18cd1 50%, #fbc2eb 75%, #ffccf0 100%); --user-text-color: #ffffff; }
+        .user-color-peach { --user-gradient: linear-gradient(to bottom, #fde0d4 0%, #fad0c4 25%, #fad0c4 50%, #ffd1ff 75%, #ffdaff 100%); --user-text-color: #333333; }
+        .user-color-green { --user-gradient: linear-gradient(to bottom, #97fcc0 0%, #84fab0 25%, #84fab0 50%, #8fd3f4 75%, #a3dcf7 100%); --user-text-color: #333333; }
+        .user-color-yellow { --user-gradient: linear-gradient(to bottom, #fff2b7 0%, #ffeaa7 25%, #ffeaa7 50%, #fab1a0 75%, #ffc1ad 100%); --user-text-color: #333333; }
+        .user-color-red { --user-gradient: linear-gradient(to bottom, #ff8a8a 0%, #ff6b6b 25%, #ff6b6b 50%, #e55353 75%, #ff7575 100%); --user-text-color: #ffffff; }
+        .user-color-teal { --user-gradient: linear-gradient(to bottom, #7dd3fc 0%, #38bdf8 25%, #38bdf8 50%, #0891b2 75%, #22d3ee 100%); --user-text-color: #ffffff; }
+        .user-color-indigo { --user-gradient: linear-gradient(to bottom, #a5b4fc 0%, #818cf8 25%, #818cf8 50%, #6366f1 75%, #8b5cf6 100%); --user-text-color: #ffffff; }
+        .user-color-emerald { --user-gradient: linear-gradient(to bottom, #86efac 0%, #4ade80 25%, #4ade80 50%, #22c55e 75%, #34d399 100%); --user-text-color: #ffffff; }
+        .user-color-rose { --user-gradient: linear-gradient(to bottom, #fda4af 0%, #fb7185 25%, #fb7185 50%, #f43f5e 75%, #ff8fa3 100%); --user-text-color: #ffffff; }
+        
+        /* Profile editor specific styles */
+        .editor-avatar { transition: all 0.2s ease; }
+        .editor-avatar:hover { transform: scale(1.05); border-color: #007bff !important; }
+        .editor-avatar.selected { border-color: #007bff !important; box-shadow: 0 0 15px rgba(0, 123, 255, 0.5); }
+        .color-option { cursor: pointer; transition: all 0.2s ease; }
+        .color-option:hover { transform: translateY(-2px); }
+        .color-option.selected { transform: translateY(-2px) scale(1.05); }
