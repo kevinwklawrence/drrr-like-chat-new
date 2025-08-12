@@ -1,6 +1,14 @@
 <?php
 session_start();
-
+// Add to index.php - right after session_start()
+if (isset($_SESSION['user'])) {
+    if (isset($_SESSION['room_id'])) {
+        header("Location: room.php");
+    } else {
+        header("Location: lounge.php");
+    }
+    exit;
+}
 // Debug file path
 error_log("Current directory in login.php: " . __DIR__);
 

@@ -1,5 +1,14 @@
 <?php
-// This is the updated index.php with color selection integrated
+session_start();
+// Add to index.php - right after session_start()
+if (isset($_SESSION['user'])) {
+    if (isset($_SESSION['room_id'])) {
+        header("Location: room.php");
+    } else {
+        header("Location: lounge.php");
+    }
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
