@@ -62,6 +62,7 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
     <link href="css/room.css" rel="stylesheet">
+    <link href="css/iframe_styler.css" rel="stylesheet">
 </head>
 <body>
     <div class="room-container">
@@ -96,52 +97,8 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
         </div>
         
         <!-- Chat Container -->
-        <div class="chat-container">
-            <!-- Main Chat Area -->
-            <div class="chat-main">
-                <!-- Messages -->
-                <div class="chat-messages" id="chatbox">
-                    <div class="loading-messages">
-                        <div class="loading-spinner"></div>
-                        <span>Loading messages...</span>
-                    </div>
-                </div>
-                
-                <!-- Message Input -->
-                <div class="chat-input-container">
-                    <form id="messageForm" class="chat-input-form">
-                        <input type="text" 
-                               class="form-control chat-input" 
-                               id="message" 
-                               placeholder="Type your message..." 
-                               required>
-                        <button type="submit" class="btn btn-send-message">
-                            <i class="fas fa-paper-plane"></i> Send
-                        </button>
-                    </form>
-                </div>
-            </div>
-            
-            <!-- Sidebar -->
-            <div class="chat-sidebar">
-                <div class="sidebar-header">
-                    <div class="sidebar-title">
-                        <span><i class="fas fa-users"></i> Users</span>
-                        <button class="btn btn-test-user" onclick="createTestUser()">
-                            <i class="fas fa-plus"></i> Test User
-                        </button>
-                    </div>
-                </div>
-                <div class="sidebar-content" id="userList">
-                    <div class="loading-messages">
-                        <div class="loading-spinner"></div>
-                        <span>Loading users...</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- YouTube Player Section (shown when enabled) -->
+        <div class="chat-container <?php echo !$youtube_enabled ? 'no-youtube' : ''; ?>">
+            <!-- YouTube Player Section (shown when enabled) -->
         <?php if ($youtube_enabled): ?>
         <div class="youtube-player-container enabled" id="youtube-player-container">
             <!-- Player Header -->
@@ -184,18 +141,26 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
                 <!-- Queue Section -->
                 <div class="youtube-queue-section">
                     <!-- Queue Tabs -->
-                    <ul class="nav nav-tabs youtube-queue-tabs" id="youtube-queue-tabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="queue-tab" data-bs-toggle="tab" data-bs-target="#youtube-queue-pane" type="button" role="tab">
-                                <i class="fas fa-list"></i> Queue
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="suggestions-tab" data-bs-toggle="tab" data-bs-target="#youtube-suggestions-pane" type="button" role="tab">
-                                <i class="fas fa-lightbulb"></i> Suggestions
-                            </button>
-                        </li>
-                    </ul>
+                     <ul class="nav nav-tabs youtube-queue-tabs d-md-flex d-none" id="youtube-queue-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="queue-tab" data-bs-toggle="tab" data-bs-target="#youtube-queue-pane" type="button" role="tab">
+                <i class="fas fa-list"></i> Queue
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="suggestions-tab" data-bs-toggle="tab" data-bs-target="#youtube-suggestions-pane" type="button" role="tab">
+                <i class="fas fa-lightbulb"></i> Suggestions
+            </button>
+        </li>
+    </ul>
+    <div class="d-md-none mobile-queue-toggles">
+        <button class="btn btn-sm btn-outline-light mobile-queue-btn active" onclick="toggleMobileQueue('queue')">
+            <i class="fas fa-list"></i> Queue <i class="fas fa-chevron-down"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-light mobile-queue-btn" onclick="toggleMobileQueue('suggestions')">
+            <i class="fas fa-lightbulb"></i> Suggestions <i class="fas fa-chevron-down"></i>
+        </button>
+    </div>
                     
                     <!-- Queue Content -->
                     <div class="tab-content" id="youtube-queue-content">
@@ -235,14 +200,63 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
                     </div>
                 </div>
             </div>
-        </div>
+            
         
-        <!-- YouTube Player Toggle Button -->
-        <button class="btn youtube-player-toggle" onclick="togglePlayerVisibility()" title="Hide Player">
+        </div>
+        <?php endif; ?>
+        <?php if ($youtube_enabled): ?>
+            <button class="btn youtube-player-toggle" onclick="togglePlayerVisibility()" title="Hide Player">
             <i class="fas fa-video-slash"></i>
         </button>
         <?php endif; ?>
+            <!-- Main Chat Area -->
+            <div class="chat-main">
+                <!-- Messages -->
+                <div class="chat-messages" id="chatbox">
+                    <div class="loading-messages">
+                        <div class="loading-spinner"></div>
+                        <span>Loading messages...</span>
+                    </div>
+                </div>
+                
+                <!-- Message Input -->
+                <div class="chat-input-container">
+                    <form id="messageForm" class="chat-input-form">
+                        <input type="text" 
+                               class="form-control chat-input" 
+                               id="message" 
+                               placeholder="Type your message..." 
+                               required>
+                        <button type="submit" class="btn btn-send-message">
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Sidebar -->
+
+<!-- AFTER -->
+<div class="chat-sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-title">
+            <span><i class="fas fa-users"></i> Users</span>
+            <button class="btn btn-test-user" onclick="createTestUser()">
+                <i class="fas fa-plus"></i> Test User
+            </button>
+            <button class="btn btn-sm btn-outline-secondary d-md-none mobile-users-toggle" onclick="toggleMobileUsers()">
+                <i class="fas fa-chevron-down"></i>
+            </button>
+        </div>
     </div>
+    <div class="sidebar-content mobile-collapsible" id="userList">
+        
+        
+        
+        <!-- YouTube Player Toggle Button -->
+        
+    </div>
+                
     
     <!-- Knock notifications will appear here -->
     <div id="knockNotifications"></div>

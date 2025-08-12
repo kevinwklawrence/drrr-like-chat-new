@@ -381,22 +381,22 @@ function onYouTubePlayerReady(event) {
 function onYouTubePlayerStateChange(event) {
     debugLog('🎬 Player state changed:', event.data);
     
-    if (isHost && youtubePlayerReady) {
+    if (youtubePlayerReady) {
         const currentTime = youtubePlayer.getCurrentTime();
         const videoId = getCurrentVideoId();
         
-        switch (event.data) {
-            case YT.PlayerState.PLAYING:
-                updatePlayerSync(videoId, currentTime, true);
-                break;
-            case YT.PlayerState.PAUSED:
-                updatePlayerSync(videoId, currentTime, false);
-                break;
-            case YT.PlayerState.ENDED:
-                if (isHost) {
-                    skipToNextVideo();
-                }
-                break;
+        if (isHost) {
+            switch (event.data) {
+                case YT.PlayerState.PLAYING:
+                    updatePlayerSync(videoId, currentTime, true);
+                    break;
+                case YT.PlayerState.PAUSED:
+                    updatePlayerSync(videoId, currentTime, false);
+                    break;
+                case YT.PlayerState.ENDED:
+                    setTimeout(() => skipToNextVideo(), 1000);
+                    break;
+            }
         }
     }
 }
@@ -842,20 +842,20 @@ function togglePlayerVisibility() {
     const toggle = $('.youtube-player-toggle');
     
     if (container.hasClass('user-hidden')) {
-        container.removeClass('user-hidden');
+        container.removeClass('user-hidden').show();
         toggle.removeClass('hidden-player').html('<i class="fas fa-video-slash"></i>').attr('title', 'Hide Player');
         playerHidden = false;
         
         if (youtubePlayerReady) {
-            syncPlayerState();
+            setTimeout(() => syncPlayerState(), 500);
         }
     } else {
-        container.addClass('user-hidden');
+        container.addClass('user-hidden').hide();
         toggle.addClass('hidden-player').html('<i class="fas fa-video"></i>').attr('title', 'Show Player');
         playerHidden = true;
     }
     
-    localStorage.setItem(`youtube_hidden_${roomId}`, playerHidden);
+    localStorage.setItem(`youtube_hidden_${roomId}`, playerHidden.toString());
 }
 
 function getCurrentVideoId() {
@@ -2077,11 +2077,11 @@ $(document).ready(function() {
         isYoutubeHost = isHost;
         
         const savedHidden = localStorage.getItem(`youtube_hidden_${roomId}`);
-        if (savedHidden === 'true') {
-            $('.youtube-player-container').addClass('user-hidden');
-            $('.youtube-player-toggle').addClass('hidden-player').html('<i class="fas fa-video"></i>').attr('title', 'Show Player');
-            playerHidden = true;
-        }
+if (savedHidden === 'true') {
+    $('.youtube-player-container').addClass('user-hidden').hide();
+    $('.youtube-player-toggle').addClass('hidden-player').html('<i class="fas fa-video"></i>').attr('title', 'Show Player');
+    playerHidden = true;
+}
         
         // Set up YouTube API ready callback
         window.onYouTubeIframeAPIReady = function() {
@@ -2127,3 +2127,46 @@ $(window).on('beforeunload', function() {
     stopActivityTracking();
     stopKickDetection();
 });
+
+// ADD THESE FUNCTIONS
+function toggleMobileUsers() {
+    const userList = $('#userList');
+    const toggleBtn = $('.mobile-users-toggle');
+    
+    if (userList.hasClass('expanded')) {
+        userList.removeClass('expanded');
+        toggleBtn.removeClass('expanded');
+    } else {
+        userList.addClass('expanded');
+        toggleBtn.addClass('expanded');
+    }
+}
+
+function toggleMobileQueue(section) {
+    const tabContent = $('#youtube-queue-content');
+    const queueBtn = $('.mobile-queue-btn').eq(0);
+    const suggestionsBtn = $('.mobile-queue-btn').eq(1);
+    
+    // Update active button
+    $('.mobile-queue-btn').removeClass('active expanded');
+    
+    if (section === 'queue') {
+        queueBtn.addClass('active');
+        $('#queue-tab').tab('show');
+    } else {
+        suggestionsBtn.addClass('active');
+        $('#suggestions-tab').tab('show');
+    }
+    
+    // Toggle content visibility
+    if (tabContent.hasClass('expanded')) {
+        tabContent.removeClass('expanded');
+    } else {
+        tabContent.addClass('expanded');
+        if (section === 'queue') {
+            queueBtn.addClass('expanded');
+        } else {
+            suggestionsBtn.addClass('expanded');
+        }
+    }
+}

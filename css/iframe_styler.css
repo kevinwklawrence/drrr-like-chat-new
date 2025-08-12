@@ -2,13 +2,20 @@
 
 .youtube-player-container {
     background: #1a1a1a;
-    border-top: 1px solid #333;
+    border-right: 1px solid #333;
     position: relative;
-    display: none;
+    width: 0;
+    overflow: hidden;
+    transition: width 0.3s ease;
+    flex-shrink: 0;
 }
 
 .youtube-player-container.enabled {
-    display: block;
+    width: 400px;
+}
+
+.youtube-player-container.user-hidden {
+    width: 0 !important;
 }
 
 .youtube-player-header {
@@ -64,20 +71,23 @@
 
 .youtube-player-wrapper {
     display: flex;
-    height: 350px;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
 }
 
 .youtube-video-section {
-    flex: 2;
+    flex: 1;
     display: flex;
     flex-direction: column;
     background: #000;
     position: relative;
+    min-height: 280px;
 }
 
 .youtube-player-embed {
     width: 100%;
-    height: 280px;
+    height: 180px;
     border: none;
 }
 
@@ -105,10 +115,10 @@
 .youtube-queue-section {
     flex: 1;
     background: #2a2a2a;
-    border-left: 1px solid #333;
+    border-top: 1px solid #333;
     display: flex;
     flex-direction: column;
-    min-width: 300px;
+    min-height: 0;
 }
 
 .youtube-queue-tabs {
@@ -180,21 +190,24 @@
 }
 
 .youtube-queue-item-thumb {
-    width: 60px;
-    height: 45px;
+    width: 140px;
+    height: 90px;
     border-radius: 4px;
     object-fit: cover;
-    margin-right: 10px;
+    margin-right: 8px;
+    flex-shrink: 0;
 }
 
 .youtube-queue-item-content {
     display: flex;
     align-items: flex-start;
+    min-width: 0;
 }
 
 .youtube-queue-item-details {
     flex: 1;
     min-width: 0;
+    overflow: hidden;
 }
 
 .youtube-queue-item-title {
@@ -317,7 +330,7 @@
 .youtube-empty-state {
     text-align: center;
     color: #666;
-    padding: 40px 20px;
+    padding: 0px 20px 0px 20px;
 }
 
 .youtube-empty-state i {
@@ -357,56 +370,3 @@
     animation: spin 1s linear infinite;
 }
 
-/* Responsive Design */
-@media (max-width: 1024px) {
-    .youtube-player-wrapper {
-        flex-direction: column;
-        height: auto;
-    }
-    
-    .youtube-queue-section {
-        border-left: none;
-        border-top: 1px solid #333;
-        max-height: 300px;
-        min-width: auto;
-    }
-    
-    .youtube-video-section {
-        flex: none;
-    }
-}
-
-@media (max-width: 768px) {
-    .youtube-player-header {
-        padding: 10px 15px;
-        flex-direction: column;
-        gap: 8px;
-        align-items: flex-start;
-    }
-    
-    .youtube-player-controls {
-        width: 100%;
-        justify-content: flex-end;
-    }
-    
-    .youtube-player-embed {
-        height: 200px;
-    }
-    
-    .youtube-player-toggle {
-        bottom: 15px;
-        right: 15px;
-        width: 45px;
-        height: 45px;
-        font-size: 1rem;
-    }
-    
-    .youtube-queue-item-thumb {
-        width: 50px;
-        height: 38px;
-    }
-    
-    .youtube-queue-item-title {
-        font-size: 0.8rem;
-    }
-}
