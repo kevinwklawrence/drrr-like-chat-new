@@ -31,7 +31,7 @@ function sanitizeMarkup($message) {
         $alt = htmlspecialchars($matches[1], ENT_QUOTES, 'UTF-8');
         $url = trim($matches[2]);
         if ($validateUrl($url)) {
-            return '<img src="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" alt="' . $alt . '" style="max-height: 400px; max-width: 800px;" loading="lazy">';
+            return '<img src="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" alt="' . $alt . '" style="max-height: 400px; max-width: 800px; border: 2px solid white;" loading="lazy">';
         }
         return $matches[0]; // Return original if URL is invalid
     }, $message);

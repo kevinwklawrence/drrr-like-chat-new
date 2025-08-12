@@ -304,7 +304,7 @@
         
         /* Chat Input */
         .chat-input-container {
-            padding: 20px;
+            padding: 10px 30px 10px 10px;
             background: #2a2a2a;
             border-top: 1px solid #404040;
         }
