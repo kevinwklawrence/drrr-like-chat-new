@@ -239,6 +239,14 @@ try {
         $user_param_values[] = $ip_address;
     }
     
+    if (in_array('color', $user_columns)) {
+        $color = $_SESSION['user']['color'] ?? 'blue';
+        $user_insert_fields[] = 'color';
+        $user_insert_values[] = '?';
+        $user_param_types .= 's';
+        $user_param_values[] = $color;
+    }
+    
     $user_insert_sql = "INSERT INTO chatroom_users (" . implode(', ', $user_insert_fields) . ") VALUES (" . implode(', ', $user_insert_values) . ")";
     
     error_log("SAFE_CREATE_ROOM: User SQL: $user_insert_sql");

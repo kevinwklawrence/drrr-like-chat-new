@@ -300,6 +300,25 @@
             
             // Update color name
             document.getElementById('selectedColorName').textContent = colorName.charAt(0).toUpperCase() + colorName.slice(1);
+            
+            // Update color in session/database via AJAX
+            $.ajax({
+                url: 'api/update_user_color.php',
+                method: 'POST',
+                data: { color: colorName },
+                dataType: 'json',
+                success: function(res) {
+                    if (res.status === 'success') {
+                        // Optionally notify user or update UI
+                        console.log('Color updated:', res.new_color);
+                    } else {
+                        console.warn('Color update failed:', res.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Color update AJAX error:', error);
+                }
+            });
         }
         
         function resetColorToDefault() {

@@ -72,6 +72,7 @@ $(document).ready(function() {
             data: {
                 guest_name: $('#guestName').val(),
                 avatar: $('#selectedAvatar').val(),
+                color: $('#selectedColor').val(),
                 type: 'guest'
             },
             dataType: 'json',

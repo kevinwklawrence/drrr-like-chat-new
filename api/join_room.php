@@ -85,6 +85,15 @@ try {
     if ($result->num_rows === 0) {
         echo json_encode(['status' => 'error', 'message' => 'Room not found']);
         $stmt->close();
+    // After user entry is made to chatroom_users, copy color from global_users to chatroom_users for this user
+    if (in_array('color', $available_columns)) {
+        $copy_color_stmt = $conn->prepare("UPDATE chatroom_users SET color = (SELECT color FROM global_users WHERE user_id_string = ?) WHERE room_id = ? AND user_id_string = ?");
+        if ($copy_color_stmt) {
+            $copy_color_stmt->bind_param("sis", $user_id_string, $room_id, $user_id_string);
+            $copy_color_stmt->execute();
+            $copy_color_stmt->close();
+        }
+    }
         exit;
     }
     
@@ -221,41 +230,49 @@ try {
         $param_types .= 'i';
         $param_values[] = ($user_session['type'] === 'user') ? $user_session['id'] : null;
     }
-    
+
     if (in_array('username', $available_columns)) {
         $insert_fields[] = 'username';
         $insert_values[] = '?';
         $param_types .= 's';
         $param_values[] = $user_session['username'] ?? null;
     }
-    
+
     if (in_array('guest_name', $available_columns)) {
         $insert_fields[] = 'guest_name';
         $insert_values[] = '?';
         $param_types .= 's';
         $param_values[] = $user_session['name'] ?? null;
     }
-    
+
     if (in_array('avatar', $available_columns)) {
         $insert_fields[] = 'avatar';
         $insert_values[] = '?';
         $param_types .= 's';
         $param_values[] = $user_session['avatar'] ?? 'default_avatar.jpg';
     }
-    
+
     if (in_array('guest_avatar', $available_columns)) {
         $insert_fields[] = 'guest_avatar';
         $insert_values[] = '?';
         $param_types .= 's';
         $param_values[] = $user_session['avatar'] ?? 'default_avatar.jpg';
     }
-    
+
+    if (in_array('color', $available_columns)) {
+        $insert_fields[] = 'color';
+        $insert_values[] = '?';
+        $param_types .= 's';
+        $param_values[] = $user_session['color'] ?? 'blue';
+    }
+
     if (in_array('ip_address', $available_columns)) {
         $insert_fields[] = 'ip_address';
         $insert_values[] = '?';
         $param_types .= 's';
         $param_values[] = $_SERVER['REMOTE_ADDR'];
     }
+    
     
     $insert_sql = "INSERT INTO chatroom_users (" . implode(', ', $insert_fields) . ") VALUES (" . implode(', ', $insert_values) . ")";
     

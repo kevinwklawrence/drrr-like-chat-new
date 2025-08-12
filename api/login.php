@@ -11,13 +11,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// IMPORTANT: Replace the entire POST handler section in login.php (lines ~20-80) with this:
-
 // Handle POST request for login
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
     $selected_avatar = $_POST['avatar'] ?? ''; // Allow empty avatar selection
+    $selected_color = $_POST['color'] ?? 'black'; // Allow empty color selection
 
     if (empty($username) || empty($password)) {
         error_log("Missing username or password in login.php");
@@ -29,8 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // The old line: if (empty($selected_avatar)) { $selected_avatar = 'u0.png'; }
     // is now removed because we handle fallbacks in the new avatar priority system
 
-    // Updated query to include custom_av and avatar_memory
-    $stmt = $conn->prepare("SELECT id, username, user_id, email, password, is_admin, avatar, custom_av, avatar_memory FROM users WHERE username = ?");
+    // Updated query to include color
+    $stmt = $conn->prepare("SELECT id, username, user_id, email, password, is_admin, avatar, custom_av, avatar_memory, color FROM users WHERE username = ?");
     if (!$stmt) {
         error_log("Prepare failed in login.php: " . $conn->error);
         echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
@@ -70,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             
-            // Update user's avatar and avatar_memory in database if needed
+            // Update user's avatar, avatar_memory, and color in database if needed
             $updates_needed = [];
             $update_params = [];
             $param_types = '';
@@ -89,6 +88,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $param_types .= 's';
             }
             
+            // Update color if selected (remove the check for difference)
+            if (!empty($selected_color)) {
+                $updates_needed[] = 'color = ?';
+                $update_params[] = $selected_color;
+                $param_types .= 's';
+                $user['color'] = $selected_color;
+            }
+            
             // Perform database update if needed
             if (!empty($updates_needed)) {
                 $update_sql = "UPDATE users SET " . implode(', ', $updates_needed) . " WHERE id = ?";
@@ -98,25 +105,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $update_stmt = $conn->prepare($update_sql);
                 if ($update_stmt) {
                     $update_stmt->bind_param($param_types, ...$update_params);
-                    if ($update_stmt->execute()) {
-                        error_log("Updated user data: avatar=$final_avatar" . ($should_update_avatar_memory ? ", avatar_memory=$selected_avatar" : "") . " for user: $username");
-                        $user['avatar'] = $final_avatar; // Update local variable
-                    } else {
-                        error_log("Failed to update user data: " . $update_stmt->error);
-                    }
+                    $update_stmt->execute();
                     $update_stmt->close();
                 }
             }
             
-            // Create user session with final avatar
+            // Create user session with final avatar and color
             $_SESSION['user'] = [
                 'type' => 'user',
                 'id' => $user['id'],
                 'username' => $user['username'],
-                'user_id' => $user['user_id'],  // This is crucial for the host system!
+                'user_id' => $user['user_id'],
                 'email' => $user['email'],
                 'is_admin' => $user['is_admin'],
-                'avatar' => $final_avatar, // Use the determined final avatar
+                'avatar' => $final_avatar,
+                'color' => (!empty($selected_color) && $selected_color !== 'black') ? $selected_color : $user['color'],
                 'ip' => $_SERVER['REMOTE_ADDR']
             ];
             

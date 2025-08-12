@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
     $selected_avatar = $_POST['avatar'] ?? ''; // Allow empty avatar selection
+    $selected_color = $_POST['color'] ?? ''; // Allow empty avatar selection
 
     if (empty($username) || empty($password)) {
         error_log("Missing username or password in login.php");
@@ -27,8 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Updated query to include custom_av and avatar_memory
-    $stmt = $conn->prepare("SELECT id, username, user_id, email, password, is_admin, avatar, custom_av, avatar_memory FROM users WHERE username = ?");
+    // Updated query to include color
+    $stmt = $conn->prepare("SELECT id, username, user_id, email, password, is_admin, avatar, custom_av, avatar_memory, color FROM users WHERE username = ?");
     if (!$stmt) {
         error_log("Prepare failed in login.php: " . $conn->error);
         echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
@@ -68,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             
-            // Update user's avatar and avatar_memory in database if needed
+            // Update user's avatar, avatar_memory, and color in database if needed
             $updates_needed = [];
             $update_params = [];
             $param_types = '';
@@ -87,6 +88,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $param_types .= 's';
             }
             
+            // Update color if selected and different from current
+            if (!empty($selected_color) && $selected_color !== $user['color']) {
+                $update_color_stmt = $conn->prepare("UPDATE users SET color = ? WHERE id = ?");
+                $update_color_stmt->bind_param("si", $selected_color, $user['id']);
+                $update_color_stmt->execute();
+                $update_color_stmt->close();
+                $user['color'] = $selected_color; // Update local variable for session
+            }
+            
             // Perform database update if needed
             if (!empty($updates_needed)) {
                 $update_sql = "UPDATE users SET " . implode(', ', $updates_needed) . " WHERE id = ?";
@@ -96,25 +106,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $update_stmt = $conn->prepare($update_sql);
                 if ($update_stmt) {
                     $update_stmt->bind_param($param_types, ...$update_params);
-                    if ($update_stmt->execute()) {
-                        error_log("Updated user data: avatar=$final_avatar" . ($should_update_avatar_memory ? ", avatar_memory=$selected_avatar" : "") . " for user: $username");
-                        $user['avatar'] = $final_avatar; // Update local variable
-                    } else {
-                        error_log("Failed to update user data: " . $update_stmt->error);
-                    }
+                    $update_stmt->execute();
                     $update_stmt->close();
                 }
             }
             
-            // Create user session with final avatar
+            // Create user session with final avatar and color
             $_SESSION['user'] = [
                 'type' => 'user',
                 'id' => $user['id'],
                 'username' => $user['username'],
-                'user_id' => $user['user_id'],  // This is crucial for the host system!
+                'user_id' => $user['user_id'],
                 'email' => $user['email'],
                 'is_admin' => $user['is_admin'],
-                'avatar' => $final_avatar, // Use the determined final avatar
+                'avatar' => $final_avatar,
+                'color' => $user['color'],
                 'ip' => $_SERVER['REMOTE_ADDR']
             ];
             
@@ -322,12 +328,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                             </div>
                             
+                            <div class="color-selection-section">
+    <label class="form-label">
+        <i class="fas fa-palette"></i> Choose Your Chat Color
+    </label>
+    <div class="color-grid">
+        <div class="color-option color-black selected" data-color="black" onclick="selectColor('black', this)">
+                                    <div class="color-name">Black</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-blue" data-color="blue" onclick="selectColor('blue', this)">
+                                    <div class="color-name">Blue</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-purple" data-color="purple" onclick="selectColor('purple', this)">
+                                    <div class="color-name">Purple</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-pink" data-color="pink" onclick="selectColor('pink', this)">
+                                    <div class="color-name">Pink</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-cyan" data-color="cyan" onclick="selectColor('cyan', this)">
+                                    <div class="color-name">Cyan</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-mint" data-color="mint" onclick="selectColor('mint', this)">
+                                    <div class="color-name">Mint</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-orange" data-color="orange" onclick="selectColor('orange', this)">
+                                    <div class="color-name">Orange</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-green" data-color="green" onclick="selectColor('green', this)">
+                                    <div class="color-name">Green</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-red" data-color="red" onclick="selectColor('red', this)">
+                                    <div class="color-name">Red</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-yellow" data-color="yellow" onclick="selectColor('yellow', this)">
+                                    <div class="color-name">Yellow</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-teal" data-color="teal" onclick="selectColor('teal', this)">
+                                    <div class="color-name">Teal</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+                                
+                                <div class="color-option color-indigo" data-color="indigo" onclick="selectColor('indigo', this)">
+                                    <div class="color-name">Indigo</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+    </div>
+    <input type="hidden" id="selectedColor" name="color" value="black">
+    <div class="selected-color-preview">
+        <div class="preview-circle color-black" id="selectedColorPreview"></div>
+        <div>
+            <strong id="selectedColorName">Black</strong> - Your message bubble color
+        </div>
+    </div>
+</div>
+                            
                             <div class="d-grid gap-2">
                                 <button type="submit" class="btn btn-primary btn-lg">
                                     <i class="fas fa-sign-in-alt"></i> Login
                                 </button>
                             </div>
                         </div>
+                        
                     </div>
                     
                     <!-- Avatar Selection -->
@@ -362,6 +443,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Replace the JavaScript section in login.php with this updated version
 
 $(document).ready(function() {
+    
     updateAvatarStats();
     
     // Avatar selection handling
@@ -392,6 +474,7 @@ $(document).ready(function() {
         const username = $('#username').val().trim();
         const password = $('#password').val();
         const selectedAvatar = $('#selectedAvatar').val(); // Allow empty
+        const selectedColor = $('#selectedColor').val();
         
         if (!username || !password) {
             alert('Please enter both username and password');
@@ -403,13 +486,22 @@ $(document).ready(function() {
         const originalText = submitBtn.html();
         submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Logging in...');
         
+        console.log('Submitting login:', {
+  username,
+  password,
+  selectedAvatar,
+  selectedColor
+});
+        console.log('Selected color:', $('#selectedColor').val());
+
         $.ajax({
             url: 'api/login.php',
             method: 'POST',
             data: {
                 username: username,
                 password: password,
-                avatar: selectedAvatar, // This can now be empty
+                avatar: selectedAvatar,
+                color: selectedColor, // Add this line
                 type: 'user'
             },
             dataType: 'json',
@@ -428,6 +520,9 @@ $(document).ready(function() {
             }
         });
     });
+    
+    // Initialize color selection
+    selectColor('black', document.querySelector('[data-color="black"]'));
 });
 
 function filterAvatars() {
@@ -493,6 +588,21 @@ function randomAvatar() {
         const randomIndex = Math.floor(Math.random() * visibleAvatars.length);
         $(visibleAvatars[randomIndex]).click();
     }
+}
+
+function selectColor(colorName, element) {
+    document.querySelectorAll('.color-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+    element.classList.add('selected');
+    document.getElementById('selectedColor').value = colorName;
+    const preview = document.getElementById('selectedColorPreview');
+    preview.className = `preview-circle color-${colorName}`;
+    document.getElementById('selectedColorName').textContent = colorName.charAt(0).toUpperCase() + colorName.slice(1);
+}
+
+function resetColorToDefault() {
+    selectColor('black', document.querySelector('[data-color="black"]'));
 }
     </script>
     <script src="js/script.js"></script>
