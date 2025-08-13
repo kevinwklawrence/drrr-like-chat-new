@@ -300,28 +300,37 @@ function renderUser(user) {
         badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
     }
     
-    // Find the renderUser function and modify the actions section:
-let actions = '';
-if ((isHost || isAdmin) && !user.is_host && !user.is_admin) {
-    actions = `
-        <div class="user-actions">
-            <button class="btn btn-ban-user" onclick="showBanModal('${userIdString}', '${name.replace(/'/g, "\\'")}')">
-                <i class="fas fa-ban"></i> Ban
-            </button>
+    let actions = '';
+if (user.user_id_string !== currentUserIdString) { // Show buttons for all users except self
+    actions = `<div class="user-actions">`;
+    
+    // Whisper button for all users
+    const displayName = user.display_name || user.username || user.guest_name || 'Unknown';
+    actions += `
+        <button class="btn whisper-btn" onclick="openWhisper('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
+            <i class="fas fa-comment"></i> Whisper
+        </button>
     `;
     
-    // Add whisper button for registered users only
+    // Add friend button for registered users only (both current user and target must be registered)
     if (user.user_id && currentUser.type === 'user') {
         actions += `
-            <button class="btn whisper-btn" onclick="openPrivateMessage(${user.user_id}, '${name.replace(/'/g, "\\'")}')">
-                <i class="fas fa-comment"></i> Whisper
+            <button class="btn friend-btn" onclick="sendFriendRequest(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
+                <i class="fas fa-user-plus"></i> Add Friend
             </button>
         `;
     }
     
-    actions += `
-        </div>
-    `;
+    // Ban button only for hosts/admins, and not on other hosts/admins
+    if ((isHost || isAdmin) && !user.is_host && !user.is_admin) {
+        actions += `
+            <button class="btn btn-ban-user" onclick="showBanModal('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
+                <i class="fas fa-ban"></i> Ban
+            </button>
+        `;
+    }
+    
+    actions += `</div>`;
 }
     
     return `
@@ -2025,6 +2034,336 @@ function createTestUser() {
     });
 }
 
+
+
+
+
+
+
+// Whisper System
+let openWhispers = new Map();
+let whisperTabs = [];
+
+// Helper function to escape special characters for CSS selectors
+function escapeSelector(str) {
+    return str.replace(/([ #;&,.+*~':"!^$[\]()=>|\/])/g, '\\$1');
+}
+
+// Helper function to create safe IDs
+function createSafeId(str) {
+    return str.replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+function openWhisper(userIdString, username) {
+    console.log('Opening whisper for user:', userIdString, username);
+    
+    if (openWhispers.has(userIdString)) {
+        showWhisperTab(userIdString);
+        return;
+    }
+    
+    const safeId = createSafeId(userIdString);
+    const tabId = `whisper-tab-${safeId}`;
+    const windowId = `whisper-${safeId}`;
+    
+    // Create tab
+    const tabHtml = `
+        <div class="whisper-tab" id="${tabId}" onclick="toggleWhisperTab('${userIdString.replace(/'/g, "\\'")}')">
+            <span class="whisper-tab-title">💬 ${username}</span>
+            <span class="whisper-tab-unread" id="whisper-unread-${safeId}" style="display: none;">0</span>
+            <button class="whisper-tab-close" onclick="event.stopPropagation(); closeWhisper('${userIdString.replace(/'/g, "\\'")}');" title="Close">&times;</button>
+        </div>
+    `;
+    
+    // Create window
+    const windowHtml = `
+        <div class="whisper-window" id="${windowId}">
+            <div class="whisper-body" id="whisper-body-${safeId}">
+                Loading messages...
+            </div>
+            <div class="whisper-input">
+                <form class="whisper-form" onsubmit="sendWhisper('${userIdString.replace(/'/g, "\\'")}'); return false;">
+                    <input type="text" id="whisper-input-${safeId}" placeholder="Type a whisper..." required>
+                    <button type="submit">Send</button>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    // Add to page
+    if ($('#whisper-tabs').length === 0) {
+        $('body').append('<div id="whisper-tabs"></div>');
+    }
+    $('#whisper-tabs').append(tabHtml);
+    $('body').append(windowHtml);
+    
+    openWhispers.set(userIdString, { username: username, unreadCount: 0, safeId: safeId });
+    whisperTabs.push(userIdString);
+    
+    loadWhisperMessages(userIdString);
+    showWhisperTab(userIdString);
+}
+
+function toggleWhisperTab(userIdString) {
+    console.log('Toggling whisper tab for:', userIdString);
+    const data = openWhispers.get(userIdString);
+    if (!data) return;
+    
+    const safeId = data.safeId;
+    const window = $(`#whisper-${safeId}`);
+    const tab = $(`#whisper-tab-${safeId}`);
+    const isCollapsed = window.hasClass('collapsed');
+    
+    // Collapse all other whisper windows
+    $('.whisper-window').addClass('collapsed');
+    $('.whisper-tab').removeClass('active');
+    
+    if (isCollapsed) {
+        window.removeClass('collapsed');
+        tab.addClass('active');
+        markWhisperAsRead(userIdString);
+        setTimeout(() => {
+            $(`#whisper-input-${safeId}`).focus();
+        }, 300);
+    } else {
+        window.addClass('collapsed');
+        tab.removeClass('active');
+    }
+}
+
+function showWhisperTab(userIdString) {
+    console.log('Showing whisper tab for:', userIdString);
+    const data = openWhispers.get(userIdString);
+    if (!data) return;
+    
+    const safeId = data.safeId;
+    $('.whisper-window').addClass('collapsed');
+    $('.whisper-tab').removeClass('active');
+    
+    const window = $(`#whisper-${safeId}`);
+    const tab = $(`#whisper-tab-${safeId}`);
+    
+    window.removeClass('collapsed');
+    tab.addClass('active');
+    markWhisperAsRead(userIdString);
+    
+    setTimeout(() => {
+        $(`#whisper-input-${safeId}`).focus();
+    }, 300);
+}
+
+function closeWhisper(userIdString) {
+    const data = openWhispers.get(userIdString);
+    if (!data) return;
+    
+    const safeId = data.safeId;
+    $(`#whisper-tab-${safeId}`).remove();
+    $(`#whisper-${safeId}`).remove();
+    openWhispers.delete(userIdString);
+    whisperTabs = whisperTabs.filter(id => id !== userIdString);
+    
+    if (whisperTabs.length === 0) {
+        $('#whisper-tabs').remove();
+    }
+}
+
+function sendWhisper(recipientUserIdString) {
+    const data = openWhispers.get(recipientUserIdString);
+    if (!data) return false;
+    
+    const safeId = data.safeId;
+    const input = $(`#whisper-input-${safeId}`);
+    const message = input.val().trim();
+    
+    if (!message) return false;
+    
+    $.ajax({
+        url: 'api/room_whispers.php',
+        method: 'POST',
+        data: {
+            action: 'send',
+            recipient_user_id_string: recipientUserIdString,
+            message: message
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                input.val('');
+                loadWhisperMessages(recipientUserIdString);
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Send whisper error:', error);
+            alert('Error sending whisper: ' + error);
+        }
+    });
+    
+    return false;
+}
+
+function loadWhisperMessages(otherUserIdString) {
+    console.log('Loading whisper messages for:', otherUserIdString);
+    
+    $.ajax({
+        url: 'api/room_whispers.php',
+        method: 'GET',
+        data: {
+            action: 'get',
+            other_user_id_string: otherUserIdString
+        },
+        dataType: 'json',
+        success: function(response) {
+            console.log('Whisper messages response:', response);
+            if (response.status === 'success') {
+                displayWhisperMessages(otherUserIdString, response.messages);
+            } else {
+                console.error('API error:', response.message);
+                const data = openWhispers.get(otherUserIdString);
+                if (data) {
+                    $(`#whisper-body-${data.safeId}`).html('<div style="color: #f44336; padding: 10px;">Error: ' + response.message + '</div>');
+                }
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error details:', {
+                status: status,
+                error: error,
+                responseText: xhr.responseText,
+                statusCode: xhr.status
+            });
+            const data = openWhispers.get(otherUserIdString);
+            if (data) {
+                $(`#whisper-body-${data.safeId}`).html('<div style="color: #f44336; padding: 10px;">Failed to load messages. Check console for details.</div>');
+            }
+        }
+    });
+}
+
+function displayWhisperMessages(otherUserIdString, messages) {
+    const data = openWhispers.get(otherUserIdString);
+    if (!data) {
+        console.error('No whisper data found for user:', otherUserIdString);
+        return;
+    }
+    
+    const safeId = data.safeId;
+    const container = $(`#whisper-body-${safeId}`);
+    
+    if (container.length === 0) {
+        console.error('Whisper container not found:', `#whisper-body-${safeId}`);
+        return;
+    }
+    
+    const wasAtBottom = container[0].scrollHeight > 0 ? 
+        (container.scrollTop() + container.innerHeight() >= container[0].scrollHeight - 20) : true;
+    
+    let html = '';
+    
+    if (messages.length === 0) {
+        html = '<div style="text-align: center; color: #999; padding: 20px;">No whispers yet</div>';
+    } else {
+        messages.forEach(msg => {
+            const isOwn = msg.sender_user_id_string === currentUserIdString;
+            const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            const author = isOwn ? 
+                (currentUser.name || currentUser.username || 'You') : 
+                (msg.sender_username || msg.sender_guest_name || 'Unknown');
+            const avatar = isOwn ? 
+                (currentUser.avatar || 'default_avatar.jpg') : 
+                (msg.sender_avatar || 'default_avatar.jpg');
+            const userColor = isOwn ? 
+                (currentUser.color || 'blue') : 
+                (msg.sender_color || 'blue');
+            
+            html += `
+                <div class="private-chat-message ${isOwn ? 'sent' : 'received'}">
+                    <img src="images/${avatar}" class="private-message-avatar" alt="${author}'s avatar">
+                    <div class="private-message-bubble ${isOwn ? 'sent' : 'received'} user-color-${userColor}">
+                        <div class="private-message-header-info">
+                            <div class="private-message-author">${author}</div>
+                            <div class="private-message-time">${time}</div>
+                        </div>
+                        <div class="private-message-content">${msg.message}</div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    container.html(html);
+    
+    if (wasAtBottom && container[0].scrollHeight > 0) {
+        container.scrollTop(container[0].scrollHeight);
+    }
+}
+
+function markWhisperAsRead(userIdString) {
+    const data = openWhispers.get(userIdString);
+    if (data && data.unreadCount > 0) {
+        data.unreadCount = 0;
+        openWhispers.set(userIdString, data);
+        $(`#whisper-unread-${data.safeId}`).hide().text('0');
+    }
+}
+
+function checkForNewWhispers() {
+    openWhispers.forEach((data, userIdString) => {
+        const safeId = data.safeId;
+        const input = $(`#whisper-input-${safeId}`);
+        const isTyping = input.is(':focus') && input.val().length > 0;
+        
+        if (!isTyping) {
+            loadWhisperMessages(userIdString);
+        }
+    });
+}
+
+
+
+
+
+
+
+
+
+function sendFriendRequest(userId, username) {
+    if (!userId || !username) {
+        alert('Invalid user data');
+        return;
+    }
+    
+    if (confirm('Send friend request to ' + username + '?')) {
+        $.ajax({
+            url: 'api/friends.php',
+            method: 'POST',
+            data: {
+                action: 'add',
+                friend_username: username
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    alert('Friend request sent to ' + username + '!');
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Send friend request error:', error);
+                alert('Error sending friend request: ' + error);
+            }
+        });
+    }
+}
+
+
+
+
+
+
 // ===== INITIALIZATION =====
 $(document).ready(function() {
     debugLog('🏠 Room loaded, roomId:', roomId);
@@ -2135,7 +2474,9 @@ if (savedHidden === 'true') {
     debugLog('✅ Room initialization complete');
 
     // Add this line at the end of the existing $(document).ready function:
-setTimeout(initializePrivateMessaging, 1000);
+setTimeout(initializePrivateMessaging, 500);
+// Start whisper checking
+setInterval(checkForNewWhispers, 500);
 
 });
 

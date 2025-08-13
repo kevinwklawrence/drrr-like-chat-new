@@ -180,6 +180,14 @@ if ($is_leaving_user_host) {
                 }
                 $stmt->close();
             }
+
+            // Delete room whispers
+$stmt = $conn->prepare("DELETE FROM room_whispers WHERE room_id = ?");
+if ($stmt) {
+    $stmt->bind_param("i", $room_id);
+    $stmt->execute();
+    $stmt->close();
+}
             
             // Finally delete the room itself
             $stmt = $conn->prepare("DELETE FROM chatrooms WHERE id = ?");
@@ -374,6 +382,8 @@ if (!($is_leaving_user_host && $action === 'transfer_host')) {
         $stmt->close();
     }
 }
+
+
 
 unset($_SESSION['room_id']);
 
