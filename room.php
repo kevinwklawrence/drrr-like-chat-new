@@ -63,6 +63,7 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
     <link href="css/style.css" rel="stylesheet">
     <link href="css/room.css" rel="stylesheet">
     <link href="css/iframe_styler.css" rel="stylesheet">
+    <link href="css/private.css" rel="stylesheet">
 </head>
 <body>
     <div class="room-container">
@@ -84,11 +85,17 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
                     <?php endif; ?>
                 </div>
                 <div class="room-actions">
+                    <?php if ($_SESSION['user']['type'] === 'user'): ?>
+        <button class="btn btn-outline-primary" onclick="showFriendsPanel()">
+            <i class="fas fa-user-friends"></i> Friends
+        </button>
+    <?php endif; ?>
                     <?php if ($is_host): ?>
                         <button class="btn btn-room-settings" onclick="showRoomSettings()">
                             <i class="fas fa-cog"></i> Room Settings
                         </button>
                     <?php endif; ?>
+                    
                     <button class="btn btn-leave-room" onclick="leaveRoom()">
                         <i class="fas fa-sign-out-alt"></i> Leave Room
                     </button>
@@ -257,32 +264,48 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
         
     </div>
                 
-    
+    <!-- Friends Panel -->
+<div class="friends-panel" id="friendsPanel" style="display: none;">
+    <div style="background: #333; padding: 10px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center;">
+        <h6 style="margin: 0; color: #e0e0e0;"><i class="fas fa-user-friends"></i> Friends & Messages</h6>
+        <button type="button" style="background: none; border: none; color: #999; font-size: 18px; cursor: pointer;" onclick="closeFriendsPanel()">&times;</button>
+    </div>
+    <div style="padding: 15px; max-height: 350px; overflow-y: auto;" id="friendsList">
+        Loading friends...
+    </div>
+</div>
+
     <!-- Knock notifications will appear here -->
     <div id="knockNotifications"></div>
     
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Global variables
-        const roomId = <?php echo json_encode($room_id); ?>;
-        const isAdmin = <?php echo isset($_SESSION['user']['is_admin']) && $_SESSION['user']['is_admin'] ? 'true' : 'false'; ?>;
-        const isHost = <?php echo $is_host ? 'true' : 'false'; ?>;
-        const currentUserIdString = <?php echo json_encode($_SESSION['user']['user_id'] ?? ''); ?>;
-        const youtubeEnabledGlobal = <?php echo $youtube_enabled ? 'true' : 'false'; ?>;
-        
-        if (!roomId) {
-            console.error('roomId is invalid, redirecting to lounge');
-            window.location.href = 'lounge.php';
+    // Global variables
+    const roomId = <?php echo json_encode($room_id); ?>;
+    const isAdmin = <?php echo isset($_SESSION['user']['is_admin']) && $_SESSION['user']['is_admin'] ? 'true' : 'false'; ?>;
+    const isHost = <?php echo $is_host ? 'true' : 'false'; ?>;
+    const currentUserIdString = <?php echo json_encode($_SESSION['user']['user_id'] ?? ''); ?>;
+    const youtubeEnabledGlobal = <?php echo $youtube_enabled ? 'true' : 'false'; ?>;
+    
+    // Add currentUser for private messaging
+    const currentUser = <?php echo json_encode(array_merge($_SESSION['user'], [
+        'color' => $_SESSION['user']['color'] ?? 'blue'
+    ])); ?>;
+    
+    if (!roomId) {
+        console.error('roomId is invalid, redirecting to lounge');
+        window.location.href = 'lounge.php';
+    }
+    
+    // YouTube API callback
+    window.onYouTubeIframeAPIReady = function() {
+        if (typeof initializeYouTubePlayer === 'function') {
+            initializeYouTubePlayer();
         }
-        
-        // YouTube API callback
-        window.onYouTubeIframeAPIReady = function() {
-            if (typeof initializeYouTubePlayer === 'function') {
-                initializeYouTubePlayer();
-            }
-        };
-    </script>
+    };
+</script>
+    
     <script src="js/room.js"></script>
 </body>
 </html>

@@ -215,8 +215,8 @@ function renderMessage(msg) {
     }
     
     let adminInfo = '';
-    if (isAdmin && msg.ip_address) {
-        adminInfo = `<div class="admin-info"><small class="text-muted">IP: ${msg.ip_address}</small></div>`;
+    if (isAdmin && msg.user_id_string) {
+       // adminInfo = `<div class="admin-info"><span class="text-muted">IP: ${msg.user_id_string}</span></div>`;
     }
     
     return `
@@ -300,16 +300,29 @@ function renderUser(user) {
         badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
     }
     
-    let actions = '';
-    if ((isHost || isAdmin) && !user.is_host && !user.is_admin) {
-        actions = `
-            <div class="user-actions">
-                <button class="btn btn-ban-user" onclick="showBanModal('${userIdString}', '${name.replace(/'/g, "\\'")}')">
-                    <i class="fas fa-ban"></i> Ban
-                </button>
-            </div>
+    // Find the renderUser function and modify the actions section:
+let actions = '';
+if ((isHost || isAdmin) && !user.is_host && !user.is_admin) {
+    actions = `
+        <div class="user-actions">
+            <button class="btn btn-ban-user" onclick="showBanModal('${userIdString}', '${name.replace(/'/g, "\\'")}')">
+                <i class="fas fa-ban"></i> Ban
+            </button>
+    `;
+    
+    // Add whisper button for registered users only
+    if (user.user_id && currentUser.type === 'user') {
+        actions += `
+            <button class="btn whisper-btn" onclick="openPrivateMessage(${user.user_id}, '${name.replace(/'/g, "\\'")}')">
+                <i class="fas fa-comment"></i> Whisper
+            </button>
         `;
     }
+    
+    actions += `
+        </div>
+    `;
+}
     
     return `
         <div class="user-item">
@@ -2120,6 +2133,10 @@ if (savedHidden === 'true') {
     $('#message').focus();
     
     debugLog('✅ Room initialization complete');
+
+    // Add this line at the end of the existing $(document).ready function:
+setTimeout(initializePrivateMessaging, 1000);
+
 });
 
 $(window).on('beforeunload', function() {
@@ -2168,5 +2185,382 @@ function toggleMobileQueue(section) {
         } else {
             suggestionsBtn.addClass('expanded');
         }
+    }
+}
+
+// Private Message System
+let openPrivateChats = new Map();
+let friends = [];
+
+function initializePrivateMessaging() {
+    if (currentUser.type !== 'user') return;
+    
+    loadFriends();
+    checkForNewPrivateMessages();
+    setInterval(checkForNewPrivateMessages, 3000);
+}
+
+function showFriendsPanel() {
+    $('#friendsPanel').show();
+    loadFriends();
+    loadConversations();
+}
+
+function closeFriendsPanel() {
+    $('#friendsPanel').hide();
+}
+
+function loadFriends() {
+    console.log('Loading friends...');
+    $.ajax({
+        url: 'api/friends.php',
+        method: 'GET',
+        data: { action: 'get' },
+        dataType: 'json',
+        success: function(response) {
+            console.log('Friends response:', response);
+            if (response.status === 'success') {
+                friends = response.friends;
+                updateFriendsPanel();
+            } else {
+                $('#friendsList').html('<p class="text-danger">Error: ' + response.message + '</p>');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Friends API error:', error, xhr.responseText);
+            $('#friendsList').html('<p class="text-danger">Failed to load friends. Check console for details.</p>');
+        }
+    });
+}
+
+function updateFriendsPanel() {
+    console.log('Updating friends panel with:', friends);
+    
+    let html = `
+        <div class="mb-3">
+            <div class="input-group input-group-sm">
+                <input type="text" class="form-control" id="addFriendInput" placeholder="Username to add" style="background: #333; border: 1px solid #555; color: #fff;">
+                <button class="btn btn-primary" onclick="addFriend()">
+                    <i class="fas fa-user-plus"></i> Add
+                </button>
+            </div>
+        </div>
+        <div class="mb-3">
+            <h6 style="color: #e0e0e0;">Recent Conversations</h6>
+            <div id="conversationsList">Loading conversations...</div>
+        </div>
+        <div>
+            <h6 style="color: #e0e0e0;">Friends</h6>
+            <div id="friendsListContent">
+    `;
+    
+    if (!friends || friends.length === 0) {
+        html += '<p class="text-muted small">No friends yet. Add someone using the form above!</p>';
+    } else {
+        friends.forEach(friend => {
+            if (friend.status === 'accepted') {
+                html += `
+                    <div class="d-flex align-items-center mb-2 p-2" style="background: #333; border-radius: 4px;">
+                        <img src="images/${friend.avatar || 'default_avatar.jpg'}" width="24" height="24" class="me-2" style="border-radius: 2px;">
+                        <div class="flex-grow-1">
+                            <small style="color: #e0e0e0;">${friend.username}</small>
+                        </div>
+                        <button class="btn btn-sm btn-primary" onclick="openPrivateMessage(${friend.id}, '${friend.username}')">
+                            <i class="fas fa-comment"></i>
+                        </button>
+                    </div>
+                `;
+            } else if (friend.status === 'pending' && friend.request_type === 'received') {
+                html += `
+                    <div class="d-flex align-items-center mb-2 p-2" style="background: #4a4a2a; border-radius: 4px;">
+                        <img src="images/${friend.avatar || 'default_avatar.jpg'}" width="24" height="24" class="me-2" style="border-radius: 2px;">
+                        <div class="flex-grow-1">
+                            <small style="color: #e0e0e0;">${friend.username}</small>
+                            <br><small class="text-warning">Pending request</small>
+                        </div>
+                        <button class="btn btn-sm btn-success" onclick="acceptFriend(${friend.id})">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    </div>
+                `;
+            }
+        });
+    }
+    
+    html += '</div></div>';
+    $('#friendsList').html(html);
+    
+    // Load conversations after friends are loaded
+    loadConversations();
+}
+
+function addFriend() {
+    const username = $('#addFriendInput').val().trim();
+    if (!username) return;
+    
+    $.ajax({
+        url: 'api/friends.php',
+        method: 'POST',
+        data: {
+            action: 'add',
+            friend_username: username
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                $('#addFriendInput').val('');
+                alert('Friend request sent!');
+                loadFriends();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        }
+    });
+}
+
+function acceptFriend(friendId) {
+    $.ajax({
+        url: 'api/friends.php',
+        method: 'POST',
+        data: {
+            action: 'accept',
+            friend_id: friendId
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                alert('Friend request accepted!');
+                loadFriends();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        }
+    });
+}
+
+function loadConversations() {
+    console.log('Loading conversations...');
+    $.ajax({
+        url: 'api/private_messages.php',
+        method: 'GET',
+        data: { action: 'get_conversations' },
+        dataType: 'json',
+        success: function(response) {
+            console.log('Conversations response:', response);
+            if (response.status === 'success') {
+                displayConversations(response.conversations);
+            } else {
+                $('#conversationsList').html('<p class="text-danger small">Error loading conversations</p>');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Conversations API error:', error, xhr.responseText);
+            $('#conversationsList').html('<p class="text-danger small">Failed to load conversations</p>');
+        }
+    });
+}
+
+function displayConversations(conversations) {
+    let html = '';
+    
+    if (conversations.length === 0) {
+        html = '<p class="text-muted small">No conversations yet</p>';
+    } else {
+        conversations.forEach(conv => {
+            const unreadBadge = conv.unread_count > 0 ? `<span class="badge bg-danger">${conv.unread_count}</span>` : '';
+            html += `
+                <div class="d-flex align-items-center mb-2 p-2" style="background: #333; border-radius: 4px; cursor: pointer;" onclick="openPrivateMessage(${conv.other_user_id}, '${conv.username}')">
+                    <img src="images/${conv.avatar}" width="24" height="24" class="me-2" style="border-radius: 2px;">
+                    <div class="flex-grow-1">
+                        <small style="color: #e0e0e0;">${conv.username}</small>
+                        <br><small class="text-muted">${conv.last_message ? conv.last_message.substring(0, 30) + '...' : 'No messages'}</small>
+                    </div>
+                    ${unreadBadge}
+                </div>
+            `;
+        });
+    }
+    
+    $('#conversationsList').html(html);
+}
+
+function openPrivateMessage(userId, username) {
+    console.log('Opening private message for user:', userId, username);
+    
+    if (openPrivateChats.has(userId)) {
+        $(`#pm-${userId}`).show();
+        return;
+    }
+    
+    const windowHtml = `
+        <div class="private-message-window" id="pm-${userId}">
+            <div class="private-message-header">
+                <h6 class="private-message-title">Chat with ${username}</h6>
+                <button class="private-message-close" onclick="closePrivateMessage(${userId})">&times;</button>
+            </div>
+            <div class="private-message-body" id="pm-body-${userId}">
+                Loading messages...
+            </div>
+            <div class="private-message-input">
+                <form class="private-message-form" onsubmit="sendPrivateMessage(${userId}); return false;">
+                    <input type="text" id="pm-input-${userId}" placeholder="Type a message..." required>
+                    <button type="submit">Send</button>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    $('body').append(windowHtml);
+    openPrivateChats.set(userId, { username: username, color: 'blue' }); // Default until we fetch
+    
+    // Fetch user info including color
+    $.ajax({
+        url: 'api/get_user_info.php',
+        method: 'GET',
+        data: { user_id: userId },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                const chatData = openPrivateChats.get(userId);
+                chatData.color = response.user.color || 'blue';
+                chatData.avatar = response.user.avatar || 'default_avatar.jpg';
+                openPrivateChats.set(userId, chatData);
+                console.log('Fetched user color:', response.user.color);
+                // Reload messages to apply correct colors
+                loadPrivateMessages(userId);
+            }
+        },
+        error: function() {
+            console.log('Failed to fetch user info, using default color');
+            loadPrivateMessages(userId);
+        }
+    });
+}
+
+function closePrivateMessage(userId) {
+    $(`#pm-${userId}`).remove();
+    openPrivateChats.delete(userId);
+}
+
+function sendPrivateMessage(recipientId) {
+    console.log('Sending private message to:', recipientId);
+    const input = $(`#pm-input-${recipientId}`);
+    const message = input.val().trim();
+    
+    if (!message) return false;
+    
+    $.ajax({
+        url: 'api/private_messages.php',
+        method: 'POST',
+        data: {
+            action: 'send',
+            recipient_id: recipientId,
+            message: message
+        },
+        dataType: 'json',
+        success: function(response) {
+            console.log('Send message response:', response);
+            if (response.status === 'success') {
+                input.val('');
+                loadPrivateMessages(recipientId);
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Send message error:', error, xhr.responseText);
+            alert('Error sending message: ' + error);
+        }
+    });
+    
+    return false;
+}
+
+function loadPrivateMessages(otherUserId) {
+    console.log('Loading private messages with user:', otherUserId);
+    
+    $.ajax({
+        url: 'api/private_messages.php',
+        method: 'GET',
+        data: {
+            action: 'get',
+            other_user_id: otherUserId
+        },
+        dataType: 'json',
+        success: function(response) {
+            console.log('Load messages response:', response);
+            if (response.status === 'success') {
+                displayPrivateMessages(otherUserId, response.messages);
+            } else {
+                $(`#pm-body-${otherUserId}`).html('<div style="color: #f44336; padding: 10px;">Error: ' + response.message + '</div>');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Load messages error:', error, xhr.responseText);
+            $(`#pm-body-${otherUserId}`).html('<div style="color: #f44336; padding: 10px;">Failed to load messages</div>');
+        }
+    });
+}
+
+function displayPrivateMessages(otherUserId, messages) {
+    const container = $(`#pm-body-${otherUserId}`);
+    
+    // Check if user was at bottom before update
+    const wasAtBottom = container[0] ? 
+        (container.scrollTop() + container.innerHeight() >= container[0].scrollHeight - 20) : true;
+    
+    let html = '';
+    
+    if (messages.length === 0) {
+        html = '<div style="text-align: center; color: #999; padding: 20px;">No messages yet</div>';
+    } else {
+        messages.forEach(msg => {
+            const isOwn = msg.sender_id == currentUser.id;
+            const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            // Get user info and color from message data
+            const author = isOwn ? (currentUser.username || currentUser.name) : msg.sender_username;
+            const avatar = isOwn ? (currentUser.avatar || 'default_avatar.jpg') : (msg.sender_avatar || 'default_avatar.jpg');
+            const userColor = isOwn ? (currentUser.color || 'blue') : (msg.sender_color || 'blue');
+            
+            html += `
+                <div class="private-chat-message ${isOwn ? 'sent' : 'received'}">
+                    <img src="images/${avatar}" class="private-message-avatar" alt="${author}'s avatar">
+                    <div class="private-message-bubble ${isOwn ? 'sent' : 'received'} user-color-${userColor}">
+                        <div class="private-message-header-info">
+                            <div class="private-message-author">${author}</div>
+                            <div class="private-message-time">${time}</div>
+                        </div>
+                        <div class="private-message-content">${msg.message}</div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    container.html(html);
+    
+    // Only scroll to bottom if user was already at bottom or it's the first load
+    if (wasAtBottom) {
+        container.scrollTop(container[0].scrollHeight);
+    }
+}
+
+function checkForNewPrivateMessages() {
+    if (currentUser.type !== 'user') return;
+    
+    // Update open chat windows (but don't reload if user is typing)
+    openPrivateChats.forEach((data, userId) => {
+        const input = $(`#pm-input-${userId}`);
+        const isTyping = input.is(':focus') && input.val().length > 0;
+        
+        if (!isTyping) {
+            loadPrivateMessages(userId);
+        }
+    });
+    
+    // Update conversations list if friends panel is open
+    if ($('#friendsPanel').is(':visible')) {
+        loadConversations();
     }
 }

@@ -1,0 +1,191 @@
+<?php
+session_start();
+header('Content-Type: application/json');
+
+if (!isset($_SESSION['user']) || $_SESSION['user']['type'] !== 'user') {
+    echo json_encode(['status' => 'error', 'message' => 'Only registered users can send private messages']);
+    exit;
+}
+
+include '../db_connect.php';
+
+function sanitizeMarkup($message) {
+    // Convert markdown-style formatting to HTML safely
+    $message = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
+    
+    // Helper function to validate URLs
+    $validateUrl = function($url) {
+        // Remove any potential XSS attempts
+        $url = trim($url);
+        // Only allow http, https, and data URLs (for images)
+        if (preg_match('/^(https?:\/\/|data:image\/)/i', $url)) {
+            return filter_var($url, FILTER_VALIDATE_URL) !== false;
+        }
+        return false;
+    };
+    
+    // Process in order of complexity (most specific first)
+    
+    // 1. Code blocks (triple backticks) - must come before single backticks
+    $message = preg_replace('/```([^`]*?)```/s', '<pre><code>$1</code></pre>', $message);
+    
+    // 2. Images: ![alt text](url)
+    $message = preg_replace_callback('/!\[([^\]]*)\]\(([^)]+)\)/', function($matches) use ($validateUrl) {
+        $alt = htmlspecialchars($matches[1], ENT_QUOTES, 'UTF-8');
+        $url = trim($matches[2]);
+        if ($validateUrl($url)) {
+            return '<img src="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" alt="' . $alt . '" style="max-height: 200px; max-width: 100%; border: 2px solid white;" loading="lazy">';
+        }
+        return $matches[0]; // Return original if URL is invalid
+    }, $message);
+    
+    // 3. Links: [link text](url)
+    $message = preg_replace_callback('/\[([^\]]+)\]\(([^)]+)\)/', function($matches) use ($validateUrl) {
+        $text = htmlspecialchars($matches[1], ENT_QUOTES, 'UTF-8');
+        $url = trim($matches[2]);
+        if ($validateUrl($url)) {
+            return '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener noreferrer">' . $text . '</a>';
+        }
+        return $matches[0]; // Return original if URL is invalid
+    }, $message);
+    
+    // 4. Headers (must come before other formatting)
+    $message = preg_replace('/^### (.*$)/m', '<h6>$1</h6>', $message);
+    $message = preg_replace('/^## (.*$)/m', '<h5>$1</h5>', $message);
+    $message = preg_replace('/^# (.*$)/m', '<h4>$1</h4>', $message);
+    
+    // 5. Horizontal rules
+    $message = preg_replace('/^(---|\*\*\*|___)$/m', '<hr>', $message);
+    
+    // 6. Blockquotes
+    $message = preg_replace('/^> (.*)$/m', '<blockquote style="border-left: 3px solid #ccc; padding-left: 10px; margin: 5px 0;">$1</blockquote>', $message);
+    
+    // 7. Text formatting
+    $patterns = [
+        '/\*\*(.*?)\*\*/' => '<strong>$1</strong>',  // **bold**
+        '/\*(.*?)\*/' => '<em>$1</em>',              // *italic*
+        '/__(.*?)__/' => '<u>$1</u>',                // __underline__
+        '/~~(.*?)~~/' => '<del>$1</del>',            // ~~strikethrough~~
+        '/`(.*?)`/' => '<code style="background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 3px;">$1</code>'             // `code` (inline)
+    ];
+    
+    foreach ($patterns as $pattern => $replacement) {
+        $message = preg_replace($pattern, $replacement, $message);
+    }
+    
+    // 8. Line breaks (convert single line breaks to <br>)
+    $message = preg_replace('/\n/', '<br>', $message);
+    
+    return $message;
+}
+
+$action = $_POST['action'] ?? $_GET['action'] ?? '';
+$user_id = $_SESSION['user']['id'];
+
+switch($action) {
+    case 'send':
+        $recipient_id = (int)$_POST['recipient_id'];
+        $message = trim($_POST['message'] ?? '');
+        
+        if (empty($message)) {
+            echo json_encode(['status' => 'error', 'message' => 'Message cannot be empty']);
+            exit;
+        }
+        
+        // Check if recipient accepts whispers
+        $stmt = $conn->prepare("SELECT accepting_whispers FROM users WHERE id = ?");
+        $stmt->bind_param("i", $recipient_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows === 0) {
+            echo json_encode(['status' => 'error', 'message' => 'User not found']);
+            exit;
+        }
+        
+        $recipient = $result->fetch_assoc();
+        if (!$recipient['accepting_whispers']) {
+            echo json_encode(['status' => 'error', 'message' => 'User is not accepting private messages']);
+            exit;
+        }
+        
+        // Apply markdown formatting
+    $sanitized_message = sanitizeMarkup($message);
+    
+    $stmt = $conn->prepare("INSERT INTO private_messages (sender_id, recipient_id, message) VALUES (?, ?, ?)");
+    $stmt->bind_param("iis", $user_id, $recipient_id, $sanitized_message);
+    
+    if ($stmt->execute()) {
+        echo json_encode(['status' => 'success', 'message' => 'Message sent']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to send message']);
+    }
+    $stmt->close();
+    break;
+        
+    // Replace the 'get' case in api/private_messages.php:
+case 'get':
+    $other_user_id = (int)$_GET['other_user_id'];
+    $stmt = $conn->prepare("
+        SELECT pm.*, 
+               s.username as sender_username, s.avatar as sender_avatar, s.color as sender_color,
+               r.username as recipient_username, r.avatar as recipient_avatar, r.color as recipient_color
+        FROM private_messages pm
+        JOIN users s ON pm.sender_id = s.id 
+        JOIN users r ON pm.recipient_id = r.id
+        WHERE (pm.sender_id = ? AND pm.recipient_id = ?) OR (pm.sender_id = ? AND pm.recipient_id = ?)
+        ORDER BY pm.created_at ASC
+        LIMIT 50
+    ");
+    $stmt->bind_param("iiii", $user_id, $other_user_id, $other_user_id, $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $messages = [];
+    while ($row = $result->fetch_assoc()) {
+        $messages[] = $row;
+    }
+    $stmt->close();
+    
+    // Mark messages as read
+    $stmt2 = $conn->prepare("UPDATE private_messages SET is_read = 1 WHERE sender_id = ? AND recipient_id = ?");
+    $stmt2->bind_param("ii", $other_user_id, $user_id);
+    $stmt2->execute();
+    $stmt2->close();
+    
+    echo json_encode(['status' => 'success', 'messages' => $messages]);
+    break;
+        
+    case 'get_conversations':
+        $stmt = $conn->prepare("
+            SELECT DISTINCT 
+                CASE WHEN pm.sender_id = ? THEN pm.recipient_id ELSE pm.sender_id END as other_user_id,
+                u.username, u.avatar,
+                (SELECT message FROM private_messages pm2 WHERE 
+                 (pm2.sender_id = ? AND pm2.recipient_id = other_user_id) OR 
+                 (pm2.sender_id = other_user_id AND pm2.recipient_id = ?)
+                 ORDER BY pm2.created_at DESC LIMIT 1) as last_message,
+                (SELECT COUNT(*) FROM private_messages pm3 WHERE 
+                 pm3.sender_id = other_user_id AND pm3.recipient_id = ? AND pm3.is_read = 0) as unread_count
+            FROM private_messages pm
+            JOIN users u ON u.id = (CASE WHEN pm.sender_id = ? THEN pm.recipient_id ELSE pm.sender_id END)
+            WHERE pm.sender_id = ? OR pm.recipient_id = ?
+            ORDER BY (SELECT MAX(created_at) FROM private_messages pm4 WHERE 
+                     (pm4.sender_id = ? AND pm4.recipient_id = other_user_id) OR 
+                     (pm4.sender_id = other_user_id AND pm4.recipient_id = ?)) DESC
+        ");
+        $stmt->bind_param("iiiiiiiii", $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $conversations = [];
+        while ($row = $result->fetch_assoc()) {
+            $conversations[] = $row;
+        }
+        
+        echo json_encode(['status' => 'success', 'conversations' => $conversations]);
+        break;
+}
+
+$conn->close();
+?>
