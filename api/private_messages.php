@@ -84,40 +84,63 @@ $user_id = $_SESSION['user']['id'];
 
 switch($action) {
     case 'send':
-        $recipient_id = (int)$_POST['recipient_id'];
-        $message = trim($_POST['message'] ?? '');
+    $recipient_id = (int)$_POST['recipient_id'];
+    $message = trim($_POST['message'] ?? '');
+    
+    error_log("Private message send attempt: recipient_id=$recipient_id, sender_id=$user_id, message_length=" . strlen($message));
+    
+    if (empty($message)) {
+        echo json_encode(['status' => 'error', 'message' => 'Message cannot be empty']);
+        exit;
+    }
+    
+    // Check if accepting_whispers column exists
+    $columns_check = $conn->query("SHOW COLUMNS FROM users LIKE 'accepting_whispers'");
+    $has_whispers_column = $columns_check->num_rows > 0;
+    
+    if (!$has_whispers_column) {
+        // Add the column if it doesn't exist
+        $conn->query("ALTER TABLE users ADD COLUMN accepting_whispers TINYINT(1) DEFAULT 1");
+        error_log("Added accepting_whispers column to users table");
+    }
+    
+    // Check if recipient exists and accepts whispers
+    $query = $has_whispers_column ? 
+        "SELECT id, username, accepting_whispers FROM users WHERE id = ?" :
+        "SELECT id, username, 1 as accepting_whispers FROM users WHERE id = ?";
         
-        if (empty($message)) {
-            echo json_encode(['status' => 'error', 'message' => 'Message cannot be empty']);
-            exit;
-        }
-        
-        // Check if recipient accepts whispers
-        $stmt = $conn->prepare("SELECT accepting_whispers FROM users WHERE id = ?");
-        $stmt->bind_param("i", $recipient_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($result->num_rows === 0) {
-            echo json_encode(['status' => 'error', 'message' => 'User not found']);
-            exit;
-        }
-        
-        $recipient = $result->fetch_assoc();
-        if (!$recipient['accepting_whispers']) {
-            echo json_encode(['status' => 'error', 'message' => 'User is not accepting private messages']);
-            exit;
-        }
-        
-        // Apply markdown formatting
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $recipient_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        error_log("User not found: recipient_id=$recipient_id");
+        echo json_encode(['status' => 'error', 'message' => 'User not found']);
+        exit;
+    }
+    
+    $recipient = $result->fetch_assoc();
+    $stmt->close();
+    
+    error_log("Recipient found: " . print_r($recipient, true));
+    
+    if (!$recipient['accepting_whispers']) {
+        echo json_encode(['status' => 'error', 'message' => 'User is not accepting private messages']);
+        exit;
+    }
+    
+    // Apply markdown formatting
     $sanitized_message = sanitizeMarkup($message);
     
     $stmt = $conn->prepare("INSERT INTO private_messages (sender_id, recipient_id, message) VALUES (?, ?, ?)");
     $stmt->bind_param("iis", $user_id, $recipient_id, $sanitized_message);
     
     if ($stmt->execute()) {
+        error_log("Private message sent successfully from $user_id to $recipient_id");
         echo json_encode(['status' => 'success', 'message' => 'Message sent']);
     } else {
+        error_log("Failed to insert private message: " . $stmt->error);
         echo json_encode(['status' => 'error', 'message' => 'Failed to send message']);
     }
     $stmt->close();

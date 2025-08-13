@@ -2707,6 +2707,19 @@ function loadFriends() {
             console.log('Friends response:', response);
             if (response.status === 'success') {
                 friends = response.friends;
+                
+                // DEBUG: Log each friend object to see the structure
+                console.log('Number of friends:', friends.length);
+                friends.forEach((friend, index) => {
+                    console.log(`Friend ${index}:`, {
+                        id: friend.id,
+                        friend_user_id: friend.friend_user_id,
+                        username: friend.username,
+                        status: friend.status,
+                        request_type: friend.request_type
+                    });
+                });
+                
                 updateFriendsPanel();
             } else {
                 $('#friendsList').html('<p class="text-danger">Error: ' + response.message + '</p>');
@@ -2751,7 +2764,7 @@ function updateFriendsPanel() {
                         <div class="flex-grow-1">
                             <small style="color: #e0e0e0;">${friend.username}</small>
                         </div>
-                        <button class="btn btn-sm btn-primary" onclick="openPrivateMessage(${friend.id}, '${friend.username}')">
+                        <button class="btn btn-sm btn-primary" onclick="openPrivateMessage(${friend.friend_user_id}, '${friend.username}')">
                             <i class="fas fa-comment"></i>
                         </button>
                     </div>
@@ -2871,7 +2884,10 @@ function displayConversations(conversations) {
 }
 
 function openPrivateMessage(userId, username) {
-    console.log('Opening private message for user:', userId, username);
+    console.log('=== DEBUG openPrivateMessage ===');
+    console.log('Received userId:', userId, 'Type:', typeof userId);
+    console.log('Received username:', username, 'Type:', typeof username);
+    console.log('Current user:', currentUser);
     
     if (openPrivateChats.has(userId)) {
         $(`#pm-${userId}`).show();
@@ -2900,12 +2916,14 @@ function openPrivateMessage(userId, username) {
     openPrivateChats.set(userId, { username: username, color: 'blue' }); // Default until we fetch
     
     // Fetch user info including color
+    console.log('Fetching user info for userId:', userId);
     $.ajax({
         url: 'api/get_user_info.php',
         method: 'GET',
         data: { user_id: userId },
         dataType: 'json',
         success: function(response) {
+            console.log('User info response:', response);
             if (response.status === 'success') {
                 const chatData = openPrivateChats.get(userId);
                 chatData.color = response.user.color || 'blue';
@@ -2916,7 +2934,13 @@ function openPrivateMessage(userId, username) {
                 loadPrivateMessages(userId);
             }
         },
-        error: function() {
+        error: function(xhr, status, error) {
+            console.error('Failed to fetch user info:', {
+                status: status,
+                error: error,
+                responseText: xhr.responseText,
+                userId: userId
+            });
             console.log('Failed to fetch user info, using default color');
             loadPrivateMessages(userId);
         }
@@ -2929,20 +2953,28 @@ function closePrivateMessage(userId) {
 }
 
 function sendPrivateMessage(recipientId) {
-    console.log('Sending private message to:', recipientId);
+    console.log('=== DEBUG sendPrivateMessage ===');
+    console.log('Sending message to recipientId:', recipientId, 'Type:', typeof recipientId);
+    
     const input = $(`#pm-input-${recipientId}`);
     const message = input.val().trim();
     
+    console.log('Message content:', message);
+    
     if (!message) return false;
+    
+    const requestData = {
+        action: 'send',
+        recipient_id: recipientId,
+        message: message
+    };
+    
+    console.log('Request data being sent:', requestData);
     
     $.ajax({
         url: 'api/private_messages.php',
         method: 'POST',
-        data: {
-            action: 'send',
-            recipient_id: recipientId,
-            message: message
-        },
+        data: requestData,
         dataType: 'json',
         success: function(response) {
             console.log('Send message response:', response);
@@ -2950,11 +2982,18 @@ function sendPrivateMessage(recipientId) {
                 input.val('');
                 loadPrivateMessages(recipientId);
             } else {
+                console.error('API Error:', response.message);
                 alert('Error: ' + response.message);
             }
         },
         error: function(xhr, status, error) {
-            console.error('Send message error:', error, xhr.responseText);
+            console.error('Send message AJAX error:', {
+                status: status,
+                error: error,
+                responseText: xhr.responseText,
+                recipientId: recipientId,
+                requestData: requestData
+            });
             alert('Error sending message: ' + error);
         }
     });

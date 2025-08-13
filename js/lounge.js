@@ -1706,7 +1706,7 @@ function updateFriendsPanel() {
                         <div class="flex-grow-1">
                             <small style="color: #e0e0e0;">${friend.username}</small>
                         </div>
-                        <button class="btn btn-sm btn-primary" onclick="openPrivateMessage(${friend.id}, '${friend.username}')">
+                        <button class="btn btn-sm btn-primary" onclick="openPrivateMessage(${friend.friend_user_id}, '${friend.username}')">
                             <i class="fas fa-comment"></i>
                         </button>
                     </div>
@@ -1734,6 +1734,7 @@ function updateFriendsPanel() {
     // Load conversations after friends are loaded
     loadConversations();
 }
+
 
 function addFriend() {
     const username = $('#addFriendInput').val().trim();
