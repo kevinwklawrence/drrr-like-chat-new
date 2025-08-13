@@ -32,6 +32,10 @@ function criticalError(message, error = null) {
 
 // ===== GLOBAL VARIABLES =====
 
+// Cache for friendship status
+let friendshipCache = new Map();
+let friendshipCacheTimeout = new Map();
+
 // Kick Detection System
 let kickDetectionInterval;
 let userKickedModalShown = false;
@@ -64,6 +68,66 @@ let currentVideoData = null;
 let playerQueue = [];
 let playerSuggestions = [];
 let youtubeAPIReady = false;
+
+function checkIfFriend(userId, callback) {
+    if (!userId || currentUser.type !== 'user') {
+        callback(false);
+        return;
+    }
+    
+    // Check cache first
+    if (friendshipCache.has(userId)) {
+        callback(friendshipCache.get(userId));
+        return;
+    }
+    
+    $.ajax({
+        url: 'api/friends.php',
+        method: 'GET',
+        data: { action: 'get' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                const isFriend = response.friends.some(friend => 
+                    friend.friend_user_id == userId && friend.status === 'accepted'
+                );
+                
+                // Cache the result for 30 seconds
+                friendshipCache.set(userId, isFriend);
+                
+                // Clear cache after 30 seconds
+                if (friendshipCacheTimeout.has(userId)) {
+                    clearTimeout(friendshipCacheTimeout.get(userId));
+                }
+                friendshipCacheTimeout.set(userId, setTimeout(() => {
+                    friendshipCache.delete(userId);
+                    friendshipCacheTimeout.delete(userId);
+                }, 30000));
+                
+                callback(isFriend);
+            } else {
+                callback(false);
+            }
+        },
+        error: function() {
+            callback(false);
+        }
+    });
+}
+
+function clearFriendshipCache(userId = null) {
+    if (userId) {
+        friendshipCache.delete(userId);
+        if (friendshipCacheTimeout.has(userId)) {
+            clearTimeout(friendshipCacheTimeout.get(userId));
+            friendshipCacheTimeout.delete(userId);
+        }
+    } else {
+        friendshipCache.clear();
+        friendshipCacheTimeout.forEach(timeout => clearTimeout(timeout));
+        friendshipCacheTimeout.clear();
+    }
+}
 
 // ===== MESSAGE FUNCTIONS =====
 function sendMessage() {
@@ -301,37 +365,78 @@ function renderUser(user) {
     }
     
     let actions = '';
-if (user.user_id_string !== currentUserIdString) { // Show buttons for all users except self
-    actions = `<div class="user-actions">`;
-    
-    // Whisper button for all users
-    const displayName = user.display_name || user.username || user.guest_name || 'Unknown';
-    actions += `
-        <button class="btn whisper-btn" onclick="openWhisper('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
-            <i class="fas fa-comment"></i> Whisper
-        </button>
-    `;
-    
-    // Add friend button for registered users only (both current user and target must be registered)
-    if (user.user_id && currentUser.type === 'user') {
+    if (user.user_id_string !== currentUserIdString) {
+        actions = `<div class="user-actions">`;
+        
+        // Whisper button for all users
+        const displayName = user.display_name || user.username || user.guest_name || 'Unknown';
         actions += `
-            <button class="btn friend-btn" onclick="sendFriendRequest(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
-                <i class="fas fa-user-plus"></i> Add Friend
+            <button class="btn whisper-btn" onclick="openWhisper('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
+                <i class="fas fa-comment"></i> Whisper
             </button>
         `;
+        
+        // Friend/PM button for registered users
+        if (user.user_id && currentUser.type === 'user') {
+            // Check cache first, render appropriate button immediately
+            if (friendshipCache.has(user.user_id)) {
+                const isFriend = friendshipCache.get(user.user_id);
+                if (isFriend) {
+                    actions += `
+                        <button class="btn btn-primary" onclick="openPrivateMessage(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
+                            <i class="fas fa-envelope"></i> PM
+                        </button>
+                    `;
+                } else {
+                    actions += `
+                        <button class="btn friend-btn" onclick="sendFriendRequest(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
+                            <i class="fas fa-user-plus"></i> Add Friend
+                        </button>
+                    `;
+                }
+            } else {
+                // Only show spinner if we don't have cached data
+                actions += `<div id="friend-action-${user.user_id}" class="d-inline">
+                    <button class="btn btn-secondary btn-sm" disabled>
+                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                    </button>
+                </div>`;
+                
+                // Check friendship status only if not cached
+                setTimeout(() => {
+                    checkIfFriend(user.user_id, function(isFriend) {
+                        const container = $(`#friend-action-${user.user_id}`);
+                        if (container.length > 0) {
+                            if (isFriend) {
+                                container.html(`
+                                    <button class="btn btn-primary" onclick="openPrivateMessage(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
+                                        <i class="fas fa-envelope"></i> PM
+                                    </button>
+                                `);
+                            } else {
+                                container.html(`
+                                    <button class="btn friend-btn" onclick="sendFriendRequest(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
+                                        <i class="fas fa-user-plus"></i> Add Friend
+                                    </button>
+                                `);
+                            }
+                        }
+                    });
+                }, 50);
+            }
+        }
+        
+        // Ban button only for hosts/admins, and not on other hosts/admins
+        if ((isHost || isAdmin) && !user.is_host && !user.is_admin) {
+            actions += `
+                <button class="btn btn-ban-user" onclick="showBanModal('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
+                    <i class="fas fa-ban"></i> Ban
+                </button>
+            `;
+        }
+        
+        actions += `</div>`;
     }
-    
-    // Ban button only for hosts/admins, and not on other hosts/admins
-    if ((isHost || isAdmin) && !user.is_host && !user.is_admin) {
-        actions += `
-            <button class="btn btn-ban-user" onclick="showBanModal('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
-                <i class="fas fa-ban"></i> Ban
-            </button>
-        `;
-    }
-    
-    actions += `</div>`;
-}
     
     return `
         <div class="user-item">
@@ -2310,6 +2415,45 @@ function markWhisperAsRead(userIdString) {
 }
 
 function checkForNewWhispers() {
+    // Check for new conversations first
+    $.ajax({
+        url: 'api/room_whispers.php',
+        method: 'GET',
+        data: { action: 'get_conversations' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                response.conversations.forEach(conv => {
+                    const userIdString = conv.other_user_id_string;
+                    
+                    // If user has unread messages and no open whisper tab, open one
+                    if (conv.unread_count > 0 && !openWhispers.has(userIdString)) {
+                        const displayName = conv.username || conv.guest_name || 'Unknown';
+                        openWhisper(userIdString, displayName);
+                    }
+                    
+                    // Update unread count for existing tabs
+                    if (openWhispers.has(userIdString)) {
+                        const data = openWhispers.get(userIdString);
+                        data.unreadCount = conv.unread_count;
+                        openWhispers.set(userIdString, data);
+                        
+                        const unreadElement = $(`#whisper-unread-${data.safeId}`);
+                        if (conv.unread_count > 0) {
+                            unreadElement.text(conv.unread_count).show();
+                        } else {
+                            unreadElement.hide();
+                        }
+                    }
+                });
+            }
+        },
+        error: function() {
+            // Silently fail
+        }
+    });
+    
+    // Also check existing open whisper conversations for new messages
     openWhispers.forEach((data, userIdString) => {
         const safeId = data.safeId;
         const input = $(`#whisper-input-${safeId}`);
@@ -2320,7 +2464,6 @@ function checkForNewWhispers() {
         }
     });
 }
-
 
 
 
@@ -2347,6 +2490,8 @@ function sendFriendRequest(userId, username) {
             success: function(response) {
                 if (response.status === 'success') {
                     alert('Friend request sent to ' + username + '!');
+                    clearFriendshipCache(userId);
+                    loadUsers(); // Refresh user list
                 } else {
                     alert('Error: ' + response.message);
                 }
@@ -2451,7 +2596,7 @@ if (savedHidden === 'true') {
 
     // Initialize other systems
     setTimeout(checkUserStatus, 500);
-    kickDetectionInterval = setInterval(checkUserStatus, 2000);
+    kickDetectionInterval = setInterval(checkUserStatus, 5000);
     kickDetectionEnabled = true;
 
     initializeActivityTracking();
@@ -2459,7 +2604,7 @@ if (savedHidden === 'true') {
     // Start knock checking if user is host
     if (isHost) {
         debugLog('🚪 User is host, starting knock checking...');
-        setInterval(checkForKnocks, 3000);
+        setInterval(checkForKnocks, 1000);
         setTimeout(checkForKnocks, 1000);
     }
 
@@ -2467,7 +2612,7 @@ if (savedHidden === 'true') {
     loadUsers();
     
     setInterval(loadMessages, 500);
-    setInterval(loadUsers, 500);
+    setInterval(loadUsers, 1000);
     
     $('#message').focus();
     

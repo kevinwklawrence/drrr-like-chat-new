@@ -99,8 +99,14 @@ try {
             
             $messages = [];
             while ($row = $result->fetch_assoc()) {
-                // Get sender info
-                $sender_stmt = $conn->prepare("SELECT username, guest_name, avatar, guest_avatar, color FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");
+                // Get sender info with proper color handling
+                $sender_stmt = $conn->prepare("
+                    SELECT cu.username, cu.guest_name, cu.avatar, cu.guest_avatar, 
+                           COALESCE(cu.color, u.color, 'blue') as color
+                    FROM chatroom_users cu 
+                    LEFT JOIN users u ON cu.user_id = u.id 
+                    WHERE cu.room_id = ? AND cu.user_id_string = ?
+                ");
                 $sender_stmt->bind_param("is", $room_id, $row['sender_user_id_string']);
                 $sender_stmt->execute();
                 $sender_result = $sender_stmt->get_result();
@@ -110,12 +116,18 @@ try {
                     $row['sender_username'] = $sender_data['username'];
                     $row['sender_guest_name'] = $sender_data['guest_name'];
                     $row['sender_avatar'] = $sender_data['avatar'] ?: $sender_data['guest_avatar'];
-                    $row['sender_color'] = $sender_data['color'] ?: 'blue';
+                    $row['sender_color'] = $sender_data['color'];
                 }
                 $sender_stmt->close();
                 
-                // Get recipient info
-                $recipient_stmt = $conn->prepare("SELECT username, guest_name, avatar, guest_avatar, color FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");
+                // Get recipient info with proper color handling
+                $recipient_stmt = $conn->prepare("
+                    SELECT cu.username, cu.guest_name, cu.avatar, cu.guest_avatar,
+                           COALESCE(cu.color, u.color, 'blue') as color
+                    FROM chatroom_users cu 
+                    LEFT JOIN users u ON cu.user_id = u.id 
+                    WHERE cu.room_id = ? AND cu.user_id_string = ?
+                ");
                 $recipient_stmt->bind_param("is", $room_id, $row['recipient_user_id_string']);
                 $recipient_stmt->execute();
                 $recipient_result = $recipient_stmt->get_result();
@@ -125,7 +137,7 @@ try {
                     $row['recipient_username'] = $recipient_data['username'];
                     $row['recipient_guest_name'] = $recipient_data['guest_name'];
                     $row['recipient_avatar'] = $recipient_data['avatar'] ?: $recipient_data['guest_avatar'];
-                    $row['recipient_color'] = $recipient_data['color'] ?: 'blue';
+                    $row['recipient_color'] = $recipient_data['color'];
                 }
                 $recipient_stmt->close();
                 
@@ -205,6 +217,7 @@ try {
             
         default:
             echo json_encode(['status' => 'error', 'message' => 'Invalid action']);
+            break;
     }
     
 } catch (Exception $e) {
