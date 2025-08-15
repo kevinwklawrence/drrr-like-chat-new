@@ -119,6 +119,36 @@ if (isset($_SESSION['user'])) {
                                 </button>
                             </div>
                         </div>
+
+<!-- Avatar Color Customization -->
+<div class="avatar-color-sliders">
+    <label class="form-label">
+        <i class="fas fa-adjust"></i> Customize Avatar Color
+    </label>
+    
+    <div class="color-slider-container">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <label for="hueSlider" class="form-label mb-0">Hue Shift</label>
+            <span class="slider-value" id="hueValue">0°</span>
+        </div>
+        <input type="range" class="color-slider" id="hueSlider" name="avatar_hue" 
+               min="0" max="360" value="0" oninput="updateAvatarFilter()">
+    </div>
+    
+    <div class="color-slider-container">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <label for="saturationSlider" class="form-label mb-0">Saturation</label>
+            <span class="slider-value" id="saturationValue">100%</span>
+        </div>
+        <input type="range" class="color-slider" id="saturationSlider" name="avatar_saturation" 
+               min="0" max="300" value="100" oninput="updateAvatarFilter()">
+    </div>
+    
+    <div class="form-text text-muted">
+        <i class="fas fa-info-circle"></i> Adjust hue and saturation to customize your avatar's colors
+    </div>
+</div>
+
                         <div class="color-selection-section">
                             <div class="d-flex justify-content-between align-items-center">
                                 <label class="form-label">
@@ -226,114 +256,234 @@ if (isset($_SESSION['user'])) {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        $(document).ready(function() {
-            // Initialize color selection
-            selectColor('black', document.querySelector('[data-color="black"]'));
-            
-            // Avatar selection handling
-            $('.avatar').click(function() {
-                $('.avatar').removeClass('selected');
-                $(this).addClass('selected');
-                
-                const avatarPath = $(this).data('avatar');
-                $('#selectedAvatar').val(avatarPath);
-                
-                // Update preview
-                $('#selectedAvatarImg').attr('src', $(this).attr('src'));
-                $('#selectedAvatarPreview').show();
-                $('#noAvatarSelected').hide();
-            });
-
-            // Form submission
-            $('#guestLoginForm').submit(function(e) {
-                e.preventDefault();
-                
-                const guestName = $('#guestName').val().trim();
-                const selectedAvatar = $('#selectedAvatar').val();
-                const selectedColor = $('#selectedColor').val();
-                
-                if (!guestName) {
-                    alert('Please enter your display name');
-                    $('#guestName').focus();
-                    return;
-                }
-                
-                // Show loading state
-                const submitBtn = $('button[type="submit"]');
-                const originalText = submitBtn.html();
-                submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Joining...');
-                
-                $.ajax({
-                    url: 'api/join_lounge.php',
-                    method: 'POST',
-                    data: {
-                        guest_name: guestName,
-                        avatar: selectedAvatar,
-                        color: selectedColor,
-                        type: 'guest'
-                    },
-                    dataType: 'json',
-                    success: function(res) {
-                        if (res.status === 'success') {
-                            window.location.href = 'lounge.php';
-                        } else {
-                            alert('Error: ' + (res.message || 'Unknown error'));
-                            submitBtn.prop('disabled', false).html(originalText);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('AJAX error:', status, error);
-                        alert('Connection error: ' + error);
-                        submitBtn.prop('disabled', false).html(originalText);
-                    }
-                });
-            });
-        });
-
-        // Color selection functions
-        function selectColor(colorName, element) {
-            // Remove selected class from all options
-            document.querySelectorAll('.color-option').forEach(option => {
-                option.classList.remove('selected');
-            });
-            
-            // Add selected class to clicked option
-            element.classList.add('selected');
-            
-            // Update hidden input
-            document.getElementById('selectedColor').value = colorName;
-            
-            // Update preview
-            const preview = document.getElementById('selectedColorPreview');
-            preview.className = `preview-circle color-${colorName}`;
-            
-            // Update color name
-            document.getElementById('selectedColorName').textContent = colorName.charAt(0).toUpperCase() + colorName.slice(1);
-            
-            // Update color in session/database via AJAX
-            $.ajax({
-                url: 'api/update_user_color.php',
-                method: 'POST',
-                data: { color: colorName },
-                dataType: 'json',
-                success: function(res) {
-                    if (res.status === 'success') {
-                        // Optionally notify user or update UI
-                        console.log('Color updated:', res.new_color);
-                    } else {
-                        console.warn('Color update failed:', res.message);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Color update AJAX error:', error);
-                }
-            });
+$(document).ready(function() {
+    // NUCLEAR OPTION: Completely disable native form submission
+    $('#guestLoginForm').attr('onsubmit', 'return false;');
+    $('#guestLoginForm').removeAttr('action');
+    $('#guestLoginForm').removeAttr('method');
+    
+    // Remove any existing event handlers
+    $('#guestLoginForm').off('submit');
+    $('button[type="submit"]').off('click');
+    
+    // Track ALL form interactions
+    let submitAttempts = 0;
+    
+    // Monitor ALL possible submission triggers
+    $(document).on('submit', '#guestLoginForm', function(e) {
+        submitAttempts++;
+        console.log(`🚨 FORM SUBMIT EVENT #${submitAttempts} - BLOCKED`);
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return false;
+    });
+    
+    $(document).on('click', 'button[type="submit"]', function(e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        console.log('🚨 SUBMIT BUTTON CLICK - REDIRECTED TO CUSTOM HANDLER');
+        handleGuestLogin();
+        return false;
+    });
+    
+    // Monitor for Enter key in form fields
+    $(document).on('keypress', '#guestLoginForm input', function(e) {
+        if (e.which === 13) { // Enter key
+            e.preventDefault();
+            console.log('🚨 ENTER KEY PRESSED - REDIRECTED TO CUSTOM HANDLER');
+            handleGuestLogin();
+            return false;
         }
+    });
+    
+    // Initialize sliders
+    $('#hueSlider').val(0);
+    $('#saturationSlider').val(100);
+    updateAvatarFilter();
+    
+    // Add real-time slider tracking
+    $('#hueSlider, #saturationSlider').on('input change', function() {
+        console.log('Slider changed - hue:', $('#hueSlider').val(), 'sat:', $('#saturationSlider').val());
+        updateAvatarFilter();
+    });
+    
+    // Initialize color selection
+    selectColor('black', document.querySelector('[data-color="black"]'));
+    
+    // Avatar selection handling
+    $('.avatar').click(function() {
+        $('.avatar').removeClass('selected').css('filter', ''); // Clear all filters
+        $(this).addClass('selected');
         
-        function resetColorToDefault() {
-            selectColor('black', document.querySelector('[data-color="black"]'));
+        const avatarPath = $(this).data('avatar');
+        $('#selectedAvatar').val(avatarPath);
+        
+        // Update preview
+        $('#selectedAvatarImg').attr('src', $(this).attr('src'));
+        $('#selectedAvatarPreview').show();
+        $('#noAvatarSelected').hide();
+        
+        // Immediately apply current filter to newly selected avatar
+        updateAvatarFilter();
+    });
+});
+
+// Separate function for handling guest login
+let guestLoginInProgress = false;
+
+function handleGuestLogin() {
+    console.log('=== CUSTOM GUEST LOGIN HANDLER ===');
+    
+    if (guestLoginInProgress) {
+        console.log('🛑 Guest login already in progress - BLOCKED');
+        return false;
+    }
+    
+    guestLoginInProgress = true;
+    
+    const guestName = $('#guestName').val().trim();
+    const selectedAvatar = $('#selectedAvatar').val();
+    const selectedColor = $('#selectedColor').val();
+    
+    // Get slider values with extensive logging
+    const hueElement = document.getElementById('hueSlider');
+    const satElement = document.getElementById('saturationSlider');
+    
+    console.log('Hue element:', hueElement);
+    console.log('Sat element:', satElement);
+    console.log('Hue value:', hueElement ? hueElement.value : 'NULL');
+    console.log('Sat value:', satElement ? satElement.value : 'NULL');
+    
+    const hueShift = hueElement ? parseInt(hueElement.value) || 0 : 0;
+    const saturation = satElement ? parseInt(satElement.value) || 100 : 100;
+    
+    console.log('Final values - hue:', hueShift, 'sat:', saturation);
+    
+    if (!guestName) {
+        guestLoginInProgress = false;
+        alert('Please enter your display name');
+        $('#guestName').focus();
+        return false;
+    }
+    
+    if (!selectedAvatar) {
+        guestLoginInProgress = false;
+        alert('Please select an avatar');
+        return false;
+    }
+    
+    // Show loading state
+    const submitBtn = $('button[type="submit"]');
+    const originalText = submitBtn.html();
+    submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Joining...');
+    
+    // Disable ALL form elements
+    $('#guestLoginForm').find('input, button, select').prop('disabled', true);
+    
+    // Create unique submission ID
+    const submissionId = 'guest_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    
+    const formData = {
+        guest_name: guestName,
+        avatar: selectedAvatar,
+        color: selectedColor,
+        avatar_hue: hueShift,
+        avatar_saturation: saturation,
+        type: 'guest',
+        submission_id: submissionId
+    };
+    
+    console.log('Sending data with submission ID:', submissionId);
+    console.log('Form data:', formData);
+    
+    $.ajax({
+        url: 'api/join_lounge.php',
+        method: 'POST',
+        data: formData,
+        dataType: 'json',
+        timeout: 15000,
+        cache: false,
+        success: function(res) {
+            console.log('Response received:', res);
+            if (res.status === 'success') {
+                console.log('Success - redirecting...');
+                // Add a small delay to prevent browser race conditions
+                setTimeout(function() {
+                    window.location.href = 'lounge.php';
+                }, 100);
+            } else {
+                resetGuestForm(submitBtn, originalText);
+                alert('Error: ' + (res.message || 'Unknown error'));
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error:', status, error);
+            resetGuestForm(submitBtn, originalText);
+            alert('Connection error: ' + error);
         }
-    </script>
+    });
+    
+    return false;
+}
+
+function resetGuestForm(submitBtn, originalText) {
+    guestLoginInProgress = false;
+    $('#guestLoginForm').find('input, button, select').prop('disabled', false);
+    submitBtn.prop('disabled', false).html(originalText);
+}
+
+// Color selection functions
+function selectColor(colorName, element) {
+    // Remove selected class from all options
+    document.querySelectorAll('.color-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+    
+    // Add selected class to clicked option
+    element.classList.add('selected');
+    
+    // Update hidden input
+    document.getElementById('selectedColor').value = colorName;
+    
+    // Update preview
+    const preview = document.getElementById('selectedColorPreview');
+    preview.className = `preview-circle color-${colorName}`;
+    
+    // Update color name
+    document.getElementById('selectedColorName').textContent = colorName.charAt(0).toUpperCase() + colorName.slice(1);
+}
+
+function resetColorToDefault() {
+    selectColor('black', document.querySelector('[data-color="black"]'));
+}
+
+function updateAvatarFilter() {
+    const hue = $('#hueSlider').val() || 0;
+    const saturation = $('#saturationSlider').val() || 100;
+    
+    console.log('UpdateAvatarFilter called - hue:', hue, 'sat:', saturation);
+    
+    $('#hueValue').text(hue + '°');
+    $('#saturationValue').text(saturation + '%');
+    
+    // Apply filter to selected avatar
+    const selectedAvatar = $('.avatar.selected');
+    if (selectedAvatar.length > 0) {
+        const filter = `hue-rotate(${hue}deg) saturate(${saturation}$)`;
+        selectedAvatar.css('filter', filter);
+        selectedAvatar.addClass('avatar-customized');
+        console.log('Applied filter to avatar:', filter);
+    }
+    
+    // Also apply to preview image if it exists
+    const previewImg = $('#selectedAvatarImg');
+    if (previewImg.length > 0 && previewImg.is(':visible')) {
+        const filter = `hue-rotate(${hue}deg) saturate(${saturation}%)`;
+        previewImg.css('filter', filter);
+        console.log('Applied filter to preview:', filter);
+    }
+}
+</script>
     <script src="js/script.js"></script>
 </body>
 </html>

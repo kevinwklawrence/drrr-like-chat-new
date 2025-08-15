@@ -20,9 +20,22 @@ $color = $_SESSION['user']['color'] ?? 'black';
 
 // FIXED: Include color field in the global_users INSERT/UPDATE
 if (!empty($user_id_string)) {
-    $stmt = $conn->prepare("INSERT INTO global_users (user_id_string, username, guest_name, avatar, guest_avatar, is_admin, ip_address, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE username = VALUES(username), guest_name = VALUES(guest_name), avatar = VALUES(avatar), guest_avatar = VALUES(guest_avatar), is_admin = VALUES(is_admin), ip_address = VALUES(ip_address), color = VALUES(color), last_activity = CURRENT_TIMESTAMP");
+    error_log("LOUNGE.PHP: Updating global_users for user: $user_id_string");
+    
+    // Preserve existing avatar customization values
+    $existing_hue = $_SESSION['user']['avatar_hue'] ?? 0;
+    $existing_sat = $_SESSION['user']['avatar_saturation'] ?? 100;
+    
+    error_log("LOUNGE.PHP: Using session values - hue: $existing_hue, sat: $existing_sat");
+    
+
+    // Preserve existing avatar customization values
+    $existing_hue = $_SESSION['user']['avatar_hue'] ?? 0;
+    $existing_sat = $_SESSION['user']['avatar_saturation'] ?? 100;
+    
+    $stmt = $conn->prepare("INSERT INTO global_users (user_id_string, username, guest_name, avatar, guest_avatar, is_admin, ip_address, color, avatar_hue, avatar_saturation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE username = VALUES(username), guest_name = VALUES(guest_name), avatar = VALUES(avatar), guest_avatar = VALUES(guest_avatar), is_admin = VALUES(is_admin), ip_address = VALUES(ip_address), color = VALUES(color), last_activity = CURRENT_TIMESTAMP");
     if ($stmt) {
-        $stmt->bind_param("sssssiss", $user_id_string, $username, $guest_name, $avatar, $avatar, $is_admin, $ip_address, $color);
+        $stmt->bind_param("ssssisssii", $user_id_string, $username, $guest_name, $avatar, $avatar, $is_admin, $ip_address, $color, $existing_hue, $existing_sat);
         $stmt->execute();
         $stmt->close();
     }

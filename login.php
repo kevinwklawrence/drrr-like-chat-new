@@ -336,6 +336,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                             </div>
                             
+
+<!-- Avatar Color Customization -->
+<div class="avatar-color-sliders">
+    <label class="form-label">
+        <i class="fas fa-adjust"></i> Customize Avatar Color
+    </label>
+    
+    <div class="color-slider-container">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <label for="hueSlider" class="form-label mb-0">Hue Shift</label>
+            <span class="slider-value" id="hueValue">0°</span>
+        </div>
+        <input type="range" class="color-slider" id="hueSlider" name="hue_shift" 
+               min="0" max="360" value="0" oninput="updateAvatarFilter()">
+    </div>
+    
+    <div class="color-slider-container">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <label for="saturationSlider" class="form-label mb-0">Saturation</label>
+            <span class="slider-value" id="saturationValue">100%</span>
+        </div>
+        <input type="range" class="color-slider" id="saturationSlider" name="saturation" 
+               min="0" max="300" value="100" oninput="updateAvatarFilter()">
+    </div>
+    
+    <div class="form-text text-muted">
+        <i class="fas fa-info-circle"></i> Adjust hue and saturation to customize your avatar's colors
+    </div>
+</div>
+
+
                             <div class="color-selection-section">
     <label class="form-label">
         <i class="fas fa-palette"></i> Choose Your Chat Color
@@ -448,15 +479,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Replace the JavaScript section in login.php with this updated version
-
 $(document).ready(function() {
+    // NUCLEAR OPTION: Completely disable native form submission
+    $('#userLoginForm').attr('onsubmit', 'return false;');
+    $('#userLoginForm').removeAttr('action');
+    $('#userLoginForm').removeAttr('method');
+    
+    // Remove any existing event handlers
+    $('#userLoginForm').off('submit');
+    $('button[type="submit"]').off('click');
+    
+    // Monitor ALL possible submission triggers
+    $(document).on('submit', '#userLoginForm', function(e) {
+        console.log('🚨 LOGIN FORM SUBMIT EVENT - BLOCKED');
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return false;
+    });
+    
+    $(document).on('click', '#userLoginForm button[type="submit"]', function(e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        console.log('🚨 LOGIN SUBMIT BUTTON CLICK - REDIRECTED TO CUSTOM HANDLER');
+        handleUserLogin();
+        return false;
+    });
+    
+    $(document).on('keypress', '#userLoginForm input', function(e) {
+        if (e.which === 13) { // Enter key
+            e.preventDefault();
+            console.log('🚨 LOGIN ENTER KEY PRESSED - REDIRECTED TO CUSTOM HANDLER');
+            handleUserLogin();
+            return false;
+        }
+    });
+    
+    // Initialize sliders
+    $('#hueSlider').val(0);
+    $('#saturationSlider').val(100);
+    updateAvatarFilter();
+    
+    // Add real-time slider tracking
+    $('#hueSlider, #saturationSlider').on('input change', function() {
+        updateAvatarFilter();
+    });
     
     updateAvatarStats();
     
     // Avatar selection handling
     $(document).on('click', '.avatar', function() {
-        $('.avatar').removeClass('selected');
+        $('.avatar').removeClass('selected').css('filter', ''); // Clear all filters
         $(this).addClass('selected');
         
         const avatarPath = $(this).data('avatar');
@@ -467,6 +539,9 @@ $(document).ready(function() {
         $('#selectedAvatarPreview').show();
         $('#noAvatarSelected').hide();
         
+        // Apply current filter to selected avatar
+        updateAvatarFilter();
+        
         updateAvatarStats();
     });
 
@@ -474,64 +549,87 @@ $(document).ready(function() {
     $('#avatarSort').on('change', function() {
         filterAvatars();
     });
-
-    // Form submission - UPDATED to allow no avatar selection and use correct default
-    $('#userLoginForm').submit(function(e) {
-        e.preventDefault();
-        
-        const username = $('#username').val().trim();
-        const password = $('#password').val();
-        const selectedAvatar = $('#selectedAvatar').val(); // Allow empty
-        const selectedColor = $('#selectedColor').val();
-        
-        if (!username || !password) {
-            alert('Please enter both username and password');
-            return;
-        }
-        
-        // Show loading state
-        const submitBtn = $('button[type="submit"]');
-        const originalText = submitBtn.html();
-        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Logging in...');
-        
-        console.log('Submitting login:', {
-  username,
-  password,
-  selectedAvatar,
-  selectedColor
-});
-        console.log('Selected color:', $('#selectedColor').val());
-
-        $.ajax({
-            url: 'api/login.php',
-            method: 'POST',
-            data: {
-                username: username,
-                password: password,
-                avatar: selectedAvatar,
-                color: selectedColor, // Add this line
-                type: 'user'
-            },
-            dataType: 'json',
-            success: function(res) {
-                if (res.status === 'success') {
-                    window.location.href = 'lounge.php';
-                } else {
-                    alert('Error: ' + (res.message || 'Unknown error'));
-                    submitBtn.prop('disabled', false).html(originalText);
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('AJAX error:', status, error);
-                alert('Connection error: ' + error);
-                submitBtn.prop('disabled', false).html(originalText);
-            }
-        });
-    });
     
     // Initialize color selection
     selectColor('black', document.querySelector('[data-color="black"]'));
 });
+
+let userLoginInProgress = false;
+
+function handleUserLogin() {
+    if (userLoginInProgress) {
+        console.log('🛑 User login already in progress - BLOCKED');
+        return false;
+    }
+    
+    userLoginInProgress = true;
+    
+    const username = $('#username').val().trim();
+    const password = $('#password').val();
+    const selectedAvatar = $('#selectedAvatar').val();
+    const selectedColor = $('#selectedColor').val();
+    const hueShift = $('#hueSlider').val() || 0;
+    const saturation = $('#saturationSlider').val() || 100;
+    
+    console.log('Login form values - hue:', hueShift, 'sat:', saturation);
+    
+    if (!username || !password) {
+        userLoginInProgress = false;
+        alert('Please enter both username and password');
+        return false;
+    }
+    
+    const submitBtn = $('button[type="submit"]');
+    const originalText = submitBtn.html();
+    submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Logging in...');
+    $('#userLoginForm').find('input, button, select').prop('disabled', true);
+    
+    const submissionId = 'login_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    
+    const formData = {
+        username: username,
+        password: password,
+        avatar: selectedAvatar,
+        color: selectedColor,
+        avatar_hue: hueShift,
+        avatar_saturation: saturation,
+        type: 'user',
+        submission_id: submissionId
+    };
+    
+    console.log('Sending login data:', formData);
+    
+    $.ajax({
+        url: 'api/login.php',
+        method: 'POST',
+        data: formData,
+        dataType: 'json',
+        timeout: 15000,
+        cache: false,
+        success: function(res) {
+            if (res.status === 'success') {
+                setTimeout(function() {
+                    window.location.href = 'lounge.php';
+                }, 100);
+            } else {
+                resetLoginForm(submitBtn, originalText);
+                alert('Error: ' + (res.message || 'Unknown error'));
+            }
+        },
+        error: function(xhr, status, error) {
+            resetLoginForm(submitBtn, originalText);
+            alert('Connection error: ' + error);
+        }
+    });
+    
+    return false;
+}
+
+function resetLoginForm(submitBtn, originalText) {
+    userLoginInProgress = false;
+    $('#userLoginForm').find('input, button, select').prop('disabled', false);
+    submitBtn.prop('disabled', false).html(originalText);
+}
 
 function filterAvatars() {
     const selectedGroup = $('#avatarSort').val();
@@ -612,7 +710,29 @@ function selectColor(colorName, element) {
 function resetColorToDefault() {
     selectColor('black', document.querySelector('[data-color="black"]'));
 }
-    </script>
+
+function updateAvatarFilter() {
+    const hue = $('#hueSlider').val() || 0;
+    const saturation = $('#saturationSlider').val() || 100;
+    
+    $('#hueValue').text(hue + '°');
+    $('#saturationValue').text(saturation + '%');
+    
+    const selectedAvatar = $('.avatar.selected');
+    if (selectedAvatar.length > 0) {
+        const filter = `hue-rotate(${hue}deg) saturate(${saturation/100})`;
+        selectedAvatar.css('filter', filter);
+        selectedAvatar.addClass('avatar-customized');
+    }
+    
+    // Also apply to preview image if it exists
+    const previewImg = $('#selectedAvatarImg');
+    if (previewImg.length > 0 && previewImg.is(':visible')) {
+        const filter = `hue-rotate(${hue}deg) saturate(${saturation/100})`;
+        previewImg.css('filter', filter);
+    }
+}
+</script>
     <script src="js/script.js"></script>
 </body>
 </html>

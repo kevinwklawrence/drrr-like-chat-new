@@ -17,6 +17,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
     $selected_avatar = $_POST['avatar'] ?? ''; // Allow empty avatar selection
     $selected_color = $_POST['color'] ?? ''; // Handle color selection
+// Check if this is a complete login request with customization data
+$has_customization_data = isset($_POST['avatar_hue']) && isset($_POST['avatar_saturation']);
+
+if (!$has_customization_data) {
+    error_log("⚠️ WARNING: Login request without avatar customization data - ignoring to prevent override");
+    // If no customization data, check if user already has values and preserve them
+    $existing_stmt = $conn->prepare("SELECT avatar_hue, avatar_saturation FROM users WHERE username = ?");
+    $existing_stmt->bind_param("s", $username);
+    $existing_stmt->execute();
+    $existing_result = $existing_stmt->get_result();
+    if ($existing_result->num_rows > 0) {
+        $existing_data = $existing_result->fetch_assoc();
+        $avatar_hue = $existing_data['avatar_hue'] ?? 0;
+        $avatar_saturation = $existing_data['avatar_saturation'] ?? 100;
+        error_log("Using existing DB values - hue: $avatar_hue, sat: $avatar_saturation");
+    } else {
+        $avatar_hue = 0;
+        $avatar_saturation = 100;
+    }
+    $existing_stmt->close();
+} else {
+    // Normal processing with form data
+    $avatar_hue = (int)$_POST['avatar_hue'];
+    $avatar_saturation = (int)$_POST['avatar_saturation'];
+    error_log("Using form values - hue: $avatar_hue, sat: $avatar_saturation");
+}
+
 
     if (empty($username) || empty($password)) {
         error_log("Missing username or password in login.php");
@@ -96,44 +123,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             // FIXED: Update color if selected (always update, regardless of current color)
-            if (!empty($selected_color)) {
+           /* if (!empty($selected_color)) {
                 $updates_needed[] = 'color = ?';
                 $update_params[] = $selected_color;
                 $param_types .= 's';
                 $user['color'] = $selected_color; // Update local variable for session
                 error_log("Color will be updated to: $selected_color");
-            }
-            
-            // Perform database update if needed
-            if (!empty($updates_needed)) {
-                $update_sql = "UPDATE users SET " . implode(', ', $updates_needed) . " WHERE id = ?";
-                $update_params[] = $user['id'];
-                $param_types .= 'i';
-                
-                $update_stmt = $conn->prepare($update_sql);
-                if ($update_stmt) {
-                    $update_stmt->bind_param($param_types, ...$update_params);
-                    if ($update_stmt->execute()) {
-                        error_log("Database update successful for user: $username");
-                    } else {
-                        error_log("Database update failed: " . $update_stmt->error);
-                    }
-                    $update_stmt->close();
-                } else {
-                    error_log("Failed to prepare update statement: " . $conn->error);
-                }
-            }
+            }*/
+
+           // Always update color and avatar customization
+if (!empty($selected_color)) {
+    $user['color'] = $selected_color;
+}
+$user['avatar_hue'] = $avatar_hue;
+$user['avatar_saturation'] = $avatar_saturation;
+
+// FORCE UPDATE - Always update the database regardless of current values
+error_log("FORCING database update with hue: $avatar_hue, saturation: $avatar_saturation");
+
+$update_user_stmt = $conn->prepare("UPDATE users SET color = ?, avatar_hue = ?, avatar_saturation = ? WHERE id = ?");
+if ($update_user_stmt) {
+    $update_user_stmt->bind_param("siii", $user['color'], $avatar_hue, $avatar_saturation, $user['id']);
+    if ($update_user_stmt->execute()) {
+        error_log("✅ SUCCESS: Database updated - hue: $avatar_hue, sat: $avatar_saturation for user ID: " . $user['id']);
+        
+        // Verify the update worked
+        $verify_stmt = $conn->prepare("SELECT avatar_hue, avatar_saturation FROM users WHERE id = ?");
+        $verify_stmt->bind_param("i", $user['id']);
+        $verify_stmt->execute();
+        $verify_result = $verify_stmt->get_result();
+        $verify_data = $verify_result->fetch_assoc();
+        $verify_stmt->close();
+        
+        error_log("📋 VERIFICATION: DB now contains hue: " . $verify_data['avatar_hue'] . ", sat: " . $verify_data['avatar_saturation']);
+        
+        // Update local user array
+        $user['avatar_hue'] = $avatar_hue;
+        $user['avatar_saturation'] = $avatar_saturation;
+        
+    } else {
+        error_log("❌ FAILED to update user customization: " . $update_user_stmt->error);
+    }
+    $update_user_stmt->close();
+} else {
+    error_log("❌ FAILED to prepare user update statement: " . $conn->error);
+}
             
             // REMOVED: Redundant separate color update logic that was causing conflicts
             
             // ADDED: Update global_users table for registered users
-            try {
-                $stmt_global = $conn->prepare("INSERT INTO global_users (user_id_string, username, guest_name, avatar, guest_avatar, color, is_admin, ip_address, last_activity) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE username = VALUES(username), avatar = VALUES(avatar), guest_avatar = VALUES(guest_avatar), color = VALUES(color), is_admin = VALUES(is_admin), ip_address = VALUES(ip_address), last_activity = NOW()");
-                
-                if ($stmt_global) {
-                    $ip_address = $_SERVER['REMOTE_ADDR'];
-                    $stmt_global->bind_param("sssssis", $user['user_id'], $user['username'], $final_avatar, $final_avatar, $user['color'], $user['is_admin'], $ip_address);
-                    if ($stmt_global->execute()) {
+// ADDED: Update global_users table for registered users
+try {
+    $stmt_global = $conn->prepare("INSERT INTO global_users (user_id_string, username, guest_name, avatar, guest_avatar, color, avatar_hue, avatar_saturation, is_admin, ip_address, last_activity) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE username = VALUES(username), avatar = VALUES(avatar), guest_avatar = VALUES(guest_avatar), color = VALUES(color), avatar_hue = VALUES(avatar_hue), avatar_saturation = VALUES(avatar_saturation), is_admin = VALUES(is_admin), ip_address = VALUES(ip_address), last_activity = NOW()");
+    
+    if ($stmt_global) {
+        $ip_address = $_SERVER['REMOTE_ADDR'];
+$final_avatar_hue = $user['avatar_hue'] ?? 0;
+$final_avatar_saturation = $user['avatar_saturation'] ?? 0;
+// Use the form values for global_users too
+error_log("Updating global_users with hue: $avatar_hue, sat: $avatar_saturation");
+$stmt_global->bind_param("sssssiiis", $user['user_id'], $user['username'], $final_avatar, $final_avatar, $user['color'], $avatar_hue, $avatar_saturation, $user['is_admin'], $ip_address);                       
+ if ($stmt_global->execute()) {
                         error_log("Registered user stored/updated in global_users with color: " . $user['color']);
                     } else {
                         error_log("Failed to update global_users: " . $stmt_global->error);
@@ -156,6 +206,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'is_admin' => $user['is_admin'],
                 'avatar' => $final_avatar,
                 'color' => $user['color'], // Use the updated color from $user array
+'avatar_hue' => $avatar_hue,
+'avatar_saturation' => $avatar_saturation,
                 'ip' => $_SERVER['REMOTE_ADDR']
             ];
             
@@ -172,4 +224,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->close();
     exit;
 }
+error_log("🎯 FINAL SESSION VALUES - hue: " . $_SESSION['user']['avatar_hue'] . ", sat: " . $_SESSION['user']['avatar_saturation']);
+error_log("=== END LOGIN AVATAR CUSTOMIZATION DEBUG ===");
 ?>
