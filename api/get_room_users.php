@@ -50,6 +50,18 @@ try {
     if (in_array('username', $available_columns)) {
         $select_fields[] = 'cu.username as chatroom_username';
     }
+
+    if (in_array('avatar_hue', $available_columns)) {
+    $select_fields[] = 'u.avatar_hue as user_avatar_hue';
+} else {
+    $select_fields[] = '0 as user_avatar_hue';
+}
+
+if (in_array('avatar_saturation', $available_columns)) {
+    $select_fields[] = 'u.avatar_saturation as user_avatar_saturation';
+} else {
+    $select_fields[] = '100 as user_avatar_saturation';
+}
     
     $sql = "SELECT " . implode(', ', $select_fields) . " FROM chatroom_users cu " . $joins . " WHERE cu.room_id = ?";
     

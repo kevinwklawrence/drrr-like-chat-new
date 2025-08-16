@@ -111,14 +111,30 @@ $_SESSION['user'] = [
 ];
 
 // ADDED: Store in global_users table with color and avatar customization
+// After the existing avatar customization logging, make sure the INSERT includes these fields:
 try {
+    // Check if columns exist first
+    $columns_check = $conn->query("SHOW COLUMNS FROM global_users");
+    $available_columns = [];
+    while ($row = $columns_check->fetch_assoc()) {
+        $available_columns[] = $row['Field'];
+    }
+    
+    // Add columns if they don't exist
+    if (!in_array('avatar_hue', $available_columns)) {
+        $conn->query("ALTER TABLE global_users ADD COLUMN avatar_hue INT DEFAULT 0 NOT NULL");
+    }
+    if (!in_array('avatar_saturation', $available_columns)) {
+        $conn->query("ALTER TABLE global_users ADD COLUMN avatar_saturation INT DEFAULT 100 NOT NULL");
+    }
+    
     $stmt = $conn->prepare("INSERT INTO global_users (user_id_string, username, guest_name, avatar, color, guest_avatar, avatar_hue, avatar_saturation, is_admin, ip_address) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, 0, ?) ON DUPLICATE KEY UPDATE guest_name = VALUES(guest_name), avatar = VALUES(avatar), guest_avatar = VALUES(guest_avatar), color = VALUES(color), avatar_hue = VALUES(avatar_hue), avatar_saturation = VALUES(avatar_saturation), ip_address = VALUES(ip_address), last_activity = CURRENT_TIMESTAMP");
     
     if ($stmt) {
         $stmt->bind_param("sssssiis", $guest_user_id, $guest_name, $avatar, $color, $avatar, $avatar_hue, $avatar_saturation, $ip_address);
         $stmt->execute();
         $stmt->close();
-        error_log("Guest stored in global_users with color: $color");
+        error_log("Guest stored in global_users with avatar customization: hue=$avatar_hue, sat=$avatar_saturation");
     }
 } catch (Exception $e) {
     error_log("Failed to store guest in global_users: " . $e->getMessage());

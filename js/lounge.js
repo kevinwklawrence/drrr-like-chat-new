@@ -23,17 +23,22 @@ $(document).ready(function() {
     loadRoomsWithUsers();
     loadOnlineUsers();
     
-    // IMPROVED: Much faster refresh rates for real-time experience
-    setInterval(loadOnlineUsers, 3000); // Reduced from 30000 to 5000 (5 seconds)
-    setInterval(loadRoomsWithUsers, 3000); // Reduced from 15000 to 10000 (10 seconds)
-    setInterval(checkForKnocks, 3000); // Keep at 3 seconds
-    setInterval(loadUserRoomKeys, 3000); // Reduced from 60000 to 30000 (30 seconds)
+    // Main update loop - handles most updates
+    setInterval(() => {
+        loadOnlineUsers();
+        loadRoomsWithUsers();
+        loadUserRoomKeys();
+        sendHeartbeat();
+    }, 5000); // Every 5 seconds
     
-    // NEW: Heartbeat to keep user active and clean up inactive users
-    setInterval(sendHeartbeat, 10000); // Send heartbeat every 10 seconds
-    setInterval(cleanupInactiveUsers, 30000); // Cleanup inactive users every 30 seconds
+    // Fast knock checking for hosts
+    setInterval(checkForKnocks, 3000); // Every 3 seconds
+    
+    // Cleanup interval
+    setInterval(cleanupInactiveUsers, 60000); // Every minute
+    
+    // Initialize private messaging after a delay
     setTimeout(initializePrivateMessaging, 1000);
-
 });
 
 // NEW: Send heartbeat to keep user marked as active
@@ -308,19 +313,26 @@ function displayRoomsWithUsers(rooms) {
             if (host) {
                 const hostAvatar = host.avatar || host.user_avatar || host.guest_avatar || 'default_avatar.jpg';
                 const hostName = host.display_name || host.username || host.guest_name || 'Unknown Host';
+                const hostHue = host.avatar_hue || host.user_avatar_hue || 0;
+const hostSaturation = host.avatar_saturation || host.user_avatar_saturation || 100;
                 
                 debugLog(`Building host HTML for ${hostName}:`, host);
                 
                 hostHtml = `
-                    <div class="room-host">
-                        <h6><i class="fas fa-crown"></i> Host</h6>
-                        <div class="d-flex align-items-center">
-                            <img src="images/${hostAvatar}" width="32" height="32" class="me-2" alt="${hostName}">
-                            <div>
-                                <div class="fw-bold">${hostName}</div>
-                                <div class="user-badges">
-                                    ${parseInt(host.is_admin) === 1 ? '<span class="badge bg-danger badge-sm">Admin</span>' : ''}
-                                    ${host.user_type === 'registered' || host.user_id ? '<span class="badge bg-success badge-sm">Verified</span>' : '<span class="badge bg-secondary badge-sm">Guest</span>'}
+    <div class="room-host">
+        <h6><i class="fas fa-crown"></i> Host</h6>
+        <div class="d-flex align-items-center">
+            <img src="images/${hostAvatar}" 
+                 width="32" height="32" 
+                 class="me-2 avatar-filtered" 
+                 data-hue="${hostHue}" 
+                 data-saturation="${hostSaturation}"
+                 alt="${hostName}">
+            <div>
+                <div class="fw-bold">${hostName}</div>
+                <div class="user-badges">
+                    ${parseInt(host.is_admin) === 1 ? '<span class="badge bg-danger badge-sm">Admin</span>' : ''}
+                    ${host.user_type === 'registered' || host.user_id ? '<span class="badge bg-success badge-sm">Verified</span>' : '<span class="badge bg-secondary badge-sm">Guest</span>'}
                                 </div>
                             </div>
                         </div>
@@ -347,18 +359,25 @@ function displayRoomsWithUsers(rooms) {
                 `;
                 
                 // Show first 8 users in 2-column layout
-                regularUsers.slice(0, 8).forEach(user => {
-                    const userAvatar = user.avatar || user.user_avatar || user.guest_avatar || 'default_avatar.jpg';
-                    const userName = user.display_name || user.username || user.guest_name || 'Unknown';
+               regularUsers.slice(0, 8).forEach(user => {
+    const userAvatar = user.avatar || user.user_avatar || user.guest_avatar || 'default_avatar.jpg';
+    const userName = user.display_name || user.username || user.guest_name || 'Unknown';
+    const userHue = user.avatar_hue || user.user_avatar_hue || 0;
+    const userSaturation = user.avatar_saturation || user.user_avatar_saturation || 100;
                     
                     usersHtml += `
-                        <div class="user-item-mini d-flex align-items-center">
-                            <img src="images/${userAvatar}" width="24" height="24" class="me-2" alt="${userName}">
-                            <div class="user-info">
-                                <div class="user-name">${userName}</div>
-                                <div class="user-badges">
-                                    ${parseInt(user.is_admin) === 1 ? '<span class="badge bg-danger badge-xs">Admin</span>' : ''}
-                                    ${user.user_type === 'registered' || user.user_id ? '<span class="badge bg-success badge-xs">Verified</span>' : '<span class="badge bg-secondary badge-xs">Guest</span>'}
+        <div class="user-item-mini d-flex align-items-center">
+            <img src="images/${userAvatar}" 
+                 width="24" height="24" 
+                 class="me-2 avatar-filtered" 
+                 data-hue="${userHue}" 
+                 data-saturation="${userSaturation}"
+                 alt="${userName}">
+            <div class="user-info">
+                <div class="user-name">${userName}</div>
+                <div class="user-badges">
+                    ${parseInt(user.is_admin) === 1 ? '<span class="badge bg-danger badge-xs">Admin</span>' : ''}
+                    ${user.user_type === 'registered' || user.user_id ? '<span class="badge bg-success badge-xs">Verified</span>' : '<span class="badge bg-secondary badge-xs">Guest</span>'}
                                 </div>
                             </div>
                         </div>
@@ -441,6 +460,8 @@ function displayRoomsWithUsers(rooms) {
     } else {
         $roomsList.html(html);
     }
+    setTimeout(applyAllAvatarFilters, 100);
+
 }
 
 // Enhanced joinRoom function
@@ -498,13 +519,23 @@ function loadOnlineUsers() {
 function displayOnlineUsers(users) {
     let html = '';
     
+console.log('Online users data:', users);
+
+    
     if (!Array.isArray(users) || users.length === 0) {
         html = '<p style="color: #666;">No users online</p>';
     } else {
         users.forEach(user => {
+            console.log('User avatar data:', {
+        name: user.username || user.guest_name,
+        avatar_hue: user.avatar_hue,
+        avatar_saturation: user.avatar_saturation
+    });
+
             const name = user.username || user.guest_name || 'Unknown';
             const avatar = user.avatar || user.guest_avatar || 'default_avatar.jpg';
             const lastActivity = user.last_activity;
+            
             
             // Calculate time since last activity
             let activityIndicator = '';
@@ -522,22 +553,38 @@ function displayOnlineUsers(users) {
                 }
             }
             
-            html += `
-                <div class="d-flex align-items-center mb-2">
-                    <img src="images/${avatar}" width="30" height="30" class="me-2" alt="${name}" style="border-radius: 2px;">
-                    <div style="flex-grow: 1;">
-                        <small class="fw-bold" style="color: #fff;">${name}</small>
-                        <div>
-                            ${user.is_admin ? '<span class="badge bg-danger badge-sm">Admin</span>' : ''}
-                            ${activityIndicator}
-                        </div>
-                    </div>
-                </div>
-            `;
+            // In the displayOnlineUsers function, replace the avatar img tag:
+const hue = user.avatar_hue || 0;
+const saturation = user.avatar_saturation || 100;
+
+    console.log('Applied hue/sat for', name, ':', hue, saturation);
+
+
+html += `
+    <div class="d-flex align-items-center mb-2">
+        <img src="images/${avatar}" 
+             width="30" height="30" 
+             class="me-2 avatar-filtered" 
+             data-hue="${hue}" 
+             data-saturation="${saturation}"
+             alt="${name}" 
+             style="border-radius: 2px;">
+        <div style="flex-grow: 1;">
+            <small class="fw-bold" style="color: #fff;">${name}</small>
+            <div>
+                ${user.is_admin ? '<span class="badge bg-danger badge-sm">Admin</span>' : ''}
+                ${activityIndicator}
+            </div>
+        </div>
+    </div>
+`;
         });
     }
     
     $('#onlineUsersList').html(html);
+    // At the end of displayRoomsWithUsers function:
+    setTimeout(applyAllAvatarFilters, 100);
+
 }
 
 // Password modal function
@@ -1333,9 +1380,21 @@ function randomAvatarSelection() {
 }
 
 function saveProfileChanges() {
+    let selectedAvatarHue = null;
+let selectedAvatarSaturation = null;
     const changes = {};
     let hasChanges = false;
     
+    if (selectedAvatarHue !== null && selectedAvatarHue !== currentUser.avatar_hue) {
+    changes.avatar_hue = selectedAvatarHue;
+    hasChanges = true;
+}
+
+if (selectedAvatarSaturation !== null && selectedAvatarSaturation !== currentUser.avatar_saturation) {
+    changes.avatar_saturation = selectedAvatarSaturation;
+    hasChanges = true;
+}
+
     // Check for avatar changes
     if (selectedAvatar && selectedAvatar !== currentUser.avatar) {
         changes.avatar = selectedAvatar;
@@ -1389,6 +1448,20 @@ function saveProfileChanges() {
         .then(responses => {
             // Check if all responses are successful
             const allSuccessful = responses.every(response => response.status === 'success');
+
+            if (changes.avatar_hue !== undefined || changes.avatar_saturation !== undefined) {
+    savePromises.push(
+        $.ajax({
+            url: 'api/update_avatar_customization.php',
+            method: 'POST',
+            data: { 
+                avatar_hue: changes.avatar_hue || currentUser.avatar_hue || 0,
+                avatar_saturation: changes.avatar_saturation || currentUser.avatar_saturation || 100
+            },
+            dataType: 'json'
+        })
+    );
+}
             
             if (allSuccessful) {
                 // Update current user object
@@ -1839,3 +1912,32 @@ function loadFriends() {
         }
     });
 }
+
+// Apply avatar filters based on hue and saturation values
+function applyAvatarFilter(imgElement, hue, saturation) {
+    if (hue !== undefined && saturation !== undefined) {
+        const hueValue = parseInt(hue) || 0;
+        const satValue = parseInt(saturation) || 100;
+        const filterValue = `hue-rotate(${hueValue}deg) saturate(${satValue}%)`;
+        imgElement.css('filter', filterValue).addClass('avatar-filtered');
+    }
+}
+
+// Apply filters to all avatars on page
+function applyAllAvatarFilters() {
+    $('.avatar-filtered, .message-avatar, .user-avatar, .private-message-avatar').each(function() {
+        const hue = $(this).data('hue');
+        const sat = $(this).data('saturation');
+        if (hue !== undefined && sat !== undefined) {
+            applyAvatarFilter($(this), hue, sat);
+        }
+    });
+}
+
+
+$(window).on('beforeunload', function() {
+    // Clear any remaining intervals
+    if (typeof cleanupInactiveUsers !== 'undefined') {
+        clearInterval(cleanupInactiveUsers);
+    }
+});

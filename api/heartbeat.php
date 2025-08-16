@@ -36,6 +36,36 @@ if (!empty($user_id_string)) {
     } else {
         $color_column_exists = false;
     }
+
+    // After the color column check, add:
+// Check if avatar customization columns exist
+$check_hue_column = $conn->prepare("SELECT COUNT(*) as column_exists FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'global_users' AND COLUMN_NAME = 'avatar_hue'");
+if ($check_hue_column) {
+    $check_hue_column->execute();
+    $result = $check_hue_column->get_result();
+    $row = $result->fetch_assoc();
+    $hue_column_exists = $row['column_exists'] > 0;
+    $check_hue_column->close();
+    
+    if (!$hue_column_exists) {
+        $add_hue_column = "ALTER TABLE global_users ADD COLUMN avatar_hue INT DEFAULT 0 NOT NULL";
+        $conn->query($add_hue_column);
+    }
+}
+
+$check_sat_column = $conn->prepare("SELECT COUNT(*) as column_exists FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'global_users' AND COLUMN_NAME = 'avatar_saturation'");
+if ($check_sat_column) {
+    $check_sat_column->execute();
+    $result = $check_sat_column->get_result();
+    $row = $result->fetch_assoc();
+    $sat_column_exists = $row['column_exists'] > 0;
+    $check_sat_column->close();
+    
+    if (!$sat_column_exists) {
+        $add_sat_column = "ALTER TABLE global_users ADD COLUMN avatar_saturation INT DEFAULT 100 NOT NULL";
+        $conn->query($add_sat_column);
+    }
+}
     
     // Update user's last activity in global_users with current session data
     $columns = "user_id_string, username, guest_name, avatar, guest_avatar, is_admin, ip_address";

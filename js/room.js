@@ -248,6 +248,11 @@ function renderMessage(msg) {
     const avatar = msg.avatar || msg.guest_avatar || 'default_avatar.jpg';
     const name = msg.username || msg.guest_name || 'Unknown';
     const userIdString = msg.user_id_string || msg.user_id || 'unknown';
+    // In renderMessage function, update the hue/saturation assignment:
+const hue = msg.user_avatar_hue !== undefined ? msg.user_avatar_hue : (msg.avatar_hue || 0);
+const saturation = msg.user_avatar_saturation !== undefined ? msg.user_avatar_saturation : (msg.avatar_saturation || 100);
+
+console.log(`Message avatar filters for ${name}: hue=${hue}, sat=${saturation}`); // Debug
     
     if (msg.type === 'system' || msg.is_system) {
         return `
@@ -312,6 +317,18 @@ function loadUsers() {
             debugLog('Response from api/get_room_users.php:', response);
             try {
                 let users = JSON.parse(response);
+                // In loadUsers function, after the JSON.parse, add:
+console.log('=== AVATAR DEBUG ===');
+console.log('Raw users data:', users);
+users.forEach((user, index) => {
+    console.log(`User ${index}:`, {
+        name: user.display_name,
+        avatar_hue: user.avatar_hue,
+        avatar_saturation: user.avatar_saturation,
+        user_avatar_hue: user.user_avatar_hue,
+        user_avatar_saturation: user.user_avatar_saturation
+    });
+});
                 let html = '';
                 
                 if (!Array.isArray(users)) {
@@ -350,6 +367,10 @@ function renderUser(user) {
     const avatar = user.avatar || user.guest_avatar || 'default_avatar.jpg';
     const name = user.display_name || user.username || user.guest_name || 'Unknown';
     const userIdString = user.user_id_string || 'unknown';
+    const hue = user.user_avatar_hue !== undefined ? user.user_avatar_hue : (user.avatar_hue || 0);
+const saturation = user.user_avatar_saturation !== undefined ? user.user_avatar_saturation : (user.avatar_saturation || 100);
+
+console.log(`Applying filters for ${name}: hue=${hue}, sat=${saturation}`); // Debug
     
     let badges = '';
     if (user.is_admin) {
@@ -3088,4 +3109,28 @@ function checkForNewPrivateMessages() {
     if ($('#friendsPanel').is(':visible')) {
         loadConversations();
     }
+}
+
+// Replace the existing syncAvatarCustomization function with this:
+function syncAvatarCustomization() {
+    $.ajax({
+        url: 'api/update_room_avatar_customization.php',
+        method: 'POST',
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                debugLog('Avatar customization synced:', response);
+                // Reload users and messages to show updated avatars
+                setTimeout(() => {
+                    loadUsers();
+                    loadMessages();
+                }, 200);
+            } else {
+                debugLog('Avatar sync failed:', response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            debugLog('Avatar sync error (non-critical):', error);
+        }
+    });
 }

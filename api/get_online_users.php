@@ -15,23 +15,46 @@ try {
     // This ensures we only show users who are actually online
     $active_threshold = 2; // minutes
     
-    $stmt = $conn->prepare("
-        SELECT 
-            user_id_string,
-            username, 
-            guest_name, 
-            avatar, 
-            guest_avatar,
-            is_admin,
-            color,
-            last_activity,
-            TIMESTAMPDIFF(SECOND, last_activity, NOW()) as seconds_since_activity
-        FROM global_users 
-        WHERE last_activity >= DATE_SUB(NOW(), INTERVAL ? MINUTE)
-        ORDER BY last_activity DESC
-        LIMIT 50
-    ");
+    // First check if avatar customization columns exist
+    $columns_check = $conn->query("SHOW COLUMNS FROM global_users");
+    $available_columns = [];
+    while ($row = $columns_check->fetch_assoc()) {
+        $available_columns[] = $row['Field'];
+    }
     
+    // Build the select fields
+    $select_fields = [
+        'user_id_string',
+        'username', 
+        'guest_name', 
+        'avatar', 
+        'guest_avatar',
+        'is_admin',
+        'color',
+        'last_activity',
+        'TIMESTAMPDIFF(SECOND, last_activity, NOW()) as seconds_since_activity'
+    ];
+    
+    // Add avatar customization fields if they exist
+    if (in_array('avatar_hue', $available_columns)) {
+        $select_fields[] = 'avatar_hue';
+    } else {
+        $select_fields[] = '0 as avatar_hue';
+    }
+    
+    if (in_array('avatar_saturation', $available_columns)) {
+        $select_fields[] = 'avatar_saturation';
+    } else {
+        $select_fields[] = '100 as avatar_saturation';
+    }
+    
+    $sql = "SELECT " . implode(', ', $select_fields) . "
+            FROM global_users 
+            WHERE last_activity >= DATE_SUB(NOW(), INTERVAL ? MINUTE)
+            ORDER BY last_activity DESC
+            LIMIT 50";
+    
+    $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $active_threshold);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -79,7 +102,9 @@ try {
             'color' => $row['color'] ?? 'black',
             'last_activity' => $row['last_activity'],
             'seconds_since_activity' => $seconds_since,
-            'activity_status' => $activity_status
+            'activity_status' => $activity_status,
+            'avatar_hue' => (int)($row['avatar_hue'] ?? 0),
+            'avatar_saturation' => (int)($row['avatar_saturation'] ?? 100)
         ];
     }
     

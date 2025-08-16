@@ -15,43 +15,105 @@ if ($room_id <= 0) {
 
 error_log("Fetching messages for room_id=$room_id"); // Debug
 
-// Updated query to include color data and better field mapping
-$stmt = $conn->prepare("
-    SELECT 
-        m.id, 
-        m.user_id, 
-        m.guest_name, 
-        m.message, 
-        m.avatar,
-        m.type, 
-        m.timestamp,
-        u.username, 
-        u.is_admin,
-        u.color as user_color,
-        cu.ip_address,
-        cu.is_host,
-        cu.color as chatroom_color,
-        cu.guest_avatar,
-        cu.user_id_string,
-        -- Create unified fields for the frontend
-        COALESCE(u.username, m.guest_name, cu.guest_name) as display_name,
-        COALESCE(m.avatar, u.avatar, cu.guest_avatar, 'default_avatar.jpg') as avatar_url,
-        COALESCE(u.color, cu.color, 'blue') as color,
-        CASE 
-            WHEN m.user_id IS NOT NULL THEN CONCAT('user_', m.user_id)
-            WHEN cu.user_id_string IS NOT NULL THEN cu.user_id_string
-            ELSE CONCAT('guest_', m.guest_name)
-        END as user_id_string
-    FROM messages m 
-    LEFT JOIN users u ON m.user_id = u.id 
-    LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id 
-        AND (
-            (m.user_id IS NOT NULL AND m.user_id = cu.user_id) OR 
-            (m.user_id IS NULL AND m.guest_name = cu.guest_name)
-        )
-    WHERE m.room_id = ? 
-    ORDER BY m.timestamp ASC
-");
+// Check what columns exist in both tables
+$msg_columns_query = $conn->query("SHOW COLUMNS FROM messages");
+$msg_columns = [];
+while ($row = $msg_columns_query->fetch_assoc()) {
+    $msg_columns[] = $row['Field'];
+}
+
+$cu_columns_query = $conn->query("SHOW COLUMNS FROM chatroom_users");
+$cu_columns = [];
+while ($row = $cu_columns_query->fetch_assoc()) {
+    $cu_columns[] = $row['Field'];
+}
+
+$users_columns_query = $conn->query("SHOW COLUMNS FROM users");
+$users_columns = [];
+while ($row = $users_columns_query->fetch_assoc()) {
+    $users_columns[] = $row['Field'];
+}
+
+// Build select fields
+$select_fields = [
+    'm.id', 
+    'm.user_id', 
+    'm.guest_name', 
+    'm.message', 
+    'm.avatar',
+    'm.type', 
+    'm.timestamp'
+];
+
+// Add user fields if they exist
+if (in_array('username', $users_columns)) {
+    $select_fields[] = 'u.username';
+}
+if (in_array('is_admin', $users_columns)) {
+    $select_fields[] = 'u.is_admin';
+}
+if (in_array('color', $users_columns)) {
+    $select_fields[] = 'u.color as user_color';
+}
+
+// Add avatar customization from users table
+if (in_array('avatar_hue', $users_columns)) {
+    $select_fields[] = 'u.avatar_hue as user_avatar_hue';
+} else {
+    $select_fields[] = '0 as user_avatar_hue';
+}
+
+if (in_array('avatar_saturation', $users_columns)) {
+    $select_fields[] = 'u.avatar_saturation as user_avatar_saturation';
+} else {
+    $select_fields[] = '100 as user_avatar_saturation';
+}
+
+// Add chatroom_users fields
+if (in_array('ip_address', $cu_columns)) {
+    $select_fields[] = 'cu.ip_address';
+}
+if (in_array('is_host', $cu_columns)) {
+    $select_fields[] = 'cu.is_host';
+}
+if (in_array('color', $cu_columns)) {
+    $select_fields[] = 'cu.color as chatroom_color';
+}
+if (in_array('guest_avatar', $cu_columns)) {
+    $select_fields[] = 'cu.guest_avatar';
+}
+if (in_array('user_id_string', $cu_columns)) {
+    $select_fields[] = 'cu.user_id_string';
+}
+
+// Add avatar customization from chatroom_users table
+if (in_array('avatar_hue', $cu_columns)) {
+    $select_fields[] = 'cu.avatar_hue as chatroom_avatar_hue';
+} else {
+    $select_fields[] = '0 as chatroom_avatar_hue';
+}
+
+if (in_array('avatar_saturation', $cu_columns)) {
+    $select_fields[] = 'cu.avatar_saturation as chatroom_avatar_saturation';
+} else {
+    $select_fields[] = '100 as chatroom_avatar_saturation';
+}
+
+$sql = "SELECT " . implode(', ', $select_fields) . "
+        FROM messages m 
+        LEFT JOIN users u ON m.user_id = u.id 
+        LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id 
+            AND (
+                (m.user_id IS NOT NULL AND m.user_id = cu.user_id) OR 
+                (m.user_id IS NULL AND m.guest_name = cu.guest_name) OR
+                (m.user_id IS NULL AND m.user_id_string = cu.user_id_string)
+            )
+        WHERE m.room_id = ? 
+        ORDER BY m.timestamp ASC";
+
+error_log("Messages query: " . $sql); // Debug
+
+$stmt = $conn->prepare($sql);
 
 if (!$stmt) {
     error_log("Prepare failed in get_messages.php: " . $conn->error);
@@ -65,6 +127,24 @@ $result = $stmt->get_result();
 $messages = [];
 
 while ($row = $result->fetch_assoc()) {
+    error_log("Raw message row: " . print_r($row, true)); // Debug
+    
+    // Process avatar customization - prioritize user table values for registered users
+    $avatar_hue = 0;
+    $avatar_saturation = 100;
+    
+    if (isset($row['user_avatar_hue']) && $row['user_avatar_hue'] !== null) {
+        $avatar_hue = (int)$row['user_avatar_hue'];
+    } elseif (isset($row['chatroom_avatar_hue']) && $row['chatroom_avatar_hue'] !== null) {
+        $avatar_hue = (int)$row['chatroom_avatar_hue'];
+    }
+    
+    if (isset($row['user_avatar_saturation']) && $row['user_avatar_saturation'] !== null) {
+        $avatar_saturation = (int)$row['user_avatar_saturation'];
+    } elseif (isset($row['chatroom_avatar_saturation']) && $row['chatroom_avatar_saturation'] !== null) {
+        $avatar_saturation = (int)$row['chatroom_avatar_saturation'];
+    }
+    
     // Process the message data to ensure compatibility with frontend
     $processed_message = [
         'id' => $row['id'],
@@ -74,28 +154,33 @@ while ($row = $result->fetch_assoc()) {
         
         // User identification
         'user_id' => $row['user_id'],
-        'user_id_string' => $row['user_id_string'],
+        'user_id_string' => $row['user_id_string'] ?? '',
         
         // Display information
-        'username' => $row['username'],
+        'username' => $row['username'] ?? null,
         'guest_name' => $row['guest_name'],
-        'display_name' => $row['display_name'],
+        'display_name' => $row['username'] ?? $row['guest_name'] ?? 'Unknown',
         
         // Avatar information
-        'avatar' => $row['avatar_url'],
-        'guest_avatar' => $row['guest_avatar'],
+        'avatar' => $row['avatar'] ?? $row['guest_avatar'] ?? 'default_avatar.jpg',
+        'guest_avatar' => $row['guest_avatar'] ?? null,
         
-        // Color information (this is the key addition)
-        'color' => $row['color'],
+        // Avatar customization
+        'avatar_hue' => $avatar_hue,
+        'avatar_saturation' => $avatar_saturation,
+        
+        // Color information
+        'color' => $row['user_color'] ?? $row['chatroom_color'] ?? 'blue',
         
         // Permissions and roles
-        'is_admin' => (bool)$row['is_admin'],
-        'is_host' => (bool)$row['is_host'],
+        'is_admin' => (bool)($row['is_admin'] ?? false),
+        'is_host' => (bool)($row['is_host'] ?? false),
         
         // Admin information
-        'ip_address' => $row['ip_address']
+        'ip_address' => $row['ip_address'] ?? null
     ];
     
+    error_log("Processed message: " . print_r($processed_message, true)); // Debug
     $messages[] = $processed_message;
 }
 
