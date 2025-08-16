@@ -28,12 +28,16 @@ try {
     }
 
     // Sync avatar customization from global_users to chatroom_users
-    $sync_stmt = $conn->prepare("
-        UPDATE chatroom_users cu 
-        JOIN global_users gu ON cu.user_id_string = gu.user_id_string 
-        SET cu.avatar_hue = gu.avatar_hue, cu.avatar_saturation = gu.avatar_saturation 
-        WHERE cu.room_id = ? AND gu.avatar_hue IS NOT NULL AND gu.avatar_saturation IS NOT NULL
-    ");
+    // Sync avatar customization from users table for registered users, global_users for guests
+$sync_stmt = $conn->prepare("
+    UPDATE chatroom_users cu 
+    LEFT JOIN users u ON cu.user_id = u.id
+    LEFT JOIN global_users gu ON cu.user_id_string = gu.user_id_string 
+    SET cu.avatar_hue = COALESCE(u.avatar_hue, gu.avatar_hue, 0), 
+        cu.avatar_saturation = COALESCE(u.avatar_saturation, gu.avatar_saturation, 100),
+        cu.avatar = COALESCE(u.avatar, cu.guest_avatar, cu.avatar, 'default_avatar.jpg')
+    WHERE cu.room_id = ?
+");
     if ($sync_stmt) {
         $sync_stmt->bind_param("i", $room_id);
         $sync_stmt->execute();

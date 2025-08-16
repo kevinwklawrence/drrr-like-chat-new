@@ -1690,10 +1690,16 @@ function displayPrivateMessages(otherUserId, messages) {
             const author = isOwn ? (currentUser.username || currentUser.name) : msg.sender_username;
             const avatar = isOwn ? (currentUser.avatar || 'default_avatar.jpg') : (msg.sender_avatar || 'default_avatar.jpg');
             const userColor = isOwn ? (currentUser.color || 'blue') : (msg.sender_color || 'blue');
+            const avatarHue = isOwn ? (currentUser.avatar_hue || 0) : (msg.sender_avatar_hue || 0);
+const avatarSat = isOwn ? (currentUser.avatar_saturation || 100) : (msg.sender_avatar_saturation || 100);
+
             
             html += `
-                <div class="private-chat-message ${isOwn ? 'sent' : 'received'}">
-                    <img src="images/${avatar}" class="private-message-avatar" alt="${author}'s avatar">
+    <div class="private-chat-message ${isOwn ? 'sent' : 'received'}">
+        <img src="images/${avatar}" 
+             class="private-message-avatar" 
+             style="filter: hue-rotate(${avatarHue}deg) saturate(${avatarSat}%);"
+             alt="${author}'s avatar">
                     <div class="private-message-bubble ${isOwn ? 'sent' : 'received'} user-color-${userColor}">
                         <div class="private-message-header-info">
                             <div class="private-message-author">${author}</div>
@@ -1776,7 +1782,7 @@ function updateFriendsPanel() {
             if (friend.status === 'accepted') {
                 html += `
                     <div class="d-flex align-items-center mb-2 p-2" style="background: #333; border-radius: 4px;">
-                        <img src="images/${friend.avatar || 'default_avatar.jpg'}" width="24" height="24" class="me-2" style="border-radius: 2px;">
+                        <img src="images/${friend.avatar || 'default_avatar.jpg'}" width="24" height="24" class="me-2" style="border-radius: 2px; filter: hue-rotate(${friend.avatar_hue || 0}deg) saturate(${friend.avatar_saturation || 100}%);">                        
                         <div class="flex-grow-1">
                             <small style="color: #e0e0e0;">${friend.username}</small>
                         </div>
@@ -1878,7 +1884,7 @@ function displayConversations(conversations) {
             const unreadBadge = conv.unread_count > 0 ? `<span class="badge bg-danger">${conv.unread_count}</span>` : '';
             html += `
                 <div class="d-flex align-items-center mb-2 p-2" style="background: #333; border-radius: 4px; cursor: pointer;" onclick="openPrivateMessage(${conv.other_user_id}, '${conv.username}')">
-                    <img src="images/${conv.avatar}" width="24" height="24" class="me-2" style="border-radius: 2px;">
+                    <img src="images/${conv.avatar}" width="24" height="24" class="me-2" style="border-radius: 2px; filter: hue-rotate(${conv.avatar_hue || 0}deg) saturate(${conv.avatar_saturation || 100}%);">
                     <div class="flex-grow-1">
                         <small>${conv.username}</small>
                         <br><small class="text-muted">${conv.last_message ? conv.last_message.substring(0, 30) + '...' : 'No messages'}</small>

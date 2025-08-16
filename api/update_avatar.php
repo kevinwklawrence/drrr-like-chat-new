@@ -45,6 +45,38 @@ try {
             $stmt->close();
         }
     }
+    // Update users table for registered users
+if ($_SESSION['user']['type'] === 'user' && isset($_SESSION['user']['id'])) {
+    // Check if avatar_memory column exists
+    $check_memory_col = $conn->query("SHOW COLUMNS FROM users LIKE 'avatar_memory'");
+    $has_memory_col = $check_memory_col->num_rows > 0;
+    
+    if ($has_memory_col) {
+        $stmt = $conn->prepare("UPDATE users SET avatar = ?, avatar_memory = ? WHERE id = ?");
+        if ($stmt) {
+            $stmt->bind_param("ssi", $avatar, $avatar, $_SESSION['user']['id']);
+            $stmt->execute();
+            $stmt->close();
+        }
+    } else {
+        $stmt = $conn->prepare("UPDATE users SET avatar = ? WHERE id = ?");
+        if ($stmt) {
+            $stmt->bind_param("si", $avatar, $_SESSION['user']['id']);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
+}
+if ($stmt) {
+    $username = $_SESSION['user']['username'] ?? null;
+    $guest_name = $_SESSION['user']['name'] ?? null;
+    $is_admin = $_SESSION['user']['is_admin'] ?? 0;
+    $ip_address = $_SERVER['REMOTE_ADDR'];
+    
+    $stmt->bind_param("sssssis", $user_id_string, $username, $guest_name, $avatar, $avatar, $is_admin, $ip_address);
+    $stmt->execute();
+    $stmt->close();
+}
     
     // Update any active chatroom_users records
     $chatroom_columns_query = $conn->query("SHOW COLUMNS FROM chatroom_users");

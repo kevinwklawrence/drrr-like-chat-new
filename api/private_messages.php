@@ -130,11 +130,30 @@ switch($action) {
         exit;
     }
     
+    // Ensure columns exist in private_messages table  
+    $check_color_col = $conn->query("SHOW COLUMNS FROM private_messages LIKE 'color'");
+    if ($check_color_col->num_rows === 0) {
+        $conn->query("ALTER TABLE private_messages ADD COLUMN color VARCHAR(50) DEFAULT 'blue'");
+    }
+
+    $check_hue_col = $conn->query("SHOW COLUMNS FROM private_messages LIKE 'avatar_hue'");
+    if ($check_hue_col->num_rows === 0) {
+        $conn->query("ALTER TABLE private_messages ADD COLUMN avatar_hue INT DEFAULT 0");
+    }
+
+    $check_sat_col = $conn->query("SHOW COLUMNS FROM private_messages LIKE 'avatar_saturation'");
+    if ($check_sat_col->num_rows === 0) {
+        $conn->query("ALTER TABLE private_messages ADD COLUMN avatar_saturation INT DEFAULT 100");
+    }
+    
     // Apply markdown formatting
     $sanitized_message = sanitizeMarkup($message);
+    $color = $_SESSION['user']['color'] ?? 'blue';
+    $avatar_hue = (int)($_SESSION['user']['avatar_hue'] ?? 0);
+    $avatar_saturation = (int)($_SESSION['user']['avatar_saturation'] ?? 100);
     
-    $stmt = $conn->prepare("INSERT INTO private_messages (sender_id, recipient_id, message) VALUES (?, ?, ?)");
-    $stmt->bind_param("iis", $user_id, $recipient_id, $sanitized_message);
+    $stmt = $conn->prepare("INSERT INTO private_messages (sender_id, recipient_id, message, color, avatar_hue, avatar_saturation) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("iissii", $user_id, $recipient_id, $sanitized_message, $color, $avatar_hue, $avatar_saturation);
     
     if ($stmt->execute()) {
         error_log("Private message sent successfully from $user_id to $recipient_id");
@@ -146,13 +165,12 @@ switch($action) {
     $stmt->close();
     break;
         
-    // Replace the 'get' case in api/private_messages.php:
-case 'get':
+    case 'get':
     $other_user_id = (int)$_GET['other_user_id'];
     $stmt = $conn->prepare("
     SELECT pm.*, 
-           s.username as sender_username, s.avatar as sender_avatar, s.color as sender_color,
-           r.username as recipient_username, r.avatar as recipient_avatar, r.color as recipient_color
+           s.username as sender_username, s.avatar as sender_avatar,
+           r.username as recipient_username, r.avatar as recipient_avatar
     FROM private_messages pm
     JOIN users s ON pm.sender_id = s.id 
     JOIN users r ON pm.recipient_id = r.id
@@ -166,34 +184,16 @@ $result = $stmt->get_result();
 
 $messages = [];
 while ($row = $result->fetch_assoc()) {
-    // Get avatar customization from global_users for sender
-    $sender_stmt = $conn->prepare("SELECT avatar_hue, avatar_saturation FROM global_users WHERE user_id_string = ?");
-    $sender_id_str = (string)$row['sender_id'];
-    $sender_stmt->bind_param("s", $sender_id_str);
-    $sender_stmt->execute();
-    $sender_result = $sender_stmt->get_result();
-    $sender_custom = $sender_result->fetch_assoc();
-    $sender_stmt->close();
+    // Use stored values from when the message was sent (no lookups needed)
+    $row['sender_color'] = $row['color'] ?? 'blue';
+    $row['sender_avatar_hue'] = (int)($row['avatar_hue'] ?? 0);
+    $row['sender_avatar_saturation'] = (int)($row['avatar_saturation'] ?? 100);
     
-    // Debug logging
-    error_log("Private message debug - sender_id: " . $row['sender_id'] . ", sender_id_str: $sender_id_str");
-    error_log("Sender custom data: " . print_r($sender_custom, true));
-    
-    // Get avatar customization from global_users for recipient
-    $recipient_stmt = $conn->prepare("SELECT avatar_hue, avatar_saturation FROM global_users WHERE user_id_string = ?");
-    $recipient_id_str = (string)$row['recipient_id'];
-    $recipient_stmt->bind_param("s", $recipient_id_str);
-    $recipient_stmt->execute();
-    $recipient_result = $recipient_stmt->get_result();
-    $recipient_custom = $recipient_result->fetch_assoc();
-    $recipient_stmt->close();
-    
-    error_log("Recipient custom data: " . print_r($recipient_custom, true));
-    
-    $row['sender_avatar_hue'] = $sender_custom['avatar_hue'] ?? 0;
-    $row['sender_avatar_saturation'] = $sender_custom['avatar_saturation'] ?? 100;
-    $row['recipient_avatar_hue'] = $recipient_custom['avatar_hue'] ?? 0;
-    $row['recipient_avatar_saturation'] = $recipient_custom['avatar_saturation'] ?? 100;
+    // For recipient, we don't store their customization in private messages
+    // so we set defaults (this matches the previous behavior)
+    $row['recipient_color'] = 'blue';
+    $row['recipient_avatar_hue'] = 0;
+    $row['recipient_avatar_saturation'] = 100;
     
     $messages[] = $row;
 }
@@ -212,7 +212,7 @@ while ($row = $result->fetch_assoc()) {
         $stmt = $conn->prepare("
             SELECT DISTINCT 
                 CASE WHEN pm.sender_id = ? THEN pm.recipient_id ELSE pm.sender_id END as other_user_id,
-                u.username, u.avatar,
+                u.username, u.avatar, u.avatar_hue, u.avatar_saturation,
                 (SELECT message FROM private_messages pm2 WHERE 
                  (pm2.sender_id = ? AND pm2.recipient_id = other_user_id) OR 
                  (pm2.sender_id = other_user_id AND pm2.recipient_id = ?)

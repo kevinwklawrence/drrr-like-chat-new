@@ -45,28 +45,23 @@ $select_fields = [
     'm.timestamp'
 ];
 
+// Add stored customization fields from messages table
+if (in_array('color', $msg_columns)) {
+    $select_fields[] = 'm.color';
+}
+if (in_array('avatar_hue', $msg_columns)) {
+    $select_fields[] = 'm.avatar_hue';
+}
+if (in_array('avatar_saturation', $msg_columns)) {
+    $select_fields[] = 'm.avatar_saturation';
+}
+
 // Add user fields if they exist
 if (in_array('username', $users_columns)) {
     $select_fields[] = 'u.username';
 }
 if (in_array('is_admin', $users_columns)) {
     $select_fields[] = 'u.is_admin';
-}
-if (in_array('color', $users_columns)) {
-    $select_fields[] = 'u.color as user_color';
-}
-
-// Add avatar customization from users table
-if (in_array('avatar_hue', $users_columns)) {
-    $select_fields[] = 'u.avatar_hue as user_avatar_hue';
-} else {
-    $select_fields[] = '0 as user_avatar_hue';
-}
-
-if (in_array('avatar_saturation', $users_columns)) {
-    $select_fields[] = 'u.avatar_saturation as user_avatar_saturation';
-} else {
-    $select_fields[] = '100 as user_avatar_saturation';
 }
 
 // Add chatroom_users fields
@@ -76,27 +71,11 @@ if (in_array('ip_address', $cu_columns)) {
 if (in_array('is_host', $cu_columns)) {
     $select_fields[] = 'cu.is_host';
 }
-if (in_array('color', $cu_columns)) {
-    $select_fields[] = 'cu.color as chatroom_color';
-}
 if (in_array('guest_avatar', $cu_columns)) {
     $select_fields[] = 'cu.guest_avatar';
 }
 if (in_array('user_id_string', $cu_columns)) {
     $select_fields[] = 'cu.user_id_string';
-}
-
-// Add avatar customization from chatroom_users table
-if (in_array('avatar_hue', $cu_columns)) {
-    $select_fields[] = 'cu.avatar_hue as chatroom_avatar_hue';
-} else {
-    $select_fields[] = '0 as chatroom_avatar_hue';
-}
-
-if (in_array('avatar_saturation', $cu_columns)) {
-    $select_fields[] = 'cu.avatar_saturation as chatroom_avatar_saturation';
-} else {
-    $select_fields[] = '100 as chatroom_avatar_saturation';
 }
 
 $sql = "SELECT " . implode(', ', $select_fields) . "
@@ -129,21 +108,10 @@ $messages = [];
 while ($row = $result->fetch_assoc()) {
     error_log("Raw message row: " . print_r($row, true)); // Debug
     
-    // Process avatar customization - prioritize user table values for registered users
-    $avatar_hue = 0;
-    $avatar_saturation = 100;
-    
-    if (isset($row['user_avatar_hue']) && $row['user_avatar_hue'] !== null) {
-        $avatar_hue = (int)$row['user_avatar_hue'];
-    } elseif (isset($row['chatroom_avatar_hue']) && $row['chatroom_avatar_hue'] !== null) {
-        $avatar_hue = (int)$row['chatroom_avatar_hue'];
-    }
-    
-    if (isset($row['user_avatar_saturation']) && $row['user_avatar_saturation'] !== null) {
-        $avatar_saturation = (int)$row['user_avatar_saturation'];
-    } elseif (isset($row['chatroom_avatar_saturation']) && $row['chatroom_avatar_saturation'] !== null) {
-        $avatar_saturation = (int)$row['chatroom_avatar_saturation'];
-    }
+    // Use stored values from when the message was sent (no lookups needed)
+    $avatar_hue = (int)($row['avatar_hue'] ?? 0);
+    $avatar_saturation = (int)($row['avatar_saturation'] ?? 100);
+    $user_color = $row['color'] ?? 'blue';
     
     // Process the message data to ensure compatibility with frontend
     $processed_message = [
@@ -165,12 +133,15 @@ while ($row = $result->fetch_assoc()) {
         'avatar' => $row['avatar'] ?? $row['guest_avatar'] ?? 'default_avatar.jpg',
         'guest_avatar' => $row['guest_avatar'] ?? null,
         
-        // Avatar customization
+        // STORED avatar customization (preserved from when message was sent)
         'avatar_hue' => $avatar_hue,
         'avatar_saturation' => $avatar_saturation,
+        'user_avatar_hue' => $avatar_hue,  // For compatibility
+        'user_avatar_saturation' => $avatar_saturation,  // For compatibility
         
-        // Color information
-        'color' => $row['user_color'] ?? $row['chatroom_color'] ?? 'blue',
+        // STORED color information (preserved from when message was sent)
+        'color' => $user_color,
+        'user_color' => $user_color,  // For compatibility
         
         // Permissions and roles
         'is_admin' => (bool)($row['is_admin'] ?? false),

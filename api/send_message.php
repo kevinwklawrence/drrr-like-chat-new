@@ -6,6 +6,22 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+// Ensure avatar customization and color columns exist in messages table
+$check_color_col = $conn->query("SHOW COLUMNS FROM messages LIKE 'color'");
+if ($check_color_col->num_rows === 0) {
+    $conn->query("ALTER TABLE messages ADD COLUMN color VARCHAR(50) DEFAULT 'blue'");
+}
+
+$check_hue_col = $conn->query("SHOW COLUMNS FROM messages LIKE 'avatar_hue'");
+if ($check_hue_col->num_rows === 0) {
+    $conn->query("ALTER TABLE messages ADD COLUMN avatar_hue INT DEFAULT 0");
+}
+
+$check_sat_col = $conn->query("SHOW COLUMNS FROM messages LIKE 'avatar_saturation'");
+if ($check_sat_col->num_rows === 0) {
+    $conn->query("ALTER TABLE messages ADD COLUMN avatar_saturation INT DEFAULT 100");
+}
+
 function sanitizeMarkup($message) {
     // Convert markdown-style formatting to HTML safely
     $message = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
@@ -121,13 +137,16 @@ if ($_SESSION['user']['type'] === 'user') {
 error_log("Inserting message: room_id=$room_id, user_id=$user_id, guest_name=$guest_name, avatar=$avatar, user_id_string=$user_id_string, message=$message");
 
 $sanitized_message = sanitizeMarkup($message);
-$stmt = $conn->prepare("INSERT INTO messages (room_id, user_id, guest_name, message, avatar, user_id_string) VALUES (?, ?, ?, ?, ?, ?)");
+$color = $_SESSION['user']['color'] ?? 'blue';
+$avatar_hue = (int)($_SESSION['user']['avatar_hue'] ?? 0);
+$avatar_saturation = (int)($_SESSION['user']['avatar_saturation'] ?? 100);
+$stmt = $conn->prepare("INSERT INTO messages (room_id, user_id, guest_name, message, avatar, user_id_string, color, avatar_hue, avatar_saturation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
 if (!$stmt) {
     error_log("Prepare failed in send_message.php: " . $conn->error);
     echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
     exit;
 }
-$stmt->bind_param("iissss", $room_id, $user_id, $guest_name, $sanitized_message, $avatar, $user_id_string);
+$stmt->bind_param("iisssssii", $room_id, $user_id, $guest_name, $sanitized_message, $avatar, $user_id_string, $color, $avatar_hue, $avatar_saturation);
 if (!$stmt->execute()) {
     error_log("Execute failed in send_message.php: " . $stmt->error);
     echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $stmt->error]);

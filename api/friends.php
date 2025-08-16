@@ -112,24 +112,28 @@ try {
             
         case 'get':
     $stmt = $conn->prepare("
-        SELECT 
-            MIN(f.id) as id,
-            CASE WHEN f.user_id = ? THEN f.friend_id ELSE f.user_id END as friend_user_id,
-            u.username, 
-            u.avatar, 
-            f.status,
-            CASE WHEN f.user_id = ? THEN 'sent' ELSE 'received' END as request_type
-        FROM friends f 
-        JOIN users u ON (CASE WHEN f.user_id = ? THEN f.friend_id ELSE f.user_id END = u.id)
-        WHERE (f.user_id = ? OR f.friend_id = ?)
-        GROUP BY 
-            CASE WHEN f.user_id = ? THEN f.friend_id ELSE f.user_id END,
-            u.username, 
-            u.avatar, 
-            f.status
-        ORDER BY MIN(f.created_at) DESC
-    ");
-    $stmt->bind_param("iiiiii", $user_id, $user_id, $user_id, $user_id, $user_id, $user_id);
+    SELECT 
+        MIN(f.id) as id,
+        CASE WHEN f.user_id = ? THEN f.friend_id ELSE f.user_id END as friend_user_id,
+        u.username, 
+        u.avatar, 
+        u.avatar_hue,
+        u.avatar_saturation,
+        f.status,
+        CASE WHEN f.user_id = ? THEN 'sent' ELSE 'received' END as request_type
+    FROM friends f 
+    JOIN users u ON (CASE WHEN f.user_id = ? THEN f.friend_id ELSE f.user_id END = u.id)
+    WHERE (f.user_id = ? OR f.friend_id = ?)
+    GROUP BY 
+        CASE WHEN f.user_id = ? THEN f.friend_id ELSE f.user_id END,
+        u.username, 
+        u.avatar, 
+        u.avatar_hue,
+        u.avatar_saturation,
+        f.status
+    ORDER BY MIN(f.created_at) DESC
+");
+$stmt->bind_param("iiiiii", $user_id, $user_id, $user_id, $user_id, $user_id, $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
     

@@ -347,21 +347,43 @@ if (in_array('avatar_saturation', $available_columns)) {
     }
     
     if (in_array('is_system', $msg_columns)) {
-        $stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, '', ?, 1, NOW(), ?, 'system')");
-        if ($stmt) {
-            $avatar = $user_session['avatar'] ?? 'default_avatar.jpg';
-            $stmt->bind_param("iss", $room_id, $join_message, $avatar);
-            $stmt->execute();
-            $stmt->close();
-        }
+        $stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, ?, ?, 1, NOW(), ?, 'system')");
+if ($stmt) {
+    $avatar = $user_session['avatar'] ?? 'default_avatar.jpg';
+    $stmt->bind_param("isss", $room_id, $user_id_string, $join_message, $avatar);
+    $stmt->execute();
+    $stmt->close();
+}
     }
     
     $_SESSION['room_id'] = $room_id;
     
     $conn->commit();
 
-// Sync avatar customization from global_users if session values are defaults
-if (($user_session['avatar_hue'] ?? 0) === 0 && ($user_session['avatar_saturation'] ?? 100) === 100) {
+// Sync avatar customization - prioritize users table for registered users
+if ($user_session['type'] === 'user' && isset($user_session['id'])) {
+    // For registered users, get data from users table
+    try {
+        $user_sync_stmt = $conn->prepare("UPDATE chatroom_users cu 
+                                         JOIN users u ON cu.user_id = u.id 
+                                         SET cu.avatar_hue = u.avatar_hue, 
+                                             cu.avatar_saturation = u.avatar_saturation,
+                                             cu.avatar = u.avatar
+                                         WHERE cu.room_id = ? AND cu.user_id_string = ?");
+        if ($user_sync_stmt) {
+            $user_sync_stmt->bind_param("is", $room_id, $user_id_string);
+            $user_sync_stmt->execute();
+            $affected_rows = $user_sync_stmt->affected_rows;
+            if ($affected_rows > 0) {
+                error_log("JOIN_ROOM_DEBUG: Synced avatar data from users table");
+            }
+            $user_sync_stmt->close();
+        }
+    } catch (Exception $e) {
+        error_log("JOIN_ROOM_DEBUG: User table sync failed (non-critical): " . $e->getMessage());
+    }
+} else {
+    // For guests, sync from global_users as fallback
     try {
         $sync_stmt = $conn->prepare("UPDATE chatroom_users cu 
                                      JOIN global_users gu ON cu.user_id_string = gu.user_id_string 

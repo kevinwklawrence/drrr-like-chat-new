@@ -277,13 +277,13 @@ try {
         }
         
         if (in_array('is_system', $message_columns)) {
-            $stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, '', ?, 1, NOW(), ?, 'system')");
-            if ($stmt) {
-                $avatar = $_SESSION['user']['avatar'] ?? 'default_avatar.jpg';
-                $stmt->bind_param("iss", $room_id, $creation_message, $avatar);
-                $stmt->execute();
-                $stmt->close();
-            }
+            $stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, ?, ?, 1, NOW(), ?, 'system')");
+if ($stmt) {
+    $avatar = $_SESSION['user']['avatar'] ?? 'default_avatar.jpg';
+    $stmt->bind_param("isss", $room_id, $user_id_string, $creation_message, $avatar);
+    $stmt->execute();
+    $stmt->close();
+}
         }
     }
     

@@ -1,6 +1,7 @@
 <?php
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0); // Don't display errors in JSON response
+ini_set('log_errors', 1);     // Log errors instead
 
 session_start();
 header('Content-Type: application/json');
@@ -63,10 +64,41 @@ try {
             }
             $stmt->close();
             
-            $sanitized_message = sanitizeMarkup($message);
+            // Ensure columns exist in room_whispers table
+            $check_color_col = $conn->query("SHOW COLUMNS FROM room_whispers LIKE 'color'");
+            if ($check_color_col->num_rows === 0) {
+                $conn->query("ALTER TABLE room_whispers ADD COLUMN color VARCHAR(50) DEFAULT 'blue'");
+            }
+
+            $check_hue_col = $conn->query("SHOW COLUMNS FROM room_whispers LIKE 'avatar_hue'");
+            if ($check_hue_col->num_rows === 0) {
+                $conn->query("ALTER TABLE room_whispers ADD COLUMN avatar_hue INT DEFAULT 0");
+            }
+
+            $check_sat_col = $conn->query("SHOW COLUMNS FROM room_whispers LIKE 'avatar_saturation'");
+            if ($check_sat_col->num_rows === 0) {
+                $conn->query("ALTER TABLE room_whispers ADD COLUMN avatar_saturation INT DEFAULT 100");
+            }
+
+            $check_avatar_col = $conn->query("SHOW COLUMNS FROM room_whispers LIKE 'sender_avatar'");
+            if ($check_avatar_col->num_rows === 0) {
+                $conn->query("ALTER TABLE room_whispers ADD COLUMN sender_avatar VARCHAR(255) DEFAULT 'default_avatar.jpg'");
+            }
+
+            $check_name_col = $conn->query("SHOW COLUMNS FROM room_whispers LIKE 'sender_name'");
+            if ($check_name_col->num_rows === 0) {
+                $conn->query("ALTER TABLE room_whispers ADD COLUMN sender_name VARCHAR(255) DEFAULT 'Unknown'");
+            }
             
-            $stmt = $conn->prepare("INSERT INTO room_whispers (room_id, sender_user_id_string, recipient_user_id_string, message) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param("isss", $room_id, $user_id_string, $recipient_user_id_string, $sanitized_message);
+            $sanitized_message = sanitizeMarkup($message);
+            $color = $_SESSION['user']['color'] ?? 'blue';
+            $avatar_hue = (int)($_SESSION['user']['avatar_hue'] ?? 0);
+            $avatar_saturation = (int)($_SESSION['user']['avatar_saturation'] ?? 100);
+            $sender_avatar = $_SESSION['user']['avatar'] ?? 'default_avatar.jpg';
+            $sender_name = $_SESSION['user']['username'] ?? $_SESSION['user']['name'] ?? 'Unknown';
+            
+            $stmt = $conn->prepare("INSERT INTO room_whispers (room_id, sender_user_id_string, recipient_user_id_string, message, color, avatar_hue, avatar_saturation, sender_avatar, sender_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("issssiiss", $room_id, $user_id_string, $recipient_user_id_string, $sanitized_message, $color, $avatar_hue, $avatar_saturation, $sender_avatar, $sender_name);
             
             if ($stmt->execute()) {
                 echo json_encode(['status' => 'success', 'message' => 'Whisper sent']);
@@ -84,7 +116,7 @@ try {
                 exit;
             }
             
-            // Get whisper messages
+            // Get whisper messages with stored customization data
             $stmt = $conn->prepare("
                 SELECT * FROM room_whispers 
                 WHERE room_id = ? 
@@ -99,50 +131,41 @@ try {
             
             $messages = [];
             while ($row = $result->fetch_assoc()) {
-                // Get sender info with proper color handling
-                // Get sender info with proper color handling
-$sender_stmt = $conn->prepare("
-    SELECT cu.username, cu.guest_name, cu.avatar, cu.guest_avatar, cu.avatar_hue, cu.avatar_saturation,
-           COALESCE(cu.color, u.color, 'blue') as color
-    FROM chatroom_users cu 
-    LEFT JOIN users u ON cu.user_id = u.id 
-    WHERE cu.room_id = ? AND cu.user_id_string = ?
-");
-                $sender_stmt->bind_param("is", $room_id, $row['sender_user_id_string']);
-                $sender_stmt->execute();
-                $sender_result = $sender_stmt->get_result();
+                // Use stored sender info from when whisper was sent
+                $row['sender_username'] = $row['sender_name'] ?? 'Unknown';
+                $row['sender_guest_name'] = $row['sender_name'] ?? 'Unknown';
+                $row['sender_avatar'] = $row['sender_avatar'] ?? 'default_avatar.jpg';
                 
-                if ($sender_result->num_rows > 0) {
-                    $sender_data = $sender_result->fetch_assoc();
-                    $row['sender_username'] = $sender_data['username'];
-                    $row['sender_guest_name'] = $sender_data['guest_name'];
-                    $row['sender_avatar'] = $sender_data['avatar'] ?: $sender_data['guest_avatar'];
-                    $row['sender_color'] = $sender_data['color'];
-                }
-                $sender_stmt->close();
-                
-                // Get recipient info with proper color handling
-$recipient_stmt = $conn->prepare("
-    SELECT cu.username, cu.guest_name, cu.avatar, cu.guest_avatar, cu.avatar_hue, cu.avatar_saturation,
-           COALESCE(cu.color, u.color, 'blue') as color
-    FROM chatroom_users cu 
-    LEFT JOIN users u ON cu.user_id = u.id 
-    WHERE cu.room_id = ? AND cu.user_id_string = ?
-");
-$recipient_stmt->bind_param("is", $room_id, $row['recipient_user_id_string']);
-$recipient_stmt->execute();
-$recipient_result = $recipient_stmt->get_result();
+                // Get basic recipient info (username/display name)
+                $recipient_stmt = $conn->prepare("
+                    SELECT cu.username, cu.guest_name, cu.avatar, cu.guest_avatar
+                    FROM chatroom_users cu 
+                    WHERE cu.room_id = ? AND cu.user_id_string = ?
+                ");
+                $recipient_stmt->bind_param("is", $room_id, $row['recipient_user_id_string']);
+                $recipient_stmt->execute();
+                $recipient_result = $recipient_stmt->get_result();
 
-if ($recipient_result->num_rows > 0) {
-    $recipient_data = $recipient_result->fetch_assoc();
-    $row['recipient_username'] = $recipient_data['username'];
-    $row['recipient_guest_name'] = $recipient_data['guest_name'];
-    $row['recipient_avatar'] = $recipient_data['avatar'] ?: $recipient_data['guest_avatar'];
-    $row['recipient_color'] = $recipient_data['color'];
-    $row['recipient_avatar_hue'] = $recipient_data['avatar_hue'];
-    $row['recipient_avatar_saturation'] = $recipient_data['avatar_saturation'];
-}
-$recipient_stmt->close();
+                if ($recipient_result->num_rows > 0) {
+                    $recipient_data = $recipient_result->fetch_assoc();
+                    $row['recipient_username'] = $recipient_data['username'];
+                    $row['recipient_guest_name'] = $recipient_data['guest_name'];
+                    $row['recipient_avatar'] = $recipient_data['avatar'] ?: $recipient_data['guest_avatar'];
+                } else {
+                    // Recipient left room, use fallback
+                    $row['recipient_username'] = 'User Left';
+                    $row['recipient_guest_name'] = 'User Left';
+                    $row['recipient_avatar'] = 'default_avatar.jpg';
+                }
+                $recipient_stmt->close();
+                
+                // Use stored customization values (preserved from when whisper was sent)
+                $row['sender_color'] = $row['color'] ?? 'blue';
+                $row['sender_avatar_hue'] = (int)($row['avatar_hue'] ?? 0);
+                $row['sender_avatar_saturation'] = (int)($row['avatar_saturation'] ?? 100);
+                $row['recipient_color'] = 'blue'; // Recipients don't have stored color in whispers
+                $row['recipient_avatar_hue'] = 0;  // Recipients don't have stored customization in whispers
+                $row['recipient_avatar_saturation'] = 100;
                 
                 $messages[] = $row;
             }

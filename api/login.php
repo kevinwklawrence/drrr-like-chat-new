@@ -141,30 +141,30 @@ $user['avatar_saturation'] = $avatar_saturation;
 // FORCE UPDATE - Always update the database regardless of current values
 error_log("FORCING database update with hue: $avatar_hue, saturation: $avatar_saturation");
 
-$update_user_stmt = $conn->prepare("UPDATE users SET color = ?, avatar_hue = ?, avatar_saturation = ? WHERE id = ?");
-if ($update_user_stmt) {
-    $update_user_stmt->bind_param("siii", $user['color'], $avatar_hue, $avatar_saturation, $user['id']);
-    if ($update_user_stmt->execute()) {
-        error_log("✅ SUCCESS: Database updated - hue: $avatar_hue, sat: $avatar_saturation for user ID: " . $user['id']);
+// Always update avatar, avatar_memory, color, and customization data
+$update_stmt = $conn->prepare("UPDATE users SET avatar = ?, avatar_memory = ?, color = ?, avatar_hue = ?, avatar_saturation = ? WHERE id = ?");
+if ($update_stmt) {
+    $update_avatar_memory = $should_update_avatar_memory ? $selected_avatar : $user['avatar_memory'];
+    $update_color = !empty($selected_color) ? $selected_color : $user['color'];
+    
+    error_log("Updating user DB: avatar=$final_avatar, avatar_memory=$update_avatar_memory, color=$update_color, hue=$avatar_hue, sat=$avatar_saturation");
+    
+    $update_stmt->bind_param("sssiii", $final_avatar, $update_avatar_memory, $update_color, $avatar_hue, $avatar_saturation, $user['id']);
+    
+    if ($update_stmt->execute()) {
+        error_log("✅ SUCCESS: All user data updated in database");
         
-        // Verify the update worked
-        $verify_stmt = $conn->prepare("SELECT avatar_hue, avatar_saturation FROM users WHERE id = ?");
-        $verify_stmt->bind_param("i", $user['id']);
-        $verify_stmt->execute();
-        $verify_result = $verify_stmt->get_result();
-        $verify_data = $verify_result->fetch_assoc();
-        $verify_stmt->close();
-        
-        error_log("📋 VERIFICATION: DB now contains hue: " . $verify_data['avatar_hue'] . ", sat: " . $verify_data['avatar_saturation']);
-        
-        // Update local user array
+        // Update local user array with new values
+        $user['avatar'] = $final_avatar;
+        $user['avatar_memory'] = $update_avatar_memory;
+        $user['color'] = $update_color;
         $user['avatar_hue'] = $avatar_hue;
         $user['avatar_saturation'] = $avatar_saturation;
         
     } else {
-        error_log("❌ FAILED to update user customization: " . $update_user_stmt->error);
+        error_log("❌ FAILED to update user data: " . $update_stmt->error);
     }
-    $update_user_stmt->close();
+    $update_stmt->close();
 } else {
     error_log("❌ FAILED to prepare user update statement: " . $conn->error);
 }
