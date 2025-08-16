@@ -37,9 +37,8 @@ A new drrr-like-chat project made from scratch, using HTML, CSS, JS, PHP, Ajax, 
   - Users can be unbanned at any point by the host, allowing them access to the room they were once banned in.
 - Auto-disconnect feature
   - After a set amount of time, users will automatically disconnect from rooms. If host, then passes host to random user.  
-
-# PLANNED FEATURES
 - Private messaging
-- Etc...
+- Whispers
+- Avatar color changer
 
 # REQUIRES SQL SETUP
