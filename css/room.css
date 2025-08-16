@@ -288,8 +288,8 @@
         }
         
         .system-message img {
-            width: 20px;
-            height: 20px;
+            width: 30px !important;
+            height: 30px !important;
             margin-right: 8px;
             vertical-align: middle;
             border-radius: 2px; /* FIXED: Changed from rounded to 4px */
@@ -714,6 +714,26 @@
     body {
         overflow-x: auto;
     }
+
+    .system-message {
+            text-align: center;
+            margin: 16px 0;
+            padding: 8px 16px;
+            background: rgba(103, 126, 234, 0.1);
+            border-radius: 20px;
+            border: 1px solid rgba(103, 126, 234, 0.2);
+            color: #677eea;
+            font-style: italic;
+            font-size: 0.8rem;
+        }
+        
+        .system-message img {
+            width: 26px !important;
+            height: 26px !important;
+            margin-right: 8px;
+            vertical-align: middle;
+            border-radius: 2px; /* FIXED: Changed from rounded to 4px */
+        }
     
     .room-container {
         margin: 5px;
@@ -798,8 +818,8 @@
     
     .chat-messages {
         flex: 1;
-        min-height: 300px;
-        padding: 15px;
+        min-height: 100px;
+        padding: 10px;
     }
     
     /* Sidebar Mobile */
@@ -848,8 +868,8 @@
     /* Messages Mobile */
     .message-bubble {
         max-width: calc(100% - 45px);
-        margin-left: 40px;
-        padding: 8px 12px;
+        margin-left: 50px;
+        padding: 4px 10px;
     }
     
     .message-avatar {

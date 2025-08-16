@@ -195,7 +195,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <option value="all">All Colors</option>
                                             <?php
                                             $image_base_dir = __DIR__ . '/images';
-                                            $excluded_folders = ['staff', 'bg', 'icon', 'time-limited', 'default'];
+                                            $excluded_folders = ['staff', 'bg', 'icon', 'time-limited', 'default', 'drrrjp', 'drrrx2'];
                                             foreach (glob($image_base_dir . '/*', GLOB_ONLYDIR) as $color_dir) {
                                                 $color_name = basename($color_dir);
                                                 if (in_array(strtolower($color_name), $excluded_folders)) continue;
@@ -207,9 +207,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="col-md-6">
                                         <label class="form-label">Avatar Actions</label>
                                         <div class="d-flex gap-2">
-                                            <!--<button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSelection()">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSelection()">
                                                 <i class="fas fa-times"></i> Clear
-                                            </button>-->
+                                            </button>
                                             <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="skipAvatarSelection()">
                                         <i class="fas fa-fast-forward"></i> Use Saved/Custom
                                     </button>
@@ -227,7 +227,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $web_base_dir = 'images/';
                                 $allowed_ext = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
                                 $excluded_folders = ['staff', 'bg', 'icon'];
-                                $priority_folders = ['time-limited', 'default'];
+                                $priority_folders = ['time-limited'];
+                                $nonpriority_folders = ['default', 'drrrjp'];
+                                $drrrx2 = ['drrrx2'];
                                 $total_avatars = 0;
 
                                 // Show priority folders first if they exist
@@ -253,11 +255,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     }
                                 }
 
+                                
+
                                 // Now show all other folders except excluded and priority
                                 foreach (glob($image_base_dir . '/*', GLOB_ONLYDIR) as $color_dir) {
                                     $color_name = basename($color_dir);
                                     if (in_array(strtolower($color_name), $excluded_folders)) continue;
                                     if (in_array(strtolower($color_name), $priority_folders)) continue;
+                                    if (in_array(strtolower($color_name), $nonpriority_folders)) continue;
+                                    if (in_array(strtolower($color_name), $drrrx2)) continue;
 
                                     $folder_avatars = glob($color_dir . '/*.{png,jpg,jpeg,gif,webp}', GLOB_BRACE);
                                     $folder_count = count($folder_avatars);
@@ -275,6 +281,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         }
                                     }
                                     echo '</div></div>';
+                                }
+
+                                // Show priority folders first if they exist
+                                foreach ($nonpriority_folders as $folder) {
+                                    $color_dir = $image_base_dir . '/' . $folder;
+                                    if (is_dir($color_dir)) {
+                                        $folder_avatars = glob($color_dir . '/*.{png,jpg,jpeg,gif,webp}', GLOB_BRACE);
+                                        $folder_count = count($folder_avatars);
+                                        $total_avatars += $folder_count;
+                                        
+                                        echo '<div class="avatar-group" data-group="' . strtolower($folder) . '">';
+                                        echo '<h6><i class="fas fa-star"></i> ' . ucfirst($folder) . ' Avatars <span class="avatar-count">' . $folder_count . '</span></h6>';
+                                        echo '<div class="d-flex flex-wrap">';
+                                        
+                                        foreach ($folder_avatars as $img_path) {
+                                            $img_file = basename($img_path);
+                                            $ext = strtolower(pathinfo($img_file, PATHINFO_EXTENSION));
+                                            if (in_array($ext, $allowed_ext)) {
+                                                echo '<img src="' . $web_base_dir . $folder . '/' . $img_file . '" class="avatar" data-avatar="' . $folder . '/' . $img_file . '" alt="Avatar option">';
+                                            }
+                                        }
+                                        echo '</div></div>';
+                                    }
+                                }
+
+                                // Show priority folders first if they exist
+                                foreach ($drrrx2 as $folder) {
+                                    $color_dir = $image_base_dir . '/' . $folder;
+                                    if (is_dir($color_dir)) {
+                                        $folder_avatars = glob($color_dir . '/*.{png,jpg,jpeg,gif,webp}', GLOB_BRACE);
+                                        $folder_count = count($folder_avatars);
+                                        $total_avatars += $folder_count;
+                                        
+                                        echo '<div class="avatar-group" data-group="' . strtolower($folder) . '">';
+                                        echo '<h6><i class="fas fa-star"></i> ' . ucfirst($folder) . ' Avatars <span class="avatar-count">' . $folder_count . '</span></h6>';
+                                        echo '<div class="d-flex flex-wrap">';
+                                        
+                                        foreach ($folder_avatars as $img_path) {
+                                            $img_file = basename($img_path);
+                                            $ext = strtolower(pathinfo($img_file, PATHINFO_EXTENSION));
+                                            if (in_array($ext, $allowed_ext)) {
+                                                echo '<img src="' . $web_base_dir . $folder . '/' . $img_file . '" class="avatar x2style" data-avatar="' . $folder . '/' . $img_file . '" alt="Avatar option">';
+                                            }
+                                        }
+                                        echo '</div></div>';
+                                    }
                                 }
                                 ?>
                                 
@@ -320,59 +372,93 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                        required>
                             </div>
                             
-                            <div class="mb-4">
-                                <label class="form-label"><i class="fas fa-image"></i> Selected Avatar</label>
-                                <div class="selected-avatar-preview">
-                                    <div id="selectedAvatarPreview" style="display: none;">
-                                        <img id="selectedAvatarImg" src="" width="58" height="58" class="avatar-sel" style="border-color: #007bff !important;">
-                                        <p class="mt-2 mb-0 small text-muted">Current selection</p>
-                                    </div>
-                                    <div id="noAvatarSelected">
-                                        <div class="text-muted">
-                                            <i class="fas fa-magic fa-2x mb-2"></i>
-                                            <p class="mb-0 small">Using saved/custom avatar</p>
-                                        </div>
-                                    </div>
-                                </div>
+                            <!-- Replace the existing "Selected Avatar" section with this: -->
+<div class="mb-4">
+    <label class="form-label"><i class="fas fa-image"></i> Selected Avatar</label>
+    <div class="selected-preview-row mb-4">
+        <div class="selected-avatar-preview">
+            <div id="selectedAvatarPreview" style="display: none;">
+                <img id="selectedAvatarImg" src="" width="58" height="58" class="avatar-sel" style="border-color: #007bff !important;">
+                <p class="mt-2 mb-0 small text-muted">Current selection</p>
+            </div>
+            <div id="noAvatarSelected">
+                <div class="text-muted">
+                    <i class="fas fa-magic fa-2x mb-2"></i>
+                    <p class="mb-0 small">Using saved/custom avatar</p>
+                </div>
+            </div>
+        </div>
+        <div class="selected-color-preview">
+            <div class="preview-circle color-black" id="selectedColorPreview"></div>
+            <div>
+                <strong id="selectedColorName">Black</strong> - Your message bubble color
+            </div>
+        </div>
+        
+    </div>
+    <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-sign-in-alt"></i> Login
+                                </button>
+                            </div>
+</div>
                             </div>
                             
 
-<!-- Avatar Color Customization -->
-<div class="avatar-color-sliders">
-    <label class="form-label">
-        <i class="fas fa-adjust"></i> Customize Avatar Color
-    </label>
-    
-    <div class="color-slider-container">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <label for="hueSlider" class="form-label mb-0">Hue Shift</label>
-            <span class="slider-value" id="hueValue">0°</span>
-        </div>
-        <input type="range" class="color-slider" id="hueSlider" name="hue_shift" 
-               min="0" max="360" value="0" oninput="updateAvatarFilter()">
+<!-- Replace the existing Avatar Color Customization and Color Selection sections with this: -->
+<div class="customize-section">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <label class="form-label mb-0">
+            <i class="fas fa-cog"></i> Customize Appearance
+        </label>
+        <button class="btn btn-outline-primary btn-md" type="button" data-bs-toggle="collapse" data-bs-target="#customizeCollapse" aria-expanded="false" aria-controls="customizeCollapse">
+            <i class="fas fa-chevron-down" id="customizeChevron"></i> Options
+        </button>
     </div>
     
-    <div class="color-slider-container">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <label for="saturationSlider" class="form-label mb-0">Saturation</label>
-            <span class="slider-value" id="saturationValue">100%</span>
-        </div>
-        <input type="range" class="color-slider" id="saturationSlider" name="saturation" 
-               min="0" max="300" value="100" oninput="updateAvatarFilter()">
-    </div>
-    
-    <div class="form-text text-muted">
-        <i class="fas fa-info-circle"></i> Adjust hue and saturation to customize your avatar's colors
-    </div>
-</div>
+    <div class="collapse" id="customizeCollapse">
+        <div class="customize-content">
+            <!-- Avatar Color Customization -->
+            <div class="avatar-color-sliders">
+                <label class="form-label">
+                    <i class="fas fa-adjust"></i> Customize Avatar Color
+                </label>
+                
+                <div class="color-slider-container">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label for="hueSlider" class="form-label mb-0">Hue Shift</label>
+                        <span class="slider-value" id="hueValue">0°</span>
+                    </div>
+                    <input type="range" class="color-slider" id="hueSlider" name="hue_shift" 
+                           min="0" max="360" value="0" oninput="updateAvatarFilter()">
+                </div>
+                
+                <div class="color-slider-container">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label for="saturationSlider" class="form-label mb-0">Saturation</label>
+                        <span class="slider-value" id="saturationValue">100%</span>
+                    </div>
+                    <input type="range" class="color-slider" id="saturationSlider" name="saturation" 
+                           min="0" max="300" value="100" oninput="updateAvatarFilter()">
+                </div>
+                
+                <div class="form-text text-muted">
+                    <i class="fas fa-info-circle"></i> Adjust hue and saturation to customize your avatar's colors
+                </div>
+            </div>
+
+            <hr class="my-4">
 
 
-                            <div class="color-selection-section">
-    <label class="form-label">
-        <i class="fas fa-palette"></i> Choose Your Chat Color
-    </label>
-    <div class="color-grid">
-        <div class="color-option color-black selected" data-color="black" onclick="selectColor('black', this)">
+         <!-- Chat Color Selection -->
+            <div class="color-selection-section">
+                <label class="form-label">
+                    <i class="fas fa-palette"></i> Choose Your Chat Color
+                </label>
+                
+                <div class="color-grid">
+                            <div class="color-option color-black" data-color="black" onclick="selectColor('black', this)">
+
                                     <div class="color-name">Black</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
@@ -431,21 +517,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="color-name">Indigo</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
-    </div>
-    <input type="hidden" id="selectedColor" name="color" value="black">
-    <div class="selected-color-preview">
-        <div class="preview-circle color-black" id="selectedColorPreview"></div>
-        <div>
-            <strong id="selectedColorName">Black</strong> - Your message bubble color
-        </div>
-    </div>
-</div>
+                                </div>
+                                 <input type="hidden" id="selectedColor" name="color" value="">
+                                
                             
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-sign-in-alt"></i> Login
-                                </button>
-                            </div>
+                        </div>
+                            
+                            
                         </div>
                         
                     </div>
@@ -479,7 +557,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        let userManuallySelectedColor = false;
+        
 $(document).ready(function() {
+
+    // Add this to the document ready function in both files:
+$('#customizeCollapse').on('show.bs.collapse', function () {
+    $('#customizeChevron').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+});
+
+$('#customizeCollapse').on('hide.bs.collapse', function () {
+    $('#customizeChevron').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+});
     // NUCLEAR OPTION: Completely disable native form submission
     $('#userLoginForm').attr('onsubmit', 'return false;');
     $('#userLoginForm').removeAttr('action');
@@ -528,22 +617,24 @@ $(document).ready(function() {
     
     // Avatar selection handling
     $(document).on('click', '.avatar', function() {
-        $('.avatar').removeClass('selected').css('filter', ''); // Clear all filters
-        $(this).addClass('selected');
-        
-        const avatarPath = $(this).data('avatar');
-        $('#selectedAvatar').val(avatarPath);
-        
-        // Update preview
-        $('#selectedAvatarImg').attr('src', $(this).attr('src'));
-        $('#selectedAvatarPreview').show();
-        $('#noAvatarSelected').hide();
-        
-        // Apply current filter to selected avatar
-        updateAvatarFilter();
-        
-        updateAvatarStats();
-    });
+    $('.avatar').removeClass('selected').css('filter', '');
+    $(this).addClass('selected');
+    
+    const avatarPath = $(this).data('avatar');
+    $('#selectedAvatar').val(avatarPath);
+    
+    // Auto-select color based on avatar (only if user hasn't manually changed it)
+    if (!userManuallySelectedColor) {
+        const defaultColor = getAvatarDefaultColor(avatarPath);
+        selectColor(defaultColor, document.querySelector(`[data-color="${defaultColor}"]`), true);
+    }
+    
+    $('#selectedAvatarImg').attr('src', $(this).attr('src'));
+    $('#selectedAvatarPreview').show();
+    $('#noAvatarSelected').hide();
+    
+    updateAvatarFilter();
+});
 
     // Filter dropdown
     $('#avatarSort').on('change', function() {
@@ -551,7 +642,67 @@ $(document).ready(function() {
     });
     
     // Initialize color selection
-    selectColor('black', document.querySelector('[data-color="black"]'));
+   // Change the initialization to mark it as automatic:
+selectColor('black', document.querySelector('[data-color="black"]'), true);
+
+
+    // Username field live preview
+let usernameTimeout;
+$('#username').on('input', function() {
+    clearTimeout(usernameTimeout);
+    const username = $(this).val().trim();
+    
+    if (username.length >= 3) {
+        usernameTimeout = setTimeout(function() {
+            fetchUserAvatar(username);
+        }, 500); // Debounce for 500ms
+    } else {
+        // Clear preview when username is too short
+        clearUserAvatarPreview();
+    }
+});
+
+function fetchUserAvatar(username) {
+    $.ajax({
+        url: 'api/get_user_avatar.php',
+        method: 'GET',
+        data: { username: username },
+        dataType: 'json',
+        success: function(res) {
+            if (res.status === 'success' && res.avatar) {
+                showUserAvatarPreview(res.avatar);
+            } else {
+                clearUserAvatarPreview();
+            }
+        },
+        error: function() {
+            clearUserAvatarPreview();
+        }
+    });
+}
+
+function showUserAvatarPreview(avatarPath) {
+    if ($('#selectedAvatar').val() === '') {
+        $('#selectedAvatarImg').attr('src', 'images/' + avatarPath);
+        $('#selectedAvatarPreview').show();
+        $('#noAvatarSelected .text-muted p').text('Your saved avatar');
+        
+        // Only auto-select color if user hasn't manually changed it
+        if (!userManuallySelectedColor) {
+            const defaultColor = getAvatarDefaultColor(avatarPath);
+            selectColor(defaultColor, document.querySelector(`[data-color="${defaultColor}"]`), true);
+        }
+    }
+}
+
+function clearUserAvatarPreview() {
+    // Only clear if no avatar is manually selected
+    if ($('#selectedAvatar').val() === '') {
+        $('#selectedAvatarPreview').hide();
+        $('#noAvatarSelected .text-muted p').text('Using saved/custom avatar');
+    }
+}
+
 });
 
 let userLoginInProgress = false;
@@ -561,6 +712,8 @@ function handleUserLogin() {
         console.log('🛑 User login already in progress - BLOCKED');
         return false;
     }
+
+
     
     userLoginInProgress = true;
     
@@ -570,6 +723,8 @@ function handleUserLogin() {
     const selectedColor = $('#selectedColor').val();
     const hueShift = $('#hueSlider').val() || 0;
     const saturation = $('#saturationSlider').val() || 100;
+
+    
     
     console.log('Login form values - hue:', hueShift, 'sat:', saturation);
     
@@ -679,6 +834,13 @@ function clearSelection() {
     $('#selectedAvatar').val('');
     $('#selectedAvatarPreview').hide();
     $('#noAvatarSelected').show();
+    
+    // Re-trigger username preview if username exists
+    const username = $('#username').val().trim();
+    if (username.length >= 3) {
+        fetchUserAvatar(username);
+    }
+    
     updateAvatarStats();
 }
 
@@ -696,19 +858,33 @@ function randomAvatar() {
     }
 }
 
-function selectColor(colorName, element) {
+function selectColor(colorName, element, isAutomatic = false) {
+    // Track if this was a manual selection (not automatic from avatar)
+    if (!isAutomatic) {
+        userManuallySelectedColor = true;
+    }
+    
+    // Remove selected class from all options
     document.querySelectorAll('.color-option').forEach(option => {
         option.classList.remove('selected');
     });
+    
+    // Add selected class to clicked option
     element.classList.add('selected');
+    
+    // Update hidden input
     document.getElementById('selectedColor').value = colorName;
+    
+    // Update preview
     const preview = document.getElementById('selectedColorPreview');
     preview.className = `preview-circle color-${colorName}`;
+    
+    // Update color name
     document.getElementById('selectedColorName').textContent = colorName.charAt(0).toUpperCase() + colorName.slice(1);
 }
 
 function resetColorToDefault() {
-    selectColor('black', document.querySelector('[data-color="black"]'));
+    //selectColor('black', document.querySelector('[data-color="black"]'));
 }
 
 function updateAvatarFilter() {
@@ -732,7 +908,15 @@ function updateAvatarFilter() {
         previewImg.css('filter', filter);
     }
 }
+
+// Add this to track manual color clicks:
+$(document).on('click', '.color-option', function() {
+    const colorName = $(this).data('color');
+    selectColor(colorName, this, false); // false = manual selection
+});
 </script>
     <script src="js/script.js"></script>
+    <!-- Add this script tag before the closing </body> tag -->
+<script src="js/avatar-color-mapping.js"></script>
 </body>
 </html>

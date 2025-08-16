@@ -19,7 +19,7 @@ body {
         .container-fluid {
             background-color: #1a1a1a;
             min-height: 100vh;
-            padding: 20px;
+            padding: 0px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -61,7 +61,7 @@ body {
         }
         
         .avatar-container {
-            max-height: 500px;
+            max-height: 590px;
             overflow-y: auto;
             border: 2px solid #404040;
             border-radius: 10px;
@@ -324,7 +324,7 @@ body {
         /* Mobile optimizations */
         @media (max-width: 768px) {
             .container-fluid {
-                padding: 10px;
+                padding: 0px;
             }
             
             .login-container {
@@ -399,3 +399,27 @@ body {
             color: #0056b3;
             text-decoration: underline;
         }
+        .customize-section {
+    background: #2a2a2a;
+    border: 1px solid #404040;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.customize-content {
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 15px;
+}
+
+#customizeChevron {
+    transition: transform 0.3s ease;
+}
+
+#customizeCollapse.show ~ * #customizeChevron,
+#customizeCollapse.collapsing ~ * #customizeChevron {
+    transform: rotate(180deg);
+}

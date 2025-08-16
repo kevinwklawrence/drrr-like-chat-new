@@ -34,7 +34,7 @@ if (isset($_SESSION['user'])) {
             
             <form id="guestLoginForm">
                 <div class="row">
-                    <div class="col-lg-6">
+                    <div class="col-lg-8">
                         <div class="avatar-selection-card">
                             <label class="form-label mb-3">
                                 <i class="fas fa-images"></i> Choose Your Avatar
@@ -43,7 +43,8 @@ if (isset($_SESSION['user'])) {
                                 <?php
                                 $image_base_dir = __DIR__ . '/images';
                                 $web_base_dir = 'images/';
-                                $priority_folders = ['time-limited', 'default'];
+                                $priority_folders = ['time-limited', 'default', 'drrrjp'];
+                                $drrrx2 = ['drrrx2'];
                                 $allowed_ext = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
 
                                 foreach ($priority_folders as $folder) {
@@ -62,6 +63,23 @@ if (isset($_SESSION['user'])) {
                                         echo '</div></div>';
                                     }
                                 }
+
+                                foreach ($drrrx2 as $folder) {
+                                    $folder_path = $image_base_dir . '/' . $folder;
+                                    if (is_dir($folder_path)) {
+                                        echo '<div class="avatar-section">';
+                                        echo '<h6><i class="fas fa-star"></i> ' . ucfirst($folder) . ' Avatars</h6>';
+                                        echo '<div class="d-flex flex-wrap">';
+                                        foreach (glob($folder_path . '/*.{png,jpg,jpeg,gif,webp}', GLOB_BRACE) as $img_path) {
+                                            $img_file = basename($img_path);
+                                            $ext = strtolower(pathinfo($img_file, PATHINFO_EXTENSION));
+                                            if (in_array($ext, $allowed_ext)) {
+                                                echo '<img src="' . $web_base_dir . $folder . '/' . $img_file . '" class="avatar x2style" data-avatar="' . $folder . '/' . $img_file . '" alt="Avatar option">';
+                                            }
+                                        }
+                                        echo '</div></div>';
+                                    }
+                                }
                                 ?>
                             </div>
                             <input type="hidden" id="selectedAvatar" name="avatar" required>
@@ -71,7 +89,7 @@ if (isset($_SESSION['user'])) {
                         </div>
                     </div>
 
-                    <div class="col-lg-6">
+                    <div class="col-lg-4">
                         <!-- Color Selection -->
                          <div class="avatar-selection-card">
                             <div class="mb-4">
@@ -120,49 +138,59 @@ if (isset($_SESSION['user'])) {
                             </div>
                         </div>
 
-<!-- Avatar Color Customization -->
-<div class="avatar-color-sliders">
-    <label class="form-label">
-        <i class="fas fa-adjust"></i> Customize Avatar Color
-    </label>
-    
-    <div class="color-slider-container">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <label for="hueSlider" class="form-label mb-0">Hue Shift</label>
-            <span class="slider-value" id="hueValue">0°</span>
-        </div>
-        <input type="range" class="color-slider" id="hueSlider" name="avatar_hue" 
-               min="0" max="360" value="0" oninput="updateAvatarFilter()">
+<div class="customize-section">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <label class="form-label mb-0">
+            <i class="fas fa-cog"></i> Customize Appearance
+        </label>
+        <button class="btn btn-outline-primary btn-md" type="button" data-bs-toggle="collapse" data-bs-target="#customizeCollapse" aria-expanded="false" aria-controls="customizeCollapse">
+            <i class="fas fa-chevron-down" id="customizeChevron"></i> Options
+        </button>
     </div>
     
-    <div class="color-slider-container">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <label for="saturationSlider" class="form-label mb-0">Saturation</label>
-            <span class="slider-value" id="saturationValue">100%</span>
-        </div>
-        <input type="range" class="color-slider" id="saturationSlider" name="avatar_saturation" 
-               min="0" max="300" value="100" oninput="updateAvatarFilter()">
-    </div>
-    
-    <div class="form-text text-muted">
-        <i class="fas fa-info-circle"></i> Adjust hue and saturation to customize your avatar's colors
-    </div>
-</div>
+    <div class="collapse" id="customizeCollapse">
+        <div class="customize-content">
+            <!-- Avatar Color Customization -->
+            <div class="avatar-color-sliders">
+                <label class="form-label">
+                    <i class="fas fa-adjust"></i> Customize Avatar Color
+                </label>
+                
+                <div class="color-slider-container">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label for="hueSlider" class="form-label mb-0">Hue Shift</label>
+                        <span class="slider-value" id="hueValue">0°</span>
+                    </div>
+                    <input type="range" class="color-slider" id="hueSlider" name="avatar_hue" 
+                           min="0" max="360" value="0" oninput="updateAvatarFilter()">
+                </div>
+                
+                <div class="color-slider-container">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label for="saturationSlider" class="form-label mb-0">Saturation</label>
+                        <span class="slider-value" id="saturationValue">100%</span>
+                    </div>
+                    <input type="range" class="color-slider" id="saturationSlider" name="avatar_saturation" 
+                           min="0" max="300" value="100" oninput="updateAvatarFilter()">
+                </div>
+                
+                <div class="form-text text-muted">
+                    <i class="fas fa-info-circle"></i> Adjust hue and saturation to customize your avatar's colors
+                </div>
+            </div>
 
-                        <div class="color-selection-section">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <label class="form-label">
-                                    <i class="fas fa-palette"></i> Choose Your Chat Color
-                                </label>
-                               <!-- <button type="button" class="reset-btn" onclick="resetColorToDefault()">
-                                    <i class="fas fa-undo"></i> Reset
-                                </button>-->
-                            </div>
-                            
-                            <div class="color-grid">
+            <hr class="my-4">
+
+                        <!-- Chat Color Selection -->
+            <div class="color-selection-section">
+                <label class="form-label">
+                    <i class="fas fa-palette"></i> Choose Your Chat Color
+                </label>
+                
+                <div class="color-grid">
                                 <!-- Default: Black -->
-                                <div class="color-option color-black selected" data-color="black" onclick="selectColor('black', this)">
-                                    <div class="color-name">Black</div>
+                                <div class="color-option color-black" data-color="black" onclick="selectColor('black', this)">
+
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
                                 
@@ -222,9 +250,10 @@ if (isset($_SESSION['user'])) {
                                 </div>
                             </div>
                             
-                           <input type="hidden" id="selectedColor" name="color" value="black">
+                           <input type="hidden" id="selectedColor" name="color" value="">
+
                             
-                            
+                             </div>
                             
                         </div>
                     </div>
@@ -256,7 +285,17 @@ if (isset($_SESSION['user'])) {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        let userManuallySelectedColor = false;
 $(document).ready(function() {
+
+    $('#customizeCollapse').on('show.bs.collapse', function () {
+    $('#customizeChevron').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+});
+
+$('#customizeCollapse').on('hide.bs.collapse', function () {
+    $('#customizeChevron').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+});
+    
     // NUCLEAR OPTION: Completely disable native form submission
     $('#guestLoginForm').attr('onsubmit', 'return false;');
     $('#guestLoginForm').removeAttr('action');
@@ -308,24 +347,29 @@ $(document).ready(function() {
     });
     
     // Initialize color selection
-    selectColor('black', document.querySelector('[data-color="black"]'));
+    // Change the initialization to mark it as automatic:
+selectColor('black', document.querySelector('[data-color="black"]'), true);
     
-    // Avatar selection handling
-    $('.avatar').click(function() {
-        $('.avatar').removeClass('selected').css('filter', ''); // Clear all filters
-        $(this).addClass('selected');
-        
-        const avatarPath = $(this).data('avatar');
-        $('#selectedAvatar').val(avatarPath);
-        
-        // Update preview
-        $('#selectedAvatarImg').attr('src', $(this).attr('src'));
-        $('#selectedAvatarPreview').show();
-        $('#noAvatarSelected').hide();
-        
-        // Immediately apply current filter to newly selected avatar
-        updateAvatarFilter();
-    });
+    // Update the avatar click handler in index.php:
+$('.avatar').click(function() {
+    $('.avatar').removeClass('selected').css('filter', '');
+    $(this).addClass('selected');
+    
+    const avatarPath = $(this).data('avatar');
+    $('#selectedAvatar').val(avatarPath);
+    
+    // Auto-select color based on avatar (only if user hasn't manually changed it)
+    if (!userManuallySelectedColor) {
+        const defaultColor = getAvatarDefaultColor(avatarPath);
+        selectColor(defaultColor, document.querySelector(`[data-color="${defaultColor}"]`), true);
+    }
+    
+    $('#selectedAvatarImg').attr('src', $(this).attr('src'));
+    $('#selectedAvatarPreview').show();
+    $('#noAvatarSelected').hide();
+    
+    updateAvatarFilter();
+});
 });
 
 // Separate function for handling guest login
@@ -356,8 +400,12 @@ function handleGuestLogin() {
     
     const hueShift = hueElement ? parseInt(hueElement.value) || 0 : 0;
     const saturation = satElement ? parseInt(satElement.value) || 100 : 100;
+
+    
     
     console.log('Final values - hue:', hueShift, 'sat:', saturation);
+
+    
     
     if (!guestName) {
         guestLoginInProgress = false;
@@ -433,7 +481,12 @@ function resetGuestForm(submitBtn, originalText) {
 }
 
 // Color selection functions
-function selectColor(colorName, element) {
+function selectColor(colorName, element, isAutomatic = false) {
+    // Track if this was a manual selection (not automatic from avatar)
+    if (!isAutomatic) {
+        userManuallySelectedColor = true;
+    }
+    
     // Remove selected class from all options
     document.querySelectorAll('.color-option').forEach(option => {
         option.classList.remove('selected');
@@ -483,7 +536,15 @@ function updateAvatarFilter() {
         console.log('Applied filter to preview:', filter);
     }
 }
+
+// Add this to track manual color clicks:
+$(document).on('click', '.color-option', function() {
+    const colorName = $(this).data('color');
+    selectColor(colorName, this, false); // false = manual selection
+});
 </script>
     <script src="js/script.js"></script>
+    <script src="js/avatar-color-mapping.js"></script>
+
 </body>
 </html>

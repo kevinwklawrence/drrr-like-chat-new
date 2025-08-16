@@ -124,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
 // UPDATED: Use new default avatar path
-$default_avatar = 'default/u0.png';
+$default_avatar = 'default/_u0.png';
 
 // Insert new user into database with avatar_memory initialization
 $stmt = $conn->prepare("INSERT INTO users (username, email, password, user_id, avatar, avatar_memory, is_admin) VALUES (?, ?, ?, ?, ?, ?, 0)");

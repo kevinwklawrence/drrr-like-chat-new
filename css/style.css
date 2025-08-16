@@ -2,7 +2,7 @@
 .avatar.selected { border: 2px solid blue; }
 .chatroom { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
 #chatbox { height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
-#chatbox img { margin-right: 5px; }
+#chatbox img { margin-right: 5px; height:58px; width:58px; }
 #chatbox .system-message { 
     color: #6c757d; 
     font-style: italic;
@@ -176,6 +176,8 @@ body {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+    #chatbox img { height:40px; width:40px; }
+    #chatbox { padding: 10px; }
     .knock-notification {
         position: fixed;
         top: 10px;
@@ -320,4 +322,7 @@ body {
     color: #007bff;
     min-width: 50px;
     text-align: right;
+}
+.x2style {
+    border-radius: 15px !important;
 }
