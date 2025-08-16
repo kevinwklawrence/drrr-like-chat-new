@@ -324,20 +324,19 @@ const hostSaturation = host.avatar_saturation || host.user_avatar_saturation || 
         <div class="d-flex align-items-center">
             <img src="images/${hostAvatar}" 
                  width="32" height="32" 
-                 class="me-2 avatar-filtered" 
-                 data-hue="${hostHue}" 
-                 data-saturation="${hostSaturation}"
+                 class="me-2" 
+                 style="filter: hue-rotate(${hostHue}deg) saturate(${hostSaturation}%);"
                  alt="${hostName}">
             <div>
                 <div class="fw-bold">${hostName}</div>
                 <div class="user-badges">
                     ${parseInt(host.is_admin) === 1 ? '<span class="badge bg-danger badge-sm">Admin</span>' : ''}
                     ${host.user_type === 'registered' || host.user_id ? '<span class="badge bg-success badge-sm">Verified</span>' : '<span class="badge bg-secondary badge-sm">Guest</span>'}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                </div>
+            </div>
+        </div>
+    </div>
+`;
             } else {
                 hostHtml = `
                     <div class="room-host">
@@ -366,22 +365,21 @@ const hostSaturation = host.avatar_saturation || host.user_avatar_saturation || 
     const userSaturation = user.avatar_saturation || user.user_avatar_saturation || 100;
                     
                     usersHtml += `
-        <div class="user-item-mini d-flex align-items-center">
-            <img src="images/${userAvatar}" 
-                 width="24" height="24" 
-                 class="me-2 avatar-filtered" 
-                 data-hue="${userHue}" 
-                 data-saturation="${userSaturation}"
-                 alt="${userName}">
-            <div class="user-info">
-                <div class="user-name">${userName}</div>
-                <div class="user-badges">
-                    ${parseInt(user.is_admin) === 1 ? '<span class="badge bg-danger badge-xs">Admin</span>' : ''}
-                    ${user.user_type === 'registered' || user.user_id ? '<span class="badge bg-success badge-xs">Verified</span>' : '<span class="badge bg-secondary badge-xs">Guest</span>'}
-                                </div>
-                            </div>
-                        </div>
-                    `;
+    <div class="user-item-mini d-flex align-items-center">
+        <img src="images/${userAvatar}" 
+             width="24" height="24" 
+             class="me-2" 
+             style="filter: hue-rotate(${userHue}deg) saturate(${userSaturation}%);"
+             alt="${userName}">
+        <div class="user-info">
+            <div class="user-name">${userName}</div>
+            <div class="user-badges">
+                ${parseInt(user.is_admin) === 1 ? '<span class="badge bg-danger badge-xs">Admin</span>' : ''}
+                ${user.user_type === 'registered' || user.user_id ? '<span class="badge bg-success badge-xs">Verified</span>' : '<span class="badge bg-secondary badge-xs">Guest</span>'}
+            </div>
+        </div>
+    </div>
+`;
                 });
                 
                 if (regularUsers.length > 8) {
@@ -460,7 +458,10 @@ const hostSaturation = host.avatar_saturation || host.user_avatar_saturation || 
     } else {
         $roomsList.html(html);
     }
-    setTimeout(applyAllAvatarFilters, 100);
+    /* Only apply filters if this is a new render, not just an update
+if (!$roomsList.hasClass('updating')) {
+    setTimeout(applyAllAvatarFilters, 200);
+}*/
 
 }
 
@@ -564,11 +565,9 @@ html += `
     <div class="d-flex align-items-center mb-2">
         <img src="images/${avatar}" 
              width="30" height="30" 
-             class="me-2 avatar-filtered" 
-             data-hue="${hue}" 
-             data-saturation="${saturation}"
-             alt="${name}" 
-             style="border-radius: 2px;">
+             class="me-2" 
+             style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); border-radius: 2px;"
+             alt="${name}">
         <div style="flex-grow: 1;">
             <small class="fw-bold" style="color: #fff;">${name}</small>
             <div>
@@ -583,7 +582,9 @@ html += `
     
     $('#onlineUsersList').html(html);
     // At the end of displayRoomsWithUsers function:
-    setTimeout(applyAllAvatarFilters, 100);
+   /* Debounce filter application
+clearTimeout(window.avatarFilterTimeout);
+window.avatarFilterTimeout = setTimeout(applyAllAvatarFilters, 300);*/
 
 }
 
@@ -1913,23 +1914,39 @@ function loadFriends() {
     });
 }
 
-// Apply avatar filters based on hue and saturation values
 function applyAvatarFilter(imgElement, hue, saturation) {
     if (hue !== undefined && saturation !== undefined) {
         const hueValue = parseInt(hue) || 0;
         const satValue = parseInt(saturation) || 100;
         const filterValue = `hue-rotate(${hueValue}deg) saturate(${satValue}%)`;
-        imgElement.css('filter', filterValue).addClass('avatar-filtered');
+        const filterKey = `${hueValue}-${satValue}`;
+        
+        // Only apply if different from current
+        if (imgElement.data('filter-applied') !== filterKey) {
+            imgElement.css('filter', filterValue);
+            imgElement.data('filter-applied', filterKey);
+            imgElement.addClass('avatar-filtered');
+        }
     }
 }
 
-// Apply filters to all avatars on page
 function applyAllAvatarFilters() {
     $('.avatar-filtered, .message-avatar, .user-avatar, .private-message-avatar').each(function() {
-        const hue = $(this).data('hue');
-        const sat = $(this).data('saturation');
-        if (hue !== undefined && sat !== undefined) {
-            applyAvatarFilter($(this), hue, sat);
+        const $img = $(this);
+        const hue = $img.data('hue');
+        const sat = $img.data('saturation');
+        
+        // Skip if no filter data or already processed
+        if (hue === undefined || sat === undefined) return;
+        
+        const filterKey = `${hue}-${sat}`;
+        const appliedKey = $img.data('filter-applied');
+        
+        // Only apply if not already applied with same values
+        if (appliedKey !== filterKey) {
+            const filterValue = `hue-rotate(${hue}deg) saturate(${sat}%)`;
+            $img.css('filter', filterValue);
+            $img.data('filter-applied', filterKey);
         }
     });
 }

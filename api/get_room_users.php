@@ -13,57 +13,52 @@ if ($room_id <= 0) {
     exit;
 }
 
-error_log("Fetching users for room_id=$room_id"); // Debug
+error_log("Fetching users for room_id=$room_id");
 
 try {
-    // Check what columns exist in chatroom_users table
-    $columns_query = $conn->query("SHOW COLUMNS FROM chatroom_users");
-    $available_columns = [];
-    while ($row = $columns_query->fetch_assoc()) {
-        $available_columns[] = $row['Field'];
-    }
-    
-    // Build query based on available columns
-    $select_fields = ['cu.user_id_string', 'cu.is_host'];
-    $joins = '';
-    
-    if (in_array('user_id', $available_columns)) {
-        $select_fields[] = 'cu.user_id';
-        $joins = 'LEFT JOIN users u ON cu.user_id = u.id';
-        $select_fields[] = 'u.username';
-        $select_fields[] = 'u.is_admin';
-        $select_fields[] = 'u.avatar as user_avatar';
-    }
-    
-    if (in_array('guest_name', $available_columns)) {
-        $select_fields[] = 'cu.guest_name';
-    }
-    
-    if (in_array('guest_avatar', $available_columns)) {
-        $select_fields[] = 'cu.guest_avatar';
-    }
-    
-    if (in_array('avatar', $available_columns)) {
-        $select_fields[] = 'cu.avatar';
-    }
-    
-    if (in_array('username', $available_columns)) {
-        $select_fields[] = 'cu.username as chatroom_username';
+    // Ensure avatar customization columns exist in chatroom_users
+    $check_cu_hue = $conn->query("SHOW COLUMNS FROM chatroom_users LIKE 'avatar_hue'");
+    if ($check_cu_hue->num_rows === 0) {
+        $conn->query("ALTER TABLE chatroom_users ADD COLUMN avatar_hue INT DEFAULT 0");
     }
 
-    if (in_array('avatar_hue', $available_columns)) {
-    $select_fields[] = 'u.avatar_hue as user_avatar_hue';
-} else {
-    $select_fields[] = '0 as user_avatar_hue';
-}
+    $check_cu_sat = $conn->query("SHOW COLUMNS FROM chatroom_users LIKE 'avatar_saturation'");
+    if ($check_cu_sat->num_rows === 0) {
+        $conn->query("ALTER TABLE chatroom_users ADD COLUMN avatar_saturation INT DEFAULT 100");
+    }
 
-if (in_array('avatar_saturation', $available_columns)) {
-    $select_fields[] = 'u.avatar_saturation as user_avatar_saturation';
-} else {
-    $select_fields[] = '100 as user_avatar_saturation';
-}
-    
-    $sql = "SELECT " . implode(', ', $select_fields) . " FROM chatroom_users cu " . $joins . " WHERE cu.room_id = ?";
+    // Sync avatar customization from global_users to chatroom_users
+    $sync_stmt = $conn->prepare("
+        UPDATE chatroom_users cu 
+        JOIN global_users gu ON cu.user_id_string = gu.user_id_string 
+        SET cu.avatar_hue = gu.avatar_hue, cu.avatar_saturation = gu.avatar_saturation 
+        WHERE cu.room_id = ? AND gu.avatar_hue IS NOT NULL AND gu.avatar_saturation IS NOT NULL
+    ");
+    if ($sync_stmt) {
+        $sync_stmt->bind_param("i", $room_id);
+        $sync_stmt->execute();
+        $sync_stmt->close();
+    }
+
+    // Get users with proper avatar customization
+    $sql = "
+        SELECT 
+            cu.user_id_string,
+            cu.user_id,
+            cu.is_host,
+            cu.guest_name,
+            cu.guest_avatar,
+            cu.avatar,
+            cu.username as chatroom_username,
+            cu.avatar_hue,
+            cu.avatar_saturation,
+            u.username,
+            u.is_admin,
+            u.avatar as user_avatar
+        FROM chatroom_users cu 
+        LEFT JOIN users u ON cu.user_id = u.id
+        WHERE cu.room_id = ?
+    ";
     
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
@@ -98,32 +93,24 @@ if (in_array('avatar_saturation', $available_columns)) {
             $avatar = $row['avatar'];
         }
         
-        $user_data = [
+        $users[] = [
             'user_id_string' => $row['user_id_string'],
             'display_name' => $display_name,
             'avatar' => $avatar,
             'is_host' => (int)$row['is_host'],
             'is_admin' => isset($row['is_admin']) ? (int)$row['is_admin'] : 0,
-            'user_type' => isset($row['user_id']) && $row['user_id'] ? 'registered' : 'guest'
+            'user_type' => isset($row['user_id']) && $row['user_id'] ? 'registered' : 'guest',
+            'username' => $row['username'],
+            'guest_name' => $row['guest_name'],
+            'user_id' => $row['user_id'],
+            'avatar_hue' => (int)($row['avatar_hue'] ?? 0),
+            'avatar_saturation' => (int)($row['avatar_saturation'] ?? 100)
         ];
-        
-        // Include original fields for compatibility
-        if (isset($row['username'])) {
-            $user_data['username'] = $row['username'];
-        }
-        if (isset($row['guest_name'])) {
-            $user_data['guest_name'] = $row['guest_name'];
-        }
-        if (isset($row['user_id'])) {
-            $user_data['user_id'] = $row['user_id'];
-        }
-        
-        $users[] = $user_data;
     }
     
     $stmt->close();
     
-    error_log("Retrieved " . count($users) . " users for room_id=$room_id"); // Debug
+    error_log("Retrieved " . count($users) . " users for room_id=$room_id");
     echo json_encode($users);
     
 } catch (Exception $e) {

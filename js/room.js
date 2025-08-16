@@ -230,6 +230,11 @@ function loadMessages() {
             $('#chatbox').html('<div class="empty-chat"><i class="fas fa-wifi"></i><h5>Connection Error</h5><p>Failed to load messages. Check your connection.</p></div>');
         }
     });
+
+    // Apply avatar filters after loading messages
+/* Debounce filter application for messages
+clearTimeout(window.messageAvatarFilterTimeout);
+window.messageAvatarFilterTimeout = setTimeout(applyAllAvatarFilters, 300);*/
 }
 
 function getUserColor(msg) {
@@ -289,21 +294,24 @@ console.log(`Message avatar filters for ${name}: hue=${hue}, sat=${saturation}`)
     }
     
     return `
-        <div class="chat-message">
-            <img src="images/${avatar}" class="message-avatar" alt="${name}'s avatar">
-            <div class="message-bubble ${userColorClass}">
-                <div class="message-header">
-                    <div class="message-header-left">
-                        <div class="message-author">${name}</div>
-                        ${badges ? `<div class="message-badges">${badges}</div>` : ''}
-                    </div>
-                    <div class="message-time">${timestamp}</div>
+    <div class="chat-message">
+        <img src="images/${avatar}" 
+             class="message-avatar" 
+             style="filter: hue-rotate(${hue}deg) saturate(${saturation}%);"
+             alt="${name}'s avatar">
+        <div class="message-bubble ${userColorClass}">
+            <div class="message-header">
+                <div class="message-header-left">
+                    <div class="message-author">${name}</div>
+                    ${badges ? `<div class="message-badges">${badges}</div>` : ''}
                 </div>
-                <div class="message-content">${msg.message}</div>
-                ${adminInfo}
+                <div class="message-time">${timestamp}</div>
             </div>
+            <div class="message-content">${msg.message}</div>
+            ${adminInfo}
         </div>
-    `;
+    </div>
+`;
 }
 
 // ===== USER MANAGEMENT FUNCTIONS =====
@@ -361,14 +369,19 @@ users.forEach((user, index) => {
             $('#userList').html('<div class="empty-users"><i class="fas fa-wifi"></i><p>Connection error</p></div>');
         }
     });
+
+    // Apply avatar filters after loading users
+/* Debounce filter application for users
+clearTimeout(window.userAvatarFilterTimeout);
+window.userAvatarFilterTimeout = setTimeout(applyAllAvatarFilters, 300);*/
 }
 
 function renderUser(user) {
     const avatar = user.avatar || user.guest_avatar || 'default_avatar.jpg';
     const name = user.display_name || user.username || user.guest_name || 'Unknown';
     const userIdString = user.user_id_string || 'unknown';
-    const hue = user.user_avatar_hue !== undefined ? user.user_avatar_hue : (user.avatar_hue || 0);
-const saturation = user.user_avatar_saturation !== undefined ? user.user_avatar_saturation : (user.avatar_saturation || 100);
+    const hue = user.avatar_hue || 0;
+const saturation = user.avatar_saturation || 100;
 
 console.log(`Applying filters for ${name}: hue=${hue}, sat=${saturation}`); // Debug
     
@@ -460,17 +473,28 @@ console.log(`Applying filters for ${name}: hue=${hue}, sat=${saturation}`); // D
     }
     
     return `
-        <div class="user-item">
-            <div class="user-info-row">
-                <img src="images/${avatar}" class="user-avatar" alt="${name}'s avatar">
-                <div class="user-details">
-                    <div class="user-name">${name}</div>
-                    <div class="user-badges-row">${badges}</div>
-                </div>
+    <div class="user-item">
+        <div class="user-info-row">
+            <img src="images/${avatar}" 
+                 class="user-avatar" 
+                 style="filter: hue-rotate(${hue}deg) saturate(${saturation}%);"
+                 alt="${name}'s avatar">
+            <div class="user-details">
+                <div class="user-name">${name}</div>
+                <div class="user-badges-row">${badges}</div>
             </div>
-            ${actions}
         </div>
-    `;
+        ${actions}
+    </div>
+`;
+    /* Apply avatar filter
+setTimeout(() => {
+    const imgElement = $(`.user-avatar[alt="${name}'s avatar"]`).last();
+    if (imgElement.length > 0) {
+        imgElement.attr('data-hue', hue).attr('data-saturation', saturation);
+        applyAvatarFilter(imgElement, hue, saturation);
+    }
+}, 100);*/
 }
 
 // ===== YOUTUBE PLAYER SYSTEM =====
@@ -2391,32 +2415,39 @@ function displayWhisperMessages(otherUserIdString, messages) {
         html = '<div style="text-align: center; color: #999; padding: 20px;">No whispers yet</div>';
     } else {
         messages.forEach(msg => {
-            const isOwn = msg.sender_user_id_string === currentUserIdString;
-            const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            
-            const author = isOwn ? 
-                (currentUser.name || currentUser.username || 'You') : 
-                (msg.sender_username || msg.sender_guest_name || 'Unknown');
-            const avatar = isOwn ? 
-                (currentUser.avatar || 'default_avatar.jpg') : 
-                (msg.sender_avatar || 'default_avatar.jpg');
-            const userColor = isOwn ? 
-                (currentUser.color || 'blue') : 
-                (msg.sender_color || 'blue');
-            
-            html += `
-                <div class="private-chat-message ${isOwn ? 'sent' : 'received'}">
-                    <img src="images/${avatar}" class="private-message-avatar" alt="${author}'s avatar">
-                    <div class="private-message-bubble ${isOwn ? 'sent' : 'received'} user-color-${userColor}">
-                        <div class="private-message-header-info">
-                            <div class="private-message-author">${author}</div>
-                            <div class="private-message-time">${time}</div>
-                        </div>
-                        <div class="private-message-content">${msg.message}</div>
-                    </div>
+    const isOwn = msg.sender_user_id_string === currentUserIdString;
+    const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    
+    const author = isOwn ? 
+        (currentUser.name || currentUser.username || 'You') : 
+        (msg.sender_username || msg.sender_guest_name || 'Unknown');
+    const avatar = isOwn ? 
+        (currentUser.avatar || 'default_avatar.jpg') : 
+        (msg.sender_avatar || 'default_avatar.jpg');
+    const userColor = isOwn ? 
+        (currentUser.color || 'blue') : 
+        (msg.sender_color || 'blue');
+    
+    // Fix: Get correct avatar customization for each user  
+    const avatarHue = isOwn ? (currentUser.avatar_hue || 0) : (msg.sender_avatar_hue || 0);
+    const avatarSat = isOwn ? (currentUser.avatar_saturation || 100) : (msg.sender_avatar_saturation || 100);
+    
+    html += `
+        <div class="private-chat-message ${isOwn ? 'sent' : 'received'}">
+            <img src="images/${avatar}" 
+                 class="private-message-avatar" 
+                 style="filter: hue-rotate(${avatarHue}deg) saturate(${avatarSat}%);"
+                 alt="${author}'s avatar">
+            <div class="private-message-bubble ${isOwn ? 'sent' : 'received'} user-color-${userColor}">
+                <div class="private-message-header-info">
+                    <div class="private-message-author">${author}</div>
+                    <div class="private-message-time">${time}</div>
                 </div>
-            `;
-        });
+                <div class="private-message-content">${msg.message}</div>
+            </div>
+        </div>
+    `;
+});
     }
     
     container.html(html);
@@ -3051,6 +3082,7 @@ function loadPrivateMessages(otherUserId) {
 function displayPrivateMessages(otherUserId, messages) {
     const container = $(`#pm-body-${otherUserId}`);
     
+    
     // Check if user was at bottom before update
     const wasAtBottom = container[0] ? 
         (container.scrollTop() + container.innerHeight() >= container[0].scrollHeight - 20) : true;
@@ -3061,27 +3093,42 @@ function displayPrivateMessages(otherUserId, messages) {
         html = '<div style="text-align: center; color: #999; padding: 20px;">No messages yet</div>';
     } else {
         messages.forEach(msg => {
-            const isOwn = msg.sender_id == currentUser.id;
-            const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            
-            // Get user info and color from message data
-            const author = isOwn ? (currentUser.username || currentUser.name) : msg.sender_username;
-            const avatar = isOwn ? (currentUser.avatar || 'default_avatar.jpg') : (msg.sender_avatar || 'default_avatar.jpg');
-            const userColor = isOwn ? (currentUser.color || 'blue') : (msg.sender_color || 'blue');
-            
-            html += `
-                <div class="private-chat-message ${isOwn ? 'sent' : 'received'}">
-                    <img src="images/${avatar}" class="private-message-avatar" alt="${author}'s avatar">
-                    <div class="private-message-bubble ${isOwn ? 'sent' : 'received'} user-color-${userColor}">
-                        <div class="private-message-header-info">
-                            <div class="private-message-author">${author}</div>
-                            <div class="private-message-time">${time}</div>
-                        </div>
-                        <div class="private-message-content">${msg.message}</div>
-                    </div>
+    const isOwn = msg.sender_id == currentUser.id;
+    const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    
+    // Get user info and color from message data
+    const author = isOwn ? (currentUser.username || currentUser.name) : msg.sender_username;
+    const avatar = isOwn ? (currentUser.avatar || 'default_avatar.jpg') : (msg.sender_avatar || 'default_avatar.jpg');
+    const userColor = isOwn ? (currentUser.color || 'blue') : (msg.sender_color || 'blue');
+    
+    // Fix: Use the correct property names from the API response
+    const avatarHue = isOwn ? (currentUser.avatar_hue || 0) : (msg.sender_avatar_hue || 0);
+    const avatarSat = isOwn ? (currentUser.avatar_saturation || 100) : (msg.sender_avatar_saturation || 100);
+    
+    console.log('Avatar customization debug:', {
+        isOwn: isOwn,
+        avatarHue: avatarHue,
+        avatarSat: avatarSat,
+        msg_sender_avatar_hue: msg.sender_avatar_hue,
+        currentUser_avatar_hue: currentUser.avatar_hue
+    });
+    
+    html += `
+        <div class="private-chat-message ${isOwn ? 'sent' : 'received'}">
+            <img src="images/${avatar}" 
+                 class="private-message-avatar" 
+                 style="filter: hue-rotate(${avatarHue}deg) saturate(${avatarSat}%);"
+                 alt="${author}'s avatar">
+            <div class="private-message-bubble ${isOwn ? 'sent' : 'received'} user-color-${userColor}">
+                <div class="private-message-header-info">
+                    <div class="private-message-author">${author}</div>
+                    <div class="private-message-time">${time}</div>
                 </div>
-            `;
-        });
+                <div class="private-message-content">${msg.message}</div>
+            </div>
+        </div>
+    `;
+});
     }
     
     container.html(html);
@@ -3131,6 +3178,43 @@ function syncAvatarCustomization() {
         },
         error: function(xhr, status, error) {
             debugLog('Avatar sync error (non-critical):', error);
+        }
+    });
+}
+
+function applyAvatarFilter(imgElement, hue, saturation) {
+    if (hue !== undefined && saturation !== undefined) {
+        const hueValue = parseInt(hue) || 0;
+        const satValue = parseInt(saturation) || 100;
+        const filterValue = `hue-rotate(${hueValue}deg) saturate(${satValue}%)`;
+        const filterKey = `${hueValue}-${satValue}`;
+        
+        // Only apply if different from current
+        if (imgElement.data('filter-applied') !== filterKey) {
+            imgElement.css('filter', filterValue);
+            imgElement.data('filter-applied', filterKey);
+            imgElement.addClass('avatar-filtered');
+        }
+    }
+}
+
+function applyAllAvatarFilters() {
+    $('.avatar-filtered, .message-avatar, .user-avatar, .private-message-avatar').each(function() {
+        const $img = $(this);
+        const hue = $img.data('hue');
+        const sat = $img.data('saturation');
+        
+        // Skip if no filter data or already processed
+        if (hue === undefined || sat === undefined) return;
+        
+        const filterKey = `${hue}-${sat}`;
+        const appliedKey = $img.data('filter-applied');
+        
+        // Only apply if not already applied with same values
+        if (appliedKey !== filterKey) {
+            const filterValue = `hue-rotate(${hue}deg) saturate(${sat}%)`;
+            $img.css('filter', filterValue);
+            $img.data('filter-applied', filterKey);
         }
     });
 }

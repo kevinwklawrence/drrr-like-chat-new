@@ -100,13 +100,14 @@ try {
             $messages = [];
             while ($row = $result->fetch_assoc()) {
                 // Get sender info with proper color handling
-                $sender_stmt = $conn->prepare("
-                    SELECT cu.username, cu.guest_name, cu.avatar, cu.guest_avatar, 
-                           COALESCE(cu.color, u.color, 'blue') as color
-                    FROM chatroom_users cu 
-                    LEFT JOIN users u ON cu.user_id = u.id 
-                    WHERE cu.room_id = ? AND cu.user_id_string = ?
-                ");
+                // Get sender info with proper color handling
+$sender_stmt = $conn->prepare("
+    SELECT cu.username, cu.guest_name, cu.avatar, cu.guest_avatar, cu.avatar_hue, cu.avatar_saturation,
+           COALESCE(cu.color, u.color, 'blue') as color
+    FROM chatroom_users cu 
+    LEFT JOIN users u ON cu.user_id = u.id 
+    WHERE cu.room_id = ? AND cu.user_id_string = ?
+");
                 $sender_stmt->bind_param("is", $room_id, $row['sender_user_id_string']);
                 $sender_stmt->execute();
                 $sender_result = $sender_stmt->get_result();
@@ -121,25 +122,27 @@ try {
                 $sender_stmt->close();
                 
                 // Get recipient info with proper color handling
-                $recipient_stmt = $conn->prepare("
-                    SELECT cu.username, cu.guest_name, cu.avatar, cu.guest_avatar,
-                           COALESCE(cu.color, u.color, 'blue') as color
-                    FROM chatroom_users cu 
-                    LEFT JOIN users u ON cu.user_id = u.id 
-                    WHERE cu.room_id = ? AND cu.user_id_string = ?
-                ");
-                $recipient_stmt->bind_param("is", $room_id, $row['recipient_user_id_string']);
-                $recipient_stmt->execute();
-                $recipient_result = $recipient_stmt->get_result();
-                
-                if ($recipient_result->num_rows > 0) {
-                    $recipient_data = $recipient_result->fetch_assoc();
-                    $row['recipient_username'] = $recipient_data['username'];
-                    $row['recipient_guest_name'] = $recipient_data['guest_name'];
-                    $row['recipient_avatar'] = $recipient_data['avatar'] ?: $recipient_data['guest_avatar'];
-                    $row['recipient_color'] = $recipient_data['color'];
-                }
-                $recipient_stmt->close();
+$recipient_stmt = $conn->prepare("
+    SELECT cu.username, cu.guest_name, cu.avatar, cu.guest_avatar, cu.avatar_hue, cu.avatar_saturation,
+           COALESCE(cu.color, u.color, 'blue') as color
+    FROM chatroom_users cu 
+    LEFT JOIN users u ON cu.user_id = u.id 
+    WHERE cu.room_id = ? AND cu.user_id_string = ?
+");
+$recipient_stmt->bind_param("is", $room_id, $row['recipient_user_id_string']);
+$recipient_stmt->execute();
+$recipient_result = $recipient_stmt->get_result();
+
+if ($recipient_result->num_rows > 0) {
+    $recipient_data = $recipient_result->fetch_assoc();
+    $row['recipient_username'] = $recipient_data['username'];
+    $row['recipient_guest_name'] = $recipient_data['guest_name'];
+    $row['recipient_avatar'] = $recipient_data['avatar'] ?: $recipient_data['guest_avatar'];
+    $row['recipient_color'] = $recipient_data['color'];
+    $row['recipient_avatar_hue'] = $recipient_data['avatar_hue'];
+    $row['recipient_avatar_saturation'] = $recipient_data['avatar_saturation'];
+}
+$recipient_stmt->close();
                 
                 $messages[] = $row;
             }

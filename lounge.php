@@ -343,10 +343,11 @@ if (!empty($user_id_string)) {
                     <div class="user-profile-card">
                         <div class="text-center mb-3">
                             <img src="images/<?php echo htmlspecialchars($avatar); ?>" 
-                                 class="avatar-selector" 
-                                 id="currentAvatar" 
-                                 onclick="showAvatarSelector()"
-                                 alt="Your avatar">
+     class="avatar-selector" 
+     id="currentAvatar" 
+     style="filter: hue-rotate(<?php echo $_SESSION['user']['avatar_hue'] ?? 0; ?>deg) saturate(<?php echo $_SESSION['user']['avatar_saturation'] ?? 100; ?>%);"
+     onclick="showAvatarSelector()"
+     alt="Your avatar">
                             <div class="mt-3">
                                 <h5 class="mb-1"><?php echo htmlspecialchars($guest_name ?? $username ?? 'User'); ?></h5>
                                 <small class="text-muted">
