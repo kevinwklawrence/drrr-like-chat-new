@@ -80,6 +80,16 @@ try {
                 $conn->query("ALTER TABLE room_whispers ADD COLUMN avatar_saturation INT DEFAULT 100");
             }
 
+            $check_bubble_hue_col = $conn->query("SHOW COLUMNS FROM room_whispers LIKE 'bubble_hue'");
+if ($check_bubble_hue_col->num_rows === 0) {
+    $conn->query("ALTER TABLE room_whispers ADD COLUMN bubble_hue INT DEFAULT 0");
+}
+
+$check_bubble_sat_col = $conn->query("SHOW COLUMNS FROM room_whispers LIKE 'bubble_saturation'");
+if ($check_bubble_sat_col->num_rows === 0) {
+    $conn->query("ALTER TABLE room_whispers ADD COLUMN bubble_saturation INT DEFAULT 100");
+}
+
             $check_avatar_col = $conn->query("SHOW COLUMNS FROM room_whispers LIKE 'sender_avatar'");
             if ($check_avatar_col->num_rows === 0) {
                 $conn->query("ALTER TABLE room_whispers ADD COLUMN sender_avatar VARCHAR(255) DEFAULT 'default_avatar.jpg'");
@@ -94,12 +104,14 @@ try {
             $color = $_SESSION['user']['color'] ?? 'blue';
             $avatar_hue = (int)($_SESSION['user']['avatar_hue'] ?? 0);
             $avatar_saturation = (int)($_SESSION['user']['avatar_saturation'] ?? 100);
+            $bubble_hue = (int)($_SESSION['user']['bubble_hue'] ?? 0);
+$bubble_saturation = (int)($_SESSION['user']['bubble_saturation'] ?? 100);
             $sender_avatar = $_SESSION['user']['avatar'] ?? 'default_avatar.jpg';
             $sender_name = $_SESSION['user']['username'] ?? $_SESSION['user']['name'] ?? 'Unknown';
             
-            $stmt = $conn->prepare("INSERT INTO room_whispers (room_id, sender_user_id_string, recipient_user_id_string, message, color, avatar_hue, avatar_saturation, sender_avatar, sender_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("issssiiss", $room_id, $user_id_string, $recipient_user_id_string, $sanitized_message, $color, $avatar_hue, $avatar_saturation, $sender_avatar, $sender_name);
-            
+$stmt = $conn->prepare("INSERT INTO room_whispers (room_id, sender_user_id_string, recipient_user_id_string, message, color, avatar_hue, avatar_saturation, bubble_hue, bubble_saturation, sender_avatar, sender_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+$stmt->bind_param("issssiiiiss", $room_id, $user_id_string, $recipient_user_id_string, $sanitized_message, $color, $avatar_hue, $avatar_saturation, $bubble_hue, $bubble_saturation, $sender_avatar, $sender_name);
+
             if ($stmt->execute()) {
                 echo json_encode(['status' => 'success', 'message' => 'Whisper sent']);
             } else {
@@ -135,6 +147,8 @@ try {
                 $row['sender_username'] = $row['sender_name'] ?? 'Unknown';
                 $row['sender_guest_name'] = $row['sender_name'] ?? 'Unknown';
                 $row['sender_avatar'] = $row['sender_avatar'] ?? 'default_avatar.jpg';
+                $row['bubble_hue'] = (int)($row['bubble_hue'] ?? 0);
+                $row['bubble_saturation'] = (int)($row['bubble_saturation'] ?? 100);
                 
                 // Get basic recipient info (username/display name)
                 $recipient_stmt = $conn->prepare("

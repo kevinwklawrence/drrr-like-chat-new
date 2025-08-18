@@ -5,7 +5,7 @@ if (!isset($_SESSION['user'])) {
     header("Location: index.php");
     exit;
 }
-
+echo '<script>console.log("Bubble values in session:", ' . json_encode($_SESSION['user']['bubble_hue'] ?? 'missing') . ', ' . json_encode($_SESSION['user']['bubble_saturation'] ?? 'missing') . ');</script>';
 include 'db_connect.php';
 
 $user_id_string = $_SESSION['user']['user_id'] ?? '';
@@ -347,7 +347,7 @@ if (!empty($user_id_string)) {
      class="avatar-selector" 
      id="currentAvatar" 
      style="filter: hue-rotate(<?php echo $_SESSION['user']['avatar_hue'] ?? 0; ?>deg) saturate(<?php echo $_SESSION['user']['avatar_saturation'] ?? 100; ?>%);"
-     onclick="showAvatarSelector()"
+     onclick="showProfileEditor()"
      alt="Your avatar">
                             <div class="mt-3">
                                 <h5 class="mb-1"><?php echo htmlspecialchars($guest_name ?? $username ?? 'User'); ?></h5>

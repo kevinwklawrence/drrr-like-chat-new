@@ -255,6 +255,8 @@ function renderMessage(msg) {
     const userIdString = msg.user_id_string || msg.user_id || 'unknown';
     const hue = msg.user_avatar_hue !== undefined ? msg.user_avatar_hue : (msg.avatar_hue || 0);
     const saturation = msg.user_avatar_saturation !== undefined ? msg.user_avatar_saturation : (msg.avatar_saturation || 100);
+    const bubbleHue = msg.bubble_hue || 0;
+const bubbleSat = msg.bubble_saturation || 100;
     
     if (msg.type === 'system' || msg.is_system) {
         const systemHue = msg.avatar_hue || msg.user_avatar_hue || 0;
@@ -276,11 +278,18 @@ function renderMessage(msg) {
         minute: '2-digit'
     });
     
-    // Check if this is a registered user and add click handler
-    const isRegisteredUser = msg.user_id && msg.user_id > 0;
-    const avatarClickHandler = isRegisteredUser && currentUser.type === 'user' ? 
-        `onclick="handleAvatarClick(event, ${msg.user_id}, '${(msg.username || '').replace(/'/g, "\\'")}')" style="cursor: pointer;"` : 
-        '';
+// In renderMessage function, update the avatar click handler:
+const isRegisteredUser = msg.user_id && msg.user_id > 0;
+const isCurrentUser = msg.user_id_string === currentUserIdString;
+
+let avatarClickHandler = '';
+if (isRegisteredUser) {
+    // Registered users - anyone can click to view profile
+    avatarClickHandler = `onclick="handleAvatarClick(event, ${msg.user_id}, '${(msg.username || '').replace(/'/g, "\\'")}')" style="cursor: pointer;"`;
+} else if (isCurrentUser) {
+    // Current guest user - can click to edit their own profile
+    avatarClickHandler = `onclick="showProfileEditor()" style="cursor: pointer;"`;
+}
     
     let badges = '';
     if (msg.is_admin) {
@@ -307,7 +316,7 @@ function renderMessage(msg) {
              style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); ${avatarClickHandler ? 'cursor: pointer;' : ''}"
              ${avatarClickHandler}
              alt="${name}'s avatar">
-        <div class="message-bubble ${userColorClass}">
+        <div class="message-bubble ${userColorClass}" style="filter: hue-rotate(${bubbleHue}deg) saturate(${bubbleSat}%);">
             <div class="message-header">
                 <div class="message-header-left">
                     <div class="message-author">${name}</div>
@@ -391,25 +400,42 @@ function renderUser(user) {
     const hue = user.avatar_hue || 0;
 const saturation = user.avatar_saturation || 100;
 
-const isRegisteredUser = user.user_id && user.user_id > 0;
-    const avatarClickHandler = isRegisteredUser && currentUser.type === 'user' ? 
-        `onclick="handleAvatarClick(event, ${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')" style="cursor: pointer;"` : 
-        '';
+// In renderUser function, simplified logic:
+const isRegisteredUser = user.user_type === 'registered';
+const isCurrentUser = user.user_id_string === currentUserIdString;
 
-console.log(`Applying filters for ${name}: hue=${hue}, sat=${saturation}`); // Debug
+console.log(`User ${user.display_name}: user_type=${user.user_type}, user_id=${user.user_id}, isRegistered=${isRegisteredUser}`);
+
+let avatarClickHandler = '';
+if (isRegisteredUser) {
+    avatarClickHandler = `onclick="handleAvatarClick(event, ${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')" style="cursor: pointer;"`;
+} else if (isCurrentUser) {
+    avatarClickHandler = `onclick="showProfileEditor()" style="cursor: pointer;"`;
+}
     
-    let badges = '';
-    if (user.is_admin) {
-        badges += '<span class="user-badge badge-admin"><i class="fas fa-shield-alt"></i> Admin</span>';
-    }
-    if (user.is_host) {
-        badges += '<span class="user-badge badge-host"><i class="fas fa-crown"></i> Host</span>';
-    }
-    if (user.user_id && !user.is_admin) {
-        badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle"></i> Verified</span>';
-    } else if (!user.user_id) {
-        badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
-    }
+let badges = '';
+
+// "You" indicator first
+if (isCurrentUser) {
+    badges += '<span class="user-badge badge-you"><i class="fas fa-user-circle"></i> You</span>';
+}
+
+// Admin badge
+if (user.is_admin) {
+    badges += '<span class="user-badge badge-admin"><i class="fas fa-shield-alt"></i> Admin</span>';
+}
+
+// Host badge
+if (user.is_host) {
+    badges += '<span class="user-badge badge-host"><i class="fas fa-crown"></i> Host</span>';
+}
+
+// User type badge
+if (isRegisteredUser && !user.is_admin) {
+    badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle"></i> Verified</span>';
+} else if (!isRegisteredUser) {
+    badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
+}
     
     let actions = '';
     if (user.user_id_string !== currentUserIdString) {
@@ -2445,6 +2471,8 @@ function displayWhisperMessages(otherUserIdString, messages) {
     // Fix: Get correct avatar customization for each user  
     const avatarHue = isOwn ? (currentUser.avatar_hue || 0) : (msg.sender_avatar_hue || 0);
     const avatarSat = isOwn ? (currentUser.avatar_saturation || 100) : (msg.sender_avatar_saturation || 100);
+    const bubbleHue = isOwn ? (currentUser.bubble_hue || 0) : (msg.bubble_hue || 0);
+const bubbleSat = isOwn ? (currentUser.bubble_saturation || 100) : (msg.bubble_saturation || 100);
     
     html += `
         <div class="private-chat-message ${isOwn ? 'sent' : 'received'}">
@@ -2452,7 +2480,7 @@ function displayWhisperMessages(otherUserIdString, messages) {
                  class="private-message-avatar" 
                  style="filter: hue-rotate(${avatarHue}deg) saturate(${avatarSat}%);"
                  alt="${author}'s avatar">
-            <div class="private-message-bubble ${isOwn ? 'sent' : 'received'} user-color-${userColor}">
+            <div class="private-message-bubble ${isOwn ? 'sent' : 'received'} user-color-${userColor}" style="filter: hue-rotate(${bubbleHue}deg) saturate(${bubbleSat}%);">
                 <div class="private-message-header-info">
                     <div class="private-message-author">${author}</div>
                     <div class="private-message-time">${time}</div>
@@ -3239,7 +3267,14 @@ function handleAvatarClick(event, userId, username) {
     
     console.log('Avatar clicked - userId:', userId, 'username:', username); // Debug log
     
-    if (currentUser.type === 'user' && userId && userId !== 'null' && userId !== null) {
-        showUserProfile(userId, event.target);
+    // Allow anyone to view registered user profiles
+    if (userId && userId !== 'null' && userId !== null && userId > 0) {
+        if (userId == currentUser.id) {
+            // Allow both registered users and guests to edit their own profile
+            showUserProfile(userId, event.target);
+        } else {
+            // Anyone can view other registered users' profiles
+            showUserProfile(userId, event.target);
+        }
     }
 }

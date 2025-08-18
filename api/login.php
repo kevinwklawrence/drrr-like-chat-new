@@ -23,7 +23,7 @@ $has_customization_data = isset($_POST['avatar_hue']) && isset($_POST['avatar_sa
 if (!$has_customization_data) {
     error_log("⚠️ WARNING: Login request without avatar customization data - ignoring to prevent override");
     // If no customization data, check if user already has values and preserve them
-    $existing_stmt = $conn->prepare("SELECT avatar_hue, avatar_saturation FROM users WHERE username = ?");
+    $existing_stmt = $conn->prepare("SELECT avatar_hue, avatar_saturation, bubble_hue, bubble_saturation FROM users WHERE username = ?");
     $existing_stmt->bind_param("s", $username);
     $existing_stmt->execute();
     $existing_result = $existing_stmt->get_result();
@@ -31,17 +31,23 @@ if (!$has_customization_data) {
         $existing_data = $existing_result->fetch_assoc();
         $avatar_hue = $existing_data['avatar_hue'] ?? 0;
         $avatar_saturation = $existing_data['avatar_saturation'] ?? 100;
+        $bubble_hue = $existing_data['bubble_hue'] ?? 0;
+        $bubble_saturation = $existing_data['bubble_saturation'] ?? 100;
         error_log("Using existing DB values - hue: $avatar_hue, sat: $avatar_saturation");
     } else {
         $avatar_hue = 0;
         $avatar_saturation = 100;
+        $bubble_hue = 0;
+        $bubble_saturation = 100;
     }
     $existing_stmt->close();
 } else {
     // Normal processing with form data
     $avatar_hue = (int)$_POST['avatar_hue'];
     $avatar_saturation = (int)$_POST['avatar_saturation'];
-    error_log("Using form values - hue: $avatar_hue, sat: $avatar_saturation");
+    $bubble_hue = (int)($_POST['bubble_hue'] ?? 0);
+    $bubble_saturation = (int)($_POST['bubble_saturation'] ?? 100);
+    error_log("Using form values - hue: $avatar_hue, sat: $avatar_saturation, bubble_hue: $bubble_hue, bubble_sat: $bubble_saturation");
 }
 
 
@@ -103,54 +109,27 @@ if (!$has_customization_data) {
                 }
             }
             
-            // Update user's avatar, avatar_memory, and color in database if needed
-            $updates_needed = [];
-            $update_params = [];
-            $param_types = '';
-            
-            // Always update current avatar if it's different
-            if ($final_avatar !== $user['avatar']) {
-                $updates_needed[] = 'avatar = ?';
-                $update_params[] = $final_avatar;
-                $param_types .= 's';
-            }
-            
-            // Update avatar_memory if user selected an avatar
-            if ($should_update_avatar_memory && $selected_avatar !== $user['avatar_memory']) {
-                $updates_needed[] = 'avatar_memory = ?';
-                $update_params[] = $selected_avatar;
-                $param_types .= 's';
-            }
-            
-            // FIXED: Update color if selected (always update, regardless of current color)
-           /* if (!empty($selected_color)) {
-                $updates_needed[] = 'color = ?';
-                $update_params[] = $selected_color;
-                $param_types .= 's';
-                $user['color'] = $selected_color; // Update local variable for session
-                error_log("Color will be updated to: $selected_color");
-            }*/
-
            // Always update color and avatar customization
 if (!empty($selected_color)) {
     $user['color'] = $selected_color;
 }
 $user['avatar_hue'] = $avatar_hue;
 $user['avatar_saturation'] = $avatar_saturation;
+$user['bubble_hue'] = $bubble_hue;
+$user['bubble_saturation'] = $bubble_saturation;
 
 // FORCE UPDATE - Always update the database regardless of current values
-error_log("FORCING database update with hue: $avatar_hue, saturation: $avatar_saturation");
+error_log("FORCING database update with hue: $avatar_hue, saturation: $avatar_saturation, bubble_hue: $bubble_hue, bubble_sat: $bubble_saturation");
 
 // Always update avatar, avatar_memory, color, and customization data
-$update_stmt = $conn->prepare("UPDATE users SET avatar = ?, avatar_memory = ?, color = ?, avatar_hue = ?, avatar_saturation = ? WHERE id = ?");
+$update_stmt = $conn->prepare("UPDATE users SET avatar = ?, avatar_memory = ?, color = ?, avatar_hue = ?, avatar_saturation = ?, bubble_hue = ?, bubble_saturation = ? WHERE id = ?");
 if ($update_stmt) {
     $update_avatar_memory = $should_update_avatar_memory ? $selected_avatar : $user['avatar_memory'];
     $update_color = !empty($selected_color) ? $selected_color : $user['color'];
     
-    error_log("Updating user DB: avatar=$final_avatar, avatar_memory=$update_avatar_memory, color=$update_color, hue=$avatar_hue, sat=$avatar_saturation");
-    
-    $update_stmt->bind_param("sssiii", $final_avatar, $update_avatar_memory, $update_color, $avatar_hue, $avatar_saturation, $user['id']);
-    
+    error_log("Updating user DB: avatar=$final_avatar, avatar_memory=$update_avatar_memory, color=$update_color, hue=$avatar_hue, sat=$avatar_saturation, bubble_hue=$bubble_hue, bubble_sat=$bubble_saturation");
+    error_log("DEBUG: bubble_hue=$bubble_hue, bubble_saturation=$bubble_saturation, type=" . gettype($bubble_saturation));
+$update_stmt->bind_param("sssiiiii", $final_avatar, $update_avatar_memory, $update_color, $avatar_hue, $avatar_saturation, $bubble_hue, $bubble_saturation, $user['id']);
     if ($update_stmt->execute()) {
         error_log("✅ SUCCESS: All user data updated in database");
         
@@ -169,20 +148,16 @@ if ($update_stmt) {
     error_log("❌ FAILED to prepare user update statement: " . $conn->error);
 }
             
-            // REMOVED: Redundant separate color update logic that was causing conflicts
-            
             // ADDED: Update global_users table for registered users
-// ADDED: Update global_users table for registered users
 try {
-    $stmt_global = $conn->prepare("INSERT INTO global_users (user_id_string, username, guest_name, avatar, guest_avatar, color, avatar_hue, avatar_saturation, is_admin, ip_address, last_activity) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE username = VALUES(username), avatar = VALUES(avatar), guest_avatar = VALUES(guest_avatar), color = VALUES(color), avatar_hue = VALUES(avatar_hue), avatar_saturation = VALUES(avatar_saturation), is_admin = VALUES(is_admin), ip_address = VALUES(ip_address), last_activity = NOW()");
-    
+$stmt_global = $conn->prepare("INSERT INTO global_users (user_id_string, username, guest_name, avatar, guest_avatar, color, avatar_hue, avatar_saturation, bubble_hue, bubble_saturation, is_admin, ip_address, last_activity) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE username = VALUES(username), avatar = VALUES(avatar), guest_avatar = VALUES(guest_avatar), color = VALUES(color), avatar_hue = VALUES(avatar_hue), avatar_saturation = VALUES(avatar_saturation), bubble_hue = VALUES(bubble_hue), bubble_saturation = VALUES(bubble_saturation), is_admin = VALUES(is_admin), ip_address = VALUES(ip_address), last_activity = NOW()");    
     if ($stmt_global) {
         $ip_address = $_SERVER['REMOTE_ADDR'];
 $final_avatar_hue = $user['avatar_hue'] ?? 0;
 $final_avatar_saturation = $user['avatar_saturation'] ?? 0;
 // Use the form values for global_users too
 error_log("Updating global_users with hue: $avatar_hue, sat: $avatar_saturation");
-$stmt_global->bind_param("sssssiiis", $user['user_id'], $user['username'], $final_avatar, $final_avatar, $user['color'], $avatar_hue, $avatar_saturation, $user['is_admin'], $ip_address);                       
+$stmt_global->bind_param("sssssiiiiis", $user['user_id'], $user['username'], $final_avatar, $final_avatar, $user['color'], $avatar_hue, $avatar_saturation, $bubble_hue, $bubble_saturation, $user['is_admin'], $ip_address);
  if ($stmt_global->execute()) {
                         error_log("Registered user stored/updated in global_users with color: " . $user['color']);
                     } else {
@@ -208,6 +183,8 @@ $stmt_global->bind_param("sssssiiis", $user['user_id'], $user['username'], $fina
                 'color' => $user['color'], // Use the updated color from $user array
 'avatar_hue' => $avatar_hue,
 'avatar_saturation' => $avatar_saturation,
+'bubble_hue' => $bubble_hue,
+'bubble_saturation' => $bubble_saturation,
                 'ip' => $_SERVER['REMOTE_ADDR']
             ];
             
@@ -224,6 +201,6 @@ $stmt_global->bind_param("sssssiiis", $user['user_id'], $user['username'], $fina
     $stmt->close();
     exit;
 }
-error_log("🎯 FINAL SESSION VALUES - hue: " . $_SESSION['user']['avatar_hue'] . ", sat: " . $_SESSION['user']['avatar_saturation']);
+error_log("🎯 FINAL SESSION VALUES - hue: " . ($_SESSION['user']['avatar_hue'] ?? 'NULL') . ", sat: " . ($_SESSION['user']['avatar_saturation'] ?? 'NULL'));
 error_log("=== END LOGIN AVATAR CUSTOMIZATION DEBUG ===");
 ?>

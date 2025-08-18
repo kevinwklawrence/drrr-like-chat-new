@@ -226,7 +226,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $image_base_dir = __DIR__ . '/images';
                                 $web_base_dir = 'images/';
                                 $allowed_ext = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
-                                $excluded_folders = ['staff', 'bg', 'icon'];
+                                $excluded_folders = ['staff', 'bg', 'icon', 'covers'];
                                 $priority_folders = ['time-limited'];
                                 $nonpriority_folders = ['default', 'drrrjp'];
                                 $drrrx2 = ['drrrx2'];
@@ -441,6 +441,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="range" class="color-slider" id="saturationSlider" name="saturation" 
                            min="0" max="300" value="100" oninput="updateAvatarFilter()">
                 </div>
+
+<hr>
+                <label class="form-label">
+                    <i class="fas fa-adjust"></i> Customize Bubble Color
+                </label>
+                <!-- Add after the avatar saturation slider -->
+<div class="color-slider-container">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <label for="bubbleHueSlider" class="form-label mb-0">Bubble Hue</label>
+        <span class="slider-value" id="bubbleHueValue">0°</span>
+    </div>
+    <input type="range" class="color-slider" id="bubbleHueSlider" name="bubble_hue" 
+           min="0" max="360" value="0" oninput="updateBubbleFilter()">
+</div>
+
+<div class="color-slider-container">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <label for="bubbleSaturationSlider" class="form-label mb-0">Bubble Saturation</label>
+        <span class="slider-value" id="bubbleSaturationValue">100%</span>
+    </div>
+    <input type="range" class="color-slider" id="bubbleSaturationSlider" name="bubble_saturation" 
+           min="0" max="300" value="100" oninput="updateBubbleFilter()">
+</div>
                 
                 <div class="form-text text-muted">
                     <i class="fas fa-info-circle"></i> Adjust hue and saturation to customize your avatar's colors
@@ -606,11 +629,18 @@ $('#customizeCollapse').on('hide.bs.collapse', function () {
     // Initialize sliders
     $('#hueSlider').val(0);
     $('#saturationSlider').val(100);
+    $('#bubbleHueSlider').val(0);
+    $('#bubbleSaturationSlider').val(100);
     updateAvatarFilter();
+    updateBubbleFilter();
     
     // Add real-time slider tracking
     $('#hueSlider, #saturationSlider').on('input change', function() {
         updateAvatarFilter();
+    });
+    
+    $('#bubbleHueSlider, #bubbleSaturationSlider').on('input change', function() {
+        updateBubbleFilter();
     });
     
     updateAvatarStats();
@@ -713,8 +743,6 @@ function handleUserLogin() {
         return false;
     }
 
-
-    
     userLoginInProgress = true;
     
     const username = $('#username').val().trim();
@@ -723,10 +751,10 @@ function handleUserLogin() {
     const selectedColor = $('#selectedColor').val();
     const hueShift = $('#hueSlider').val() || 0;
     const saturation = $('#saturationSlider').val() || 100;
-
+    const bubbleHue = $('#bubbleHueSlider').val() || 0;
+    const bubbleSaturation = $('#bubbleSaturationSlider').val() || 100;
     
-    
-    console.log('Login form values - hue:', hueShift, 'sat:', saturation);
+    console.log('Login form values - hue:', hueShift, 'sat:', saturation, 'bubble_hue:', bubbleHue, 'bubble_sat:', bubbleSaturation);
     
     if (!username || !password) {
         userLoginInProgress = false;
@@ -748,6 +776,8 @@ function handleUserLogin() {
         color: selectedColor,
         avatar_hue: hueShift,
         avatar_saturation: saturation,
+        bubble_hue: bubbleHue,
+        bubble_saturation: bubbleSaturation,
         type: 'user',
         submission_id: submissionId
     };
@@ -881,6 +911,9 @@ function selectColor(colorName, element, isAutomatic = false) {
     
     // Update color name
     document.getElementById('selectedColorName').textContent = colorName.charAt(0).toUpperCase() + colorName.slice(1);
+    
+    // Update bubble filter preview
+    updateColorPreview();
 }
 
 function resetColorToDefault() {
@@ -907,6 +940,27 @@ function updateAvatarFilter() {
         const filter = `hue-rotate(${hue}deg) saturate(${saturation/100})`;
         previewImg.css('filter', filter);
     }
+}
+
+function updateBubbleFilter() {
+    const hue = $('#bubbleHueSlider').val() || 0;
+    const saturation = $('#bubbleSaturationSlider').val() || 100;
+    
+    $('#bubbleHueValue').text(hue + '°');
+    $('#bubbleSaturationValue').text(saturation + '%');
+    
+    // Update preview if needed
+    updateColorPreview();
+}
+
+function updateColorPreview() {
+    const selectedColor = $('#selectedColor').val() || 'black';
+    const hue = $('#bubbleHueSlider').val() || 0;
+    const saturation = $('#bubbleSaturationSlider').val() || 100;
+    
+    const preview = $('#selectedColorPreview');
+    const filter = `hue-rotate(${hue}deg) saturate(${saturation}%)`;
+    preview.css('filter', filter);
 }
 
 // Add this to track manual color clicks:

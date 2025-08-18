@@ -299,6 +299,16 @@ if (!in_array('avatar_saturation', $available_columns)) {
     $available_columns[] = 'avatar_saturation';
 }
 
+if (!in_array('bubble_hue', $available_columns)) {
+    $conn->query("ALTER TABLE chatroom_users ADD COLUMN bubble_hue INT DEFAULT 0 NOT NULL");
+    $available_columns[] = 'bubble_hue';
+}
+
+if (!in_array('bubble_saturation', $available_columns)) {
+    $conn->query("ALTER TABLE chatroom_users ADD COLUMN bubble_saturation INT DEFAULT 100 NOT NULL");
+    $available_columns[] = 'bubble_saturation';
+}
+
 // Add avatar customization to the INSERT
 if (in_array('avatar_hue', $available_columns)) {
     $insert_fields[] = 'avatar_hue';
@@ -312,6 +322,20 @@ if (in_array('avatar_saturation', $available_columns)) {
     $insert_values[] = '?';
     $param_types .= 'i';
     $param_values[] = (int)($user_session['avatar_saturation'] ?? 100);
+}
+
+if (in_array('bubble_hue', $available_columns)) {
+    $insert_fields[] = 'bubble_hue';
+    $insert_values[] = '?';
+    $param_types .= 'i';
+    $param_values[] = (int)($user_session['bubble_hue'] ?? 0);
+}
+
+if (in_array('bubble_saturation', $available_columns)) {
+    $insert_fields[] = 'bubble_saturation';
+    $insert_values[] = '?';
+    $param_types .= 'i';
+    $param_values[] = (int)($user_session['bubble_saturation'] ?? 100);
 }
     
     $insert_sql = "INSERT INTO chatroom_users (" . implode(', ', $insert_fields) . ") VALUES (" . implode(', ', $insert_values) . ")";
@@ -365,11 +389,13 @@ if ($user_session['type'] === 'user' && isset($user_session['id'])) {
     // For registered users, get data from users table
     try {
         $user_sync_stmt = $conn->prepare("UPDATE chatroom_users cu 
-                                         JOIN users u ON cu.user_id = u.id 
-                                         SET cu.avatar_hue = u.avatar_hue, 
-                                             cu.avatar_saturation = u.avatar_saturation,
-                                             cu.avatar = u.avatar
-                                         WHERE cu.room_id = ? AND cu.user_id_string = ?");
+                                 JOIN users u ON cu.user_id = u.id 
+                                 SET cu.avatar_hue = u.avatar_hue, 
+                                     cu.avatar_saturation = u.avatar_saturation,
+                                     cu.bubble_hue = u.bubble_hue,
+                                     cu.bubble_saturation = u.bubble_saturation,
+                                     cu.avatar = u.avatar
+                                 WHERE cu.room_id = ? AND cu.user_id_string = ?");
         if ($user_sync_stmt) {
             $user_sync_stmt->bind_param("is", $room_id, $user_id_string);
             $user_sync_stmt->execute();
@@ -386,9 +412,9 @@ if ($user_session['type'] === 'user' && isset($user_session['id'])) {
     // For guests, sync from global_users as fallback
     try {
         $sync_stmt = $conn->prepare("UPDATE chatroom_users cu 
-                                     JOIN global_users gu ON cu.user_id_string = gu.user_id_string 
-                                     SET cu.avatar_hue = gu.avatar_hue, cu.avatar_saturation = gu.avatar_saturation 
-                                     WHERE cu.room_id = ? AND cu.user_id_string = ?");
+                             JOIN global_users gu ON cu.user_id_string = gu.user_id_string 
+                             SET cu.avatar_hue = gu.avatar_hue, cu.avatar_saturation = gu.avatar_saturation, cu.bubble_hue = gu.bubble_hue, cu.bubble_saturation = gu.bubble_saturation 
+                             WHERE cu.room_id = ? AND cu.user_id_string = ?");
         if ($sync_stmt) {
             $sync_stmt->bind_param("is", $room_id, $user_id_string);
             $sync_stmt->execute();

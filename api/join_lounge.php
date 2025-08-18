@@ -52,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $guest_name = $_POST['guest_name'] ?? '';
 $avatar = $_POST['avatar'] ?? '';
 $color = $_POST['color'] ?? ''; // ADDED: Handle color selection
+
 // Check if this is a complete guest registration with customization data
 $has_customization_data = isset($_POST['avatar_hue']) && isset($_POST['avatar_saturation']);
 
@@ -59,9 +60,13 @@ if (!$has_customization_data) {
     error_log("⚠️ WARNING: Guest registration without avatar customization data - using defaults");
     $avatar_hue = 0;
     $avatar_saturation = 100;
+    $bubble_hue = 0; // Default bubble hue
+    $bubble_saturation = 100; // Default bubble saturation
 } else {
     $avatar_hue = (int)$_POST['avatar_hue'];
     $avatar_saturation = (int)$_POST['avatar_saturation'];
+    $bubble_hue = (int)($_POST['bubble_hue'] ?? 0);
+    $bubble_saturation = (int)($_POST['bubble_saturation'] ?? 100);
     error_log("✅ Guest registration with customization - hue: $avatar_hue, sat: $avatar_saturation");
 }
 
@@ -107,6 +112,8 @@ $_SESSION['user'] = [
     'color' => $color, // ADDED: Store color in session
     'avatar_hue' => $avatar_hue,
     'avatar_saturation' => $avatar_saturation,
+    'bubble_hue' => $bubble_hue,
+    'bubble_saturation' => $bubble_saturation,
     'ip_address' => $ip_address
 ];
 
@@ -128,10 +135,10 @@ try {
         $conn->query("ALTER TABLE global_users ADD COLUMN avatar_saturation INT DEFAULT 100 NOT NULL");
     }
     
-    $stmt = $conn->prepare("INSERT INTO global_users (user_id_string, username, guest_name, avatar, color, guest_avatar, avatar_hue, avatar_saturation, is_admin, ip_address) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, 0, ?) ON DUPLICATE KEY UPDATE guest_name = VALUES(guest_name), avatar = VALUES(avatar), guest_avatar = VALUES(guest_avatar), color = VALUES(color), avatar_hue = VALUES(avatar_hue), avatar_saturation = VALUES(avatar_saturation), ip_address = VALUES(ip_address), last_activity = CURRENT_TIMESTAMP");
-    
+$stmt = $conn->prepare("INSERT INTO global_users (user_id_string, username, guest_name, avatar, color, guest_avatar, avatar_hue, avatar_saturation, bubble_hue, bubble_saturation, is_admin, ip_address) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?) ON DUPLICATE KEY UPDATE guest_name = VALUES(guest_name), avatar = VALUES(avatar), guest_avatar = VALUES(guest_avatar), color = VALUES(color), avatar_hue = VALUES(avatar_hue), avatar_saturation = VALUES(avatar_saturation), bubble_hue = VALUES(bubble_hue), bubble_saturation = VALUES(bubble_saturation), ip_address = VALUES(ip_address), last_activity = CURRENT_TIMESTAMP");
+
     if ($stmt) {
-        $stmt->bind_param("sssssiis", $guest_user_id, $guest_name, $avatar, $color, $avatar, $avatar_hue, $avatar_saturation, $ip_address);
+$stmt->bind_param("sssssiiiis", $guest_user_id, $guest_name, $avatar, $color, $avatar, $avatar_hue, $avatar_saturation, $bubble_hue, $bubble_saturation, $ip_address);
         $stmt->execute();
         $stmt->close();
         error_log("Guest stored in global_users with avatar customization: hue=$avatar_hue, sat=$avatar_saturation");

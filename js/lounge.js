@@ -530,11 +530,18 @@ function displayOnlineUsers(users) {
             const hue = user.avatar_hue || 0;
             const saturation = user.avatar_saturation || 100;
             
-            // Check if this is a registered user
-            const isRegisteredUser = user.username && user.username.trim() !== ''; // Registered users have usernames
-            const avatarClickHandler = isRegisteredUser && currentUser.type === 'user' ? 
-                `onclick="handleAvatarClick(event, '${user.user_id_string}', '${user.username.replace(/'/g, "\\'")}')" style="cursor: pointer;"` : 
-                '';
+// In displayOnlineUsers function, update the avatar click handler:
+const isRegisteredUser = user.username && user.username.trim() !== '';
+const isCurrentUser = user.user_id_string === currentUser.user_id;
+
+let avatarClickHandler = '';
+if (isRegisteredUser) {
+    // Registered users - anyone can click to view profile
+    avatarClickHandler = `onclick="handleAvatarClick(event, '${user.user_id_string}', '${user.username.replace(/'/g, "\\'")}')" style="cursor: pointer;"`;
+} else if (isCurrentUser) {
+    // Current guest user - can click to edit their own profile  
+    avatarClickHandler = `onclick="showProfileEditor()" style="cursor: pointer;"`;
+}
             
             let activityIndicator = '';
             if (lastActivity) {
@@ -574,18 +581,23 @@ function displayOnlineUsers(users) {
     $('#onlineUsersList').html(html);
 }
 
-// Add this function to handle avatar clicks in lounge
 function handleAvatarClick(event, userIdString, username) {
     event.preventDefault();
     event.stopPropagation();
     
     console.log('Lounge avatar clicked - userIdString:', userIdString, 'username:', username);
     
-    if (currentUser.type === 'user' && username && username.trim() !== '') {
+    if (username && username.trim() !== '') {
         // For lounge, we need to get the actual user ID from username
         getUserIdFromUsername(username, function(userId) {
             if (userId) {
-                showUserProfile(userId, event.target);
+                if (userId == currentUser.id) {
+                    // Allow both registered users and guests to edit their own profile
+                    showUserProfile(userId, event.target);
+                } else {
+                    // Anyone can view other registered users' profiles
+                    showUserProfile(userId, event.target);
+                }
             }
         });
     }
@@ -907,657 +919,6 @@ window.respondToKnock = function(knockId, response) {
     });
 };
 
-// ===== ENHANCED PROFILE EDITOR FUNCTIONS =====
-
-// Enhanced avatar selector with profile editor styling
-window.showAvatarSelector = function() {
-    debugLog('Opening avatar selector / profile editor');
-    
-    // Get user type to determine avatar access
-    const userType = currentUser.type || 'guest';
-    const isRegistered = userType === 'user';
-
-    window.showAvatarSelector = function() {
-    if (currentUser.type === 'user') {
-        showProfileEditor();
-    } else {
-        // Keep existing avatar selector for guests
-        createProfileEditorModal(false);
-    }
-};
-};
-
-
-function createProfileEditorModal(isRegistered) {
-    const modalHtml = `
-        <div class="modal fade" id="profileEditorModal" tabindex="-1">
-            <div class="modal-dialog modal-xl">
-                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
-                    <div class="modal-header" style="background: linear-gradient(45deg, #333, #444); border-bottom: 1px solid #555;">
-                        <h5 class="modal-title">
-                            <i class="fas fa-user-edit"></i> Profile Editor
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
-                    </div>
-                    <div class="modal-body p-0">
-                        <!-- Navigation Tabs -->
-                        <ul class="nav nav-tabs" id="profileTabs" role="tablist" style="background: #333; border-bottom: 1px solid #555; margin: 0;">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="avatar-tab" data-bs-toggle="tab" data-bs-target="#avatar-panel" type="button" role="tab" style="background: transparent; border: none; color: #e0e0e0;">
-                                    <i class="fas fa-user-circle"></i> Avatar
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="color-tab" data-bs-toggle="tab" data-bs-target="#color-panel" type="button" role="tab" style="background: transparent; border: none; color: #e0e0e0;">
-                                    <i class="fas fa-palette"></i> Chat Color
-                                </button>
-                            </li>
-                        </ul>
-                        
-                        <div class="tab-content" id="profileTabsContent">
-                            <!-- Avatar Selection Panel -->
-                            <div class="tab-pane fade show active" id="avatar-panel" role="tabpanel">
-                                <div class="row g-0">
-                                    <!-- Avatar Preview Sidebar -->
-                                    <div class="col-md-4" style="background: #333; border-right: 1px solid #555; min-height: 500px;">
-                                        <div class="p-4 text-center">
-                                            <h6 class="mb-3" style="color: #e0e0e0;">
-                                                <i class="fas fa-eye"></i> Preview
-                                            </h6>
-                                            <div id="avatarPreviewContainer" class="mb-3">
-                                                <img id="selectedAvatarPreview" 
-                                                     src="images/${currentUser.avatar || 'default/u0.png'}" 
-                                                     width="100" height="100" 
-                                                     style="border: 3px solid #007bff; border-radius: 8px;"
-                                                     alt="Selected avatar">
-                                            </div>
-                                            <p class="small text-muted mb-3">Current Selection</p>
-                                            
-                                            <!-- Avatar Controls -->
-                                            <div class="mb-3">
-                                                <div class="row mb-2">
-                                                    <div class="col-6">
-                                                        <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="clearAvatarSelection()">
-                                                            <i class="fas fa-times"></i> Clear
-                                                        </button>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="randomAvatarSelection()">
-                                                            <i class="fas fa-random"></i> Random
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                ${isRegistered ? `
-                                                <div class="mb-2">
-                                                    <select id="avatarFolderFilter" class="form-select form-select-sm" style="background: #444; border: 1px solid #666; color: #fff;">
-                                                        <option value="all">All Categories</option>
-                                                        <option value="default">Default</option>
-                                                        <option value="time-limited">Time Limited</option>
-                                                        <option value="color">Color Collections</option>
-                                                    </select>
-                                                </div>
-                                                ` : ''}
-                                            </div>
-                                            
-                                            <!-- Avatar Stats -->
-                                            <div class="avatar-stats p-3" style="background: #444; border-radius: 8px;">
-                                                <div class="row text-center">
-                                                    <div class="col-12 mb-2">
-                                                        <small class="text-muted">Available Avatars</small>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <div style="color: #28a745; font-weight: bold;" id="visibleAvatarCount">0</div>
-                                                        <small class="text-muted">Visible</small>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <div style="color: #ffc107; font-weight: bold;" id="totalAvatarCount">0</div>
-                                                        <small class="text-muted">Total</small>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Avatar Grid -->
-                                    <div class="col-md-8">
-                                        <div class="p-4">
-                                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                                <h6 class="mb-0" style="color: #e0e0e0;">
-                                                    <i class="fas fa-images"></i> Choose Your Avatar
-                                                </h6>
-                                                <small class="text-muted">
-                                                    ${isRegistered ? 'Full Collection' : 'Guest Collection'}
-                                                </small>
-                                            </div>
-                                            
-                                            <div id="avatarGridContainer" style="max-height: 400px; overflow-y: auto; border: 1px solid #555; border-radius: 8px; padding: 15px; background: #1a1a1a;">
-                                                <div class="text-center py-4">
-                                                    <div class="spinner-border text-primary" role="status">
-                                                        <span class="visually-hidden">Loading...</span>
-                                                    </div>
-                                                    <p class="mt-2 mb-0 text-muted">Loading avatars...</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Color Selection Panel -->
-                            <div class="tab-pane fade" id="color-panel" role="tabpanel">
-                                <div class="row g-0">
-                                    <!-- Color Preview Sidebar -->
-                                    <div class="col-md-4" style="background: #333; border-right: 1px solid #555; min-height: 500px;">
-                                        <div class="p-4 text-center">
-                                            <h6 class="mb-3" style="color: #e0e0e0;">
-                                                <i class="fas fa-paint-brush"></i> Preview
-                                            </h6>
-                                            <div class="mb-3">
-                                                <div id="colorPreviewCircle" class="mx-auto mb-3" style="width: 80px; height: 80px; border-radius: 8px; border: 3px solid rgba(255,255,255,0.3); background: linear-gradient(135deg, #2c3e50 0%, #34495e 25%, #2c3e50 50%, #1a252f 75%, #2c3e50 100%);"></div>
-                                                <h6 id="colorPreviewName" style="color: #e0e0e0;">Black</h6>
-                                                <p class="small text-muted">Your chat bubble color</p>
-                                            </div>
-                                            
-                                            <!-- Sample Message Preview -->
-                                            <div class="mb-3">
-                                                <div class="sample-message-preview p-3" style="background: #222; border-radius: 12px; border: 1px solid #555;">
-                                                    <small class="text-muted d-block mb-2">Message Preview:</small>
-                                                    <div class="mini-message-bubble user-color-black" id="sampleMessageBubble" style="
-                                                        background: var(--user-gradient);
-                                                        border-radius: 12px;
-                                                        padding: 8px 12px;
-                                                        border: 2px solid rgba(255,255,255,0.25);
-                                                        position: relative;
-                                                        margin-left: 20px;
-                                                    ">
-                                                        <div style="color: var(--user-text-color); font-size: 0.8rem;">
-                                                            Hello! This is how your messages will look.
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Color Grid -->
-                                    <div class="col-md-8">
-                                        <div class="p-4">
-                                            <h6 class="mb-3" style="color: #e0e0e0;">
-                                                <i class="fas fa-palette"></i> Choose Your Chat Color
-                                            </h6>
-                                            
-                                            <div id="colorGrid" class="color-grid" style="
-                                                display: grid;
-                                                grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-                                                gap: 15px;
-                                                padding: 20px;
-                                                background: #1a1a1a;
-                                                border-radius: 12px;
-                                                border: 1px solid #555;
-                                                max-height: 400px;
-                                                overflow-y: auto;
-                                            ">
-                                                <!-- Color options will be populated here -->
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer" style="border-top: 1px solid #555; background: #333;">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <i class="fas fa-times"></i> Cancel
-                        </button>
-                        <button type="button" class="btn btn-primary" onclick="saveProfileChanges()">
-                            <i class="fas fa-save"></i> Save Changes
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Remove existing modal and add new one
-    $('#profileEditorModal').remove();
-    $('body').append(modalHtml);
-    
-    // Initialize the modal
-    const modal = new bootstrap.Modal(document.getElementById('profileEditorModal'));
-    modal.show();
-    
-    // Set up event handlers
-    setupProfileEditorHandlers(isRegistered);
-    
-    // Load initial data
-    loadAvatarsForEditor(isRegistered);
-    loadColorsForEditor();
-}
-
-function setupProfileEditorHandlers(isRegistered) {
-    // Avatar folder filter (only for registered users)
-    if (isRegistered) {
-        $('#avatarFolderFilter').on('change', function() {
-            filterAvatarsByCategory($(this).val());
-        });
-    }
-    
-    // Tab switching handlers
-    $('#avatar-tab').on('shown.bs.tab', function() {
-        updateAvatarStats();
-    });
-    
-    $('#color-tab').on('shown.bs.tab', function() {
-        // Refresh color preview when switching to color tab
-        updateColorPreview();
-    });
-}
-
-function loadAvatarsForEditor(isRegistered) {
-    debugLog('Loading avatars for editor, isRegistered:', isRegistered);
-    
-    $.ajax({
-        url: 'api/get_organized_avatars.php',
-        method: 'GET',
-        data: { user_type: isRegistered ? 'registered' : 'guest' },
-        dataType: 'json',
-        success: function(response) {
-            debugLog('Avatars loaded for editor:', response);
-            displayAvatarsInEditor(response, isRegistered);
-        },
-        error: function(xhr, status, error) {
-            console.error('Error loading avatars for editor:', error);
-            $('#avatarGridContainer').html(`
-                <div class="text-center py-4">
-                    <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
-                    <p class="text-muted">Error loading avatars</p>
-                </div>
-            `);
-        }
-    });
-}
-
-function displayAvatarsInEditor(avatarData, isRegistered) {
-    let html = '';
-    let totalAvatars = 0;
-    
-    // Guest users: show default and time-limited
-    if (!isRegistered) {
-        ['default', 'time-limited'].forEach(folder => {
-            if (avatarData[folder] && avatarData[folder].length > 0) {
-                html += createAvatarSection(folder, avatarData[folder]);
-                totalAvatars += avatarData[folder].length;
-            }
-        });
-    } else {
-        // Registered users: show all folders
-        // Priority folders first
-        ['time-limited', 'default'].forEach(folder => {
-            if (avatarData[folder] && avatarData[folder].length > 0) {
-                html += createAvatarSection(folder, avatarData[folder], true);
-                totalAvatars += avatarData[folder].length;
-            }
-        });
-        
-        // Then color folders
-        Object.keys(avatarData).forEach(folder => {
-            if (!['time-limited', 'default'].includes(folder) && avatarData[folder].length > 0) {
-                html += createAvatarSection(folder, avatarData[folder]);
-                totalAvatars += avatarData[folder].length;
-            }
-        });
-    }
-    
-    if (html === '') {
-        html = `
-            <div class="text-center py-4">
-                <i class="fas fa-images fa-2x text-muted mb-2"></i>
-                <p class="text-muted">No avatars available</p>
-            </div>
-        `;
-    }
-    
-    $('#avatarGridContainer').html(html);
-    updateAvatarStats();
-    
-    // Set current avatar as selected
-    const currentAvatarPath = currentUser.avatar || 'default/u0.png';
-    $(`.editor-avatar[data-avatar="${currentAvatarPath}"]`).addClass('selected');
-}
-
-function createAvatarSection(folderName, avatars, isPriority = false) {
-    const displayName = folderName.charAt(0).toUpperCase() + folderName.slice(1).replace('-', ' ');
-    const iconClass = isPriority ? 'fas fa-star' : 'fas fa-folder';
-    
-    let html = `
-        <div class="avatar-section mb-4" data-folder="${folderName}">
-            <h6 style="color: #667eea; font-weight: 600; margin-bottom: 15px; padding: 8px 12px; background: #333; border-radius: 6px;">
-                <i class="${iconClass}"></i> ${displayName} 
-                <span class="badge bg-secondary ms-2">${avatars.length}</span>
-            </h6>
-            <div class="d-flex flex-wrap">
-    `;
-    
-    avatars.forEach(avatar => {
-        html += `
-            <img src="images/${avatar}" 
-                 class="editor-avatar" 
-                 data-avatar="${avatar}"
-                 onclick="selectAvatarInEditor('${avatar}')"
-                 style="width: 60px; height: 60px; margin: 3px; border: 2px solid #555; border-radius: 6px; cursor: pointer; transition: all 0.2s ease;"
-                 onmouseover="this.style.borderColor='#007bff'; this.style.transform='scale(1.05)'"
-                 onmouseout="this.style.borderColor='#555'; this.style.transform='scale(1)'"
-                 alt="Avatar option">
-        `;
-    });
-    
-    html += `
-            </div>
-        </div>
-    `;
-    
-    return html;
-}
-
-function loadColorsForEditor() {
-    const colors = [
-        { name: 'black', displayName: 'Black' },
-        { name: 'blue', displayName: 'Blue' },
-        { name: 'purple', displayName: 'Purple' },
-        { name: 'pink', displayName: 'Pink' },
-        { name: 'cyan', displayName: 'Cyan' },
-        { name: 'mint', displayName: 'Mint' },
-        { name: 'orange', displayName: 'Orange' },
-        { name: 'lavender', displayName: 'Lavender' },
-        { name: 'peach', displayName: 'Peach' },
-        { name: 'green', displayName: 'Green' },
-        { name: 'yellow', displayName: 'Yellow' },
-        { name: 'red', displayName: 'Red' },
-        { name: 'teal', displayName: 'Teal' },
-        { name: 'indigo', displayName: 'Indigo' },
-        { name: 'emerald', displayName: 'Emerald' },
-        { name: 'rose', displayName: 'Rose' }
-    ];
-    
-    let html = '';
-    colors.forEach(color => {
-        const isSelected = currentUser.color === color.name ? 'selected' : '';
-        html += `
-            <div class="color-option color-${color.name} ${isSelected}" 
-                 data-color="${color.name}" 
-                 onclick="selectColorInEditor('${color.name}')"
-                 style="position: relative; width: 70px; height: 70px; border-radius: 8px; border: 3px solid ${isSelected ? '#fff' : 'rgba(255,255,255,0.4)'}; cursor: pointer; display: flex; align-items: center; justify-content: center; background-size: 200% 200%; background-position: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.2s ease;">
-                <div class="color-name" style="background: rgba(0,0,0,0.5); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">
-                    ${color.displayName}
-                </div>
-                ${isSelected ? `
-                <div class="selected-indicator" style="position: absolute; top: -8px; right: -8px; background: #28a745; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; border: 2px solid #2a2a2a;">
-                    <i class="fas fa-check"></i>
-                </div>
-                ` : ''}
-            </div>
-        `;
-    });
-    
-    $('#colorGrid').html(html);
-    updateColorPreview();
-}
-
-// Global variables to track selections
-let selectedAvatar = null;
-let selectedColor = null;
-
-function selectAvatarInEditor(avatarPath) {
-    // Remove previous selection
-    $('.editor-avatar').removeClass('selected').css({
-        'border-color': '#555',
-        'box-shadow': 'none'
-    });
-    
-    // Select new avatar
-    $(`.editor-avatar[data-avatar="${avatarPath}"]`).addClass('selected').css({
-        'border-color': '#007bff',
-        'box-shadow': '0 0 15px rgba(0, 123, 255, 0.5)'
-    });
-    
-    // Update preview
-    $('#selectedAvatarPreview').attr('src', 'images/' + avatarPath);
-    selectedAvatar = avatarPath;
-    
-    debugLog('Avatar selected in editor:', avatarPath);
-}
-
-function selectColorInEditor(colorName) {
-    // Remove previous selection
-    $('.color-option').removeClass('selected').css('border-color', 'rgba(255,255,255,0.4)');
-    $('.color-option .selected-indicator').remove();
-    
-    // Select new color
-    const colorElement = $(`.color-option[data-color="${colorName}"]`);
-    colorElement.addClass('selected').css('border-color', '#fff');
-    colorElement.append(`
-        <div class="selected-indicator" style="position: absolute; top: -8px; right: -8px; background: #28a745; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; border: 2px solid #2a2a2a;">
-            <i class="fas fa-check"></i>
-        </div>
-    `);
-    
-    selectedColor = colorName;
-    updateColorPreview();
-    
-    debugLog('Color selected in editor:', colorName);
-}
-
-function updateColorPreview() {
-    const color = selectedColor || currentUser.color || 'black';
-    
-    // Update preview circle
-    $('#colorPreviewCircle').removeClass().addClass(`color-${color}`).attr('class', `color-${color}`);
-    
-    // Update preview name
-    $('#colorPreviewName').text(color.charAt(0).toUpperCase() + color.slice(1));
-    
-    // Update sample message bubble
-    $('#sampleMessageBubble').removeClass().addClass(`mini-message-bubble user-color-${color}`);
-}
-
-function updateAvatarStats() {
-    const totalAvatars = $('.editor-avatar').length;
-    const visibleAvatars = $('.editor-avatar:visible').length;
-    
-    $('#totalAvatarCount').text(totalAvatars);
-    $('#visibleAvatarCount').text(visibleAvatars);
-}
-
-function filterAvatarsByCategory(category) {
-    $('.avatar-section').show();
-    
-    if (category !== 'all') {
-        $('.avatar-section').hide();
-        
-        if (category === 'color') {
-            // Show all color folders (everything except default and time-limited)
-            $('.avatar-section').each(function() {
-                const folder = $(this).data('folder');
-                if (!['default', 'time-limited'].includes(folder)) {
-                    $(this).show();
-                }
-            });
-        } else {
-            // Show specific folder
-            $(`.avatar-section[data-folder="${category}"]`).show();
-        }
-    }
-    
-    updateAvatarStats();
-}
-
-function clearAvatarSelection() {
-    $('.editor-avatar').removeClass('selected').css({
-        'border-color': '#555',
-        'box-shadow': 'none'
-    });
-    
-    selectedAvatar = null;
-    $('#selectedAvatarPreview').attr('src', 'images/' + (currentUser.avatar || 'default/u0.png'));
-}
-
-function randomAvatarSelection() {
-    const visibleAvatars = $('.editor-avatar:visible');
-    if (visibleAvatars.length > 0) {
-        const randomIndex = Math.floor(Math.random() * visibleAvatars.length);
-        const randomAvatar = $(visibleAvatars[randomIndex]);
-        const avatarPath = randomAvatar.data('avatar');
-        selectAvatarInEditor(avatarPath);
-    }
-}
-
-function saveProfileChanges() {
-    let selectedAvatarHue = null;
-let selectedAvatarSaturation = null;
-    const changes = {};
-    let hasChanges = false;
-    
-    if (selectedAvatarHue !== null && selectedAvatarHue !== currentUser.avatar_hue) {
-    changes.avatar_hue = selectedAvatarHue;
-    hasChanges = true;
-}
-
-if (selectedAvatarSaturation !== null && selectedAvatarSaturation !== currentUser.avatar_saturation) {
-    changes.avatar_saturation = selectedAvatarSaturation;
-    hasChanges = true;
-}
-
-    // Check for avatar changes
-    if (selectedAvatar && selectedAvatar !== currentUser.avatar) {
-        changes.avatar = selectedAvatar;
-        hasChanges = true;
-    }
-    
-    // Check for color changes
-    if (selectedColor && selectedColor !== currentUser.color) {
-        changes.color = selectedColor;
-        hasChanges = true;
-    }
-    
-    if (!hasChanges) {
-        $('#profileEditorModal').modal('hide');
-        return;
-    }
-    
-    debugLog('Saving profile changes:', changes);
-    
-    // Show loading state
-    const saveBtn = $('.modal-footer .btn-primary');
-    const originalText = saveBtn.html();
-    saveBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
-    
-    // Save avatar change
-    const savePromises = [];
-    
-    if (changes.avatar) {
-        savePromises.push(
-            $.ajax({
-                url: 'api/update_avatar.php',
-                method: 'POST',
-                data: { avatar: changes.avatar },
-                dataType: 'json'
-            })
-        );
-    }
-    
-    if (changes.color) {
-        savePromises.push(
-            $.ajax({
-                url: 'api/update_user_color.php',
-                method: 'POST',
-                data: { color: changes.color },
-                dataType: 'json'
-            })
-        );
-    }
-    
-    Promise.all(savePromises)
-        .then(responses => {
-            // Check if all responses are successful
-            const allSuccessful = responses.every(response => response.status === 'success');
-
-            if (changes.avatar_hue !== undefined || changes.avatar_saturation !== undefined) {
-    savePromises.push(
-        $.ajax({
-            url: 'api/update_avatar_customization.php',
-            method: 'POST',
-            data: { 
-                avatar_hue: changes.avatar_hue || currentUser.avatar_hue || 0,
-                avatar_saturation: changes.avatar_saturation || currentUser.avatar_saturation || 100
-            },
-            dataType: 'json'
-        })
-    );
-}
-            
-            if (allSuccessful) {
-                // Update current user object
-                if (changes.avatar) {
-                    currentUser.avatar = changes.avatar;
-                    $('#currentAvatar').attr('src', 'images/' + changes.avatar);
-                }
-                if (changes.color) {
-                    currentUser.color = changes.color;
-                }
-                
-                $('#profileEditorModal').modal('hide');
-                
-                // Show success message
-                showProfileSuccessMessage(changes);
-                
-                // IMPORTANT: Immediately refresh user lists to show changes
-                loadOnlineUsers();
-                loadRoomsWithUsers();
-            } else {
-                throw new Error('Some updates failed');
-            }
-        })
-        .catch(error => {
-            console.error('Error saving profile changes:', error);
-            alert('Error saving changes. Please try again.');
-        })
-        .finally(() => {
-            saveBtn.prop('disabled', false).html(originalText);
-        });
-}
-
-function showProfileSuccessMessage(changes) {
-    let message = 'Profile updated successfully!';
-    if (changes.avatar && changes.color) {
-        message = 'Avatar and chat color updated successfully!';
-    } else if (changes.avatar) {
-        message = 'Avatar updated successfully!';
-    } else if (changes.color) {
-        message = 'Chat color updated successfully!';
-    }
-    
-    // Create a nice success toast
-    const toast = `
-        <div class="toast align-items-center text-white bg-success border-0" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 1080;">
-            <div class="d-flex">
-                <div class="toast-body">
-                    <i class="fas fa-check-circle me-2"></i> ${message}
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-        </div>
-    `;
-    
-    $('body').append(toast);
-    const toastElement = $('.toast').last()[0];
-    const bootstrapToast = new bootstrap.Toast(toastElement);
-    bootstrapToast.show();
-    
-    // Remove toast element after it's hidden
-    $(toastElement).on('hidden.bs.toast', function() {
-        $(this).remove();
-    });
-}
 
 // Private Message System
 let openPrivateChats = new Map();
@@ -1756,6 +1117,8 @@ function displayPrivateMessages(otherUserId, messages) {
             const userColor = isOwn ? (currentUser.color || 'blue') : (msg.sender_color || 'blue');
             const avatarHue = isOwn ? (currentUser.avatar_hue || 0) : (msg.sender_avatar_hue || 0);
 const avatarSat = isOwn ? (currentUser.avatar_saturation || 100) : (msg.sender_avatar_saturation || 100);
+const bubbleHue = isOwn ? (currentUser.bubble_hue || 0) : (msg.bubble_hue || 0);
+const bubbleSat = isOwn ? (currentUser.bubble_saturation || 100) : (msg.bubble_saturation || 100);
 
             
             html += `
@@ -1764,7 +1127,7 @@ const avatarSat = isOwn ? (currentUser.avatar_saturation || 100) : (msg.sender_a
              class="private-message-avatar" 
              style="filter: hue-rotate(${avatarHue}deg) saturate(${avatarSat}%);"
              alt="${author}'s avatar">
-                    <div class="private-message-bubble ${isOwn ? 'sent' : 'received'} user-color-${userColor}">
+                    <div class="private-message-bubble ${isOwn ? 'sent' : 'received'} user-color-${userColor}" style="filter: hue-rotate(${bubbleHue}deg) saturate(${bubbleSat}%);">
                         <div class="private-message-header-info">
                             <div class="private-message-author">${author}</div>
                             <div class="private-message-time">${time}</div>
@@ -2028,3 +1391,7 @@ $(window).on('beforeunload', function() {
         clearInterval(cleanupInactiveUsers);
     }
 });
+
+window.showAvatarSelector = function() {
+    showProfileEditor();
+};

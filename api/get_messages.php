@@ -56,6 +56,13 @@ if (in_array('avatar_saturation', $msg_columns)) {
     $select_fields[] = 'm.avatar_saturation';
 }
 
+if (in_array('bubble_hue', $msg_columns)) {
+    $select_fields[] = 'm.bubble_hue';
+}
+if (in_array('bubble_saturation', $msg_columns)) {
+    $select_fields[] = 'm.bubble_saturation';
+}
+
 // Add user fields if they exist
 if (in_array('username', $users_columns)) {
     $select_fields[] = 'u.username';
@@ -112,6 +119,8 @@ while ($row = $result->fetch_assoc()) {
     $avatar_hue = (int)($row['avatar_hue'] ?? 0);
     $avatar_saturation = (int)($row['avatar_saturation'] ?? 100);
     $user_color = $row['color'] ?? 'blue';
+    $bubble_hue = (int)($row['bubble_hue'] ?? 0);
+    $bubble_saturation = (int)($row['bubble_saturation'] ?? 100);
     
     // Process the message data to ensure compatibility with frontend
     $processed_message = [
@@ -142,6 +151,10 @@ while ($row = $result->fetch_assoc()) {
         // STORED color information (preserved from when message was sent)
         'color' => $user_color,
         'user_color' => $user_color,  // For compatibility
+
+        // STORED bubble information (preserved from when message was sent)
+'bubble_hue' => $bubble_hue,
+'bubble_saturation' => $bubble_saturation,
         
         // Permissions and roles
         'is_admin' => (bool)($row['is_admin'] ?? false),
@@ -149,6 +162,8 @@ while ($row = $result->fetch_assoc()) {
         
         // Admin information
         'ip_address' => $row['ip_address'] ?? null
+
+        
     ];
     
     error_log("Processed message: " . print_r($processed_message, true)); // Debug

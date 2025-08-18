@@ -246,6 +246,38 @@ try {
         $user_param_types .= 's';
         $user_param_values[] = $color;
     }
+
+    if (in_array('avatar_hue', $user_columns)) {
+    $avatar_hue = (int)($_SESSION['user']['avatar_hue'] ?? 0);
+    $user_insert_fields[] = 'avatar_hue';
+    $user_insert_values[] = '?';
+    $user_param_types .= 'i';
+    $user_param_values[] = $avatar_hue;
+}
+
+if (in_array('avatar_saturation', $user_columns)) {
+    $avatar_saturation = (int)($_SESSION['user']['avatar_saturation'] ?? 100);
+    $user_insert_fields[] = 'avatar_saturation';
+    $user_insert_values[] = '?';
+    $user_param_types .= 'i';
+    $user_param_values[] = $avatar_saturation;
+}
+
+if (in_array('bubble_hue', $user_columns)) {
+    $bubble_hue = (int)($_SESSION['user']['bubble_hue'] ?? 0);
+    $user_insert_fields[] = 'bubble_hue';
+    $user_insert_values[] = '?';
+    $user_param_types .= 'i';
+    $user_param_values[] = $bubble_hue;
+}
+
+if (in_array('bubble_saturation', $user_columns)) {
+    $bubble_saturation = (int)($_SESSION['user']['bubble_saturation'] ?? 100);
+    $user_insert_fields[] = 'bubble_saturation';
+    $user_insert_values[] = '?';
+    $user_param_types .= 'i';
+    $user_param_values[] = $bubble_saturation;
+}
     
     $user_insert_sql = "INSERT INTO chatroom_users (" . implode(', ', $user_insert_fields) . ") VALUES (" . implode(', ', $user_insert_values) . ")";
     

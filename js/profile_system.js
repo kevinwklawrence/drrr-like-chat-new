@@ -1,6 +1,10 @@
 // Global Profile System
 let activeProfilePopup = null;
 
+// Profile editor variables
+let selectedAvatar = null;
+let selectedColor = null;
+
 function showUserProfile(userId, avatarElement) {
     if (userId == currentUser.id) {
         showProfileEditor();
@@ -149,10 +153,8 @@ function displayProfilePopup(user, avatarElement) {
     }, 100);
 }
 
-// Add function to accept friend requests from profile
 function acceptFriendFromProfile(userId) {
     if (confirm('Accept this friend request?')) {
-        // First get the friend request ID
         $.ajax({
             url: 'api/friends.php',
             method: 'GET',
@@ -180,7 +182,6 @@ function acceptFriendFromProfile(userId) {
                                     alert('Friend request accepted!');
                                     closeProfilePopup();
                                     
-                                    // Refresh UI
                                     if (typeof clearFriendshipCache === 'function') {
                                         clearFriendshipCache();
                                     }
@@ -206,7 +207,6 @@ function acceptFriendFromProfile(userId) {
     }
 }
 
-// Add this new function for adding friends from profile
 function addFriendFromProfile(username) {
     if (!username) {
         alert('Invalid username');
@@ -227,15 +227,14 @@ function addFriendFromProfile(username) {
                     alert('Friend request sent to ' + username + '!');
                     closeProfilePopup();
                     
-                    // Clear friendship cache and refresh UI if functions exist
                     if (typeof clearFriendshipCache === 'function') {
                         clearFriendshipCache();
                     }
                     if (typeof loadUsers === 'function') {
-                        loadUsers(); // Refresh user list in room
+                        loadUsers();
                     }
                     if (typeof loadOnlineUsers === 'function') {
-                        loadOnlineUsers(); // Refresh online users in lounge
+                        loadOnlineUsers();
                     }
                 } else {
                     alert('Error: ' + response.message);
@@ -260,75 +259,308 @@ function closeProfilePopup() {
 function showProfileEditor() {
     closeProfilePopup();
     
-    $.ajax({
-        url: 'api/get_user_profile.php',
-        method: 'GET',
-        data: { user_id: currentUser.id },
-        dataType: 'json',
-        success: function(response) {
-            if (response.status === 'success') {
-                displayProfileEditor(response.user);
+    const isRegistered = currentUser.type === 'user';
+    
+    if (isRegistered) {
+        $.ajax({
+            url: 'api/get_user_profile.php',
+            method: 'GET',
+            data: { user_id: currentUser.id },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    displayProfileEditor(response.user);
+                }
             }
-        }
-    });
+        });
+    } else {
+        displayProfileEditor(currentUser);
+    }
 }
 
 function displayProfileEditor(user) {
-    const links = user.hyperlinks || [];
-    let linksHtml = '';
-    links.forEach((link, index) => {
-        linksHtml += `
-            <div class="link-input-group">
-                <input type="text" class="form-control" placeholder="Link Title" value="${link.title}" data-link-index="${index}" data-link-field="title">
-                <input type="url" class="form-control" placeholder="https://" value="${link.url}" data-link-index="${index}" data-link-field="url">
-                <button type="button" class="btn btn-outline-danger" onclick="removeLinkInput(${index})"><i class="fas fa-trash"></i></button>
+    const isRegistered = currentUser.type === 'user';
+    
+    let profileInfoTab = '';
+    let profileInfoPanel = '';
+    
+    if (isRegistered) {
+        const links = user.hyperlinks || [];
+        let linksHtml = '';
+        links.forEach((link, index) => {
+            linksHtml += `
+                <div class="link-input-group">
+                    <input type="text" class="form-control" placeholder="Link Title" value="${link.title}" data-link-index="${index}" data-link-field="title">
+                    <input type="url" class="form-control" placeholder="https://" value="${link.url}" data-link-index="${index}" data-link-field="url">
+                    <button type="button" class="btn btn-outline-danger" onclick="removeLinkInput(${index})"><i class="fas fa-trash"></i></button>
+                </div>
+            `;
+        });
+        
+        profileInfoTab = `
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="profile-info-tab" data-bs-toggle="tab" data-bs-target="#profile-info-panel" type="button" role="tab" style="background: transparent; border: none; color: #e0e0e0;">
+                    <i class="fas fa-user"></i> Profile Info
+                </button>
+            </li>
+        `;
+        
+        profileInfoPanel = `
+            <div class="tab-pane fade show active" id="profile-info-panel" role="tabpanel">
+                <div class="p-4">
+                    <div class="mb-3">
+                        <label class="form-label">Cover Photo</label>
+                        <div class="cover-photo-preview" id="coverPhotoPreview">
+                            ${user.cover_photo ? 
+                                `<img src="images/covers/${user.cover_photo}" alt="Cover">` : 
+                                '<div class="no-cover">No cover photo</div>'
+                            }
+                            <div class="cover-photo-overlay">
+                                <input type="file" id="coverPhotoInput" accept="image/*" style="display: none;">
+                                <button type="button" class="btn btn-light" onclick="$('#coverPhotoInput').click()">
+                                    <i class="fas fa-camera"></i> Change Cover
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="profileStatus" class="form-label">Status</label>
+                        <input type="text" class="form-control" id="profileStatus" value="${user.status || ''}" maxlength="100" placeholder="What's on your mind?" style="background: #333; border: 1px solid #555; color: #fff;">
+                    </div>
+                    <div class="mb-3">
+                        <label for="profileBio" class="form-label">Bio</label>
+                        <textarea class="form-control" id="profileBio" rows="3" maxlength="500" placeholder="Tell us about yourself..." style="background: #333; border: 1px solid #555; color: #fff;">${user.bio || ''}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Links</label>
+                        <div id="linksContainer">${linksHtml}</div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addLinkInput()">
+                            <i class="fas fa-plus"></i> Add Link
+                        </button>
+                    </div>
+                </div>
             </div>
         `;
-    });
+    }
     
     const modalHtml = `
         <div class="modal fade" id="profileEditorModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
-                <div class="modal-content" style="background: #2a2a2a; color: #fff;">
-                    <div class="modal-header">
-                        <h5 class="modal-title"><i class="fas fa-user-edit"></i> Edit Profile</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
+                    <div class="modal-header" style="background: linear-gradient(45deg, #333, #444); border-bottom: 1px solid #555;">
+                        <h5 class="modal-title">
+                            <i class="fas fa-user-edit"></i> Profile Editor
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
                     </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">Cover Photo</label>
-                            <div class="cover-photo-preview" id="coverPhotoPreview">
-                                ${user.cover_photo ? 
-                                    `<img src="images/covers/${user.cover_photo}" alt="Cover">` : 
-                                    '<div class="no-cover">No cover photo</div>'
-                                }
-                                <div class="cover-photo-overlay">
-                                    <input type="file" id="coverPhotoInput" accept="image/*" style="display: none;">
-                                    <button type="button" class="btn btn-light" onclick="$('#coverPhotoInput').click()">
-                                        <i class="fas fa-camera"></i> Change Cover
-                                    </button>
+                    <div class="modal-body p-0">
+                        <!-- Navigation Tabs -->
+                        <ul class="nav nav-tabs" id="profileTabs" role="tablist" style="background: #333; border-bottom: 1px solid #555; margin: 0;">
+                            ${profileInfoTab}
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link ${!isRegistered ? 'active' : ''}" id="avatar-tab" data-bs-toggle="tab" data-bs-target="#avatar-panel" type="button" role="tab" style="background: transparent; border: none; color: #e0e0e0;">
+                                    <i class="fas fa-user-circle"></i> Avatar
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="color-tab" data-bs-toggle="tab" data-bs-target="#color-panel" type="button" role="tab" style="background: transparent; border: none; color: #e0e0e0;">
+                                    <i class="fas fa-palette"></i> Chat Color
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="profileTabsContent">
+                            ${profileInfoPanel}
+                            
+                            <!-- Avatar Selection Panel -->
+                            <div class="tab-pane fade ${!isRegistered ? 'show active' : ''}" id="avatar-panel" role="tabpanel">
+                                <div class="row g-0">
+                                    <!-- Avatar Preview Sidebar -->
+<div class="col-md-4" style="background: #333; border-right: 1px solid #555; min-height: 500px;">
+    <div class="p-4 text-center">
+        <h6 class="mb-3" style="color: #e0e0e0;">
+            <i class="fas fa-eye"></i> Preview
+        </h6>
+        <div id="avatarPreviewContainer" class="mb-3">
+            <img id="selectedAvatarPreview" 
+                 src="images/${currentUser.avatar || 'default_avatar.jpg'}" 
+                 width="100" height="100" 
+                 style="border: 3px solid #007bff; border-radius: 8px; filter: hue-rotate(${currentUser.avatar_hue || 0}deg) saturate(${currentUser.avatar_saturation || 100}%);"
+                 alt="Selected avatar">
+        </div>
+        <p class="small text-muted mb-3">Current Selection</p>
+
+        <!-- Avatar Customization Sliders -->
+        <div class="avatar-customization mb-4" style="background: #444; border-radius: 8px; padding: 15px;">
+            <h6 style="color: #e0e0e0; margin-bottom: 15px;">
+                <i class="fas fa-sliders-h"></i> Customize Colors
+            </h6>
+            
+            <!-- Hue Slider -->
+            <div class="mb-3">
+                <label for="avatarHueSlider" class="form-label" style="color: #ccc; font-size: 0.9rem;">
+                    Hue: <span id="hueValue">${currentUser.avatar_hue || 0}</span>°
+                </label>
+                <input type="range" 
+                       class="form-range avatar-slider" 
+                       id="avatarHueSlider" 
+                       min="0" 
+                       max="360" 
+                       value="${currentUser.avatar_hue || 0}"
+                       oninput="updateAvatarHue(this.value)"
+                       style="background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);">
+            </div>
+            
+            <!-- Saturation Slider -->
+            <div class="mb-3">
+                <label for="avatarSatSlider" class="form-label" style="color: #ccc; font-size: 0.9rem;">
+                    Saturation: <span id="satValue">${currentUser.avatar_saturation || 100}</span>%
+                </label>
+                <input type="range" 
+                       class="form-range avatar-slider" 
+                       id="avatarSatSlider" 
+                       min="0" 
+                       max="200" 
+                       value="${currentUser.avatar_saturation || 100}"
+                       oninput="updateAvatarSaturation(this.value)"
+                       style="background: linear-gradient(to right, #888, #fff);">
+            </div>
+            
+            <!-- Reset Button -->
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="resetAvatarCustomization()">
+                <i class="fas fa-undo"></i> Reset Colors
+            </button>
+        </div>
+                                            
+                                            <!-- Avatar Controls -->
+                                            <div class="mb-3">
+                                                <div class="row mb-2">
+                                                    <div class="col-6">
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="clearAvatarSelection()">
+                                                            <i class="fas fa-times"></i> Clear
+                                                        </button>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="randomAvatarSelection()">
+                                                            <i class="fas fa-random"></i> Random
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Avatar Stats -->
+                                            <div class="avatar-stats p-3" style="background: #444; border-radius: 8px;">
+                                                <div class="row text-center">
+                                                    <div class="col-12 mb-2">
+                                                        <small class="text-muted">Available Avatars</small>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div style="color: #28a745; font-weight: bold;" id="visibleAvatarCount">0</div>
+                                                        <small class="text-muted">Visible</small>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div style="color: #ffc107; font-weight: bold;" id="totalAvatarCount">0</div>
+                                                        <small class="text-muted">Total</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Avatar Grid -->
+                                    <div class="col-md-8">
+                                        <div class="p-4">
+                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                <h6 class="mb-0" style="color: #e0e0e0;">
+                                                    <i class="fas fa-images"></i> Choose Your Avatar
+                                                </h6>
+                                                <small class="text-muted">
+                                                    ${isRegistered ? 'Full Collection' : 'Guest Collection'}
+                                                </small>
+                                            </div>
+                                            
+                                            <div id="avatarGridContainer" style="max-height: 570px; overflow-y: auto; border: 1px solid #555; border-radius: 8px; padding: 15px; background: #1a1a1a;">
+                                                <div class="text-center py-4">
+                                                    <div class="spinner-border text-primary" role="status">
+                                                        <span class="visually-hidden">Loading...</span>
+                                                    </div>
+                                                    <p class="mt-2 mb-0 text-muted">Loading avatars...</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Color Selection Panel -->
+                            <div class="tab-pane fade" id="color-panel" role="tabpanel">
+                                <div class="row g-0">
+                                    <!-- Color Preview Sidebar -->
+                                    <div class="col-md-4" style="background: #333; border-right: 1px solid #555; min-height: 500px;">
+                                        <div class="p-4 text-center">
+                                            <h6 class="mb-3" style="color: #e0e0e0;">
+                                                <i class="fas fa-paint-brush"></i> Preview
+                                            </h6>
+                                            <div class="mb-3">
+                                                <div id="colorPreviewCircle" class="mx-auto mb-3" style="width: 80px; height: 80px; border-radius: 8px; border: 3px solid rgba(255,255,255,0.3); background: linear-gradient(135deg, #2c3e50 0%, #34495e 25%, #2c3e50 50%, #1a252f 75%, #2c3e50 100%);"></div>
+                                                <h6 id="colorPreviewName" style="color: #e0e0e0;">Black</h6>
+                                                <p class="small text-muted">Your chat bubble color</p>
+                                            </div>
+                                            
+                                            <!-- Sample Message Preview -->
+                                            <div class="mb-3">
+                                                <div class="sample-message-preview p-3" style="background: #222; border-radius: 12px; border: 1px solid #555;">
+                                                    <small class="text-muted d-block mb-2">Message Preview:</small>
+                                                    <div class="mini-message-bubble user-color-black" id="sampleMessageBubble" style="
+                                                        background: var(--user-gradient);
+                                                        border-radius: 12px;
+                                                        padding: 8px 12px;
+                                                        border: 2px solid rgba(255,255,255,0.25);
+                                                        position: relative;
+                                                        margin-left: 20px;
+                                                    ">
+                                                        <div style="color: var(--user-text-color); font-size: 0.8rem;">
+                                                            Hello! This is how your messages will look.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Color Grid -->
+                                    <div class="col-md-8">
+                                        <div class="p-4">
+                                            <h6 class="mb-3" style="color: #e0e0e0;">
+                                                <i class="fas fa-palette"></i> Choose Your Chat Color
+                                            </h6>
+                                            
+                                            <div id="colorGrid" class="color-grid" style="
+                                                display: grid;
+                                                grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+                                                gap: 15px;
+                                                padding: 20px;
+                                                background: #1a1a1a;
+                                                border-radius: 12px;
+                                                border: 1px solid #555;
+                                                max-height: 400px;
+                                                overflow-y: auto;
+                                            ">
+                                                <!-- Color options will be populated here -->
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="profileStatus" class="form-label">Status</label>
-                            <input type="text" class="form-control" id="profileStatus" value="${user.status || ''}" maxlength="100" placeholder="What's on your mind?">
-                        </div>
-                        <div class="mb-3">
-                            <label for="profileBio" class="form-label">Bio</label>
-                            <textarea class="form-control" id="profileBio" rows="3" maxlength="500" placeholder="Tell us about yourself...">${user.bio || ''}</textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Links</label>
-                            <div id="linksContainer">${linksHtml}</div>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addLinkInput()">
-                                <i class="fas fa-plus"></i> Add Link
-                            </button>
-                        </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" onclick="saveProfile()">Save Profile</button>
+                    <div class="modal-footer" style="border-top: 1px solid #555; background: #333;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="saveProfileChanges()">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
                     </div>
                 </div>
             </div>
@@ -337,14 +569,413 @@ function displayProfileEditor(user) {
     
     $('#profileEditorModal').remove();
     $('body').append(modalHtml);
-    $('#profileEditorModal').modal('show');
     
-    // Handle cover photo upload
-    $('#coverPhotoInput').on('change', function() {
-        const file = this.files[0];
-        if (file) {
-            uploadCoverPhoto(file);
+    const modal = new bootstrap.Modal(document.getElementById('profileEditorModal'));
+    modal.show();
+    
+    // Load initial data
+    loadAvatarsForEditor(isRegistered);
+    loadColorsForEditor();
+    
+    // Set up event handlers
+    if (isRegistered) {
+        $('#coverPhotoInput').on('change', function() {
+            const file = this.files[0];
+            if (file) {
+                uploadCoverPhoto(file);
+            }
+        });
+    }
+}
+
+function loadAvatarsForEditor(isRegistered) {
+    $.ajax({
+        url: 'api/get_organized_avatars.php',
+        method: 'GET',
+        data: { user_type: isRegistered ? 'registered' : 'guest' },
+        dataType: 'json',
+        success: function(response) {
+            displayAvatarsInEditor(response, isRegistered);
+        },
+        error: function() {
+            $('#avatarGridContainer').html(`
+                <div class="text-center py-4">
+                    <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                    <p class="text-muted">Error loading avatars</p>
+                </div>
+            `);
         }
+    });
+}
+
+function displayAvatarsInEditor(avatarData, isRegistered) {
+    let html = '';
+    let totalAvatars = 0;
+    
+    if (!isRegistered) {
+        ['time-limited', 'default', 'drrrjp', 'drrrx2'].forEach(folder => {
+            if (avatarData[folder] && avatarData[folder].length > 0) {
+                html += createAvatarSection(folder, avatarData[folder]);
+                totalAvatars += avatarData[folder].length;
+            }
+        });
+    } else {
+        ['time-limited', 'default', 'drrrjp', 'drrrx2'].forEach(folder => {
+            if (avatarData[folder] && avatarData[folder].length > 0) {
+                html += createAvatarSection(folder, avatarData[folder], true);
+                totalAvatars += avatarData[folder].length;
+            }
+        });
+        
+        Object.keys(avatarData).forEach(folder => {
+            if (!['time-limited', 'default', 'drrrjp', 'drrrx2'].includes(folder) && avatarData[folder].length > 0) {
+                html += createAvatarSection(folder, avatarData[folder]);
+                totalAvatars += avatarData[folder].length;
+            }
+        });
+    }
+    
+    if (html === '') {
+        html = `
+            <div class="text-center py-4">
+                <i class="fas fa-images fa-2x text-muted mb-2"></i>
+                <p class="text-muted">No avatars available</p>
+            </div>
+        `;
+    }
+    
+    $('#avatarGridContainer').html(html);
+    updateAvatarStats();
+    
+    const currentAvatarPath = currentUser.avatar || 'default_avatar.jpg';
+    $(`.editor-avatar[data-avatar="${currentAvatarPath}"]`).addClass('selected');
+}
+
+function createAvatarSection(folderName, avatars, isPriority = false) {
+    const displayName = folderName.charAt(0).toUpperCase() + folderName.slice(1).replace('-', ' ');
+    const iconClass = isPriority ? 'fas fa-star' : 'fas fa-folder';
+    
+    let html = `
+        <div class="avatar-section mb-4" data-folder="${folderName}">
+            <h6 style="color: #667eea; font-weight: 600; margin-bottom: 15px; padding: 8px 12px; background: #333; border-radius: 6px;">
+                <i class="${iconClass}"></i> ${displayName} 
+                <span class="badge bg-secondary ms-2">${avatars.length}</span>
+            </h6>
+            <div class="d-flex flex-wrap">
+    `;
+    
+    avatars.forEach(avatar => {
+        html += `
+            <img src="images/${avatar}" 
+                 class="editor-avatar" 
+                 data-avatar="${avatar}"
+                 onclick="selectAvatarInEditor('${avatar}')"
+                 style="width: 60px; height: 60px; margin: 3px; border: 2px solid #555; border-radius: 6px; cursor: pointer; transition: all 0.2s ease;"
+                 onmouseover="this.style.borderColor='#007bff'; this.style.transform='scale(1.05)'"
+                 onmouseout="this.style.borderColor='#555'; this.style.transform='scale(1)'"
+                 alt="Avatar option">
+        `;
+    });
+    
+    html += `</div></div>`;
+    return html;
+}
+
+function loadColorsForEditor() {
+    const colors = [
+        { name: 'black', displayName: 'Black' },
+        { name: 'blue', displayName: 'Blue' },
+        { name: 'purple', displayName: 'Purple' },
+        { name: 'pink', displayName: 'Pink' },
+        { name: 'cyan', displayName: 'Cyan' },
+        { name: 'mint', displayName: 'Mint' },
+        { name: 'orange', displayName: 'Orange' },
+        { name: 'lavender', displayName: 'Lavender' },
+        { name: 'peach', displayName: 'Peach' },
+        { name: 'green', displayName: 'Green' },
+        { name: 'yellow', displayName: 'Yellow' },
+        { name: 'red', displayName: 'Red' },
+        { name: 'teal', displayName: 'Teal' },
+        { name: 'indigo', displayName: 'Indigo' },
+        { name: 'emerald', displayName: 'Emerald' },
+        { name: 'rose', displayName: 'Rose' }
+    ];
+    
+    let html = '';
+    colors.forEach(color => {
+        const isSelected = currentUser.color === color.name ? 'selected' : '';
+        html += `
+            <div class="color-option color-${color.name} ${isSelected}" 
+                 data-color="${color.name}" 
+                 onclick="selectColorInEditor('${color.name}')"
+                 style="position: relative; width: 70px; height: 70px; border-radius: 8px; border: 3px solid ${isSelected ? '#fff' : 'rgba(255,255,255,0.4)'}; cursor: pointer; display: flex; align-items: center; justify-content: center; background-size: 200% 200%; background-position: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.2s ease;">
+                <div class="color-name" style="background: rgba(0,0,0,0.5); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">
+                    ${color.displayName}
+                </div>
+                ${isSelected ? `
+                <div class="selected-indicator" style="position: absolute; top: -8px; right: -8px; background: #28a745; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; border: 2px solid #2a2a2a;">
+                    <i class="fas fa-check"></i>
+                </div>
+                ` : ''}
+            </div>
+        `;
+    });
+    
+    $('#colorGrid').html(html);
+    updateColorPreview();
+}
+
+function selectAvatarInEditor(avatarPath) {
+    $('.editor-avatar').removeClass('selected').css({
+        'border-color': '#555',
+        'box-shadow': 'none'
+    });
+    
+    $(`.editor-avatar[data-avatar="${avatarPath}"]`).addClass('selected').css({
+        'border-color': '#007bff',
+        'box-shadow': '0 0 15px rgba(0, 123, 255, 0.5)'
+    });
+    
+    $('#selectedAvatarPreview').attr('src', 'images/' + avatarPath);
+    selectedAvatar = avatarPath;
+}
+
+function selectColorInEditor(colorName) {
+    $('.color-option').removeClass('selected').css('border-color', 'rgba(255,255,255,0.4)');
+    $('.color-option .selected-indicator').remove();
+    
+    const colorElement = $(`.color-option[data-color="${colorName}"]`);
+    colorElement.addClass('selected').css('border-color', '#fff');
+    colorElement.append(`
+        <div class="selected-indicator" style="position: absolute; top: -8px; right: -8px; background: #28a745; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; border: 2px solid #2a2a2a;">
+            <i class="fas fa-check"></i>
+        </div>
+    `);
+    
+    selectedColor = colorName;
+    updateColorPreview();
+}
+
+function updateColorPreview() {
+    const color = selectedColor || currentUser.color || 'black';
+    $('#colorPreviewCircle').removeClass().addClass(`color-${color}`);
+    $('#colorPreviewName').text(color.charAt(0).toUpperCase() + color.slice(1));
+    $('#sampleMessageBubble').removeClass().addClass(`mini-message-bubble user-color-${color}`);
+}
+
+function updateAvatarStats() {
+    const totalAvatars = $('.editor-avatar').length;
+    const visibleAvatars = $('.editor-avatar:visible').length;
+    $('#totalAvatarCount').text(totalAvatars);
+    $('#visibleAvatarCount').text(visibleAvatars);
+}
+
+function clearAvatarSelection() {
+    $('.editor-avatar').removeClass('selected').css({
+        'border-color': '#555',
+        'box-shadow': 'none'
+    });
+    
+    selectedAvatar = null;
+    $('#selectedAvatarPreview').attr('src', 'images/' + (currentUser.avatar || 'default_avatar.jpg'));
+}
+
+function randomAvatarSelection() {
+    const visibleAvatars = $('.editor-avatar:visible');
+    if (visibleAvatars.length > 0) {
+        const randomIndex = Math.floor(Math.random() * visibleAvatars.length);
+        const randomAvatar = $(visibleAvatars[randomIndex]);
+        const avatarPath = randomAvatar.data('avatar');
+        selectAvatarInEditor(avatarPath);
+    }
+}
+
+function saveProfileChanges() {
+    const isRegistered = currentUser.type === 'user';
+    const changes = {};
+    let hasChanges = false;
+    
+    // Check for avatar changes
+    if (selectedAvatar && selectedAvatar !== currentUser.avatar) {
+        changes.avatar = selectedAvatar;
+        hasChanges = true;
+    }
+    
+    // Check for color changes
+    if (selectedColor && selectedColor !== currentUser.color) {
+        changes.color = selectedColor;
+        hasChanges = true;
+    }
+    
+    // Check for avatar customization changes
+    if (selectedAvatarHue !== null && selectedAvatarHue !== (currentUser.avatar_hue || 0)) {
+        changes.avatar_hue = selectedAvatarHue;
+        hasChanges = true;
+    }
+    
+    if (selectedAvatarSaturation !== null && selectedAvatarSaturation !== (currentUser.avatar_saturation || 100)) {
+        changes.avatar_saturation = selectedAvatarSaturation;
+        hasChanges = true;
+    }
+    
+    // Check for profile info changes (registered users only)
+    if (isRegistered) {
+        const bio = $('#profileBio').val();
+        const status = $('#profileStatus').val();
+        
+        const links = [];
+        $('.link-input-group').each(function() {
+            const title = $(this).find('[data-link-field="title"]').val().trim();
+            const url = $(this).find('[data-link-field="url"]').val().trim();
+            if (title && url) {
+                links.push({ title, url });
+            }
+        });
+        
+        changes.bio = bio;
+        changes.status = status;
+        changes.hyperlinks = JSON.stringify(links);
+        hasChanges = true;
+    }
+    
+    if (!hasChanges) {
+        $('#profileEditorModal').modal('hide');
+        return;
+    }
+    
+    const saveBtn = $('.modal-footer .btn-primary');
+    const originalText = saveBtn.html();
+    saveBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+    
+    const savePromises = [];
+    
+    if (changes.avatar) {
+        savePromises.push(
+            $.ajax({
+                url: 'api/update_avatar.php',
+                method: 'POST',
+                data: { avatar: changes.avatar },
+                dataType: 'json'
+            })
+        );
+    }
+    
+    if (changes.color) {
+        savePromises.push(
+            $.ajax({
+                url: 'api/update_user_color.php',
+                method: 'POST',
+                data: { color: changes.color },
+                dataType: 'json'
+            })
+        );
+    }
+    
+    if (changes.avatar_hue !== undefined || changes.avatar_saturation !== undefined) {
+        savePromises.push(
+            $.ajax({
+                url: 'api/update_avatar_customization.php',
+                method: 'POST',
+                data: { 
+                    avatar_hue: changes.avatar_hue !== undefined ? changes.avatar_hue : (currentUser.avatar_hue || 0),
+                    avatar_saturation: changes.avatar_saturation !== undefined ? changes.avatar_saturation : (currentUser.avatar_saturation || 100)
+                },
+                dataType: 'json'
+            })
+        );
+    }
+    
+    if (isRegistered) {
+        savePromises.push(
+            $.ajax({
+                url: 'api/update_user_profile.php',
+                method: 'POST',
+                data: {
+                    bio: changes.bio,
+                    status: changes.status,
+                    hyperlinks: changes.hyperlinks
+                },
+                dataType: 'json'
+            })
+        );
+    }
+    
+    Promise.all(savePromises)
+        .then(responses => {
+            const allSuccessful = responses.every(response => response.status === 'success');
+            
+            if (allSuccessful) {
+                if (changes.avatar) {
+                    currentUser.avatar = changes.avatar;
+                    $('#currentAvatar').attr('src', 'images/' + changes.avatar);
+                }
+                if (changes.color) {
+                    currentUser.color = changes.color;
+                }
+                if (changes.avatar_hue !== undefined) {
+                    currentUser.avatar_hue = changes.avatar_hue;
+                }
+                if (changes.avatar_saturation !== undefined) {
+                    currentUser.avatar_saturation = changes.avatar_saturation;
+                }
+                
+                // Update the main avatar with new filters
+                if (changes.avatar_hue !== undefined || changes.avatar_saturation !== undefined) {
+                    const newHue = currentUser.avatar_hue || 0;
+                    const newSat = currentUser.avatar_saturation || 100;
+                    $('#currentAvatar').css('filter', `hue-rotate(${newHue}deg) saturate(${newSat}%)`);
+                }
+                
+                $('#profileEditorModal').modal('hide');
+                showProfileSuccessMessage(changes);
+                
+                if (typeof loadOnlineUsers === 'function') {
+                    loadOnlineUsers();
+                }
+                if (typeof loadRoomsWithUsers === 'function') {
+                    loadRoomsWithUsers();
+                }
+            } else {
+                throw new Error('Some updates failed');
+            }
+        })
+        .catch(error => {
+            console.error('Error saving profile changes:', error);
+            alert('Error saving changes. Please try again.');
+        })
+        .finally(() => {
+            saveBtn.prop('disabled', false).html(originalText);
+        });
+}
+
+function showProfileSuccessMessage(changes) {
+    let message = 'Profile updated successfully!';
+    if (changes.avatar && changes.color) {
+        message = 'Avatar and chat color updated successfully!';
+    } else if (changes.avatar) {
+        message = 'Avatar updated successfully!';
+    } else if (changes.color) {
+        message = 'Chat color updated successfully!';
+    }
+    
+    const toast = `
+        <div class="toast align-items-center text-white bg-success border-0" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 1080;">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-check-circle me-2"></i> ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `;
+    
+    $('body').append(toast);
+    const toastElement = $('.toast').last()[0];
+    const bootstrapToast = new bootstrap.Toast(toastElement);
+    bootstrapToast.show();
+    
+    $(toastElement).on('hidden.bs.toast', function() {
+        $(this).remove();
     });
 }
 
@@ -402,39 +1033,62 @@ function uploadCoverPhoto(file) {
     });
 }
 
-function saveProfile() {
-    const bio = $('#profileBio').val();
-    const status = $('#profileStatus').val();
+// Avatar customization variables
+let selectedAvatarHue = null;
+let selectedAvatarSaturation = null;
+
+function updateAvatarHue(value) {
+    selectedAvatarHue = parseInt(value);
+    $('#hueValue').text(value);
+    updateAvatarPreview();
+}
+
+function updateAvatarSaturation(value) {
+    selectedAvatarSaturation = parseInt(value);
+    $('#satValue').text(value);
+    updateAvatarPreview();
+}
+
+function updateAvatarPreview() {
+    const hue = selectedAvatarHue !== null ? selectedAvatarHue : (currentUser.avatar_hue || 0);
+    const saturation = selectedAvatarSaturation !== null ? selectedAvatarSaturation : (currentUser.avatar_saturation || 100);
     
-    // Collect links
-    const links = [];
-    $('.link-input-group').each(function() {
-        const title = $(this).find('[data-link-field="title"]').val().trim();
-        const url = $(this).find('[data-link-field="url"]').val().trim();
-        if (title && url) {
-            links.push({ title, url });
-        }
+    const filterValue = `hue-rotate(${hue}deg) saturate(${saturation}%)`;
+    $('#selectedAvatarPreview').css('filter', filterValue);
+    
+    // Also update any selected avatar in the grid
+    $('.editor-avatar.selected').css('filter', filterValue);
+}
+
+function resetAvatarCustomization() {
+    selectedAvatarHue = 0;
+    selectedAvatarSaturation = 100;
+    
+    $('#avatarHueSlider').val(0);
+    $('#avatarSatSlider').val(100);
+    $('#hueValue').text('0');
+    $('#satValue').text('100');
+    
+    updateAvatarPreview();
+}
+
+// Update the existing selectAvatarInEditor function to apply current filters
+function selectAvatarInEditor(avatarPath) {
+    $('.editor-avatar').removeClass('selected').css({
+        'border-color': '#555',
+        'box-shadow': 'none',
+        'filter': 'none'
     });
     
-    $.ajax({
-        url: 'api/update_user_profile.php',
-        method: 'POST',
-        data: {
-            bio: bio,
-            status: status,
-            hyperlinks: JSON.stringify(links)
-        },
-        dataType: 'json',
-        success: function(response) {
-            if (response.status === 'success') {
-                $('#profileEditorModal').modal('hide');
-                alert('Profile updated successfully!');
-            } else {
-                alert('Error: ' + response.message);
-            }
-        },
-        error: function() {
-            alert('Failed to save profile');
-        }
+    const selectedElement = $(`.editor-avatar[data-avatar="${avatarPath}"]`);
+    selectedElement.addClass('selected').css({
+        'border-color': '#007bff',
+        'box-shadow': '0 0 15px rgba(0, 123, 255, 0.5)'
     });
+    
+    $('#selectedAvatarPreview').attr('src', 'images/' + avatarPath);
+    selectedAvatar = avatarPath;
+    
+    // Apply current customization to the new avatar
+    updateAvatarPreview();
 }

@@ -140,13 +140,15 @@ $sanitized_message = sanitizeMarkup($message);
 $color = $_SESSION['user']['color'] ?? 'blue';
 $avatar_hue = (int)($_SESSION['user']['avatar_hue'] ?? 0);
 $avatar_saturation = (int)($_SESSION['user']['avatar_saturation'] ?? 100);
-$stmt = $conn->prepare("INSERT INTO messages (room_id, user_id, guest_name, message, avatar, user_id_string, color, avatar_hue, avatar_saturation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+$bubble_hue = (int)($_SESSION['user']['bubble_hue'] ?? 0);
+$bubble_saturation = (int)($_SESSION['user']['bubble_saturation'] ?? 100);
+$stmt = $conn->prepare("INSERT INTO messages (room_id, user_id, guest_name, message, avatar, user_id_string, color, avatar_hue, avatar_saturation, bubble_hue, bubble_saturation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 if (!$stmt) {
     error_log("Prepare failed in send_message.php: " . $conn->error);
     echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
     exit;
 }
-$stmt->bind_param("iisssssii", $room_id, $user_id, $guest_name, $sanitized_message, $avatar, $user_id_string, $color, $avatar_hue, $avatar_saturation);
+$stmt->bind_param("iisssssiiii", $room_id, $user_id, $guest_name, $sanitized_message, $avatar, $user_id_string, $color, $avatar_hue, $avatar_saturation, $bubble_hue, $bubble_saturation);
 if (!$stmt->execute()) {
     error_log("Execute failed in send_message.php: " . $stmt->error);
     echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $stmt->error]);

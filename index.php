@@ -173,6 +173,28 @@ if (isset($_SESSION['user'])) {
                     <input type="range" class="color-slider" id="saturationSlider" name="avatar_saturation" 
                            min="0" max="300" value="100" oninput="updateAvatarFilter()">
                 </div>
+<hr>
+                <label class="form-label">
+                    <i class="fas fa-adjust"></i> Customize Bubble Color
+                </label>
+                <!-- Add after the avatar saturation slider -->
+<div class="color-slider-container">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <label for="bubbleHueSlider" class="form-label mb-0">Bubble Hue</label>
+        <span class="slider-value" id="bubbleHueValue">0°</span>
+    </div>
+    <input type="range" class="color-slider" id="bubbleHueSlider" name="bubble_hue" 
+           min="0" max="360" value="0" oninput="updateBubbleFilter()">
+</div>
+
+<div class="color-slider-container">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <label for="bubbleSaturationSlider" class="form-label mb-0">Bubble Saturation</label>
+        <span class="slider-value" id="bubbleSaturationValue">100%</span>
+    </div>
+    <input type="range" class="color-slider" id="bubbleSaturationSlider" name="bubble_saturation" 
+           min="0" max="300" value="100" oninput="updateBubbleFilter()">
+</div>
                 
                 <div class="form-text text-muted">
                     <i class="fas fa-info-circle"></i> Adjust hue and saturation to customize your avatar's colors
@@ -288,6 +310,14 @@ if (isset($_SESSION['user'])) {
         let userManuallySelectedColor = false;
 $(document).ready(function() {
 
+$('#bubbleHueSlider').val(0);
+$('#bubbleSaturationSlider').val(100);
+updateBubbleFilter();
+
+$('#bubbleHueSlider, #bubbleSaturationSlider').on('input change', function() {
+    updateBubbleFilter();
+});
+
     $('#customizeCollapse').on('show.bs.collapse', function () {
     $('#customizeChevron').removeClass('fa-chevron-down').addClass('fa-chevron-up');
 });
@@ -399,7 +429,9 @@ function handleGuestLogin() {
     console.log('Sat value:', satElement ? satElement.value : 'NULL');
     
     const hueShift = hueElement ? parseInt(hueElement.value) || 0 : 0;
-    const saturation = satElement ? parseInt(satElement.value) || 100 : 100;
+const saturation = satElement ? parseInt(satElement.value) || 100 : 100;
+const bubbleHue = document.getElementById('bubbleHueSlider') ? parseInt(document.getElementById('bubbleHueSlider').value) || 0 : 0;
+const bubbleSaturation = document.getElementById('bubbleSaturationSlider') ? parseInt(document.getElementById('bubbleSaturationSlider').value) || 100 : 100;
 
     
     
@@ -432,14 +464,16 @@ function handleGuestLogin() {
     const submissionId = 'guest_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     
     const formData = {
-        guest_name: guestName,
-        avatar: selectedAvatar,
-        color: selectedColor,
-        avatar_hue: hueShift,
-        avatar_saturation: saturation,
-        type: 'guest',
-        submission_id: submissionId
-    };
+    guest_name: guestName,
+    avatar: selectedAvatar,
+    color: selectedColor,
+    avatar_hue: hueShift,
+    avatar_saturation: saturation,
+    bubble_hue: bubbleHue,
+    bubble_saturation: bubbleSaturation,
+    type: 'guest',
+    submission_id: submissionId
+};
     
     console.log('Sending data with submission ID:', submissionId);
     console.log('Form data:', formData);
@@ -542,6 +576,28 @@ $(document).on('click', '.color-option', function() {
     const colorName = $(this).data('color');
     selectColor(colorName, this, false); // false = manual selection
 });
+
+// Add these new functions
+function updateBubbleFilter() {
+    const hue = $('#bubbleHueSlider').val() || 0;
+    const saturation = $('#bubbleSaturationSlider').val() || 100;
+    
+    $('#bubbleHueValue').text(hue + '°');
+    $('#bubbleSaturationValue').text(saturation + '%');
+    
+    // Update preview if needed
+    updateColorPreview();
+}
+
+function updateColorPreview() {
+    const selectedColor = $('#selectedColor').val() || 'black';
+    const hue = $('#bubbleHueSlider').val() || 0;
+    const saturation = $('#bubbleSaturationSlider').val() || 100;
+    
+    const preview = $('#selectedColorPreview');
+    const filter = `hue-rotate(${hue}deg) saturate(${saturation}%)`;
+    preview.css('filter', filter);
+}
 </script>
     <script src="js/script.js"></script>
     <script src="js/avatar-color-mapping.js"></script>

@@ -145,15 +145,27 @@ switch($action) {
     if ($check_sat_col->num_rows === 0) {
         $conn->query("ALTER TABLE private_messages ADD COLUMN avatar_saturation INT DEFAULT 100");
     }
+
+    $check_bubble_hue_col = $conn->query("SHOW COLUMNS FROM private_messages LIKE 'bubble_hue'");
+if ($check_bubble_hue_col->num_rows === 0) {
+    $conn->query("ALTER TABLE private_messages ADD COLUMN bubble_hue INT DEFAULT 0");
+}
+
+$check_bubble_sat_col = $conn->query("SHOW COLUMNS FROM private_messages LIKE 'bubble_saturation'");
+if ($check_bubble_sat_col->num_rows === 0) {
+    $conn->query("ALTER TABLE private_messages ADD COLUMN bubble_saturation INT DEFAULT 100");
+}
     
     // Apply markdown formatting
     $sanitized_message = sanitizeMarkup($message);
     $color = $_SESSION['user']['color'] ?? 'blue';
     $avatar_hue = (int)($_SESSION['user']['avatar_hue'] ?? 0);
     $avatar_saturation = (int)($_SESSION['user']['avatar_saturation'] ?? 100);
+    $bubble_hue = (int)($_SESSION['user']['bubble_hue'] ?? 0);
+$bubble_saturation = (int)($_SESSION['user']['bubble_saturation'] ?? 100);
     
-    $stmt = $conn->prepare("INSERT INTO private_messages (sender_id, recipient_id, message, color, avatar_hue, avatar_saturation) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("iissii", $user_id, $recipient_id, $sanitized_message, $color, $avatar_hue, $avatar_saturation);
+    $stmt = $conn->prepare("INSERT INTO private_messages (sender_id, recipient_id, message, color, avatar_hue, avatar_saturation, bubble_hue, bubble_saturation) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+$stmt->bind_param("iissiiii", $user_id, $recipient_id, $sanitized_message, $color, $avatar_hue, $avatar_saturation, $bubble_hue, $bubble_saturation);
     
     if ($stmt->execute()) {
         error_log("Private message sent successfully from $user_id to $recipient_id");
@@ -188,6 +200,8 @@ while ($row = $result->fetch_assoc()) {
     $row['sender_color'] = $row['color'] ?? 'blue';
     $row['sender_avatar_hue'] = (int)($row['avatar_hue'] ?? 0);
     $row['sender_avatar_saturation'] = (int)($row['avatar_saturation'] ?? 100);
+    $row['bubble_hue'] = (int)($row['bubble_hue'] ?? 0);
+$row['bubble_saturation'] = (int)($row['bubble_saturation'] ?? 100);
     
     // For recipient, we don't store their customization in private messages
     // so we set defaults (this matches the previous behavior)

@@ -66,6 +66,8 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
     <link href="css/private.css" rel="stylesheet">
     <link href="css/whisper.css" rel="stylesheet">
     <link href="css/profile_system.css" rel="stylesheet">
+    <link href="css/profile_editor.css" rel="stylesheet">
+    <link href="css/profile_editor_colors.css" rel="stylesheet">
 
 </head>
 <body>

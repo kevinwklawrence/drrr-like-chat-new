@@ -18,7 +18,7 @@ try {
     $allowed_ext = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
     
     // Define which folders each user type can access
-    $excluded_folders = ['staff', 'bg', 'icon']; // Never show these
+    $excluded_folders = ['staff', 'bg', 'icon', 'covers']; // Never show these
     
     if ($is_registered) {
         // Registered users can access all folders except excluded ones
@@ -31,7 +31,7 @@ try {
         }
     } else {
         // Guest users can only access default and time-limited
-        $accessible_folders = ['time-limited', 'default'];
+        $accessible_folders = ['time-limited', 'default', 'drrrjp', 'drrrx2'];
     }
     
     // Scan each accessible folder for avatars
