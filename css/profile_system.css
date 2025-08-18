@@ -1,0 +1,213 @@
+.profile-popup {
+    position: fixed;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    width: 300px;
+    z-index: 1060;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    overflow: hidden;
+}
+
+.profile-cover {
+    height: 80px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.profile-cover-default {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.profile-popup-content {
+    padding: 15px;
+    color: #e0e0e0;
+}
+
+.profile-popup-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.profile-popup-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    margin-right: 10px;
+    border: 2px solid #fff;
+    margin-top: -20px;
+}
+
+.profile-popup-close {
+    position: absolute;
+    top: -5px;
+    right: 0;
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.profile-popup-name {
+    font-weight: 600;
+    margin: 0;
+    color: #fff;
+}
+
+.profile-popup-status {
+    font-size: 0.85em;
+    color: #ccc;
+    font-style: italic;
+}
+
+.profile-popup-bio {
+    font-size: 0.9em;
+    color: #ddd;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.profile-links {
+    margin: 10px 0;
+}
+
+.profile-link {
+    display: inline-block;
+    background: #444;
+    color: #fff;
+    text-decoration: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    margin: 2px;
+    transition: background 0.2s;
+}
+
+.profile-link:hover {
+    background: #555;
+    color: #fff;
+}
+
+.profile-popup-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.cover-photo-preview {
+    position: relative;
+    height: 150px;
+    background: #333;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cover-photo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.cover-photo-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.cover-photo-preview:hover .cover-photo-overlay {
+    opacity: 1;
+}
+
+.no-cover {
+    color: #666;
+    font-style: italic;
+}
+
+.link-input-group {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+}
+
+.link-input-group .form-control {
+    background: #333;
+    border: 1px solid #555;
+    color: #fff;
+}
+
+.profile-popup-actions .profile-status-btn {
+    pointer-events: none;
+    opacity: 0.8;
+    cursor: default;
+    position: relative;
+}
+
+.profile-popup-actions .profile-status-btn:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.profile-popup-actions .profile-action-btn {
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+/* Prevent loading spinners on status buttons */
+.profile-status-btn .spinner-border,
+.profile-status-btn .loading-spinner {
+    display: none !important;
+}
+
+.profile-popup-actions .btn[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.profile-popup-actions .btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.profile-popup-actions .btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #212529;
+}
+
+.profile-popup-actions .btn-info {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+}
+
+.profile-popup-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.profile-popup-actions .btn {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

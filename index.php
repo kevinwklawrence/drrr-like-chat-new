@@ -522,7 +522,7 @@ function updateAvatarFilter() {
     // Apply filter to selected avatar
     const selectedAvatar = $('.avatar.selected');
     if (selectedAvatar.length > 0) {
-        const filter = `hue-rotate(${hue}deg) saturate(${saturation}$)`;
+        const filter = `hue-rotate(${hue}deg) saturate(${saturation}%)`;
         selectedAvatar.css('filter', filter);
         selectedAvatar.addClass('avatar-customized');
         console.log('Applied filter to avatar:', filter);

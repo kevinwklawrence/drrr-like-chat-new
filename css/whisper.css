@@ -1,90 +1,488 @@
-/* Whisper System */
+/* ===== FRIENDS PANEL ===== */
+.friends-panel {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    width: 320px;
+    max-height: 500px;
+    background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
+    border: 1px solid #444;
+    border-radius: 12px;
+    z-index: 1060;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    overflow: hidden;
+    animation: slideInFromRight 0.3s ease-out;
+}
+
+@keyframes slideInFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.friends-panel .card-header,
+.friends-panel > div:first-child {
+    background: linear-gradient(135deg, #404040 0%, #4a4a4a 100%);
+    border-bottom: 1px solid #555;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 12px 12px 0 0;
+}
+
+.friends-panel h6 {
+    color: #ffffff;
+    font-weight: 600;
+    margin: 0;
+    font-size: 1rem;
+}
+
+.friends-panel .btn-close,
+.friends-panel button[onclick="closeFriendsPanel()"] {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    padding: 0;
+}
+
+.friends-panel .btn-close:hover,
+.friends-panel button[onclick="closeFriendsPanel()"]:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+.friends-panel .card-body,
+.friends-panel > div:last-child {
+    padding: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: #2a2a2a;
+}
+
+/* Friends panel scrollbar */
+.friends-panel .card-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.friends-panel .card-body::-webkit-scrollbar-track {
+    background: #1a1a1a;
+    border-radius: 3px;
+}
+
+.friends-panel .card-body::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 3px;
+}
+
+.friends-panel .card-body::-webkit-scrollbar-thumb:hover {
+    background: #666;
+}
+
+/* Friend input group */
+.friends-panel .input-group {
+    margin-bottom: 20px;
+}
+
+.friends-panel .input-group .form-control {
+    background: #1a1a1a !important;
+    border: 1px solid #555 !important;
+    color: #fff !important;
+    border-radius: 6px 0 0 6px !important;
+    padding: 10px 12px;
+}
+
+.friends-panel .input-group .form-control:focus {
+    border-color: #677eea !important;
+    box-shadow: 0 0 0 0.2rem rgba(103, 126, 234, 0.25) !important;
+}
+
+.friends-panel .input-group .btn {
+    border-radius: 0 6px 6px 0 !important;
+    border: 1px solid #677eea;
+    background: linear-gradient(45deg, #677eea, #764ba2);
+    padding: 10px 16px;
+    font-weight: 500;
+}
+
+.friends-panel .input-group .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(103, 126, 234, 0.3);
+}
+
+/* Friends list sections */
+.friends-panel h6:not(:first-child) {
+    color: #e0e0e0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #404040;
+}
+
+/* Friend/conversation items */
+.friends-panel .d-flex {
+    background: linear-gradient(135deg, #333 0%, #3a3a3a 100%);
+    border: 1px solid #404040;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.friends-panel .d-flex:hover {
+    background: linear-gradient(135deg, #3a3a3a 0%, #444 100%);
+    border-color: #555;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.friends-panel .d-flex img {
+    border: 2px solid #555;
+    border-radius: 4px;
+    transition: border-color 0.2s ease;
+}
+
+.friends-panel .d-flex:hover img {
+    border-color: #677eea;
+}
+
+.friends-panel .badge {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+/* ===== PRIVATE MESSAGE WINDOW ===== */
+.private-message-window {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 380px;
+    height: 480px;
+    background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
+    border: 1px solid #444;
+    border-radius: 12px;
+    z-index: 1070;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    overflow: hidden;
+    animation: slideInFromBottom 0.3s ease-out;
+}
+
+@keyframes slideInFromBottom {
+    from {
+        opacity: 0;
+        transform: translateY(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.private-message-header {
+    background: linear-gradient(135deg, #404040 0%, #4a4a4a 100%);
+    border-bottom: 1px solid #555;
+    padding: 15px 20px;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 60px;
+}
+
+.private-message-title {
+    color: #ffffff;
+    font-weight: 600;
+    margin: 0;
+    flex-grow: 1;
+    font-size: 1rem;
+}
+
+.private-message-close {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 16px;
+    padding: 0;
+}
+
+.private-message-close:hover {
+    background: rgba(255, 93, 93, 0.3);
+    border-color: rgba(255, 93, 93, 0.5);
+    transform: scale(1.05);
+}
+
+.private-message-body {
+    flex-grow: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background: #f3f3f3;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    filter: invert(1) hue-rotate(180deg);
+}
+
+/* Private message scrollbar */
+.private-message-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.private-message-body::-webkit-scrollbar-track {
+    background: #e0e0e0;
+    border-radius: 3px;
+}
+
+.private-message-body::-webkit-scrollbar-thumb {
+    background: #999;
+    border-radius: 3px;
+}
+
+.private-message-body::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+.private-chat-message {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.private-chat-message.sent {
+    flex-direction: row-reverse;
+}
+
+.private-message-avatar {
+    width: 58px;
+    height: 58px;
+    border-radius: 6px;
+    margin: 0 10px;
+    flex-shrink: 0;
+    border: 2px solid rgba(255,255,255,0.3);
+}
+
+.private-message-bubble {
+    max-width: 70%;
+    border-radius: 12px;
+    padding: 10px 14px;
+    border: 2px solid rgba(255,255,255,0.25);
+    position: relative;
+    word-wrap: break-word;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    background-size: 200% 200%;
+    background-position: center;
+}
+
+.private-message-bubble.sent {
+    margin-left: auto;
+}
+
+.private-message-bubble.received {
+    margin-right: auto;
+}
+
+.private-message-header-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 11px;
+    opacity: 0.9;
+}
+
+.private-message-author {
+    font-weight: 700;
+    color: inherit;
+    font-size: 12px;
+}
+
+.private-message-time {
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+.private-message-content {
+    font-size: 14px;
+    line-height: 1.4;
+    color: inherit;
+}
+
+.private-message-input {
+    border-top: 1px solid #555;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
+    border-radius: 0 0 12px 12px;
+}
+
+.private-message-form {
+    display: flex;
+    gap: 10px;
+}
+
+.private-message-form input {
+    flex-grow: 1;
+    background: #1a1a1a !important;
+    border: 1px solid #555 !important;
+    color: #fff !important;
+    border-radius: 8px !important;
+    padding: 10px 14px !important;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.private-message-form input:focus {
+    outline: none !important;
+    border-color: #677eea !important;
+    box-shadow: 0 0 0 0.2rem rgba(103, 126, 234, 0.25) !important;
+}
+
+.private-message-form button {
+    background: linear-gradient(45deg, #677eea, #764ba2);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    min-width: 70px;
+}
+
+.private-message-form button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(103, 126, 234, 0.3);
+}
+
+/* ===== WHISPER SYSTEM ===== */
 #whisper-tabs {
     position: fixed;
     bottom: 0;
     left: 20px;
     z-index: 1060;
     display: flex;
-    gap: 2px;
+    gap: 3px;
 }
 
 .whisper-tab {
-    background: #2a2a2a;
+    background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
     border: 1px solid #444;
     border-bottom: none;
-    border-radius: 8px 8px 0 0;
-    padding: 8px 12px;
+    border-radius: 12px 12px 0 0;
+    padding: 12px 16px;
     cursor: pointer;
     user-select: none;
     display: flex;
     align-items: center;
-    gap: 8px;
-    min-width: 120px;
-    max-width: 200px;
+    gap: 10px;
+    min-width: 140px;
+    max-width: 220px;
     position: relative;
     transition: all 0.3s ease;
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.2);
 }
 
 .whisper-tab:hover {
-    background: #333;
+    background: linear-gradient(135deg, #333 0%, #3a3a3a 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 -6px 16px rgba(0,0,0,0.3);
 }
 
 .whisper-tab.active {
-    background: #333;
+    background: linear-gradient(135deg, #404040 0%, #4a4a4a 100%);
     border-color: #677eea;
+    transform: translateY(-2px);
+    box-shadow: 0 -6px 16px rgba(103, 126, 234, 0.2);
 }
 
 .whisper-tab-title {
     color: #e0e0e0;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     flex: 1;
+    font-weight: 500;
 }
 
 .whisper-tab-unread {
-    background: #dc3545;
+    background: linear-gradient(45deg, #dc3545, #c82333);
     color: white;
-    border-radius: 10px;
-    padding: 2px 6px;
+    border-radius: 12px;
+    padding: 3px 8px;
     font-size: 0.7rem;
-    min-width: 16px;
+    min-width: 20px;
     text-align: center;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(220, 53, 69, 0.3);
+    animation: pulse 2s infinite;
 }
 
 .whisper-tab-close {
-    background: none;
-    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     color: #999;
-    font-size: 16px;
+    font-size: 14px;
     cursor: pointer;
     padding: 0;
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
 }
 
 .whisper-tab-close:hover {
+    background: rgba(255, 93, 93, 0.3);
+    border-color: rgba(255, 93, 93, 0.5);
     color: #fff;
+    transform: scale(1.1);
 }
 
 .whisper-window {
     position: fixed;
-    bottom: 40px;
+    bottom: 45px;
     left: 20px;
-    width: 350px;
-    height: 300px;
-    background: #2a2a2a;
+    width: 380px;
+    height: 320px;
+    background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
     border: 1px solid #444;
-    border-radius: 8px 8px 0 0;
+    border-radius: 12px 12px 0 0;
     z-index: 1059;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 -8px 25px rgba(0,0,0,0.4);
     transition: all 0.3s ease;
+    overflow: hidden;
 }
 
 .whisper-window.collapsed {
@@ -92,23 +490,109 @@
     overflow: hidden;
     border: none;
     opacity: 0;
+    transform: translateY(10px);
 }
 
 .whisper-body {
     flex: 1;
-    padding: 10px;
+    padding: 15px;
     overflow-y: auto;
     background: #f3f3f3;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     filter: invert(1) hue-rotate(180deg);
 }
 
+/* Whisper messages use the same structure as private messages */
+.whisper-body .private-chat-message {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.whisper-body .private-chat-message.sent {
+    flex-direction: row-reverse;
+}
+
+.whisper-body .private-message-avatar {
+    width: 58px;
+    height: 58px;
+    border-radius: 6px;
+    margin: 0 10px;
+    flex-shrink: 0;
+    border: 2px solid rgba(255,255,255,0.3);
+}
+
+.whisper-body .private-message-bubble {
+    max-width: 70%;
+    border-radius: 12px;
+    padding: 10px 14px;
+    border: 2px solid rgba(255,255,255,0.25);
+    position: relative;
+    word-wrap: break-word;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    background-size: 200% 200%;
+    background-position: center;
+}
+
+.whisper-body .private-message-bubble.sent {
+    margin-left: auto;
+}
+
+.whisper-body .private-message-bubble.received {
+    margin-right: auto;
+}
+
+.whisper-body .private-message-header-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 11px;
+    opacity: 0.9;
+}
+
+.whisper-body .private-message-author {
+    font-weight: 700;
+    color: inherit;
+    font-size: 12px;
+}
+
+.whisper-body .private-message-time {
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+.whisper-body .private-message-content {
+    font-size: 14px;
+    line-height: 1.4;
+    color: inherit;
+}
+
+/* Whisper scrollbar */
+.whisper-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.whisper-body::-webkit-scrollbar-track {
+    background: #e0e0e0;
+    border-radius: 3px;
+}
+
+.whisper-body::-webkit-scrollbar-thumb {
+    background: #999;
+    border-radius: 3px;
+}
+
+.whisper-body::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
 .whisper-input {
-    border-top: 1px solid #444;
-    padding: 10px;
-    background: #2a2a2a;
+    border-top: 1px solid #555;
+    padding: 12px 15px;
+    background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
 }
 
 .whisper-form {
@@ -117,81 +601,228 @@
 }
 
 .whisper-form input {
-    flex: 1;
-    background: #333;
-    border: 1px solid #555;
-    color: #fff;
-    border-radius: 6px;
-    padding: 6px 10px;
-    font-size: 12px;
+    flex-grow: 1;
+    background: #1a1a1a !important;
+    border: 1px solid #555 !important;
+    color: #fff !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+    font-size: 13px;
+    transition: all 0.2s ease;
 }
 
 .whisper-form input:focus {
-    outline: none;
-    border-color: #677eea;
+    outline: none !important;
+    border-color: #677eea !important;
+    box-shadow: 0 0 0 0.2rem rgba(103, 126, 234, 0.25) !important;
 }
 
 .whisper-form button {
-    background: #677eea;
+    background: linear-gradient(45deg, #677eea, #764ba2);
     border: none;
     color: white;
     border-radius: 6px;
-    padding: 6px 12px;
-    font-size: 12px;
+    padding: 8px 16px;
+    font-size: 13px;
     cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
 }
 
 .whisper-form button:hover {
-    background: #5a6fd8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(103, 126, 234, 0.3);
 }
 
-/* Friend and Whisper buttons */
+/* ===== FRIEND AND WHISPER BUTTONS ===== */
 .friend-btn {
-    background: #28a745;
+    background: linear-gradient(45deg, #28a745, #20c997);
     border: 1px solid #28a745;
     color: white;
-    border-radius: 4px;
-    padding: 4px 8px;
+    border-radius: 6px;
+    padding: 6px 12px;
     font-size: 0.75rem;
-    margin-left: 5px;
+    margin-left: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
 }
 
 .friend-btn:hover {
-    background: #218838;
+    background: linear-gradient(45deg, #218838, #1e7e34);
     color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
 }
 
 .whisper-btn {
-    background: #6f42c1;
+    background: linear-gradient(45deg, #6f42c1, #5a2d91);
     border: 1px solid #6f42c1;
     color: white;
-    border-radius: 4px;
-    padding: 4px 8px;
+    border-radius: 6px;
+    padding: 6px 12px;
     font-size: 0.75rem;
-    margin-left: 5px;
+    margin-left: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
 }
 
 .whisper-btn:hover {
-    background: #5a2d91;
+    background: linear-gradient(45deg, #5a2d91, #4e2579);
     color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
 }
 
-/* Mobile responsiveness */
+/* ===== MOBILE RESPONSIVENESS ===== */
 @media (max-width: 768px) {
+    .friends-panel {
+        left: 10px;
+        right: 10px;
+        width: auto;
+        max-width: none;
+        top: 60px;
+    }
+    
+    .private-message-window {
+        left: 10px;
+        right: 10px;
+        width: auto;
+        bottom: 10px;
+        height: 400px;
+    }
+    
     #whisper-tabs {
         left: 10px;
         flex-wrap: wrap;
+        max-width: calc(100vw - 20px);
     }
     
     .whisper-tab {
-        min-width: 100px;
-        max-width: 150px;
-        padding: 6px 8px;
+        min-width: 120px;
+        max-width: 180px;
+        padding: 10px 12px;
     }
     
     .whisper-window {
         left: 10px;
-        width: calc(100vw - 20px);
-        max-width: 300px;
+        right: 10px;
+        width: auto;
+        bottom: 35px;
+        height: 280px;
     }
+}
+
+/* ===== CHAT BUBBLE COLOR STYLING ===== */
+/* User color classes for private messages and whispers */
+.private-message-bubble.user-color-black,
+.whisper-body .private-message-bubble.user-color-black { 
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 25%, #2c3e50 50%, #1a252f 75%, #2c3e50 100%); 
+    color: #ecf0f1; 
+}
+.private-message-bubble.user-color-blue,
+.whisper-body .private-message-bubble.user-color-blue { 
+    background: linear-gradient(135deg, #3498db 0%, #5dade2 25%, #3498db 50%, #2980b9 75%, #3498db 100%); 
+    color: #ffffff; 
+}
+.private-message-bubble.user-color-purple,
+.whisper-body .private-message-bubble.user-color-purple { 
+    background: linear-gradient(135deg, #9b59b6 0%, #bb8fce 25%, #9b59b6 50%, #8e44ad 75%, #9b59b6 100%); 
+    color: #ffffff; 
+}
+.private-message-bubble.user-color-pink,
+.whisper-body .private-message-bubble.user-color-pink { 
+    background: linear-gradient(135deg, #e91e63 0%, #f06292 25%, #e91e63 50%, #c2185b 75%, #e91e63 100%); 
+    color: #ffffff; 
+}
+.private-message-bubble.user-color-cyan,
+.whisper-body .private-message-bubble.user-color-cyan { 
+    background: linear-gradient(135deg, #1abc9c 0%, #58d68d 25%, #1abc9c 50%, #17a085 75%, #1abc9c 100%); 
+    color: #ffffff; 
+}
+.private-message-bubble.user-color-mint,
+.whisper-body .private-message-bubble.user-color-mint { 
+    background: linear-gradient(135deg, #2ecc71 0%, #58d68d 25%, #2ecc71 50%, #27ae60 75%, #2ecc71 100%); 
+    color: #ffffff; 
+}
+.private-message-bubble.user-color-orange,
+.whisper-body .private-message-bubble.user-color-orange { 
+    background: linear-gradient(135deg, #f39c12 0%, #f7dc6f 25%, #f39c12 50%, #e67e22 75%, #f39c12 100%); 
+    color: #2c3e50; 
+}
+.private-message-bubble.user-color-lavender,
+.whisper-body .private-message-bubble.user-color-lavender { 
+    background: linear-gradient(135deg, #af7ac5 0%, #d2b4de 25%, #af7ac5 50%, #9a4993 75%, #af7ac5 100%); 
+    color: #ffffff; 
+}
+.private-message-bubble.user-color-peach,
+.whisper-body .private-message-bubble.user-color-peach { 
+    background: linear-gradient(135deg, #f1948a 0%, #f5b7b1 25%, #f1948a 50%, #ec7063 75%, #f1948a 100%); 
+    color: #2c3e50; 
+}
+.private-message-bubble.user-color-green,
+.whisper-body .private-message-bubble.user-color-green { 
+    background: linear-gradient(135deg, #27ae60 0%, #58d68d 25%, #27ae60 50%, #229954 75%, #27ae60 100%); 
+    color: #ffffff; 
+}
+.private-message-bubble.user-color-yellow,
+.whisper-body .private-message-bubble.user-color-yellow { 
+    background: linear-gradient(135deg, #f4d03f 0%, #f7dc6f 25%, #f4d03f 50%, #f1c40f 75%, #f4d03f 100%); 
+    color: #2c3e50; 
+}
+.private-message-bubble.user-color-red,
+.whisper-body .private-message-bubble.user-color-red { 
+    background: linear-gradient(135deg, #e74c3c 0%, #f1948a 25%, #e74c3c 50%, #c0392b 75%, #e74c3c 100%); 
+    color: #ffffff; 
+}
+.private-message-bubble.user-color-teal,
+.whisper-body .private-message-bubble.user-color-teal { 
+    background: linear-gradient(135deg, #17a2b8 0%, #5dade2 25%, #17a2b8 50%, #138496 75%, #17a2b8 100%); 
+    color: #ffffff; 
+}
+.private-message-bubble.user-color-indigo,
+.whisper-body .private-message-bubble.user-color-indigo { 
+    background: linear-gradient(135deg, #6610f2 0%, #9775fa 25%, #6610f2 50%, #5a0fc2 75%, #6610f2 100%); 
+    color: #ffffff; 
+}
+.private-message-bubble.user-color-emerald,
+.whisper-body .private-message-bubble.user-color-emerald { 
+    background: linear-gradient(135deg, #10d97d 0%, #50e3c2 25%, #10d97d 50%, #0bc765 75%, #10d97d 100%); 
+    color: #ffffff; 
+}
+.private-message-bubble.user-color-rose,
+.whisper-body .private-message-bubble.user-color-rose { 
+    background: linear-gradient(135deg, #fb7185 0%, #fda4af 25%, #fb7185 50%, #f43f5e 75%, #fb7185 100%); 
+    color: #ffffff; 
+}
+
+/* ===== UTILITY ANIMATIONS ===== */
+@keyframes pulse {
+    0%, 100% { 
+        opacity: 1; 
+        transform: scale(1); 
+    }
+    50% { 
+        opacity: 0.8; 
+        transform: scale(1.05); 
+    }
+}
+
+.whisper-tab-unread {
+    animation: pulse 2s infinite;
+}
+
+/* ===== IMPROVED FOCUS STATES ===== */
+.friends-panel button:focus,
+.private-message-form button:focus,
+.whisper-form button:focus,
+.friend-btn:focus,
+.whisper-btn:focus {
+    outline: 2px solid rgba(103, 126, 234, 0.6);
+    outline-offset: 2px;
+}
+
+.friends-panel input:focus,
+.private-message-form input:focus,
+.whisper-form input:focus {
+    outline: none;
 }

@@ -253,33 +253,34 @@ function renderMessage(msg) {
     const avatar = msg.avatar || msg.guest_avatar || 'default_avatar.jpg';
     const name = msg.username || msg.guest_name || 'Unknown';
     const userIdString = msg.user_id_string || msg.user_id || 'unknown';
-    // In renderMessage function, update the hue/saturation assignment:
-const hue = msg.user_avatar_hue !== undefined ? msg.user_avatar_hue : (msg.avatar_hue || 0);
-const saturation = msg.user_avatar_saturation !== undefined ? msg.user_avatar_saturation : (msg.avatar_saturation || 100);
-
-console.log(`Message avatar filters for ${name}: hue=${hue}, sat=${saturation}`); // Debug
+    const hue = msg.user_avatar_hue !== undefined ? msg.user_avatar_hue : (msg.avatar_hue || 0);
+    const saturation = msg.user_avatar_saturation !== undefined ? msg.user_avatar_saturation : (msg.avatar_saturation || 100);
     
     if (msg.type === 'system' || msg.is_system) {
-    // System messages should use the actual user's avatar customization if available
-    const systemHue = msg.avatar_hue || msg.user_avatar_hue || 0;
-    const systemSat = msg.avatar_saturation || msg.user_avatar_saturation || 100;
-    
-    return `
-        <div class="system-message">
-            <img src="images/${avatar}" 
-                 style="filter: hue-rotate(${systemHue}deg) saturate(${systemSat}%);"
-                 alt="System">
-            <span>${msg.message}</span>
-        </div>
-    `;
-}
+        const systemHue = msg.avatar_hue || msg.user_avatar_hue || 0;
+        const systemSat = msg.avatar_saturation || msg.user_avatar_saturation || 100;
+        
+        return `
+            <div class="system-message">
+                <img src="images/${avatar}" 
+                     style="filter: hue-rotate(${systemHue}deg) saturate(${systemSat}%);"
+                     alt="System">
+                <span>${msg.message}</span>
+            </div>
+        `;
+    }
     
     const userColorClass = getUserColor(msg);
-    
     const timestamp = new Date(msg.timestamp).toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit'
     });
+    
+    // Check if this is a registered user and add click handler
+    const isRegisteredUser = msg.user_id && msg.user_id > 0;
+    const avatarClickHandler = isRegisteredUser && currentUser.type === 'user' ? 
+        `onclick="handleAvatarClick(event, ${msg.user_id}, '${(msg.username || '').replace(/'/g, "\\'")}')" style="cursor: pointer;"` : 
+        '';
     
     let badges = '';
     if (msg.is_admin) {
@@ -303,7 +304,8 @@ console.log(`Message avatar filters for ${name}: hue=${hue}, sat=${saturation}`)
     <div class="chat-message">
         <img src="images/${avatar}" 
              class="message-avatar" 
-             style="filter: hue-rotate(${hue}deg) saturate(${saturation}%);"
+             style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); ${avatarClickHandler ? 'cursor: pointer;' : ''}"
+             ${avatarClickHandler}
              alt="${name}'s avatar">
         <div class="message-bubble ${userColorClass}">
             <div class="message-header">
@@ -388,6 +390,11 @@ function renderUser(user) {
     const userIdString = user.user_id_string || 'unknown';
     const hue = user.avatar_hue || 0;
 const saturation = user.avatar_saturation || 100;
+
+const isRegisteredUser = user.user_id && user.user_id > 0;
+    const avatarClickHandler = isRegisteredUser && currentUser.type === 'user' ? 
+        `onclick="handleAvatarClick(event, ${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')" style="cursor: pointer;"` : 
+        '';
 
 console.log(`Applying filters for ${name}: hue=${hue}, sat=${saturation}`); // Debug
     
@@ -478,12 +485,13 @@ console.log(`Applying filters for ${name}: hue=${hue}, sat=${saturation}`); // D
         actions += `</div>`;
     }
     
-    return `
+     return `
     <div class="user-item">
         <div class="user-info-row">
             <img src="images/${avatar}" 
                  class="user-avatar" 
-                 style="filter: hue-rotate(${hue}deg) saturate(${saturation}%);"
+                 style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); ${avatarClickHandler ? 'cursor: pointer;' : ''}"
+                 ${avatarClickHandler}
                  alt="${name}'s avatar">
             <div class="user-details">
                 <div class="user-name">${name}</div>
@@ -3223,4 +3231,15 @@ function applyAllAvatarFilters() {
             $img.data('filter-applied', filterKey);
         }
     });
+}
+
+function handleAvatarClick(event, userId, username) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    console.log('Avatar clicked - userId:', userId, 'username:', username); // Debug log
+    
+    if (currentUser.type === 'user' && userId && userId !== 'null' && userId !== null) {
+        showUserProfile(userId, event.target);
+    }
 }

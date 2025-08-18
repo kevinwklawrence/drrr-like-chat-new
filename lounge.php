@@ -54,6 +54,7 @@ if (!empty($user_id_string)) {
     <link href="css/profile_editor.css" rel="stylesheet">
      <link href="css/profile_editor_colors.css" rel="stylesheet">
      <link href="css/private.css" rel="stylesheet">
+     <link href="css/profile_system.css" rel="stylesheet">
     <style>
         body {
             background-color: #1a1a1a;
@@ -406,7 +407,7 @@ if (!empty($user_id_string)) {
     <div class="friends-panel" id="friendsPanel" style="display: none;">
     <div class="card-header">
         <h6><i class="fas fa-user-friends"></i> Friends</h6>
-        <button class="btn-close" onclick="closeFriendsPanel()"></button>
+        <button class="btn-close" style="color:black;" onclick="closeFriendsPanel()">×</button>
     </div>
     <div class="card-body" id="friendsList">
         Loading friends...
@@ -427,5 +428,6 @@ if (!empty($user_id_string)) {
     
     <!-- Include the fixed lounge.js -->
     <script src="js/lounge.js"></script>
+    <script src="js/profile_system.js"></script>
 </body>
 </html>

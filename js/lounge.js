@@ -520,25 +520,22 @@ function loadOnlineUsers() {
 function displayOnlineUsers(users) {
     let html = '';
     
-console.log('Online users data:', users);
-
-    
     if (!Array.isArray(users) || users.length === 0) {
         html = '<p style="color: #666;">No users online</p>';
     } else {
         users.forEach(user => {
-            console.log('User avatar data:', {
-        name: user.username || user.guest_name,
-        avatar_hue: user.avatar_hue,
-        avatar_saturation: user.avatar_saturation
-    });
-
             const name = user.username || user.guest_name || 'Unknown';
             const avatar = user.avatar || user.guest_avatar || 'default_avatar.jpg';
             const lastActivity = user.last_activity;
+            const hue = user.avatar_hue || 0;
+            const saturation = user.avatar_saturation || 100;
             
+            // Check if this is a registered user
+            const isRegisteredUser = user.username && user.username.trim() !== ''; // Registered users have usernames
+            const avatarClickHandler = isRegisteredUser && currentUser.type === 'user' ? 
+                `onclick="handleAvatarClick(event, '${user.user_id_string}', '${user.username.replace(/'/g, "\\'")}')" style="cursor: pointer;"` : 
+                '';
             
-            // Calculate time since last activity
             let activityIndicator = '';
             if (lastActivity) {
                 const now = new Date();
@@ -554,19 +551,13 @@ console.log('Online users data:', users);
                 }
             }
             
-            // In the displayOnlineUsers function, replace the avatar img tag:
-const hue = user.avatar_hue || 0;
-const saturation = user.avatar_saturation || 100;
-
-    console.log('Applied hue/sat for', name, ':', hue, saturation);
-
-
-html += `
+            html += `
     <div class="d-flex align-items-center mb-2">
         <img src="images/${avatar}" 
              width="30" height="30" 
              class="me-2" 
-             style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); border-radius: 2px;"
+             style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); border-radius: 2px; ${avatarClickHandler ? 'cursor: pointer;' : ''}"
+             ${avatarClickHandler}
              alt="${name}">
         <div style="flex-grow: 1;">
             <small class="fw-bold" style="color: #fff;">${name}</small>
@@ -581,11 +572,43 @@ html += `
     }
     
     $('#onlineUsersList').html(html);
-    // At the end of displayRoomsWithUsers function:
-   /* Debounce filter application
-clearTimeout(window.avatarFilterTimeout);
-window.avatarFilterTimeout = setTimeout(applyAllAvatarFilters, 300);*/
+}
 
+// Add this function to handle avatar clicks in lounge
+function handleAvatarClick(event, userIdString, username) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    console.log('Lounge avatar clicked - userIdString:', userIdString, 'username:', username);
+    
+    if (currentUser.type === 'user' && username && username.trim() !== '') {
+        // For lounge, we need to get the actual user ID from username
+        getUserIdFromUsername(username, function(userId) {
+            if (userId) {
+                showUserProfile(userId, event.target);
+            }
+        });
+    }
+}
+
+// Add this helper function to get user ID from username
+function getUserIdFromUsername(username, callback) {
+    $.ajax({
+        url: 'api/get_user_id_from_username.php',
+        method: 'GET',
+        data: { username: username },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                callback(response.user_id);
+            } else {
+                callback(null);
+            }
+        },
+        error: function() {
+            callback(null);
+        }
+    });
 }
 
 // Password modal function
@@ -893,9 +916,17 @@ window.showAvatarSelector = function() {
     // Get user type to determine avatar access
     const userType = currentUser.type || 'guest';
     const isRegistered = userType === 'user';
-    
-    createProfileEditorModal(isRegistered);
+
+    window.showAvatarSelector = function() {
+    if (currentUser.type === 'user') {
+        showProfileEditor();
+    } else {
+        // Keep existing avatar selector for guests
+        createProfileEditorModal(false);
+    }
 };
+};
+
 
 function createProfileEditorModal(isRegistered) {
     const modalHtml = `
@@ -1540,14 +1571,16 @@ function initializePrivateMessaging() {
     setInterval(checkForNewPrivateMessages, 500);
 }
 
+// Add this function to lounge.js if it doesn't exist
 function openPrivateMessage(userId, username) {
     console.log('Opening private message for user:', userId, username);
     
-    if (openPrivateChats.has(userId)) {
+    if (openPrivateChats && openPrivateChats.has(userId)) {
         $(`#pm-${userId}`).show();
         return;
     }
     
+    // Create the private message window (similar to room.js)
     const windowHtml = `
         <div class="private-message-window" id="pm-${userId}">
             <div class="private-message-header">
@@ -1567,30 +1600,61 @@ function openPrivateMessage(userId, username) {
     `;
     
     $('body').append(windowHtml);
-    openPrivateChats.set(userId, { username: username, color: 'blue' }); // Default until we fetch
     
-    // Fetch user info including color
-    $.ajax({
-        url: 'api/get_user_info.php',
-        method: 'GET',
-        data: { user_id: userId },
-        dataType: 'json',
-        success: function(response) {
-            if (response.status === 'success') {
-                const chatData = openPrivateChats.get(userId);
-                chatData.color = response.user.color || 'blue';
-                chatData.avatar = response.user.avatar || 'default_avatar.jpg';
-                openPrivateChats.set(userId, chatData);
-                console.log('Fetched user color:', response.user.color);
-                // Reload messages to apply correct colors
-                loadPrivateMessages(userId);
+    // Initialize the private chat if the system exists
+    if (typeof openPrivateChats !== 'undefined') {
+        openPrivateChats.set(userId, { username: username, color: 'blue' });
+    }
+    
+    // Load messages if the function exists
+    if (typeof loadPrivateMessages === 'function') {
+        loadPrivateMessages(userId);
+    } else {
+        $('#pm-body-' + userId).html('<div style="color: #f44336; padding: 10px;">Private messaging not available in lounge</div>');
+    }
+}
+
+function closePrivateMessage(userId) {
+    $(`#pm-${userId}`).remove();
+    if (typeof openPrivateChats !== 'undefined') {
+        openPrivateChats.delete(userId);
+    }
+}
+
+function sendPrivateMessage(recipientId) {
+    if (typeof loadPrivateMessages === 'function') {
+        // Use existing PM system
+        const input = $(`#pm-input-${recipientId}`);
+        const message = input.val().trim();
+        
+        if (!message) return false;
+        
+        $.ajax({
+            url: 'api/private_messages.php',
+            method: 'POST',
+            data: {
+                action: 'send',
+                recipient_id: recipientId,
+                message: message
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    input.val('');
+                    loadPrivateMessages(recipientId);
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('Error sending message');
             }
-        },
-        error: function() {
-            console.log('Failed to fetch user info, using default color');
-            loadPrivateMessages(userId);
-        }
-    });
+        });
+    } else {
+        alert('Private messaging not available in lounge');
+    }
+    
+    return false;
 }
 
 function closePrivateMessage(userId) {
