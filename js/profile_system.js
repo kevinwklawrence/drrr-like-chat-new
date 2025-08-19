@@ -384,7 +384,7 @@ function displayProfileEditor(user) {
         <div id="avatarPreviewContainer" class="mb-3">
             <img id="selectedAvatarPreview" 
                  src="images/${currentUser.avatar || 'default_avatar.jpg'}" 
-                 width="100" height="100" 
+                 width="116" height="116" 
                  style="border: 3px solid #007bff; border-radius: 8px; filter: hue-rotate(${currentUser.avatar_hue || 0}deg) saturate(${currentUser.avatar_saturation || 100}%);"
                  alt="Selected avatar">
         </div>
