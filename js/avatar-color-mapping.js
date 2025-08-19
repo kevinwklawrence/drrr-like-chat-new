@@ -1,12 +1,27 @@
 // Avatar to Color Mapping Configuration
 const AVATAR_COLOR_MAPPING = {
     // Time-limited avatars
-    'time-limited/': 'purple',
+    'time-limited/': 'spooky',
     
     // Default avatars by specific file
     'default/_u0.png': 'black',
     'default/bone.png': 'purple',
     'default/f1.png': 'orange',
+    'default/f2.png': 'orange2',
+    'default/f3.png': 'lavender',
+    'default/f4.png': 'pink',
+    'default/f5.png': 'rose',
+    'default/f6.png': 'red',
+    'default/f7.png': 'peach',
+    'default/m1.png': 'blue',
+    'default/m2.png': 'green',
+    'default/m3.png': 'tan',
+    'default/m4.png': 'yellow',
+    'default/m5.png': 'black',
+    'default/m6.png': 'gray',
+    'default/m7.png': 'cobalt',
+    'default/m8.png': 'black',
+    'default/m9.png': 'urban',
     
     // Color folder mappings (folder name determines default color)
     'blue/': 'blue',

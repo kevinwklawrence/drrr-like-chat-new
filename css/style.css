@@ -327,3 +327,91 @@ body {
     border-radius: 15px !important;
 }
 
+/* Saved Settings Indicators */
+#settingsLoadedIndicator {
+    background: rgba(25, 135, 84, 0.1);
+    border: 1px solid rgba(25, 135, 84, 0.2);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-top: 8px;
+}
+
+#settingsLoadedIndicator small {
+    font-weight: 500;
+}
+
+/* Enhanced preview styling when saved settings are loaded */
+.saved-settings-loaded #selectedAvatarImg {
+    border: 2px solid #198754 !important;
+    box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.1);
+    animation: savedSettingsPulse 2s ease-in-out;
+}
+
+.saved-settings-loaded #selectedColorPreview {
+    border: 2px solid #198754;
+    box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.1);
+    animation: savedSettingsPulse 2s ease-in-out;
+}
+
+@keyframes savedSettingsPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(25, 135, 84, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(25, 135, 84, 0);
+    }
+}
+
+/* Slider value indicators when saved settings are loaded */
+.saved-settings-loaded .slider-value {
+    color: #198754 !important;
+    font-weight: 600;
+}
+
+.saved-settings-loaded .color-slider::-webkit-slider-thumb {
+    border-color: #198754;
+}
+
+.saved-settings-loaded .color-slider::-moz-range-thumb {
+    border-color: #198754;
+}
+
+/* Username field styling when settings are loaded */
+.settings-loaded #username {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+}
+
+/* Subtle background for customization section when loaded */
+.saved-settings-loaded .customize-content {
+    background: rgba(25, 135, 84, 0.05);
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid rgba(25, 135, 84, 0.1);
+}
+
+/* Loading state */
+.loading-user-settings .text-muted {
+    color: #6c757d !important;
+}
+
+.loading-user-settings::after {
+    content: "";
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid #6c757d;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+    margin-left: 8px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
