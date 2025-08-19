@@ -483,9 +483,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </label>
                 
                 <div class="color-grid">
-                            <div class="color-option color-black" data-color="black" onclick="selectColor('black', this)">
-
+                                <!-- Default: Black -->
+                                <div class="color-option color-black" data-color="black" onclick="selectColor('black', this)">
                                     <div class="color-name">Black</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-policeman2" data-color="policeman2" onclick="selectColor('policeman2', this)">
+                                    <div class="color-name">Black?</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-negative" data-color="negative" onclick="selectColor('negative', this)">
+                                    <div class="color-name">Negative</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-gray" data-color="gray" onclick="selectColor('gray', this)">
+                                    <div class="color-name">Gray</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-tan" data-color="tan" onclick="selectColor('tan', this)">
+                                    <div class="color-name">Tan</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
                                 
@@ -493,18 +513,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="color-name">Blue</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
+
+                                <div class="color-option color-cobalt" data-color="cobalt" onclick="selectColor('cobalt', this)">
+                                    <div class="color-name">Cobalt</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-teal2" data-color="teal2" onclick="selectColor('teal2', this)">
+                                    <div class="color-name">Teal2</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-navy" data-color="navy" onclick="selectColor('navy', this)">
+                                    <div class="color-name">Navy</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
                                 
                                 <div class="color-option color-purple" data-color="purple" onclick="selectColor('purple', this)">
                                     <div class="color-name">Purple</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
+
+                                <div class="color-option color-lavender" data-color="lavender" onclick="selectColor('lavender', this)">
+                                    <div class="color-name">Lavender</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
                                 
+                                <div class="color-option color-lavender2" data-color="lavender2" onclick="selectColor('lavender2', this)">
+                                    <div class="color-name">Lavender2</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
                                 <div class="color-option color-pink" data-color="pink" onclick="selectColor('pink', this)">
                                     <div class="color-name">Pink</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
                                 
-                                <div class="color-option color-cyan" data-color="cyan" onclick="selectColor('cyan', this)">
+                                <!--<div class="color-option color-cyan" data-color="cyan" onclick="selectColor('cyan', this)">
                                     <div class="color-name">Cyan</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
@@ -512,10 +557,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="color-option color-mint" data-color="mint" onclick="selectColor('mint', this)">
                                     <div class="color-name">Mint</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
-                                </div>
+                                </div>-->
                                 
                                 <div class="color-option color-orange" data-color="orange" onclick="selectColor('orange', this)">
                                     <div class="color-name">Orange</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-orange2" data-color="orange2" onclick="selectColor('orange2', this)">
+                                    <div class="color-name">Blorange</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-peach" data-color="peach" onclick="selectColor('peach', this)">
+                                    <div class="color-name">Peach</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
                                 
@@ -523,9 +578,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="color-name">Green</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
+
+                                <div class="color-option color-urban" data-color="urban" onclick="selectColor('urban', this)">
+                                    <div class="color-name">Urban</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-mudgreen" data-color="mudgreen" onclick="selectColor('mudgreen', this)">
+                                    <div class="color-name">Mud Green</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-palegreen" data-color="palegreen" onclick="selectColor('palegreen', this)">
+                                    <div class="color-name">Pale Green</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
                                 
                                 <div class="color-option color-red" data-color="red" onclick="selectColor('red', this)">
                                     <div class="color-name">Red</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-toyred" data-color="toyred" onclick="selectColor('toyred', this)">
+                                    <div class="color-name">Toy Red</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-spooky" data-color="spooky" onclick="selectColor('spooky', this)">
+                                    <div class="color-name">Spooky</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-rose" data-color="rose" onclick="selectColor('rose', this)">
+                                    <div class="color-name">Rose</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
                                 
@@ -533,8 +618,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="color-name">Yellow</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
+
+                                 <div class="color-option color-bbyellow" data-color="bbyellow" onclick="selectColor('bbyellow', this)">
+                                    <div class="color-name">Yellow2</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-brown" data-color="brown" onclick="selectColor('brown', this)">
+                                    <div class="color-name">Brown</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-deepbrown" data-color="deepbrown" onclick="selectColor('deepbrown', this)">
+                                    <div class="color-name">Brown2</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
                                 
-                                <div class="color-option color-teal" data-color="teal" onclick="selectColor('teal', this)">
+                                <!--<div class="color-option color-teal" data-color="teal" onclick="selectColor('teal', this)">
                                     <div class="color-name">Teal</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
@@ -542,8 +642,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="color-option color-indigo" data-color="indigo" onclick="selectColor('indigo', this)">
                                     <div class="color-name">Indigo</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
-                                </div>
-                                </div>
+                                </div>-->
+                            </div>
                                  <input type="hidden" id="selectedColor" name="color" value="">
                                 
                             

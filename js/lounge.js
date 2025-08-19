@@ -256,12 +256,9 @@ function displayRoomsWithUsers(rooms) {
             </div>
         `;
     } else {
-        // Start with Bootstrap row
         html += '<div class="row">';
         
         rooms.forEach((room, index) => {
-            debugLog('Processing room for display:', room);
-            
             try {
                 const isPasswordProtected = parseInt(room.has_password) === 1;
                 const allowsKnocking = parseInt(room.allow_knocking) === 1;
@@ -271,7 +268,6 @@ function displayRoomsWithUsers(rooms) {
                 const host = room.host;
                 const regularUsers = room.regularUsers || [];
 
-                // NEW: Process new room features (with safe defaults)
                 const isRP = parseInt(room.is_rp || 0) === 1;
                 const youtubeEnabled = parseInt(room.youtube_enabled || 0) === 1;
                 const friendsOnly = parseInt(room.friends_only || 0) === 1;
@@ -283,95 +279,38 @@ function displayRoomsWithUsers(rooms) {
                 let headerClass = 'room-header-enhanced';
                 let actionButtons = '';
 
-               let accessDenied = false;
-let accessReason = '';
-let showRestrictedButton = false;
-
-// Check access restrictions in order of priority
-if (friendsOnly && !canAccessFriendsOnly) {
-    accessDenied = true;
-    accessReason = 'Friends Only';
-    showRestrictedButton = true;
-}
-
-if (membersOnly && typeof currentUser !== 'undefined' && currentUser.type !== 'user') {
-    accessDenied = true;
-    accessReason = 'Members Only';
-    showRestrictedButton = true;
-}
-
-if (inviteOnly) {
-    accessDenied = true;
-    accessReason = 'Invite Required';
-    showRestrictedButton = true;
-}
-
-// FIXED: Build action buttons based on access state
-if (showRestrictedButton) {
-    headerClass += ' access-denied';
-    actionButtons = `
-        <button class="btn btn-danger btn-sm" disabled title="You cannot access this room">
-            <i class="fas fa-ban"></i> ${accessReason}
-        </button>
-    `;
-} else if (isPasswordProtected && hasKey) {
-    headerClass += ' has-access';
-    actionButtons = `
-        <button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})">
-            <i class="fas fa-key"></i> Join Room 
-        </button>
-    `;
-} else if (isPasswordProtected) {
-    if (allowsKnocking) {
-        headerClass += ' knock-available';
-    } else {
-        headerClass += ' password-protected';
-    }
-    
-    actionButtons = `
-        <button class="btn btn-primary btn-sm me-2" onclick="showPasswordModal(${room.id}, '${room.name.replace(/'/g, "\\'")}');">
-            <i class="fas fa-key"></i> Enter Password
-        </button>
-    `;
-    
-    if (allowsKnocking) {
-        actionButtons += `
-            <button class="btn btn-outline-primary btn-sm" onclick="knockOnRoom(${room.id}, '${room.name.replace(/'/g, "\\'")}');">
-                <i class="fas fa-hand-paper"></i> Knock
-            </button>
-        `;
-    }
-} else {
-    // Room is accessible
-    actionButtons = `
-        <button class="btn btn-success btn-sm" onclick="joinRoom(${room.id});">
-            <i class="fas fa-sign-in-alt"></i> Join Room
-        </button>
-    `;
-}
-
-                // NEW: Build feature indicators (only if features exist)
-                let featureIndicators = '';
-                if (isRP) {
-                    featureIndicators += '<span class="room-indicator rp-indicator" title="Roleplay Room"><i class="fas fa-theater-masks"></i> RP</span>';
-                }
-                if (youtubeEnabled) {
-                    featureIndicators += '<span class="room-indicator youtube-indicator" title="YouTube Player Enabled"><i class="fab fa-youtube"></i> Video</span>';
-                }
-                if (friendsOnly) {
-                    featureIndicators += '<span class="room-indicator friends-indicator" title="Friends Only"><i class="fas fa-user-friends"></i> Friends</span>';
-                }
+                // FIXED: Simple access checking with no async operations
                 if (inviteOnly) {
-                    featureIndicators += '<span class="room-indicator invite-indicator" title="Invite Only"><i class="fas fa-link"></i> Invite</span>';
-                }
-                if (membersOnly) {
-                    featureIndicators += '<span class="room-indicator members-indicator" title="Members Only"><i class="fas fa-user-check"></i> Members</span>';
-                }
-                if (disappearingMessages) {
-                    featureIndicators += '<span class="room-indicator disappearing-indicator" title="Disappearing Messages"><i class="fas fa-clock"></i> Temp</span>';
+                    headerClass += ' access-denied';
+                    actionButtons = `<button class="btn btn-danger btn-sm"  onclick="alert('This room requires a valid invite code')"><i class="fas fa-ban"></i> Invite Required</button>`;
+                } else if (membersOnly && currentUser.type !== 'user') {
+                    headerClass += ' access-denied';
+                    actionButtons = `<button class="btn btn-danger btn-sm"  onclick="alert('This room is for registered members only')"><i class="fas fa-ban" ></i> Members Only</button>`;
+                } else if (friendsOnly && !canAccessFriendsOnly) {
+                    headerClass += ' access-denied';
+                    actionButtons = `<button class="btn btn-danger btn-sm" onclick="alert('This room is for friends of the host only')"><i class="fas fa-ban"></i> Friends Only</button>`;
+                } else if (isPasswordProtected && hasKey) {
+                    headerClass += ' has-access';
+                    actionButtons = `<button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})"><i class="fas fa-key"></i> Join Room</button>`;
+                } else if (isPasswordProtected) {
+                    headerClass += allowsKnocking ? ' knock-available' : ' password-protected';
+                    actionButtons = `<button class="btn btn-primary btn-sm me-2" onclick="showPasswordModal(${room.id}, '${room.name.replace(/'/g, "\\'")}')"><i class="fas fa-key"></i> Enter Password</button>`;
+                    if (allowsKnocking) {
+                        actionButtons += `<button class="btn btn-outline-primary btn-sm" onclick="knockOnRoom(${room.id}, '${room.name.replace(/'/g, "\\'")}')"><i class="fas fa-hand-paper"></i> Knock</button>`;
+                    }
+                } else {
+                    actionButtons = `<button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})"><i class="fas fa-sign-in-alt"></i> Join Room</button>`;
                 }
 
-                // NEW: Apply theme class (safe)
+                // Build feature indicators
+                let featureIndicators = '';
+                if (isRP) featureIndicators += '<span class="room-indicator rp-indicator" title="Roleplay Room"><i class="fas fa-theater-masks"></i> RP</span>';
+                if (youtubeEnabled) featureIndicators += '<span class="room-indicator youtube-indicator" title="YouTube Player Enabled"><i class="fab fa-youtube"></i> Video</span>';
+                if (friendsOnly) featureIndicators += '<span class="room-indicator friends-indicator" title="Friends Only"><i class="fas fa-user-friends"></i> Friends</span>';
+                if (inviteOnly) featureIndicators += '<span class="room-indicator invite-indicator" title="Invite Only"><i class="fas fa-link"></i> Invite</span>';
+                if (membersOnly) featureIndicators += '<span class="room-indicator members-indicator" title="Members Only"><i class="fas fa-user-check"></i> Members</span>';
+                if (disappearingMessages) featureIndicators += '<span class="room-indicator disappearing-indicator" title="Disappearing Messages"><i class="fas fa-clock"></i> Temp</span>';
+
                 let themeClass = (room.theme && room.theme !== 'default') ? `theme-${room.theme}` : '';
 
                 // Build host section
@@ -386,11 +325,7 @@ if (showRestrictedButton) {
                         <div class="room-host">
                             <h6><i class="fas fa-crown"></i> Host</h6>
                             <div class="d-flex align-items-center">
-                                <img src="images/${hostAvatar}" 
-                                     width="32" height="32" 
-                                     class="me-2" 
-                                     style="filter: hue-rotate(${hostHue}deg) saturate(${hostSaturation}%);"
-                                     alt="${hostName}">
+                                <img src="images/${hostAvatar}" width="32" height="32" class="me-2" style="filter: hue-rotate(${hostHue}deg) saturate(${hostSaturation}%);" alt="${hostName}">
                                 <div>
                                     <div class="fw-bold">${hostName}</div>
                                     <div class="user-badges">
@@ -402,22 +337,13 @@ if (showRestrictedButton) {
                         </div>
                     `;
                 } else {
-                    hostHtml = `
-                        <div class="room-host">
-                            <h6><i class="fas fa-crown"></i> Host</h6>
-                            <div class="text-muted">No host available</div>
-                        </div>
-                    `;
+                    hostHtml = `<div class="room-host"><h6><i class="fas fa-crown"></i> Host</h6><div class="text-muted">No host available</div></div>`;
                 }
 
                 // Build users list
                 let usersHtml = '';
                 if (regularUsers.length > 0) {
-                    usersHtml = `
-                        <div class="room-users">
-                            <h6><i class="fas fa-users"></i> Users (${regularUsers.length})</h6>
-                            <div class="users-grid-two-column">
-                    `;
+                    usersHtml = `<div class="room-users"><h6><i class="fas fa-users"></i> Users (${regularUsers.length})</h6><div class="users-grid-two-column">`;
                     
                     regularUsers.slice(0, 8).forEach(user => {
                         const userAvatar = user.avatar || user.user_avatar || user.guest_avatar || 'default_avatar.jpg';
@@ -427,11 +353,7 @@ if (showRestrictedButton) {
                         
                         usersHtml += `
                             <div class="user-item-mini d-flex align-items-center">
-                                <img src="images/${userAvatar}" 
-                                     width="24" height="24" 
-                                     class="me-2" 
-                                     style="filter: hue-rotate(${userHue}deg) saturate(${userSaturation}%);"
-                                     alt="${userName}">
+                                <img src="images/${userAvatar}" width="24" height="24" class="me-2" style="filter: hue-rotate(${userHue}deg) saturate(${userSaturation}%);" alt="${userName}">
                                 <div class="user-info">
                                     <div class="user-name">${userName}</div>
                                     <div class="user-badges">
@@ -447,20 +369,11 @@ if (showRestrictedButton) {
                         usersHtml += `<div class="text-muted small users-more-indicator">+ ${regularUsers.length - 8} more users</div>`;
                     }
                     
-                    usersHtml += `
-                            </div>
-                        </div>
-                    `;
+                    usersHtml += `</div></div>`;
                 } else {
-                    usersHtml = `
-                        <div class="room-users">
-                            <h6><i class="fas fa-users"></i> Users (0)</h6>
-                            <div class="text-muted small">No other users in room</div>
-                        </div>
-                    `;
+                    usersHtml = `<div class="room-users"><h6><i class="fas fa-users"></i> Users (0)</h6><div class="text-muted small">No other users in room</div></div>`;
                 }
 
-                // Each room card
                 html += `
                     <div class="col-lg-6 col-12 room-card-wrapper">
                         <div class="room-card-enhanced ${themeClass}">
@@ -480,22 +393,14 @@ if (showRestrictedButton) {
                                         ${featureIndicators ? `<div class="room-features mt-1">${featureIndicators}</div>` : ''}
                                         ${hasKey ? '<div class="mt-1"><span class="badge bg-success"><i class="fas fa-key"></i> Access Granted</span></div>' : ''}
                                     </div>
-                                    <div class="action-buttons">
-                                        ${actionButtons}
-                                    </div>
+                                    <div class="action-buttons">${actionButtons}</div>
                                 </div>
                             </div>
                             <div class="room-content">
-                                <div class="room-description">
-                                    <p>${room.description || 'No description'}</p>
-                                </div>
+                                <div class="room-description"><p>${room.description || 'No description'}</p></div>
                                 <div class="row">
-                                    <div class="col-12">
-                                        ${usersHtml}
-                                    </div>
-                                    <div class="col-12 mt-3">
-                                        ${hostHtml}
-                                    </div>
+                                    <div class="col-12">${usersHtml}</div>
+                                    <div class="col-12 mt-3">${hostHtml}</div>
                                 </div>
                             </div>
                         </div>
@@ -504,46 +409,15 @@ if (showRestrictedButton) {
                 
             } catch (error) {
                 console.error('Error rendering room:', room, error);
-                // Fallback to simple room display
-                html += `
-                    <div class="col-lg-6 col-12 room-card-wrapper">
-                        <div class="room-card-enhanced">
-                            <div class="room-header-enhanced">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="room-title-section">
-                                        <h5 class="room-title">${room.name}</h5>
-                                        <div class="room-meta">
-                                            <span class="capacity-info">${room.user_count || 0}/${room.capacity || 10} users</span>
-                                        </div>
-                                    </div>
-                                    <div class="action-buttons">
-                                        <button class="btn btn-success btn-sm" onclick="joinRoom(${room.id});">
-                                            <i class="fas fa-sign-in-alt"></i> Join Room
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="room-content">
-                                <div class="room-description">
-                                    <p>${room.description || 'No description'}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                html += `<div class="col-lg-6 col-12 room-card-wrapper"><div class="room-card-enhanced"><div class="room-header-enhanced"><div class="d-flex justify-content-between align-items-start"><div class="room-title-section"><h5 class="room-title">${room.name}</h5></div><div class="action-buttons"><button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})"><i class="fas fa-sign-in-alt"></i> Join Room</button></div></div></div></div></div>`;
             }
         });
         
-        // Close the Bootstrap row
         html += '</div>';
     }
     
-    debugLog('Setting rooms HTML...');
-    
-    // IMPROVED: Smoother updates with less jarring transitions
     const $roomsList = $('#roomsList');
     if ($roomsList.children().length > 0 && !$roomsList.hasClass('updating')) {
-        // Only animate if we're not already updating
         $roomsList.addClass('fade-transition');
         setTimeout(() => {
             $roomsList.html(html);
@@ -1509,6 +1383,12 @@ function checkForNewPrivateMessages() {
 
 // Initialize when page loads
 $(document).ready(function() {
+     setInterval(() => {
+        $('.room-card-enhanced .fa-spinner').each(function() {
+            console.log('PERSISTENT SPINNER DETECTED:', this.closest('.room-card-enhanced'));
+            console.log('Parent button:', this.closest('button'));
+        });
+    }, 1000);
     initializePrivateMessaging();
 });
 

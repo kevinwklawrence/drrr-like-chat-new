@@ -58,7 +58,7 @@ if (strlen($name) > 50) {
     exit;
 }
 
-// FIXED: Password validation and hashing
+// FIXED: Password validation and hashing with better error handling
 $hashed_password = null;
 if ($has_password) {
     if (empty($password)) {
@@ -67,7 +67,13 @@ if ($has_password) {
     }
     
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-    error_log("CREATE_ROOM_DEBUG: Password hashed successfully, length: " . strlen($hashed_password));
+    if ($hashed_password === false) {
+        error_log("CREATE_ROOM_DEBUG: Password hashing failed");
+        echo json_encode(['status' => 'error', 'message' => 'Failed to hash password']);
+        exit;
+    }
+    
+    error_log("CREATE_ROOM_DEBUG: Password hashed successfully, length: " . strlen($hashed_password) . ", hash: " . substr($hashed_password, 0, 20) . "...");
 } else {
     error_log("CREATE_ROOM_DEBUG: No password protection requested");
 }
@@ -117,23 +123,39 @@ try {
     $param_types = 'ssi';
     $param_values = [$name, $description, $capacity];
     
-    // Add has_password field first
-    if (in_array('has_password', $chatroom_columns)) {
-        $insert_fields[] = 'has_password';
-        $insert_values[] = '?';
-        $param_types .= 'i';
-        $param_values[] = $has_password;
-        error_log("CREATE_ROOM_DEBUG: Added has_password = $has_password");
+// Add has_password field with case-insensitive check
+$has_password_column = null;
+foreach ($chatroom_columns as $col) {
+    if (strtolower($col) === 'has_password') {
+        $has_password_column = $col;
+        break;
     }
+}
+
+if ($has_password_column) {
+    $insert_fields[] = $has_password_column;
+    $insert_values[] = '?';
+    $param_types .= 'i';
+    $param_values[] = $has_password;
+    error_log("CREATE_ROOM_DEBUG: Added $has_password_column = $has_password");
+}
     
-    // Add password field second - CRITICAL FIX
-    if (in_array('password', $chatroom_columns)) {
-        $insert_fields[] = 'password';
-        $insert_values[] = '?';
-        $param_types .= 's';
-        $param_values[] = $hashed_password;
-        error_log("CREATE_ROOM_DEBUG: Added password field with value: " . ($hashed_password ? 'HASHED_PASSWORD' : 'NULL'));
+// Add password field - CRITICAL FIX for case sensitivity
+$password_column_name = null;
+foreach ($chatroom_columns as $col) {
+    if (strtolower($col) === 'password') {
+        $password_column_name = $col;
+        break;
     }
+}
+
+if ($password_column_name) {
+    $insert_fields[] = $password_column_name; // Use the actual column name (PASSWORD or password)
+    $insert_values[] = '?';
+    $param_types .= 's';
+    $param_values[] = $has_password ? $hashed_password : null;
+    error_log("CREATE_ROOM_DEBUG: Added password field '$password_column_name' with value: " . ($has_password && $hashed_password ? 'HASHED_PASSWORD(' . strlen($hashed_password) . ')' : 'NULL'));
+}
     
     // Add other existing fields
     if (in_array('background', $chatroom_columns)) {
@@ -259,10 +281,10 @@ try {
     
     error_log("CREATE_ROOM_DEBUG: Room created with ID: $room_id");
     
-    // VERIFICATION: Check if password was actually saved
-    if ($has_password && $hashed_password) {
-    // Give database a moment to commit the data
-    usleep(100000); // 0.1 second delay
+// VERIFICATION: Check if password was actually saved
+if ($has_password && $hashed_password) {
+    // Add a small delay to ensure database commit
+    usleep(200000); // 0.2 second delay
     
     $verify_stmt = $conn->prepare("SELECT password, has_password FROM chatrooms WHERE id = ?");
     if ($verify_stmt) {
@@ -275,22 +297,26 @@ try {
             $stored_password = $verify_data['password'];
             $stored_has_password = $verify_data['has_password'];
             
-            error_log("CREATE_ROOM_DEBUG: VERIFICATION - has_password: $stored_has_password, password_exists: " . (!empty($stored_password) ? 'YES' : 'NO'));
+            error_log("CREATE_ROOM_DEBUG: VERIFICATION - has_password: $stored_has_password, stored_password_length: " . strlen($stored_password ?? ''));
             
-            // Only throw error if has_password is set but password is completely empty
-            if ($stored_has_password == 1 && (is_null($stored_password) || $stored_password === '')) {
-                error_log("CREATE_ROOM_DEBUG: CRITICAL ERROR - has_password=1 but password is empty");
+            // Check if the data was saved correctly
+            if ($stored_has_password != 1) {
+                error_log("CREATE_ROOM_DEBUG: ERROR - has_password not set correctly");
                 $verify_stmt->close();
-                throw new Exception("Password protection enabled but password was not saved properly");
-            } else if ($stored_has_password == 1 && !empty($stored_password)) {
-                error_log("CREATE_ROOM_DEBUG: Password verification successful - password saved and has_password set");
+                throw new Exception("Password protection flag was not saved correctly");
             }
+            
+            if (empty($stored_password) || strlen($stored_password) < 20) {
+                error_log("CREATE_ROOM_DEBUG: ERROR - password hash not saved correctly. Expected length ~60, got: " . strlen($stored_password ?? ''));
+                $verify_stmt->close();
+                throw new Exception("Password was not saved correctly. Please try again.");
+            }
+            
+            error_log("CREATE_ROOM_DEBUG: Password verification successful");
         } else {
-            error_log("CREATE_ROOM_DEBUG: Could not find created room for verification");
+            error_log("CREATE_ROOM_DEBUG: Room not found in verification");
         }
         $verify_stmt->close();
-    } else {
-        error_log("CREATE_ROOM_DEBUG: Could not prepare verification statement");
     }
 }
     

@@ -194,7 +194,7 @@
     --user-gradient: linear-gradient(to bottom, rgba(242,164,162,1) 0%,rgba(230,80,78,1) 24%,rgba(193,11,7,1) 50%,rgba(226,51,48,1) 79%,rgba(233,99,97,1) 100%);
     --user-tail-color: #ffffff; 
     --user-text-color: #ffffff; 
-    --user-border-color: #84fab0; 
+    --user-border-color: #ffffff; 
 }
 
 /* Green */
