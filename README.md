@@ -40,5 +40,7 @@ A new drrr-like-chat project made from scratch, using HTML, CSS, JS, PHP, Ajax, 
 - Private messaging
 - Whispers
 - Avatar color changer
+- Chat bubble color changer
+- Personal mini-profile
 
 # REQUIRES SQL SETUP
