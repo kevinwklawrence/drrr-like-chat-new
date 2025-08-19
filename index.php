@@ -127,9 +127,7 @@ if (isset($_SESSION['user'])) {
     </div>
     <div class="selected-color-preview">
         <div class="preview-circle color-black" id="selectedColorPreview"></div>
-        <div>
-            <strong id="selectedColorName">Black</strong> - Your message bubble color
-        </div>
+            <strong id="selectedColorName" style="width:0;height:0;visibility:hidden;display:flex;"></strong>
     </div>
 </div>
                             </div>
@@ -219,6 +217,16 @@ if (isset($_SESSION['user'])) {
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
 
+                                <div class="color-option color-policeman2" data-color="policeman2" onclick="selectColor('policeman2', this)">
+                                    <div class="color-name">Black?</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-negative" data-color="negative" onclick="selectColor('negative', this)">
+                                    <div class="color-name">Negative</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
                                 <div class="color-option color-gray" data-color="gray" onclick="selectColor('gray', this)">
                                     <div class="color-name">Gray</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
@@ -238,6 +246,16 @@ if (isset($_SESSION['user'])) {
                                     <div class="color-name">Cobalt</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
+
+                                <div class="color-option color-teal2" data-color="teal2" onclick="selectColor('teal2', this)">
+                                    <div class="color-name">Teal2</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-navy" data-color="navy" onclick="selectColor('navy', this)">
+                                    <div class="color-name">Navy</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
                                 
                                 <div class="color-option color-purple" data-color="purple" onclick="selectColor('purple', this)">
                                     <div class="color-name">Purple</div>
@@ -249,6 +267,11 @@ if (isset($_SESSION['user'])) {
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
                                 
+                                <div class="color-option color-lavender2" data-color="lavender2" onclick="selectColor('lavender2', this)">
+                                    <div class="color-name">Lavender2</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
                                 <div class="color-option color-pink" data-color="pink" onclick="selectColor('pink', this)">
                                     <div class="color-name">Pink</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
@@ -288,9 +311,29 @@ if (isset($_SESSION['user'])) {
                                     <div class="color-name">Urban</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
+
+                                <div class="color-option color-mudgreen" data-color="mudgreen" onclick="selectColor('mudgreen', this)">
+                                    <div class="color-name">Mud Green</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-palegreen" data-color="palegreen" onclick="selectColor('palegreen', this)">
+                                    <div class="color-name">Pale Green</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
                                 
                                 <div class="color-option color-red" data-color="red" onclick="selectColor('red', this)">
                                     <div class="color-name">Red</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-toyred" data-color="toyred" onclick="selectColor('toyred', this)">
+                                    <div class="color-name">Toy Red</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-spooky" data-color="spooky" onclick="selectColor('spooky', this)">
+                                    <div class="color-name">Spooky</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
 
@@ -301,6 +344,21 @@ if (isset($_SESSION['user'])) {
                                 
                                 <div class="color-option color-yellow" data-color="yellow" onclick="selectColor('yellow', this)">
                                     <div class="color-name">Yellow</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                 <div class="color-option color-bbyellow" data-color="bbyellow" onclick="selectColor('bbyellow', this)">
+                                    <div class="color-name">Yellow2</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-brown" data-color="brown" onclick="selectColor('brown', this)">
+                                    <div class="color-name">Brown</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-deepbrown" data-color="deepbrown" onclick="selectColor('deepbrown', this)">
+                                    <div class="color-name">Brown2</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
                                 

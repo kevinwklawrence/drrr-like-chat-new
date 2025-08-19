@@ -22,6 +22,21 @@ const AVATAR_COLOR_MAPPING = {
     'default/m7.png': 'cobalt',
     'default/m8.png': 'black',
     'default/m9.png': 'urban',
+    'default/icon_bb_tero.png': 'bbyellow',
+    'default/icon_bepo.png': 'orange',
+    'default/icon_bh.png': 'black',
+    'default/icon_hakumen.png': 'gray',
+    'default/icon_kakka.png': 'lavender2',
+    'default/icon_meme.png': 'toyred',
+    'default/icon_mudgreen.png': 'mudgreen',
+    'default/icon_shingenb.png': 'deepbrown',
+    'default/icon_teal2.png': 'teal2',
+    'default/icon_xsoncho.png': 'palegreen',
+    'default/nothing.png': 'negative',
+    'default/pbrown.png': 'brown',
+    'default/policeman2.png': 'policeman2',
+    'default/train.png': 'navy',
+    
     
     // Color folder mappings (folder name determines default color)
     'blue/': 'blue',
@@ -57,7 +72,7 @@ function getAvatarDefaultColor(avatarPath) {
     
     // Extract folder from path and check if it matches a color name
     const folder = avatarPath.split('/')[0];
-    const validColors = ['blue', 'purple', 'pink', 'cyan', 'mint', 'orange', 'green', 'yellow', 'red', 'teal', 'indigo'];
+    const validColors = ['blue', 'purple', 'pink', 'cyan', 'mint', 'orange', 'green', 'yellow', 'red', 'teal', 'indigo','spooky'];
     
     if (validColors.includes(folder.toLowerCase())) {
         return folder.toLowerCase();

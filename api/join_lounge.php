@@ -89,7 +89,7 @@ if (empty($avatar)) {
 $valid_colors = [
     'black', 'blue', 'purple', 'pink', 'cyan', 'mint', 'orange', 
     'lavender', 'peach', 'green', 'yellow', 'red', 'teal', 
-    'indigo', 'emerald', 'rose'
+    'indigo', 'emerald', 'rose', 'spooky', 'bbyellow', 'lavender2', 'toyred', 'mudgreen', 'deepbrown', 'teal2', 'palegreen', 'negative', 'policeman2', 'brown', 'navy'
 ];
 
 if (!in_array($color, $valid_colors)) {

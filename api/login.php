@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $valid_colors = [
         'black', 'blue', 'purple', 'pink', 'cyan', 'mint', 'orange', 
         'lavender', 'peach', 'green', 'yellow', 'red', 'teal', 
-        'indigo', 'emerald', 'rose'
+        'indigo', 'emerald', 'rose', 'spooky', 'bbyellow', 'lavender2', 'toyred', 'mudgreen', 'deepbrown', 'teal2', 'palegreen', 'negative', 'policeman2', 'brown', 'navy'
     ];
 
     if (!empty($selected_color) && !in_array($selected_color, $valid_colors)) {

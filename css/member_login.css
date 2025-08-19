@@ -389,10 +389,10 @@ body {
 
         .color-option {
             position: relative;
-            width: 58px;
-            height: 58px;
+            /*width: 58px;*/
+            height: 32px;
             border-radius: 4px;
-            border: 2px solid #ffffff40;
+            border: 2px solid #ffffff;
             cursor: pointer;
             /* transition: all 0.1s ease; */
             display: flex;
@@ -418,13 +418,13 @@ body {
         }
 
         .color-option .color-name {
-            background: rgb(0 0 0 / 50%);
-            color: white;
+            /*background: rgb(0 0 0 / 50%);*/
+            color: rgba(0, 0, 0, 0);
             padding: 1px 6px;
             border-radius: 4px;
             font-size: 0.7rem;
             font-weight: 600;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+            /*text-shadow: 0 1px 2px rgba(0,0,0,0.8);*/
             letter-spacing: 0.5px;
         }
 
@@ -462,13 +462,13 @@ body {
         }
 
         .preview-circle {
-            width: 50px;
-            height: 50px;
-            border-radius: 4px;
-            margin: 0 auto 8px;
-            border: 3px solid rgba(255,255,255,0.3);
-            background-size: 100% 100%;
-        }
+    width: 200px;
+    height: 80px;
+    border-radius: 12px;
+    margin: 0 0 0 10px;
+    border: 3px solid rgb(255 255 255);
+    background-size: 100% 100%;
+}
 
         .reset-btn {
             background: #404040;
@@ -504,10 +504,12 @@ body {
 }
 
 .preview-circle {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    flex-shrink: 0;
+    width: 200px;
+    height: 80px;
+    border-radius: 12px;
+    margin: 0 0 0 10px;
+    border: 3px solid rgb(255 255 255);
+    background-size: 100% 100%;
 }
 
 .selected-preview-row {
@@ -542,11 +544,11 @@ body {
 }
 
 .preview-circle {
-    width: 50px;
-    height: 50px;
-    border-radius: 4px;
-    margin: 0 auto 8px;
-    border: 3px solid rgba(255,255,255,0.3);
+    width: 200px;
+    height: 80px;
+    border-radius: 12px;
+    margin: 0 0 0 10px;
+    border: 3px solid rgb(255 255 255);
     background-size: 100% 100%;
 }
 

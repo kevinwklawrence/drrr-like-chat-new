@@ -44,11 +44,20 @@
 /* Color Option Styles with Gradients */
 .color-option {
     position: relative;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    background-size: 200% 200%;
-    background-position: center;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            /*width: 58px;*/
+            height: 32px;
+            border-radius: 4px;
+            border: 2px solid #ffffff;
+            cursor: pointer;
+            /* transition: all 0.1s ease; */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-size: 200% 200%;
+            background-position: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            color: transparent;
+            text-shadow: none;
 }
 
 .color-option:hover {

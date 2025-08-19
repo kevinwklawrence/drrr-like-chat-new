@@ -21,7 +21,7 @@ $new_color = $_POST['color'] ?? '';
 $valid_colors = [
     'blue', 'purple', 'pink', 'cyan', 'mint', 'orange', 
     'lavender', 'peach', 'green', 'yellow', 'red', 'teal', 
-    'indigo', 'emerald', 'rose'
+    'indigo', 'emerald', 'rose','spooky', 'bbyellow', 'lavender2', 'toyred', 'mudgreen', 'deepbrown', 'teal2', 'palegreen', 'negative', 'policeman2', 'brown', 'navy'
 ];
 
 if (!in_array($new_color, $valid_colors)) {

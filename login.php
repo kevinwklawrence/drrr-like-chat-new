@@ -145,6 +145,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->close();
     exit;
 }
+
+
 ?>
 
 <!DOCTYPE html>
@@ -393,9 +395,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <div class="selected-color-preview">
             <div class="preview-circle color-black" id="selectedColorPreview"></div>
-            <div>
-                <strong id="selectedColorName">Black</strong> - Your message bubble color
-            </div>
+                <strong id="selectedColorName" style="width:0;height:0;visibility:hidden;display:flex;"></strong>
         </div>
         
     </div>
