@@ -1,0 +1,22 @@
+/* css/themes/forest.css */
+body.theme-forest {
+    background: linear-gradient(135deg, #1b4332, #2d5016);
+}
+
+body.theme-forest .room-container {
+    background: rgba(27, 67, 50, 0.9);
+}
+
+body.theme-forest .room-header {
+    background: linear-gradient(135deg, #2d5016, #1b4332);
+    border-bottom: 2px solid #40916c;
+}
+
+body.theme-forest .room-title {
+    color: #95d5b2;
+}
+
+body.theme-forest .chat-messages {
+    background: rgba(27, 67, 50, 0.6);
+}
+

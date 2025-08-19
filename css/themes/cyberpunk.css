@@ -1,0 +1,31 @@
+/* css/themes/cyberpunk.css */
+body.theme-cyberpunk {
+    background: linear-gradient(135deg, #0f0f23, #1a1a2e);
+}
+
+body.theme-cyberpunk .room-container {
+    background: rgba(15, 15, 35, 0.9);
+    border: 1px solid #00ffff;
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+}
+
+body.theme-cyberpunk .room-header {
+    background: linear-gradient(135deg, #16213e, #0f0f23);
+    border-bottom: 2px solid #00ffff;
+}
+
+body.theme-cyberpunk .room-title {
+    color: #00ffff;
+    text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+}
+
+body.theme-cyberpunk .chat-messages {
+    background: rgba(15, 15, 35, 0.7);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+}
+
+body.theme-cyberpunk .message-bubble {
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.1);
+}
+

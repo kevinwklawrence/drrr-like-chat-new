@@ -1,0 +1,22 @@
+/* css/themes/ocean.css */
+body.theme-ocean {
+    background: linear-gradient(135deg, #0077be, #023e8a);
+}
+
+body.theme-ocean .room-container {
+    background: rgba(0, 119, 190, 0.9);
+}
+
+body.theme-ocean .room-header {
+    background: linear-gradient(135deg, #023e8a, #0077be);
+    border-bottom: 2px solid #0096c7;
+}
+
+body.theme-ocean .room-title {
+    color: #caf0f8;
+}
+
+body.theme-ocean .chat-messages {
+    background: rgba(2, 62, 138, 0.6);
+}
+

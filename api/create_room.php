@@ -14,7 +14,7 @@ if (!isset($_SESSION['user'])) {
 
 include '../db_connect.php';
 
-// Get form data
+// Get form data (existing)
 $name = trim($_POST['name'] ?? '');
 $description = trim($_POST['description'] ?? '');
 $capacity = (int)($_POST['capacity'] ?? 10);
@@ -23,10 +23,29 @@ $has_password = (int)($_POST['has_password'] ?? 0);
 $password = $_POST['password'] ?? '';
 $allow_knocking = (int)($_POST['allow_knocking'] ?? 1);
 
+// NEW: Get new feature data
+$is_rp = (int)($_POST['is_rp'] ?? 0);
+$youtube_enabled = (int)($_POST['youtube_enabled'] ?? 0);
+$theme = trim($_POST['theme'] ?? 'default');
+$friends_only = (int)($_POST['friends_only'] ?? 0);
+$invite_only = (int)($_POST['invite_only'] ?? 0);
+$members_only = (int)($_POST['members_only'] ?? 0);
+$disappearing_messages = (int)($_POST['disappearing_messages'] ?? 0);
+$message_lifetime_minutes = (int)($_POST['message_lifetime_minutes'] ?? 0);
+
 $user_id_string = $_SESSION['user']['user_id'] ?? '';
 $host_user_id = $_SESSION['user']['type'] === 'registered' ? $_SESSION['user']['user_id'] : null;
 
-error_log("SAFE_CREATE_ROOM: Starting - name='$name', has_password=$has_password, password_length=" . strlen($password));
+// Debug log
+error_log("CREATE_ROOM_DEBUG: Received data:");
+error_log("  - has_password: $has_password");
+error_log("  - password: '" . $password . "' (length: " . strlen($password) . ")");
+error_log("  - is_rp: $is_rp");
+error_log("  - youtube_enabled: $youtube_enabled");
+error_log("  - theme: $theme");
+error_log("  - friends_only: $friends_only");
+error_log("  - invite_only: $invite_only");
+error_log("  - members_only: $members_only");
 
 // Validation
 if (empty($name)) {
@@ -39,9 +58,29 @@ if (strlen($name) > 50) {
     exit;
 }
 
-// FIXED: Simple password validation
-if ($has_password && empty($password)) {
-    echo json_encode(['status' => 'error', 'message' => 'Password is required when password protection is enabled']);
+// FIXED: Password validation and hashing
+$hashed_password = null;
+if ($has_password) {
+    if (empty($password)) {
+        echo json_encode(['status' => 'error', 'message' => 'Password is required when password protection is enabled']);
+        exit;
+    }
+    
+    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+    error_log("CREATE_ROOM_DEBUG: Password hashed successfully, length: " . strlen($hashed_password));
+} else {
+    error_log("CREATE_ROOM_DEBUG: No password protection requested");
+}
+
+// NEW: Validate friends_only for guests
+if ($friends_only && $_SESSION['user']['type'] !== 'user') {
+    echo json_encode(['status' => 'error', 'message' => 'Only registered users can create friends-only rooms']);
+    exit;
+}
+
+// NEW: Validate disappearing messages
+if ($disappearing_messages && ($message_lifetime_minutes < 1 || $message_lifetime_minutes > 1440)) {
+    echo json_encode(['status' => 'error', 'message' => 'Message lifetime must be between 1 and 1440 minutes']);
     exit;
 }
 
@@ -52,14 +91,13 @@ if (!in_array($capacity, [5, 10, 20, 50])) {
 try {
     $conn->begin_transaction();
     
-    // FIXED: Simple password hashing - no complex logic
-    $hashed_password = null;
-    if ($has_password && !empty($password)) {
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-        error_log("SAFE_CREATE_ROOM: Password hashed successfully");
+    // NEW: Generate invite code if needed
+    $invite_code = null;
+    if ($invite_only) {
+        $invite_code = bin2hex(random_bytes(16)); // 32 character hex string
+        error_log("CREATE_ROOM_DEBUG: Generated invite code: $invite_code");
     }
     
-    // FIXED: Use your original dynamic approach but with better error handling
     // Check what columns exist in chatrooms table
     $columns_query = $conn->query("SHOW COLUMNS FROM chatrooms");
     if (!$columns_query) {
@@ -71,32 +109,33 @@ try {
         $chatroom_columns[] = $row['Field'];
     }
     
-    error_log("SAFE_CREATE_ROOM: Available chatrooms columns: " . implode(', ', $chatroom_columns));
+    error_log("CREATE_ROOM_DEBUG: Available chatrooms columns: " . implode(', ', $chatroom_columns));
     
-    // Build INSERT query based on available columns - IMPROVED VERSION
+    // Build INSERT query based on available columns
     $insert_fields = ['name', 'description', 'capacity', 'created_at'];
     $insert_values = ['?', '?', '?', 'NOW()'];
     $param_types = 'ssi';
     $param_values = [$name, $description, $capacity];
     
-    // Add password fields - CRITICAL FIX
-    if (in_array('password', $chatroom_columns)) {
-        $insert_fields[] = 'password';
-        $insert_values[] = '?';
-        $param_types .= 's';
-        $param_values[] = $hashed_password;
-        error_log("SAFE_CREATE_ROOM: Added password field");
-    }
-    
+    // Add has_password field first
     if (in_array('has_password', $chatroom_columns)) {
         $insert_fields[] = 'has_password';
         $insert_values[] = '?';
         $param_types .= 'i';
         $param_values[] = $has_password;
-        error_log("SAFE_CREATE_ROOM: Added has_password field");
+        error_log("CREATE_ROOM_DEBUG: Added has_password = $has_password");
     }
     
-    // Add other optional fields
+    // Add password field second - CRITICAL FIX
+    if (in_array('password', $chatroom_columns)) {
+        $insert_fields[] = 'password';
+        $insert_values[] = '?';
+        $param_types .= 's';
+        $param_values[] = $hashed_password;
+        error_log("CREATE_ROOM_DEBUG: Added password field with value: " . ($hashed_password ? 'HASHED_PASSWORD' : 'NULL'));
+    }
+    
+    // Add other existing fields
     if (in_array('background', $chatroom_columns)) {
         $insert_fields[] = 'background';
         $insert_values[] = '?';
@@ -125,10 +164,84 @@ try {
         $param_values[] = $user_id_string;
     }
     
+    // NEW: Add new feature fields (only if columns exist)
+    if (in_array('is_rp', $chatroom_columns)) {
+        $insert_fields[] = 'is_rp';
+        $insert_values[] = '?';
+        $param_types .= 'i';
+        $param_values[] = $is_rp;
+        error_log("CREATE_ROOM_DEBUG: Adding is_rp = $is_rp");
+    }
+    
+    if (in_array('youtube_enabled', $chatroom_columns)) {
+        $insert_fields[] = 'youtube_enabled';
+        $insert_values[] = '?';
+        $param_types .= 'i';
+        $param_values[] = $youtube_enabled;
+        error_log("CREATE_ROOM_DEBUG: Adding youtube_enabled = $youtube_enabled");
+    }
+    
+    if (in_array('theme', $chatroom_columns)) {
+        $insert_fields[] = 'theme';
+        $insert_values[] = '?';
+        $param_types .= 's';
+        $param_values[] = $theme;
+        error_log("CREATE_ROOM_DEBUG: Adding theme = $theme");
+    }
+    
+    if (in_array('friends_only', $chatroom_columns)) {
+        $insert_fields[] = 'friends_only';
+        $insert_values[] = '?';
+        $param_types .= 'i';
+        $param_values[] = $friends_only;
+        error_log("CREATE_ROOM_DEBUG: Adding friends_only = $friends_only");
+    }
+    
+    if (in_array('invite_only', $chatroom_columns)) {
+        $insert_fields[] = 'invite_only';
+        $insert_values[] = '?';
+        $param_types .= 'i';
+        $param_values[] = $invite_only;
+        error_log("CREATE_ROOM_DEBUG: Adding invite_only = $invite_only");
+    }
+    
+    if (in_array('invite_code', $chatroom_columns)) {
+        $insert_fields[] = 'invite_code';
+        $insert_values[] = '?';
+        $param_types .= 's';
+        $param_values[] = $invite_code;
+        error_log("CREATE_ROOM_DEBUG: Adding invite_code = " . ($invite_code ?: 'NULL'));
+    }
+    
+    if (in_array('members_only', $chatroom_columns)) {
+        $insert_fields[] = 'members_only';
+        $insert_values[] = '?';
+        $param_types .= 'i';
+        $param_values[] = $members_only;
+        error_log("CREATE_ROOM_DEBUG: Adding members_only = $members_only");
+    }
+    
+    if (in_array('disappearing_messages', $chatroom_columns)) {
+        $insert_fields[] = 'disappearing_messages';
+        $insert_values[] = '?';
+        $param_types .= 'i';
+        $param_values[] = $disappearing_messages;
+        error_log("CREATE_ROOM_DEBUG: Adding disappearing_messages = $disappearing_messages");
+    }
+    
+    if (in_array('message_lifetime_minutes', $chatroom_columns)) {
+        $insert_fields[] = 'message_lifetime_minutes';
+        $insert_values[] = '?';
+        $param_types .= 'i';
+        $param_values[] = $message_lifetime_minutes;
+        error_log("CREATE_ROOM_DEBUG: Adding message_lifetime_minutes = $message_lifetime_minutes");
+    }
+    
     $insert_sql = "INSERT INTO chatrooms (" . implode(', ', $insert_fields) . ") VALUES (" . implode(', ', $insert_values) . ")";
     
-    error_log("SAFE_CREATE_ROOM: SQL: $insert_sql");
-    error_log("SAFE_CREATE_ROOM: Params: " . print_r($param_values, true));
+    error_log("CREATE_ROOM_DEBUG: Final SQL: $insert_sql");
+    error_log("CREATE_ROOM_DEBUG: Param types: $param_types");
+    error_log("CREATE_ROOM_DEBUG: Param count: " . count($param_values));
     
     $stmt = $conn->prepare($insert_sql);
     if (!$stmt) {
@@ -144,34 +257,42 @@ try {
     $room_id = $conn->insert_id;
     $stmt->close();
     
-    error_log("SAFE_CREATE_ROOM: Room created with ID: $room_id");
+    error_log("CREATE_ROOM_DEBUG: Room created with ID: $room_id");
     
-    // CRITICAL: Verify password was saved correctly
+    // VERIFICATION: Check if password was actually saved
+    if ($has_password && $hashed_password) {
+    // Give database a moment to commit the data
+    usleep(100000); // 0.1 second delay
+    
     $verify_stmt = $conn->prepare("SELECT password, has_password FROM chatrooms WHERE id = ?");
     if ($verify_stmt) {
         $verify_stmt->bind_param("i", $room_id);
         $verify_stmt->execute();
         $verify_result = $verify_stmt->get_result();
-        $verify_data = $verify_result->fetch_assoc();
-        $verify_stmt->close();
         
-        error_log("SAFE_CREATE_ROOM: Verification - has_password: " . ($verify_data['has_password'] ?? 'NULL') . ", password: " . (!empty($verify_data['password']) ? 'SET' : 'EMPTY'));
-        
-        // If password should be set but isn't, try fallback
-        if ($has_password && empty($verify_data['password'])) {
-            error_log("SAFE_CREATE_ROOM: Password missing, applying fallback fix");
-            $fallback_stmt = $conn->prepare("UPDATE chatrooms SET password = ?, has_password = ? WHERE id = ?");
-            if ($fallback_stmt) {
-                $fallback_stmt->bind_param("sii", $hashed_password, $has_password, $room_id);
-                if ($fallback_stmt->execute()) {
-                    error_log("SAFE_CREATE_ROOM: Fallback password update successful");
-                } else {
-                    error_log("SAFE_CREATE_ROOM: Fallback failed: " . $fallback_stmt->error);
-                }
-                $fallback_stmt->close();
+        if ($verify_result->num_rows > 0) {
+            $verify_data = $verify_result->fetch_assoc();
+            $stored_password = $verify_data['password'];
+            $stored_has_password = $verify_data['has_password'];
+            
+            error_log("CREATE_ROOM_DEBUG: VERIFICATION - has_password: $stored_has_password, password_exists: " . (!empty($stored_password) ? 'YES' : 'NO'));
+            
+            // Only throw error if has_password is set but password is completely empty
+            if ($stored_has_password == 1 && (is_null($stored_password) || $stored_password === '')) {
+                error_log("CREATE_ROOM_DEBUG: CRITICAL ERROR - has_password=1 but password is empty");
+                $verify_stmt->close();
+                throw new Exception("Password protection enabled but password was not saved properly");
+            } else if ($stored_has_password == 1 && !empty($stored_password)) {
+                error_log("CREATE_ROOM_DEBUG: Password verification successful - password saved and has_password set");
             }
+        } else {
+            error_log("CREATE_ROOM_DEBUG: Could not find created room for verification");
         }
+        $verify_stmt->close();
+    } else {
+        error_log("CREATE_ROOM_DEBUG: Could not prepare verification statement");
     }
+}
     
     // Add host to chatroom_users - USE YOUR ORIGINAL WORKING CODE
     $user_columns_query = $conn->query("SHOW COLUMNS FROM chatroom_users");
@@ -184,7 +305,7 @@ try {
         $user_columns[] = $row['Field'];
     }
     
-    error_log("SAFE_CREATE_ROOM: Available chatroom_users columns: " . implode(', ', $user_columns));
+    error_log("CREATE_ROOM_DEBUG: Available chatroom_users columns: " . implode(', ', $user_columns));
     
     // Build INSERT query for chatroom_users based on available columns
     $user_insert_fields = ['room_id', 'user_id_string', 'is_host'];
@@ -248,40 +369,40 @@ try {
     }
 
     if (in_array('avatar_hue', $user_columns)) {
-    $avatar_hue = (int)($_SESSION['user']['avatar_hue'] ?? 0);
-    $user_insert_fields[] = 'avatar_hue';
-    $user_insert_values[] = '?';
-    $user_param_types .= 'i';
-    $user_param_values[] = $avatar_hue;
-}
+        $avatar_hue = (int)($_SESSION['user']['avatar_hue'] ?? 0);
+        $user_insert_fields[] = 'avatar_hue';
+        $user_insert_values[] = '?';
+        $user_param_types .= 'i';
+        $user_param_values[] = $avatar_hue;
+    }
 
-if (in_array('avatar_saturation', $user_columns)) {
-    $avatar_saturation = (int)($_SESSION['user']['avatar_saturation'] ?? 100);
-    $user_insert_fields[] = 'avatar_saturation';
-    $user_insert_values[] = '?';
-    $user_param_types .= 'i';
-    $user_param_values[] = $avatar_saturation;
-}
+    if (in_array('avatar_saturation', $user_columns)) {
+        $avatar_saturation = (int)($_SESSION['user']['avatar_saturation'] ?? 100);
+        $user_insert_fields[] = 'avatar_saturation';
+        $user_insert_values[] = '?';
+        $user_param_types .= 'i';
+        $user_param_values[] = $avatar_saturation;
+    }
 
-if (in_array('bubble_hue', $user_columns)) {
-    $bubble_hue = (int)($_SESSION['user']['bubble_hue'] ?? 0);
-    $user_insert_fields[] = 'bubble_hue';
-    $user_insert_values[] = '?';
-    $user_param_types .= 'i';
-    $user_param_values[] = $bubble_hue;
-}
+    if (in_array('bubble_hue', $user_columns)) {
+        $bubble_hue = (int)($_SESSION['user']['bubble_hue'] ?? 0);
+        $user_insert_fields[] = 'bubble_hue';
+        $user_insert_values[] = '?';
+        $user_param_types .= 'i';
+        $user_param_values[] = $bubble_hue;
+    }
 
-if (in_array('bubble_saturation', $user_columns)) {
-    $bubble_saturation = (int)($_SESSION['user']['bubble_saturation'] ?? 100);
-    $user_insert_fields[] = 'bubble_saturation';
-    $user_insert_values[] = '?';
-    $user_param_types .= 'i';
-    $user_param_values[] = $bubble_saturation;
-}
+    if (in_array('bubble_saturation', $user_columns)) {
+        $bubble_saturation = (int)($_SESSION['user']['bubble_saturation'] ?? 100);
+        $user_insert_fields[] = 'bubble_saturation';
+        $user_insert_values[] = '?';
+        $user_param_types .= 'i';
+        $user_param_values[] = $bubble_saturation;
+    }
     
     $user_insert_sql = "INSERT INTO chatroom_users (" . implode(', ', $user_insert_fields) . ") VALUES (" . implode(', ', $user_insert_values) . ")";
     
-    error_log("SAFE_CREATE_ROOM: User SQL: $user_insert_sql");
+    error_log("CREATE_ROOM_DEBUG: User SQL: $user_insert_sql");
     
     $stmt = $conn->prepare($user_insert_sql);
     if (!$stmt) {
@@ -310,12 +431,12 @@ if (in_array('bubble_saturation', $user_columns)) {
         
         if (in_array('is_system', $message_columns)) {
             $stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, ?, ?, 1, NOW(), ?, 'system')");
-if ($stmt) {
-    $avatar = $_SESSION['user']['avatar'] ?? 'default_avatar.jpg';
-    $stmt->bind_param("isss", $room_id, $user_id_string, $creation_message, $avatar);
-    $stmt->execute();
-    $stmt->close();
-}
+            if ($stmt) {
+                $avatar = $_SESSION['user']['avatar'] ?? 'default_avatar.jpg';
+                $stmt->bind_param("isss", $room_id, $user_id_string, $creation_message, $avatar);
+                $stmt->execute();
+                $stmt->close();
+            }
         }
     }
     
@@ -324,17 +445,25 @@ if ($stmt) {
     
     $conn->commit();
     
-    error_log("SAFE_CREATE_ROOM: Success! Room ID=$room_id, Name=$name, HasPassword=$has_password");
+    error_log("CREATE_ROOM_DEBUG: Success! Room ID=$room_id, Name=$name, HasPassword=$has_password");
     
-    echo json_encode([
+    $response = [
         'status' => 'success',
         'message' => 'Room created successfully',
         'room_id' => $room_id
-    ]);
+    ];
+    
+    // NEW: Include invite code in response if invite_only is enabled
+    if ($invite_only && $invite_code) {
+        $response['invite_code'] = $invite_code;
+        $response['invite_link'] = "lounge.php?invite=" . $invite_code;
+    }
+    
+    echo json_encode($response);
     
 } catch (Exception $e) {
     $conn->rollback();
-    error_log("SAFE_CREATE_ROOM: Error - " . $e->getMessage());
+    error_log("CREATE_ROOM_DEBUG: Error - " . $e->getMessage());
     echo json_encode(['status' => 'error', 'message' => 'Failed to create room: ' . $e->getMessage()]);
 }
 

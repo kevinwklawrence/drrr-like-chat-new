@@ -1,0 +1,21 @@
+/* css/themes/sunset.css */
+body.theme-sunset {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+}
+
+body.theme-sunset .room-container {
+    background: rgba(255, 107, 53, 0.9);
+}
+
+body.theme-sunset .room-header {
+    background: linear-gradient(135deg, #f7931e, #ff6b35);
+    border-bottom: 2px solid #ffb627;
+}
+
+body.theme-sunset .room-title {
+    color: #fff8e1;
+}
+
+body.theme-sunset .chat-messages {
+    background: rgba(247, 147, 30, 0.6);
+}

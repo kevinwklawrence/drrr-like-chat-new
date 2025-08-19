@@ -83,6 +83,7 @@ try {
     
     error_log("JOIN_ROOM_DEBUG: Room keys column check passed");
     
+
     // Get room information
     $select_fields = "id, name, capacity, password, has_password";
     if ($room_keys_column_exists) {
@@ -108,7 +109,84 @@ try {
     $stmt->close();
     
     error_log("JOIN_ROOM_DEBUG: Room found - name: {$room['name']}, has_password: {$room['has_password']}");
+
+
+    if (isset($room['invite_only']) && $room['invite_only']) {
+    $provided_invite = $_POST['invite_code'] ?? $_GET['invite'] ?? '';
+    $room_invite_code = $room['invite_code'] ?? '';
     
+    error_log("JOIN_ROOM: Invite check - provided: '$provided_invite', expected: '$room_invite_code'");
+    
+    if (empty($provided_invite) || $provided_invite !== $room_invite_code) {
+        echo json_encode(['status' => 'error', 'message' => 'This room requires a valid invite code']);
+        exit;
+    } else {
+        error_log("JOIN_ROOM: Valid invite code provided");
+    }
+}
+    
+// Add this section after line 85 in join_room.php (after room information is fetched)
+
+    // NEW: Check access restrictions
+    $access_denied_reason = null;
+    
+    // Check invite-only access
+    if ($room['invite_only']) {
+        $provided_invite = $_POST['invite_code'] ?? $_GET['invite'] ?? '';
+        if (empty($provided_invite) || $provided_invite !== $room['room_keys']) {
+            $access_denied_reason = 'This room requires a valid invite code';
+        }
+    }
+    
+    // Check members-only access
+    if (!$access_denied_reason && $room['members_only']) {
+        if ($user_session['type'] !== 'user') {
+            $access_denied_reason = 'This room is for registered members only';
+        }
+    }
+    
+    // Check friends-only access
+    if (!$access_denied_reason && $room['friends_only']) {
+        if ($user_session['type'] !== 'user') {
+            $access_denied_reason = 'This room is for friends only';
+        } else {
+            // Check if current user is friend of host
+            $current_user_id = $user_session['id'] ?? null;
+            $host_user_id_string = $room['host_user_id_string'] ?? '';
+            
+            if ($current_user_id && $host_user_id_string) {
+                $friend_check = $conn->prepare("
+                    SELECT COUNT(*) as is_friend 
+                    FROM friends f
+                    JOIN users u ON (f.user_id = u.id OR f.friend_user_id = u.id)
+                    WHERE f.status = 'accepted' 
+                    AND ((f.user_id = ? AND u.user_id_string = ?) 
+                         OR (f.friend_user_id = ? AND u.user_id_string = ?))
+                ");
+                if ($friend_check) {
+                    $friend_check->bind_param("isis", $current_user_id, $host_user_id_string, $current_user_id, $host_user_id_string);
+                    $friend_check->execute();
+                    $friend_result = $friend_check->get_result();
+                    $friend_data = $friend_result->fetch_assoc();
+                    if ($friend_data['is_friend'] == 0) {
+                        $access_denied_reason = 'This room is for friends of the host only';
+                    }
+                    $friend_check->close();
+                } else {
+                    $access_denied_reason = 'Unable to verify friend status';
+                }
+            } else {
+                $access_denied_reason = 'This room is for friends only';
+            }
+        }
+    }
+    
+    // If access is denied, return error
+    if ($access_denied_reason) {
+        echo json_encode(['status' => 'error', 'message' => $access_denied_reason]);
+        exit;
+    }
+
     // Check if user is already in the room
     $stmt = $conn->prepare("SELECT id FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");
     if ($stmt) {

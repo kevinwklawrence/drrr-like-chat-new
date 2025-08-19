@@ -172,6 +172,48 @@ while ($row = $result->fetch_assoc()) {
 
 $stmt->close();
 
+
+
 error_log("Retrieved " . count($messages) . " messages for room_id=$room_id"); // Debug
 echo json_encode($messages);
+
+// NEW: Handle disappearing messages cleanup during message loading
+if (isset($_GET['room_id'])) {
+    $room_id_for_cleanup = (int)$_GET['room_id'];
+    
+    // Check if this room has disappearing messages
+    $cleanup_check = $conn->prepare("
+        SELECT disappearing_messages, message_lifetime_minutes 
+        FROM chatrooms 
+        WHERE id = ? AND disappearing_messages = 1
+    ");
+    
+    if ($cleanup_check) {
+        $cleanup_check->bind_param("i", $room_id_for_cleanup);
+        $cleanup_check->execute();
+        $cleanup_result = $cleanup_check->get_result();
+        
+        if ($cleanup_result->num_rows > 0) {
+            $cleanup_data = $cleanup_result->fetch_assoc();
+            $lifetime_minutes = $cleanup_data['message_lifetime_minutes'];
+            
+            // Clean up expired messages for this room
+            $cleanup_stmt = $conn->prepare("
+                DELETE FROM messages 
+                WHERE room_id = ? 
+                AND timestamp < DATE_SUB(NOW(), INTERVAL ? MINUTE)
+                AND type != 'system'
+            ");
+            
+            if ($cleanup_stmt) {
+                $cleanup_stmt->bind_param("ii", $room_id_for_cleanup, $lifetime_minutes);
+                $cleanup_stmt->execute();
+                $cleanup_stmt->close();
+            }
+        }
+        
+        $cleanup_check->close();
+    }
+}
+
 ?>

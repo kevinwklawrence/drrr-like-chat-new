@@ -18,6 +18,37 @@ $ip_address = $_SERVER['REMOTE_ADDR'];
 // ADD this line after the existing variables:
 $color = $_SESSION['user']['color'] ?? 'black';
 
+if (isset($_GET['invite']) && !empty($_GET['invite'])) {
+    $invite_code = trim($_GET['invite']);
+    error_log("INVITE_LINK: Processing invite code: $invite_code");
+    
+    // Find room by invite code
+    $invite_stmt = $conn->prepare("SELECT id, name, invite_code FROM chatrooms WHERE invite_code = ? AND invite_only = 1");
+    if ($invite_stmt) {
+        $invite_stmt->bind_param("s", $invite_code);
+        $invite_stmt->execute();
+        $invite_result = $invite_stmt->get_result();
+        
+        if ($invite_result->num_rows > 0) {
+            $invited_room = $invite_result->fetch_assoc();
+            error_log("INVITE_LINK: Found room: " . $invited_room['name']);
+            
+            // Store invite data in session for modal display
+            $_SESSION['pending_invite'] = [
+                'room_id' => $invited_room['id'],
+                'room_name' => $invited_room['name'],
+                'invite_code' => $invite_code
+            ];
+        } else {
+            error_log("INVITE_LINK: Invalid invite code: $invite_code");
+            // Redirect with error
+            header("Location: lounge.php?error=invalid_invite");
+            exit;
+        }
+        $invite_stmt->close();
+    }
+}
+
 // FIXED: Include color field in the global_users INSERT/UPDATE
 if (!empty($user_id_string)) {
     error_log("LOUNGE.PHP: Updating global_users for user: $user_id_string");
@@ -167,7 +198,98 @@ if (!empty($user_id_string)) {
     ])); ?>;
     console.log('Current user:', currentUser);
 </script>
+    <script>
+<?php if (isset($_SESSION['pending_invite'])): ?>
+// Show invite modal when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const inviteData = <?php echo json_encode($_SESSION['pending_invite']); ?>;
+    <?php unset($_SESSION['pending_invite']); // Clear after use ?>
     
+    showInviteModal(inviteData);
+});
+
+function showInviteModal(inviteData) {
+    const modalHtml = `
+        <div class="modal fade" id="inviteModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
+                    <div class="modal-header" style="background: #333; border-bottom: 1px solid #444;">
+                        <h5 class="modal-title">
+                            <i class="fas fa-link"></i> Room Invitation
+                        </h5>
+                    </div>
+                    <div class="modal-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-door-open fa-3x text-primary mb-3"></i>
+                        </div>
+                        <h4 class="text-primary">${inviteData.room_name}</h4>
+                        <p class="text-muted">You have been invited to join this private room!</p>
+                        <div class="alert alert-info" style="background: rgba(13, 110, 253, 0.1); border: 1px solid rgba(13, 110, 253, 0.3);">
+                            <i class="fas fa-info-circle"></i> This is an invite-only room that requires a special link to access.
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-center" style="border-top: 1px solid #444;">
+                        <button type="button" class="btn btn-secondary" onclick="$('#inviteModal').modal('hide')">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="joinInviteRoom(${inviteData.room_id}, '${inviteData.invite_code}')">
+                            <i class="fas fa-sign-in-alt"></i> Join Room
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('body').append(modalHtml);
+    $('#inviteModal').modal('show');
+}
+
+function joinInviteRoom(roomId, inviteCode) {
+    const button = $('#inviteModal .btn-primary');
+    const originalText = button.html();
+    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Joining...');
+    
+    $.ajax({
+        url: 'api/join_room.php',
+        method: 'POST',
+        data: {
+            room_id: roomId,
+            invite_code: inviteCode
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                window.location.href = 'room.php';
+            } else {
+                alert('Error: ' + response.message);
+                button.prop('disabled', false).html(originalText);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error:', error);
+            alert('Failed to join room: ' + error);
+            button.prop('disabled', false).html(originalText);
+        }
+    });
+}
+<?php endif; ?>
+
+// Handle error messages
+<?php if (isset($_GET['error'])): ?>
+document.addEventListener('DOMContentLoaded', function() {
+    <?php if ($_GET['error'] === 'invalid_invite'): ?>
+    alert('Invalid or expired invite link. Please check the link and try again.');
+    <?php endif; ?>
+    
+    // Clean up URL
+    const url = new URL(window.location);
+    url.searchParams.delete('error');
+    url.searchParams.delete('invite');
+    window.history.replaceState({}, document.title, url);
+});
+<?php endif; ?>
+</script>
     <!-- Include the fixed lounge.js -->
     <script src="js/lounge.js"></script>
     <script src="js/profile_system.js"></script>

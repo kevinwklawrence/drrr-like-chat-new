@@ -14,8 +14,99 @@ include 'db_connect.php';
 $room_id = (int)$_SESSION['room_id'];
 error_log("room_id in room.php: $room_id"); // Debug
 
-// Get room data including YouTube settings
-$stmt = $conn->prepare("SELECT name, background, youtube_enabled FROM chatrooms WHERE id = ?");
+
+// Handle invite-only room access
+if (isset($_GET['invite']) && !empty($_GET['invite'])) {
+    $invite_code = trim($_GET['invite']);
+    
+    // Find room by invite code
+    $invite_stmt = $conn->prepare("SELECT id, name FROM chatrooms WHERE invite_code = ? AND invite_only = 1");
+    if ($invite_stmt) {
+        $invite_stmt->bind_param("s", $invite_code);
+        $invite_stmt->execute();
+        $invite_result = $invite_stmt->get_result();
+        
+        if ($invite_result->num_rows > 0) {
+            $invited_room = $invite_result->fetch_assoc();
+            
+            // Show invite room modal
+            echo '
+            <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                showInviteRoomModal(' . json_encode($invited_room) . ', ' . json_encode($invite_code) . ');
+            });
+            
+            function showInviteRoomModal(room, inviteCode) {
+                const modalHtml = `
+                    <div class="modal fade" id="inviteRoomModal" tabindex="-1" data-bs-backdrop="static">
+                        <div class="modal-dialog">
+                            <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
+                                <div class="modal-header" style="background: #333; border-bottom: 1px solid #444;">
+                                    <h5 class="modal-title">
+                                        <i class="fas fa-link"></i> Room Invitation
+                                    </h5>
+                                </div>
+                                <div class="modal-body text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-door-open fa-3x text-primary mb-3"></i>
+                                    </div>
+                                    <h4 class="text-primary">${room.name}</h4>
+                                    <p class="text-muted">You have been invited to join this room!</p>
+                                </div>
+                                <div class="modal-footer justify-content-center" style="border-top: 1px solid #444;">
+                                    <button type="button" class="btn btn-secondary" onclick="window.location.href=\'lounge.php\'">
+                                        <i class="fas fa-arrow-left"></i> Back to Lounge
+                                    </button>
+                                    <button type="button" class="btn btn-primary" onclick="joinInviteRoom(${room.id}, \'${inviteCode}\')">
+                                        <i class="fas fa-sign-in-alt"></i> Join Room
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.insertAdjacentHTML("beforeend", modalHtml);
+                new bootstrap.Modal(document.getElementById("inviteRoomModal")).show();
+            }
+            
+            function joinInviteRoom(roomId, inviteCode) {
+                fetch("api/join_room.php", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                    body: "room_id=" + roomId + "&invite_code=" + encodeURIComponent(inviteCode)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        window.location.href = "room.php";
+                    } else {
+                        alert("Error: " + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("Failed to join room");
+                });
+            }
+            </script>';
+            
+            // Don't continue with normal room loading
+            $invite_stmt->close();
+            return;
+        }
+        $invite_stmt->close();
+    }
+    
+    // Invalid invite code
+    header("Location: lounge.php?error=invalid_invite");
+    exit;
+}
+
+
+$stmt = $conn->prepare("SELECT name, background, youtube_enabled, theme, disappearing_messages, message_lifetime_minutes FROM chatrooms WHERE id = ?");
 if (!$stmt) {
     error_log("Prepare failed in room.php: " . $conn->error);
     header("Location: lounge.php");
@@ -31,6 +122,12 @@ if ($result->num_rows === 0) {
 }
 $room = $result->fetch_assoc();
 $stmt->close();
+
+// Get theme and other features
+$room_theme = $room['theme'] ?? 'default';
+$disappearing_messages = (bool)($room['disappearing_messages'] ?? false);
+$message_lifetime_minutes = (int)($room['message_lifetime_minutes'] ?? 0);
+$youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enabled'] : false;
 
 // Check if current user is host
 $user_id_string = $_SESSION['user']['user_id'] ?? '';
@@ -71,6 +168,9 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
     <link href="css/bubble_colors.css" rel="stylesheet">
     <link href="css/color_previews.css" rel="stylesheet">
     <link href="css/private_bubble_colors.css" rel="stylesheet">
+    <?php if ($room_theme !== 'default'): ?>
+    <link href="css/themes/<?php echo htmlspecialchars($room_theme); ?>.css" rel="stylesheet">
+<?php endif; ?>
 
 </head>
 <body>
@@ -288,6 +388,17 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
     
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+// Room theme and feature data
+const roomTheme = <?php echo json_encode($room_theme); ?>;
+const disappearingMessages = <?php echo $disappearing_messages ? 'true' : 'false'; ?>;
+const messageLifetimeMinutes = <?php echo $message_lifetime_minutes; ?>;
+
+// Apply theme class to body
+if (roomTheme !== 'default') {
+    document.body.classList.add('theme-' + roomTheme);
+}
+</script>
     <script>
     // Global variables
     const roomId = <?php echo json_encode($room_id); ?>;

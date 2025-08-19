@@ -241,7 +241,8 @@ function loadUsersForRoom(room, callback) {
     });
 }
 
-// Function to display rooms with users in 2-column layout
+// Replace the displayRoomsWithUsers function in lounge.js with this safer version
+
 function displayRoomsWithUsers(rooms) {
     debugLog('displayRoomsWithUsers called with:', rooms);
     let html = '';
@@ -261,183 +262,276 @@ function displayRoomsWithUsers(rooms) {
         rooms.forEach((room, index) => {
             debugLog('Processing room for display:', room);
             
-            const isPasswordProtected = parseInt(room.has_password) === 1;
-            const allowsKnocking = parseInt(room.allow_knocking) === 1;
-            const userCount = room.user_count || 0;
-            const capacity = room.capacity || 10;
-            const hasKey = hasRoomKey(room.id);
-            const host = room.host;
-            const regularUsers = room.regularUsers || [];
-            
-            let headerClass = 'room-header-enhanced';
-            let actionButtons = '';
-            
-            // Room access logic
-            if (isPasswordProtected && hasKey) {
-                headerClass += ' has-access';
-                actionButtons = `
-                    <button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})">
-                        <i class="fas fa-key"></i> Join Room 
-                    </button>
-                `;
-            } else if (isPasswordProtected) {
-                if (allowsKnocking) {
-                    headerClass += ' knock-available';
-                } else {
-                    headerClass += ' password-protected';
+            try {
+                const isPasswordProtected = parseInt(room.has_password) === 1;
+                const allowsKnocking = parseInt(room.allow_knocking) === 1;
+                const userCount = room.user_count || 0;
+                const capacity = room.capacity || 10;
+                const hasKey = hasRoomKey(room.id);
+                const host = room.host;
+                const regularUsers = room.regularUsers || [];
+
+                // NEW: Process new room features (with safe defaults)
+                const isRP = parseInt(room.is_rp || 0) === 1;
+                const youtubeEnabled = parseInt(room.youtube_enabled || 0) === 1;
+                const friendsOnly = parseInt(room.friends_only || 0) === 1;
+                const inviteOnly = parseInt(room.invite_only || 0) === 1;
+                const membersOnly = parseInt(room.members_only || 0) === 1;
+                const disappearingMessages = parseInt(room.disappearing_messages || 0) === 1;
+                const canAccessFriendsOnly = room.can_access_friends_only !== false;
+
+                let headerClass = 'room-header-enhanced';
+                let actionButtons = '';
+
+               let accessDenied = false;
+let accessReason = '';
+let showRestrictedButton = false;
+
+// Check access restrictions in order of priority
+if (friendsOnly && !canAccessFriendsOnly) {
+    accessDenied = true;
+    accessReason = 'Friends Only';
+    showRestrictedButton = true;
+}
+
+if (membersOnly && typeof currentUser !== 'undefined' && currentUser.type !== 'user') {
+    accessDenied = true;
+    accessReason = 'Members Only';
+    showRestrictedButton = true;
+}
+
+if (inviteOnly) {
+    accessDenied = true;
+    accessReason = 'Invite Required';
+    showRestrictedButton = true;
+}
+
+// FIXED: Build action buttons based on access state
+if (showRestrictedButton) {
+    headerClass += ' access-denied';
+    actionButtons = `
+        <button class="btn btn-danger btn-sm" disabled title="You cannot access this room">
+            <i class="fas fa-ban"></i> ${accessReason}
+        </button>
+    `;
+} else if (isPasswordProtected && hasKey) {
+    headerClass += ' has-access';
+    actionButtons = `
+        <button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})">
+            <i class="fas fa-key"></i> Join Room 
+        </button>
+    `;
+} else if (isPasswordProtected) {
+    if (allowsKnocking) {
+        headerClass += ' knock-available';
+    } else {
+        headerClass += ' password-protected';
+    }
+    
+    actionButtons = `
+        <button class="btn btn-primary btn-sm me-2" onclick="showPasswordModal(${room.id}, '${room.name.replace(/'/g, "\\'")}');">
+            <i class="fas fa-key"></i> Enter Password
+        </button>
+    `;
+    
+    if (allowsKnocking) {
+        actionButtons += `
+            <button class="btn btn-outline-primary btn-sm" onclick="knockOnRoom(${room.id}, '${room.name.replace(/'/g, "\\'")}');">
+                <i class="fas fa-hand-paper"></i> Knock
+            </button>
+        `;
+    }
+} else {
+    // Room is accessible
+    actionButtons = `
+        <button class="btn btn-success btn-sm" onclick="joinRoom(${room.id});">
+            <i class="fas fa-sign-in-alt"></i> Join Room
+        </button>
+    `;
+}
+
+                // NEW: Build feature indicators (only if features exist)
+                let featureIndicators = '';
+                if (isRP) {
+                    featureIndicators += '<span class="room-indicator rp-indicator" title="Roleplay Room"><i class="fas fa-theater-masks"></i> RP</span>';
                 }
-                
-                actionButtons = `
-                    <button class="btn btn-primary btn-sm me-2" onclick="showPasswordModal(${room.id}, '${room.name.replace(/'/g, "\\'")}');">
-                        <i class="fas fa-key"></i> Enter Password
-                    </button>
-                `;
-                
-                if (allowsKnocking) {
-                    actionButtons += `
-                        <button class="btn btn-outline-primary btn-sm" onclick="knockOnRoom(${room.id}, '${room.name.replace(/'/g, "\\'")}');">
-                            <i class="fas fa-hand-paper"></i> Knock
-                        </button>
+                if (youtubeEnabled) {
+                    featureIndicators += '<span class="room-indicator youtube-indicator" title="YouTube Player Enabled"><i class="fab fa-youtube"></i> Video</span>';
+                }
+                if (friendsOnly) {
+                    featureIndicators += '<span class="room-indicator friends-indicator" title="Friends Only"><i class="fas fa-user-friends"></i> Friends</span>';
+                }
+                if (inviteOnly) {
+                    featureIndicators += '<span class="room-indicator invite-indicator" title="Invite Only"><i class="fas fa-link"></i> Invite</span>';
+                }
+                if (membersOnly) {
+                    featureIndicators += '<span class="room-indicator members-indicator" title="Members Only"><i class="fas fa-user-check"></i> Members</span>';
+                }
+                if (disappearingMessages) {
+                    featureIndicators += '<span class="room-indicator disappearing-indicator" title="Disappearing Messages"><i class="fas fa-clock"></i> Temp</span>';
+                }
+
+                // NEW: Apply theme class (safe)
+                let themeClass = (room.theme && room.theme !== 'default') ? `theme-${room.theme}` : '';
+
+                // Build host section
+                let hostHtml = '';
+                if (host) {
+                    const hostAvatar = host.avatar || host.user_avatar || host.guest_avatar || 'default_avatar.jpg';
+                    const hostName = host.display_name || host.username || host.guest_name || 'Unknown Host';
+                    const hostHue = host.avatar_hue || host.user_avatar_hue || 0;
+                    const hostSaturation = host.avatar_saturation || host.user_avatar_saturation || 100;
+                    
+                    hostHtml = `
+                        <div class="room-host">
+                            <h6><i class="fas fa-crown"></i> Host</h6>
+                            <div class="d-flex align-items-center">
+                                <img src="images/${hostAvatar}" 
+                                     width="32" height="32" 
+                                     class="me-2" 
+                                     style="filter: hue-rotate(${hostHue}deg) saturate(${hostSaturation}%);"
+                                     alt="${hostName}">
+                                <div>
+                                    <div class="fw-bold">${hostName}</div>
+                                    <div class="user-badges">
+                                        ${parseInt(host.is_admin) === 1 ? '<span class="badge bg-danger badge-sm">Admin</span>' : ''}
+                                        ${host.user_type === 'registered' || host.user_id ? '<span class="badge bg-success badge-sm">Verified</span>' : '<span class="badge bg-secondary badge-sm">Guest</span>'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    hostHtml = `
+                        <div class="room-host">
+                            <h6><i class="fas fa-crown"></i> Host</h6>
+                            <div class="text-muted">No host available</div>
+                        </div>
                     `;
                 }
-            } else {
-                actionButtons = `
-                    <button class="btn btn-success btn-sm" onclick="joinRoom(${room.id});">
-                        <i class="fas fa-sign-in-alt"></i> Join Room
-                    </button>
-                `;
-            }
-            
-            // Build host section
-            let hostHtml = '';
-            if (host) {
-                const hostAvatar = host.avatar || host.user_avatar || host.guest_avatar || 'default_avatar.jpg';
-                const hostName = host.display_name || host.username || host.guest_name || 'Unknown Host';
-                const hostHue = host.avatar_hue || host.user_avatar_hue || 0;
-const hostSaturation = host.avatar_saturation || host.user_avatar_saturation || 100;
-                
-                debugLog(`Building host HTML for ${hostName}:`, host);
-                
-                hostHtml = `
-    <div class="room-host">
-        <h6><i class="fas fa-crown"></i> Host</h6>
-        <div class="d-flex align-items-center">
-            <img src="images/${hostAvatar}" 
-                 width="32" height="32" 
-                 class="me-2" 
-                 style="filter: hue-rotate(${hostHue}deg) saturate(${hostSaturation}%);"
-                 alt="${hostName}">
-            <div>
-                <div class="fw-bold">${hostName}</div>
-                <div class="user-badges">
-                    ${parseInt(host.is_admin) === 1 ? '<span class="badge bg-danger badge-sm">Admin</span>' : ''}
-                    ${host.user_type === 'registered' || host.user_id ? '<span class="badge bg-success badge-sm">Verified</span>' : '<span class="badge bg-secondary badge-sm">Guest</span>'}
-                </div>
-            </div>
-        </div>
-    </div>
-`;
-            } else {
-                hostHtml = `
-                    <div class="room-host">
-                        <h6><i class="fas fa-crown"></i> Host</h6>
-                        <div class="text-muted">No host available</div>
-                    </div>
-                `;
-            }
-            
-            // Build users list in 2-column layout
-            let usersHtml = '';
-            if (regularUsers.length > 0) {
-                debugLog(`Building users HTML for ${regularUsers.length} users:`, regularUsers);
-                
-                usersHtml = `
-                    <div class="room-users">
-                        <h6><i class="fas fa-users"></i> Users (${regularUsers.length})</h6>
-                        <div class="users-grid-two-column">
-                `;
-                
-                // Show first 8 users in 2-column layout
-               regularUsers.slice(0, 8).forEach(user => {
-    const userAvatar = user.avatar || user.user_avatar || user.guest_avatar || 'default_avatar.jpg';
-    const userName = user.display_name || user.username || user.guest_name || 'Unknown';
-    const userHue = user.avatar_hue || user.user_avatar_hue || 0;
-    const userSaturation = user.avatar_saturation || user.user_avatar_saturation || 100;
+
+                // Build users list
+                let usersHtml = '';
+                if (regularUsers.length > 0) {
+                    usersHtml = `
+                        <div class="room-users">
+                            <h6><i class="fas fa-users"></i> Users (${regularUsers.length})</h6>
+                            <div class="users-grid-two-column">
+                    `;
+                    
+                    regularUsers.slice(0, 8).forEach(user => {
+                        const userAvatar = user.avatar || user.user_avatar || user.guest_avatar || 'default_avatar.jpg';
+                        const userName = user.display_name || user.username || user.guest_name || 'Unknown';
+                        const userHue = user.avatar_hue || user.user_avatar_hue || 0;
+                        const userSaturation = user.avatar_saturation || user.user_avatar_saturation || 100;
+                        
+                        usersHtml += `
+                            <div class="user-item-mini d-flex align-items-center">
+                                <img src="images/${userAvatar}" 
+                                     width="24" height="24" 
+                                     class="me-2" 
+                                     style="filter: hue-rotate(${userHue}deg) saturate(${userSaturation}%);"
+                                     alt="${userName}">
+                                <div class="user-info">
+                                    <div class="user-name">${userName}</div>
+                                    <div class="user-badges">
+                                        ${parseInt(user.is_admin) === 1 ? '<span class="badge bg-danger badge-xs">Admin</span>' : ''}
+                                        ${user.user_type === 'registered' || user.user_id ? '<span class="badge bg-success badge-xs">Verified</span>' : '<span class="badge bg-secondary badge-xs">Guest</span>'}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    if (regularUsers.length > 8) {
+                        usersHtml += `<div class="text-muted small users-more-indicator">+ ${regularUsers.length - 8} more users</div>`;
+                    }
                     
                     usersHtml += `
-    <div class="user-item-mini d-flex align-items-center">
-        <img src="images/${userAvatar}" 
-             width="24" height="24" 
-             class="me-2" 
-             style="filter: hue-rotate(${userHue}deg) saturate(${userSaturation}%);"
-             alt="${userName}">
-        <div class="user-info">
-            <div class="user-name">${userName}</div>
-            <div class="user-badges">
-                ${parseInt(user.is_admin) === 1 ? '<span class="badge bg-danger badge-xs">Admin</span>' : ''}
-                ${user.user_type === 'registered' || user.user_id ? '<span class="badge bg-success badge-xs">Verified</span>' : '<span class="badge bg-secondary badge-xs">Guest</span>'}
-            </div>
-        </div>
-    </div>
-`;
-                });
-                
-                if (regularUsers.length > 8) {
-                    usersHtml += `<div class="text-muted small users-more-indicator">+ ${regularUsers.length - 8} more users</div>`;
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    usersHtml = `
+                        <div class="room-users">
+                            <h6><i class="fas fa-users"></i> Users (0)</h6>
+                            <div class="text-muted small">No other users in room</div>
+                        </div>
+                    `;
                 }
-                
-                usersHtml += `
+
+                // Each room card
+                html += `
+                    <div class="col-lg-6 col-12 room-card-wrapper">
+                        <div class="room-card-enhanced ${themeClass}">
+                            <div class="${headerClass}">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="room-title-section">
+                                        <h5 class="room-title">
+                                            ${room.name}
+                                            ${isPasswordProtected ? '<i class="fas fa-lock" title="Password protected"></i>' : ''}
+                                            ${allowsKnocking ? '<i class="fas fa-hand-paper" title="Knocking allowed"></i>' : ''}
+                                            ${hasKey ? '<i class="fas fa-key" title="You have access"></i>' : ''}
+                                        </h5>
+                                        <div class="room-meta">
+                                            <span class="capacity-info">${userCount}/${capacity} users</span>
+                                            ${room.theme && room.theme !== 'default' ? `<span class="theme-info">Theme: ${room.theme}</span>` : ''}
+                                        </div>
+                                        ${featureIndicators ? `<div class="room-features mt-1">${featureIndicators}</div>` : ''}
+                                        ${hasKey ? '<div class="mt-1"><span class="badge bg-success"><i class="fas fa-key"></i> Access Granted</span></div>' : ''}
+                                    </div>
+                                    <div class="action-buttons">
+                                        ${actionButtons}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="room-content">
+                                <div class="room-description">
+                                    <p>${room.description || 'No description'}</p>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        ${usersHtml}
+                                    </div>
+                                    <div class="col-12 mt-3">
+                                        ${hostHtml}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
-            } else {
-                usersHtml = `
-                    <div class="room-users">
-                        <h6><i class="fas fa-users"></i> Users (0)</h6>
-                        <div class="text-muted small">No other users in room</div>
+                
+            } catch (error) {
+                console.error('Error rendering room:', room, error);
+                // Fallback to simple room display
+                html += `
+                    <div class="col-lg-6 col-12 room-card-wrapper">
+                        <div class="room-card-enhanced">
+                            <div class="room-header-enhanced">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="room-title-section">
+                                        <h5 class="room-title">${room.name}</h5>
+                                        <div class="room-meta">
+                                            <span class="capacity-info">${room.user_count || 0}/${room.capacity || 10} users</span>
+                                        </div>
+                                    </div>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-success btn-sm" onclick="joinRoom(${room.id});">
+                                            <i class="fas fa-sign-in-alt"></i> Join Room
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="room-content">
+                                <div class="room-description">
+                                    <p>${room.description || 'No description'}</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 `;
             }
-            
-            // Each room card takes up half width (col-lg-6) for 2-column layout
-            html += `
-                <div class="col-lg-6 col-12 room-card-wrapper">
-                    <div class="room-card-enhanced">
-                        <div class="${headerClass}">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="room-title-section">
-                                    <h5 class="room-title">
-                                        ${room.name}
-                                        ${isPasswordProtected ? '<i class="fas fa-lock" title="Password protected"></i>' : ''}
-                                        ${allowsKnocking ? '<i class="fas fa-hand-paper" title="Knocking allowed"></i>' : ''}
-                                        ${hasKey ? '<i class="fas fa-key" title="You have access"></i>' : ''}
-                                    </h5>
-                                    <div class="room-meta">
-                                        <span class="capacity-info">${userCount}/${capacity} users</span>
-                                    </div>
-                                    ${hasKey ? '<div class="mt-1"><span class="badge bg-success"><i class="fas fa-key"></i> Access Granted</span></div>' : ''}
-                                </div>
-                                <div class="action-buttons">
-                                    ${actionButtons}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="room-content">
-                            <div class="room-description">
-                                <p>${room.description || 'No description'}</p>
-                            </div>
-                            <div class="row">
-                                <div class="col-12">
-                                    ${usersHtml}
-                                </div>
-                                <div class="col-12 mt-3">
-                                    ${hostHtml}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
         });
         
         // Close the Bootstrap row
@@ -458,22 +552,46 @@ const hostSaturation = host.avatar_saturation || host.user_avatar_saturation || 
     } else {
         $roomsList.html(html);
     }
-    /* Only apply filters if this is a new render, not just an update
-if (!$roomsList.hasClass('updating')) {
-    setTimeout(applyAllAvatarFilters, 200);
-}*/
-
 }
+
+// Also add this simple debugging function to check the API response
+function testRoomsAPI() {
+    console.log('Testing rooms API...');
+    $.ajax({
+        url: 'api/get_rooms.php',
+        method: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            console.log('API Response:', response);
+            if (response.status === 'error') {
+                console.error('API Error:', response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX Error:', error);
+            console.error('Response Text:', xhr.responseText);
+        }
+    });
+}
+
+// Call this in the browser console to debug: testRoomsAPI()
 
 // Enhanced joinRoom function
 window.joinRoom = function(roomId) {
     debugLog('joinRoom: Attempting to join room', roomId);
+    
+    const button = $(`button[onclick="joinRoom(${roomId})"]`);
+    const originalText = button.html();
+    
+    // Show loading state
+    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Joining...');
     
     $.ajax({
         url: 'api/join_room.php',
         method: 'POST',
         data: { room_id: roomId },
         dataType: 'json',
+        timeout: 10000, // 10 second timeout
         success: function(response) {
             if (response.status === 'success') {
                 if (response.used_room_key) {
@@ -481,16 +599,35 @@ window.joinRoom = function(roomId) {
                 }
                 window.location.href = 'room.php';
             } else {
+                // Handle different error types
                 if (response.message && response.message.toLowerCase().includes('password')) {
                     showPasswordModal(roomId, 'Room ' + roomId);
+                } else if (response.message && (
+                    response.message.includes('friends only') || 
+                    response.message.includes('members only') || 
+                    response.message.includes('invite')
+                )) {
+                    // Show restriction message
+                    alert('Access Denied: ' + response.message);
                 } else {
                     alert('Error: ' + response.message);
                 }
+                
+                // Reset button
+                button.prop('disabled', false).html(originalText);
             }
         },
         error: function(xhr, status, error) {
             console.error('joinRoom error:', error);
-            alert('Error joining room: ' + error);
+            
+            // Reset button
+            button.prop('disabled', false).html(originalText);
+            
+            if (status === 'timeout') {
+                alert('Request timed out. Please try again.');
+            } else {
+                alert('Error joining room: ' + error);
+            }
         }
     });
 };
@@ -703,11 +840,16 @@ window.joinRoomWithPassword = function(roomId) {
     });
 };
 
-// Create room modal
+// Replace the showCreateRoomModal function in lounge.js
+
+// Replace these functions in your lounge.js file
+
 window.showCreateRoomModal = function() {
+        $('#createRoomModal').remove();
+
     const modalHtml = `
         <div class="modal fade" id="createRoomModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
+            <div class="modal-dialog modal-xl">
                 <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
                     <div class="modal-header" style="background: #333; border-bottom: 1px solid #444;">
                         <h5 class="modal-title">
@@ -716,55 +858,176 @@ window.showCreateRoomModal = function() {
                         <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
                     </div>
                     <div class="modal-body">
-                        <form id="createRoomForm">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="roomName" class="form-label">Room Name</label>
-                                        <input type="text" class="form-control" id="roomName" required maxlength="50" 
-                                               style="background: #333; border: 1px solid #555; color: #fff;">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="roomCapacity" class="form-label">Capacity</label>
-                                        <select class="form-select" id="roomCapacity" required 
-                                                style="background: #333; border: 1px solid #555; color: #fff;">
-                                            <option value="5">5 users</option>
-                                            <option value="10" selected>10 users</option>
-                                            <option value="20">20 users</option>
-                                            <option value="50">50 users</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="roomDescription" class="form-label">Description</label>
-                                        <textarea class="form-control" id="roomDescription" rows="3" maxlength="200" 
-                                                  style="background: #333; border: 1px solid #555; color: #fff;"></textarea>
-                                    </div>
-                                    <div class="mb-3">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="hasPassword">
-                                            <label class="form-check-label" for="hasPassword">
-                                                <i class="fas fa-lock"></i> Password Protected
-                                            </label>
+                        <!-- Nav Tabs -->
+                        <ul class="nav nav-tabs mb-3" id="createRoomTabs" role="tablist" style="border-bottom: 1px solid #444;">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic" type="button" role="tab" style="color: #fff; background: transparent; border: none;">Basic Settings</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="access-tab" data-bs-toggle="tab" data-bs-target="#access" type="button" role="tab" style="color: #fff; background: transparent; border: none;">Access Control</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="features-tab" data-bs-toggle="tab" data-bs-target="#features" type="button" role="tab" style="color: #fff; background: transparent; border: none;">Features</button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="createRoomTabsContent">
+                            <!-- Basic Settings Tab -->
+                            <div class="tab-pane fade show active" id="basic" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="roomName" class="form-label">Room Name</label>
+                                            <input type="text" class="form-control" id="roomName" required maxlength="50" 
+                                                   style="background: #333; border: 1px solid #555; color: #fff;">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="roomCapacity" class="form-label">Capacity</label>
+                                            <select class="form-select" id="roomCapacity" required 
+                                                    style="background: #333; border: 1px solid #555; color: #fff;">
+                                                <option value="5">5 users</option>
+                                                <option value="10" selected>10 users</option>
+                                                <option value="20">20 users</option>
+                                                <option value="50">50 users</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="roomTheme" class="form-label">Theme</label>
+                                            <select class="form-select" id="roomTheme" 
+                                                    style="background: #333; border: 1px solid #555; color: #fff;">
+                                                <option value="default">Default</option>
+                                                <option value="dark">Dark</option>
+                                                <option value="cyberpunk">Cyberpunk</option>
+                                                <option value="forest">Forest</option>
+                                                <option value="ocean">Ocean</option>
+                                                <option value="sunset">Sunset</option>
+                                            </select>
                                         </div>
                                     </div>
-                                    <div class="mb-3" id="passwordField" style="display: none;">
-                                        <label for="roomPassword" class="form-label">Password</label>
-                                        <input type="password" class="form-control" id="roomPassword" 
-                                               style="background: #333; border: 1px solid #555; color: #fff;">
-                                    </div>
-                                    <div class="mb-3" id="knockingField" style="display: none;">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="allowKnocking" checked>
-                                            <label class="form-check-label" for="allowKnocking">
-                                                <i class="fas fa-hand-paper"></i> Allow Knocking
-                                            </label>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="roomDescription" class="form-label">Description</label>
+                                            <textarea class="form-control" id="roomDescription" rows="4" maxlength="200" 
+                                                      style="background: #333; border: 1px solid #555; color: #fff;"></textarea>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="isRP">
+                                                <label class="form-check-label" for="isRP">
+                                                    <i class="fas fa-theater-masks"></i> Roleplay Room
+                                                </label>
+                                            </div>
+                                            <small class="text-muted">Mark this room as suitable for roleplay</small>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </form>
+
+                            <!-- Access Control Tab -->
+                            <div class="tab-pane fade" id="access" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="hasPassword">
+                                                <label class="form-check-label" for="hasPassword">
+                                                    <i class="fas fa-lock"></i> Password Protected
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3" id="passwordField" style="display: none;">
+                                            <label for="roomPassword" class="form-label">Password</label>
+                                            <input type="password" class="form-control" id="roomPassword" 
+                                                   style="background: #333; border: 1px solid #555; color: #fff;">
+                                        </div>
+                                        <div class="mb-3" id="knockingField" style="display: none;">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="allowKnocking" checked>
+                                                <label class="form-check-label" for="allowKnocking">
+                                                    <i class="fas fa-hand-paper"></i> Allow Knocking
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="membersOnly">
+                                                <label class="form-check-label" for="membersOnly">
+                                                    <i class="fas fa-user-check"></i> Members Only
+                                                </label>
+                                            </div>
+                                            <small class="text-muted">Only registered users can join</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        ${currentUser.type === 'user' ? `
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="friendsOnly">
+                                                <label class="form-check-label" for="friendsOnly">
+                                                    <i class="fas fa-user-friends"></i> Friends Only
+                                                </label>
+                                            </div>
+                                            <small class="text-muted">Only your friends can join</small>
+                                        </div>
+                                        ` : ''}
+                                        
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="inviteOnly">
+                                                <label class="form-check-label" for="inviteOnly">
+                                                    <i class="fas fa-link"></i> Invite Only
+                                                </label>
+                                            </div>
+                                            <small class="text-muted">Generate a special invite link</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Features Tab -->
+                            <div class="tab-pane fade" id="features" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-4">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="youtubeEnabled">
+                                                <label class="form-check-label" for="youtubeEnabled">
+                                                    <i class="fab fa-youtube text-danger"></i> <strong>Enable YouTube Player</strong>
+                                                </label>
+                                            </div>
+                                            <small class="form-text text-muted">Allow synchronized video playback for all users</small>
+                                        </div>
+                                        
+                                        <div class="mb-4">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="disappearingMessages">
+                                                <label class="form-check-label" for="disappearingMessages">
+                                                    <i class="fas fa-clock"></i> <strong>Disappearing Messages</strong>
+                                                </label>
+                                            </div>
+                                            <small class="form-text text-muted">Messages automatically delete after a set time</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3" id="messageLifetimeField" style="display: none;">
+                                            <label for="messageLifetime" class="form-label">Message Lifetime (minutes)</label>
+                                            <select class="form-select" id="messageLifetime" 
+                                                    style="background: #333; border: 1px solid #555; color: #fff;">
+                                                <option value="5">5 minutes</option>
+                                                <option value="15">15 minutes</option>
+                                                <option value="30" selected>30 minutes</option>
+                                                <option value="60">1 hour</option>
+                                                <option value="120">2 hours</option>
+                                                <option value="360">6 hours</option>
+                                                <option value="720">12 hours</option>
+                                                <option value="1440">24 hours</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer" style="border-top: 1px solid #444;">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -780,6 +1043,7 @@ window.showCreateRoomModal = function() {
     $('#createRoomModal').remove();
     $('body').append(modalHtml);
     
+    // Set up event handlers AFTER modal is added to DOM
     $('#hasPassword').on('change', function() {
         if (this.checked) {
             $('#passwordField').show();
@@ -792,19 +1056,54 @@ window.showCreateRoomModal = function() {
         }
     });
     
+    $('#disappearingMessages').on('change', function() {
+        if (this.checked) {
+            $('#messageLifetimeField').show();
+        } else {
+            $('#messageLifetimeField').hide();
+        }
+    });
+    
+    // Prevent form submission on Enter key (which could cause double submission)
+    $('#createRoomModal input').on('keypress', function(e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            createRoom();
+        }
+    });
+    
     $('#createRoomModal').modal('show');
 };
 
-// Create room function
 window.createRoom = function() {
+    console.log('Creating room with new features...');
+    
+    // Prevent multiple submissions
+    const createButton = $('#createRoomModal .btn-primary');
+    if (createButton.prop('disabled')) {
+        console.log('Create button already disabled, preventing duplicate submission');
+        return;
+    }
+    
     const formData = {
         name: $('#roomName').val().trim(),
         description: $('#roomDescription').val().trim(),
         capacity: $('#roomCapacity').val(),
+        theme: $('#roomTheme').val(),
         has_password: $('#hasPassword').is(':checked') ? 1 : 0,
         password: $('#hasPassword').is(':checked') ? $('#roomPassword').val() : '',
-        allow_knocking: $('#allowKnocking').is(':checked') ? 1 : 0
+        allow_knocking: $('#allowKnocking').is(':checked') ? 1 : 0,
+        is_rp: $('#isRP').is(':checked') ? 1 : 0,
+        youtube_enabled: $('#youtubeEnabled').is(':checked') ? 1 : 0,
+        friends_only: $('#friendsOnly').is(':checked') ? 1 : 0,
+        invite_only: $('#inviteOnly').is(':checked') ? 1 : 0,
+        members_only: $('#membersOnly').is(':checked') ? 1 : 0,
+        disappearing_messages: $('#disappearingMessages').is(':checked') ? 1 : 0,
+        message_lifetime_minutes: $('#disappearingMessages').is(':checked') ? $('#messageLifetime').val() : 0
     };
+    
+    // Debug log the form data
+    console.log('Form data being sent:', formData);
     
     if (!formData.name) {
         alert('Room name is required');
@@ -816,23 +1115,65 @@ window.createRoom = function() {
         return;
     }
     
+    // Disable button immediately to prevent double-clicks
+    const originalText = createButton.html();
+    createButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating...');
+    
+    // Also disable the cancel button to prevent form closure during creation
+    const cancelButton = $('#createRoomModal .btn-secondary');
+    cancelButton.prop('disabled', true);
+    
     $.ajax({
         url: 'api/create_room.php',
         method: 'POST',
         data: formData,
         dataType: 'json',
+        timeout: 15000, // 15 second timeout
         success: function(response) {
+            console.log('Create room response:', response);
+            
             if (response.status === 'success') {
                 $('#createRoomModal').modal('hide');
-                alert('Room created successfully!');
-                window.location.href = 'room.php';
+                
+                let message = 'Room created successfully!';
+                if (response.invite_code) {
+                    const inviteLink = window.location.origin + '/' + response.invite_link;
+                    message += '\\n\\nInvite link: ' + inviteLink;
+                    
+                    // Try to copy to clipboard
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(inviteLink).then(() => {
+                            message += '\\n\\n(Invite link copied to clipboard!)';
+                            alert(message);
+                        }).catch(() => {
+                            alert(message);
+                        });
+                    } else {
+                        alert(message);
+                    }
+                } else {
+                    alert(message);
+                }
+                
+                // Add a small delay before redirect to ensure modal closes
+                setTimeout(() => {
+                    window.location.href = 'room.php';
+                }, 500);
             } else {
                 alert('Error: ' + response.message);
+                // Re-enable buttons on error
+                createButton.prop('disabled', false).html(originalText);
+                cancelButton.prop('disabled', false);
             }
         },
         error: function(xhr, status, error) {
             console.error('Error creating room:', error);
+            console.error('Response text:', xhr.responseText);
             alert('Error creating room: ' + error);
+            
+            // Re-enable buttons on error
+            createButton.prop('disabled', false).html(originalText);
+            cancelButton.prop('disabled', false);
         }
     });
 };

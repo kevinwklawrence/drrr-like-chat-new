@@ -3278,3 +3278,17 @@ function handleAvatarClick(event, userId, username) {
         }
     }
 }
+
+if (typeof disappearingMessages !== 'undefined' && disappearingMessages && messageLifetimeMinutes > 0) {
+    // Add disappearing messages indicator to room header
+    $('.room-title').append(`
+        <span class="badge bg-warning ms-2" title="Messages disappear after ${messageLifetimeMinutes} minutes">
+            <i class="fas fa-clock"></i> ${messageLifetimeMinutes}min
+        </span>
+    `);
+    
+    // Show warning about disappearing messages
+    setTimeout(() => {
+        showToast(`This room has disappearing messages enabled. Messages will be deleted after ${messageLifetimeMinutes} minutes.`, 'warning');
+    }, 2000);
+}
