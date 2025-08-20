@@ -1,4 +1,4 @@
-// Global Profile System
+// Global Profile System - Updated with Bubble Customization
 let activeProfilePopup = null;
 
 // Profile editor variables
@@ -393,13 +393,13 @@ function displayProfileEditor(user) {
         <!-- Avatar Customization Sliders -->
         <div class="avatar-customization mb-4" style="background: #444; border-radius: 8px; padding: 15px;">
             <h6 style="color: #e0e0e0; margin-bottom: 15px;">
-                <i class="fas fa-sliders-h"></i> Customize Colors
+                <i class="fas fa-sliders-h"></i> Customize Avatar Colors
             </h6>
             
-            <!-- Hue Slider -->
+            <!-- Avatar Hue Slider -->
             <div class="mb-3">
                 <label for="avatarHueSlider" class="form-label" style="color: #ccc; font-size: 0.9rem;">
-                    Hue: <span id="hueValue">${currentUser.avatar_hue || 0}</span>°
+                    Hue: <span id="avatarHueValue">${currentUser.avatar_hue || 0}</span>°
                 </label>
                 <input type="range" 
                        class="form-range avatar-slider" 
@@ -411,10 +411,10 @@ function displayProfileEditor(user) {
                        style="background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);">
             </div>
             
-            <!-- Saturation Slider -->
+            <!-- Avatar Saturation Slider -->
             <div class="mb-3">
                 <label for="avatarSatSlider" class="form-label" style="color: #ccc; font-size: 0.9rem;">
-                    Saturation: <span id="satValue">${currentUser.avatar_saturation || 100}</span>%
+                    Saturation: <span id="avatarSatValue">${currentUser.avatar_saturation || 100}</span>%
                 </label>
                 <input type="range" 
                        class="form-range avatar-slider" 
@@ -426,9 +426,9 @@ function displayProfileEditor(user) {
                        style="background: linear-gradient(to right, #888, #fff);">
             </div>
             
-            <!-- Reset Button -->
+            <!-- Reset Avatar Button -->
             <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="resetAvatarCustomization()">
-                <i class="fas fa-undo"></i> Reset Colors
+                <i class="fas fa-undo"></i> Reset Avatar Colors
             </button>
         </div>
                                             
@@ -520,12 +520,55 @@ function displayProfileEditor(user) {
                                                         padding: 8px 12px;
                                                         border: 2px solid var(--user-border-color);
                                                         position: relative;
+                                                        filter: hue-rotate(${currentUser.bubble_hue || 0}deg) saturate(${currentUser.bubble_saturation || 100}%);
                                                     ">
                                                         <div style="color: var(--user-text-color); font-size: 0.8rem;">
                                                             Hello! This is how your messages will look.
                                                         </div>
                                                     </div>
                                                 </div>
+                                            </div>
+                                            
+                                            <!-- Bubble Customization Controls -->
+                                            <div class="bubble-customization" style="background: #444; border-radius: 8px; padding: 15px;">
+                                                <h6 style="color: #e0e0e0; margin-bottom: 15px;">
+                                                    <i class="fas fa-sliders-h"></i> Customize Bubble Colors
+                                                </h6>
+                                                
+                                                <!-- Bubble Hue Slider -->
+                                                <div class="mb-3">
+                                                    <label for="bubbleHueSlider" class="form-label" style="color: #ccc; font-size: 0.9rem;">
+                                                        Hue: <span id="bubbleHueValue">${currentUser.bubble_hue || 0}</span>°
+                                                    </label>
+                                                    <input type="range" 
+                                                           class="form-range bubble-slider" 
+                                                           id="bubbleHueSlider" 
+                                                           min="0" 
+                                                           max="360" 
+                                                           value="${currentUser.bubble_hue || 0}"
+                                                           oninput="updateBubbleHue(this.value)"
+                                                           style="background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);">
+                                                </div>
+                                                
+                                                <!-- Bubble Saturation Slider -->
+                                                <div class="mb-3">
+                                                    <label for="bubbleSatSlider" class="form-label" style="color: #ccc; font-size: 0.9rem;">
+                                                        Saturation: <span id="bubbleSatValue">${currentUser.bubble_saturation || 100}</span>%
+                                                    </label>
+                                                    <input type="range" 
+                                                           class="form-range bubble-slider" 
+                                                           id="bubbleSatSlider" 
+                                                           min="0" 
+                                                           max="200" 
+                                                           value="${currentUser.bubble_saturation || 100}"
+                                                           oninput="updateBubbleSaturation(this.value)"
+                                                           style="background: linear-gradient(to right, #888, #fff);">
+                                                </div>
+                                                
+                                                <!-- Reset Bubble Button -->
+                                                <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="resetBubbleCustomization()">
+                                                    <i class="fas fa-undo"></i> Reset Bubble Colors
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -753,6 +796,9 @@ function selectAvatarInEditor(avatarPath) {
     
     $('#selectedAvatarPreview').attr('src', 'images/' + avatarPath);
     selectedAvatar = avatarPath;
+    
+    // Apply current customization to the new avatar
+    updateAvatarPreview();
 }
 
 function selectColorInEditor(colorName) {
@@ -775,7 +821,13 @@ function updateColorPreview() {
     const color = selectedColor || currentUser.color || 'black';
     $('#colorPreviewCircle').removeClass().addClass(`color-${color}`);
     $('#colorPreviewName').text(color.charAt(0).toUpperCase() + color.slice(1));
-    $('#sampleMessageBubble').removeClass().addClass(`mini-message-bubble user-color-${color}`);
+    
+    // Update message bubble preview with current bubble customization
+    const bubbleHue = selectedBubbleHue !== null ? selectedBubbleHue : (currentUser.bubble_hue || 0);
+    const bubbleSat = selectedBubbleSaturation !== null ? selectedBubbleSaturation : (currentUser.bubble_saturation || 100);
+    
+    $('#sampleMessageBubble').removeClass().addClass(`mini-message-bubble user-color-${color}`)
+        .css('filter', `hue-rotate(${bubbleHue}deg) saturate(${bubbleSat}%)`);
 }
 
 function updateAvatarStats() {
@@ -833,6 +885,17 @@ function saveProfileChanges() {
         hasChanges = true;
     }
     
+    // Check for bubble customization changes
+    if (selectedBubbleHue !== null && selectedBubbleHue !== (currentUser.bubble_hue || 0)) {
+        changes.bubble_hue = selectedBubbleHue;
+        hasChanges = true;
+    }
+    
+    if (selectedBubbleSaturation !== null && selectedBubbleSaturation !== (currentUser.bubble_saturation || 100)) {
+        changes.bubble_saturation = selectedBubbleSaturation;
+        hasChanges = true;
+    }
+    
     // Check for profile info changes (registered users only)
     if (isRegistered) {
         const bio = $('#profileBio').val();
@@ -886,15 +949,33 @@ function saveProfileChanges() {
         );
     }
     
-    if (changes.avatar_hue !== undefined || changes.avatar_saturation !== undefined) {
+    // Handle all customization changes in a single API call
+    if (changes.avatar_hue !== undefined || changes.avatar_saturation !== undefined || 
+        changes.bubble_hue !== undefined || changes.bubble_saturation !== undefined) {
+        
+        const customizationData = {};
+        
+        // Include avatar customization
+        if (changes.avatar_hue !== undefined) {
+            customizationData.avatar_hue = changes.avatar_hue;
+        }
+        if (changes.avatar_saturation !== undefined) {
+            customizationData.avatar_saturation = changes.avatar_saturation;
+        }
+        
+        // Include bubble customization
+        if (changes.bubble_hue !== undefined) {
+            customizationData.bubble_hue = changes.bubble_hue;
+        }
+        if (changes.bubble_saturation !== undefined) {
+            customizationData.bubble_saturation = changes.bubble_saturation;
+        }
+        
         savePromises.push(
             $.ajax({
                 url: 'api/update_avatar_customization.php',
                 method: 'POST',
-                data: { 
-                    avatar_hue: changes.avatar_hue !== undefined ? changes.avatar_hue : (currentUser.avatar_hue || 0),
-                    avatar_saturation: changes.avatar_saturation !== undefined ? changes.avatar_saturation : (currentUser.avatar_saturation || 100)
-                },
+                data: customizationData,
                 dataType: 'json'
             })
         );
@@ -933,6 +1014,12 @@ function saveProfileChanges() {
                 if (changes.avatar_saturation !== undefined) {
                     currentUser.avatar_saturation = changes.avatar_saturation;
                 }
+                if (changes.bubble_hue !== undefined) {
+                    currentUser.bubble_hue = changes.bubble_hue;
+                }
+                if (changes.bubble_saturation !== undefined) {
+                    currentUser.bubble_saturation = changes.bubble_saturation;
+                }
                 
                 // Update the main avatar with new filters
                 if (changes.avatar_hue !== undefined || changes.avatar_saturation !== undefined) {
@@ -965,12 +1052,21 @@ function saveProfileChanges() {
 
 function showProfileSuccessMessage(changes) {
     let message = 'Profile updated successfully!';
-    if (changes.avatar && changes.color) {
-        message = 'Avatar and chat color updated successfully!';
-    } else if (changes.avatar) {
-        message = 'Avatar updated successfully!';
-    } else if (changes.color) {
-        message = 'Chat color updated successfully!';
+    
+    const changedItems = [];
+    if (changes.avatar) changedItems.push('avatar');
+    if (changes.color) changedItems.push('chat color');
+    if (changes.avatar_hue !== undefined || changes.avatar_saturation !== undefined) changedItems.push('avatar colors');
+    if (changes.bubble_hue !== undefined || changes.bubble_saturation !== undefined) changedItems.push('bubble colors');
+    
+    if (changedItems.length > 0) {
+        if (changedItems.length === 1) {
+            message = `${changedItems[0].charAt(0).toUpperCase() + changedItems[0].slice(1)} updated successfully!`;
+        } else if (changedItems.length === 2) {
+            message = `${changedItems[0].charAt(0).toUpperCase() + changedItems[0].slice(1)} and ${changedItems[1]} updated successfully!`;
+        } else {
+            message = `${changedItems.slice(0, -1).join(', ')} and ${changedItems[changedItems.length - 1]} updated successfully!`;
+        }
     }
     
     const toast = `
@@ -1048,20 +1144,34 @@ function uploadCoverPhoto(file) {
     });
 }
 
-// Avatar customization variables
+// Avatar and bubble customization variables
 let selectedAvatarHue = null;
 let selectedAvatarSaturation = null;
+let selectedBubbleHue = null;
+let selectedBubbleSaturation = null;
 
 function updateAvatarHue(value) {
     selectedAvatarHue = parseInt(value);
-    $('#hueValue').text(value);
+    $('#avatarHueValue').text(value);
     updateAvatarPreview();
 }
 
 function updateAvatarSaturation(value) {
     selectedAvatarSaturation = parseInt(value);
-    $('#satValue').text(value);
+    $('#avatarSatValue').text(value);
     updateAvatarPreview();
+}
+
+function updateBubbleHue(value) {
+    selectedBubbleHue = parseInt(value);
+    $('#bubbleHueValue').text(value);
+    updateBubblePreview();
+}
+
+function updateBubbleSaturation(value) {
+    selectedBubbleSaturation = parseInt(value);
+    $('#bubbleSatValue').text(value);
+    updateBubblePreview();
 }
 
 function updateAvatarPreview() {
@@ -1075,35 +1185,34 @@ function updateAvatarPreview() {
     $('.editor-avatar.selected').css('filter', filterValue);
 }
 
+function updateBubblePreview() {
+    const hue = selectedBubbleHue !== null ? selectedBubbleHue : (currentUser.bubble_hue || 0);
+    const saturation = selectedBubbleSaturation !== null ? selectedBubbleSaturation : (currentUser.bubble_saturation || 100);
+    
+    const filterValue = `hue-rotate(${hue}deg) saturate(${saturation}%)`;
+    $('#sampleMessageBubble').css('filter', filterValue);
+}
+
 function resetAvatarCustomization() {
     selectedAvatarHue = 0;
     selectedAvatarSaturation = 100;
     
     $('#avatarHueSlider').val(0);
     $('#avatarSatSlider').val(100);
-    $('#hueValue').text('0');
-    $('#satValue').text('100');
+    $('#avatarHueValue').text('0');
+    $('#avatarSatValue').text('100');
     
     updateAvatarPreview();
 }
 
-// Update the existing selectAvatarInEditor function to apply current filters
-function selectAvatarInEditor(avatarPath) {
-    $('.editor-avatar').removeClass('selected').css({
-        'border-color': '#555',
-        'box-shadow': 'none',
-        'filter': 'none'
-    });
+function resetBubbleCustomization() {
+    selectedBubbleHue = 0;
+    selectedBubbleSaturation = 100;
     
-    const selectedElement = $(`.editor-avatar[data-avatar="${avatarPath}"]`);
-    selectedElement.addClass('selected').css({
-        'border-color': '#007bff',
-        'box-shadow': '0 0 15px rgba(0, 123, 255, 0.5)'
-    });
+    $('#bubbleHueSlider').val(0);
+    $('#bubbleSatSlider').val(100);
+    $('#bubbleHueValue').text('0');
+    $('#bubbleSatValue').text('100');
     
-    $('#selectedAvatarPreview').attr('src', 'images/' + avatarPath);
-    selectedAvatar = avatarPath;
-    
-    // Apply current customization to the new avatar
-    updateAvatarPreview();
+    updateBubblePreview();
 }
