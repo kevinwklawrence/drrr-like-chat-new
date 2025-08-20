@@ -1,5 +1,5 @@
 <?php
-// api/get_room_settings.php - Updated version with YouTube support
+// api/get_room_settings.php - Updated version with all new features
 session_start();
 include '../db_connect.php';
 
@@ -55,23 +55,16 @@ while ($row = $columns_query->fetch_assoc()) {
 $select_fields = ['name', 'description', 'capacity'];
 
 // Add optional fields if they exist
-if (in_array('background', $available_columns)) {
-    $select_fields[] = 'background';
-}
-if (in_array('permanent', $available_columns)) {
-    $select_fields[] = 'permanent';
-}
-if (in_array('has_password', $available_columns)) {
-    $select_fields[] = 'has_password';
-}
-if (in_array('allow_knocking', $available_columns)) {
-    $select_fields[] = 'allow_knocking';
-}
-if (in_array('theme', $available_columns)) {
-    $select_fields[] = 'theme';
-}
-if (in_array('youtube_enabled', $available_columns)) {
-    $select_fields[] = 'youtube_enabled';
+$optional_fields = [
+    'background', 'permanent', 'has_password', 'allow_knocking', 'theme', 
+    'youtube_enabled', 'is_rp', 'friends_only', 'invite_only', 'members_only',
+    'disappearing_messages', 'message_lifetime_minutes', 'invite_code'
+];
+
+foreach ($optional_fields as $field) {
+    if (in_array($field, $available_columns)) {
+        $select_fields[] = $field;
+    }
 }
 
 $sql = "SELECT " . implode(', ', $select_fields) . " FROM chatrooms WHERE id = ?";
@@ -104,10 +97,17 @@ $settings = [
     'has_password' => isset($room_settings['has_password']) ? (bool)$room_settings['has_password'] : false,
     'allow_knocking' => isset($room_settings['allow_knocking']) ? (bool)$room_settings['allow_knocking'] : true,
     'theme' => $room_settings['theme'] ?? 'default',
-    'youtube_enabled' => isset($room_settings['youtube_enabled']) ? (bool)$room_settings['youtube_enabled'] : false
+    'youtube_enabled' => isset($room_settings['youtube_enabled']) ? (bool)$room_settings['youtube_enabled'] : false,
+    'is_rp' => isset($room_settings['is_rp']) ? (bool)$room_settings['is_rp'] : false,
+    'friends_only' => isset($room_settings['friends_only']) ? (bool)$room_settings['friends_only'] : false,
+    'invite_only' => isset($room_settings['invite_only']) ? (bool)$room_settings['invite_only'] : false,
+    'members_only' => isset($room_settings['members_only']) ? (bool)$room_settings['members_only'] : false,
+    'disappearing_messages' => isset($room_settings['disappearing_messages']) ? (bool)$room_settings['disappearing_messages'] : false,
+    'message_lifetime_minutes' => isset($room_settings['message_lifetime_minutes']) ? (int)$room_settings['message_lifetime_minutes'] : 0,
+    'invite_code' => $room_settings['invite_code'] ?? null
 ];
 
-error_log("Retrieved room settings for room_id=$room_id, youtube_enabled=" . ($settings['youtube_enabled'] ? 'true' : 'false'));
+error_log("Retrieved room settings for room_id=$room_id: " . json_encode($settings));
 echo json_encode([
     'status' => 'success', 
     'settings' => $settings

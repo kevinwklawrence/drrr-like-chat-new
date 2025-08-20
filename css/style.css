@@ -415,3 +415,7 @@ body {
         transform: rotate(360deg);
     }
 }
+
+.text-muted {
+    color: #666 !important; 
+}

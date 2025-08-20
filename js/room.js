@@ -1517,7 +1517,7 @@ function displayRoomSettingsModal(settings) {
     
     const modalHtml = `
         <div class="modal fade" id="roomSettingsModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
+            <div class="modal-dialog modal-xl">
                 <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
                     <div class="modal-header" style="background: #333; border-bottom: 1px solid #444;">
                         <h5 class="modal-title">
@@ -1531,12 +1531,10 @@ function displayRoomSettingsModal(settings) {
                                 <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab" style="color: #fff; background: transparent; border: none;">General</button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab" style="color: #fff; background: transparent; border: none;">Security</button>
+                                <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab" style="color: #fff; background: transparent; border: none;">Access Control</button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="youtube-tab" data-bs-toggle="tab" data-bs-target="#youtube" type="button" role="tab" style="color: #fff; background: transparent; border: none;">
-                                    <i class="fab fa-youtube text-danger"></i> YouTube Player
-                                </button>
+                                <button class="nav-link" id="features-tab" data-bs-toggle="tab" data-bs-target="#features" type="button" role="tab" style="color: #fff; background: transparent; border: none;">Features</button>
                             </li>
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" id="banlist-tab" data-bs-toggle="tab" data-bs-target="#banlist" type="button" role="tab" style="color: #fff; background: transparent; border: none;">
@@ -1553,29 +1551,49 @@ function displayRoomSettingsModal(settings) {
                                         <div class="col-md-6">
                                             <div class="mb-3">
                                                 <label for="settingsRoomName" class="form-label">Room Name</label>
-                                                <input type="text" class="form-control" id="settingsRoomName" value="${settings.name}" required style="background: #333; border: 1px solid #555; color: #fff;">
+                                                <input type="text" class="form-control" id="settingsRoomName" value="${settings.name}" required maxlength="50" style="background: #333; border: 1px solid #555; color: #fff;">
                                             </div>
                                             <div class="mb-3">
                                                 <label for="settingsCapacity" class="form-label">Capacity</label>
                                                 <select class="form-select" id="settingsCapacity" required style="background: #333; border: 1px solid #555; color: #fff;">
-                                                    <option value="5"${settings.capacity == 5 ? ' selected' : ''}>5</option>
-                                                    <option value="10"${settings.capacity == 10 ? ' selected' : ''}>10</option>
-                                                    <option value="20"${settings.capacity == 20 ? ' selected' : ''}>20</option>
-                                                    <option value="50"${settings.capacity == 50 ? ' selected' : ''}>50</option>
+                                                    <option value="5"${settings.capacity == 5 ? ' selected' : ''}>5 users</option>
+                                                    <option value="10"${settings.capacity == 10 ? ' selected' : ''}>10 users</option>
+                                                    <option value="20"${settings.capacity == 20 ? ' selected' : ''}>20 users</option>
+                                                    <option value="50"${settings.capacity == 50 ? ' selected' : ''}>50 users</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="settingsTheme" class="form-label">Theme</label>
+                                                <select class="form-select" id="settingsTheme" style="background: #333; border: 1px solid #555; color: #fff;">
+                                                    <option value="default"${settings.theme === 'default' ? ' selected' : ''}>Default</option>
+                                                    <option value="dark"${settings.theme === 'dark' ? ' selected' : ''}>Dark</option>
+                                                    <option value="cyberpunk"${settings.theme === 'cyberpunk' ? ' selected' : ''}>Cyberpunk</option>
+                                                    <option value="forest"${settings.theme === 'forest' ? ' selected' : ''}>Forest</option>
+                                                    <option value="ocean"${settings.theme === 'ocean' ? ' selected' : ''}>Ocean</option>
+                                                    <option value="sunset"${settings.theme === 'sunset' ? ' selected' : ''}>Sunset</option>
                                                 </select>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="mb-3">
                                                 <label for="settingsDescription" class="form-label">Description</label>
-                                                <textarea class="form-control" id="settingsDescription" rows="3" style="background: #333; border: 1px solid #555; color: #fff;">${settings.description || ''}</textarea>
+                                                <textarea class="form-control" id="settingsDescription" rows="4" maxlength="200" style="background: #333; border: 1px solid #555; color: #fff;">${settings.description || ''}</textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="settingsIsRP"${settings.is_rp ? ' checked' : ''}>
+                                                    <label class="form-check-label" for="settingsIsRP">
+                                                        <i class="fas fa-theater-masks"></i> Roleplay Room
+                                                    </label>
+                                                </div>
+                                                <small class="form-text text-muted">Mark this room as suitable for roleplay</small>
                                             </div>
                                         </div>
                                     </div>
                                 </form>
                             </div>
 
-                            <!-- Security Settings -->
+                            <!-- Access Control Settings -->
                             <div class="tab-pane fade" id="security" role="tabpanel">
                                 <div class="mt-3">
                                     <div class="row">
@@ -1593,8 +1611,6 @@ function displayRoomSettingsModal(settings) {
                                                 <input type="password" class="form-control" id="settingsPassword" placeholder="Leave empty to keep current password" style="background: #333; border: 1px solid #555; color: #fff;">
                                                 <div class="form-text text-muted">Leave empty to keep current password, or enter new password to change it.</div>
                                             </div>
-                                        </div>
-                                        <div class="col-md-6">
                                             <div class="mb-3" id="knockingFieldSettings" style="display: ${settings.has_password ? 'block' : 'none'};">
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="checkbox" id="settingsAllowKnocking"${settings.allow_knocking ? ' checked' : ''}>
@@ -1605,33 +1621,103 @@ function displayRoomSettingsModal(settings) {
                                                 <small class="form-text text-muted">Let users request access when they don't know the password</small>
                                             </div>
                                         </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="settingsMembersOnly"${settings.members_only ? ' checked' : ''}>
+                                                    <label class="form-check-label" for="settingsMembersOnly">
+                                                        <i class="fas fa-user-check"></i> Members Only
+                                                    </label>
+                                                </div>
+                                                <small class="form-text text-muted">Only registered users can join</small>
+                                            </div>
+                                            
+                                            ${currentUser.type === 'user' ? `
+                                            <div class="mb-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="settingsFriendsOnly"${settings.friends_only ? ' checked' : ''}>
+                                                    <label class="form-check-label" for="settingsFriendsOnly">
+                                                        <i class="fas fa-user-friends"></i> Friends Only
+                                                    </label>
+                                                </div>
+                                                <small class="form-text text-muted">Only your friends can join</small>
+                                            </div>
+                                            ` : ''}
+                                            
+                                            <div class="mb-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="settingsInviteOnly"${settings.invite_only ? ' checked' : ''}>
+                                                    <label class="form-check-label" for="settingsInviteOnly">
+                                                        <i class="fas fa-link"></i> Invite Only
+                                                    </label>
+                                                </div>
+                                                <small class="form-text text-muted">Generate a special invite link</small>
+                                                ${settings.invite_only && settings.invite_code ? `
+                                                <div class="mt-2 p-2" style="background: #333; border-radius: 4px;">
+                                                    <small class="text-success">Current invite link:</small><br>
+                                                    <small style="word-break: break-all;">${window.location.origin}/lounge.php?invite=${settings.invite_code}</small>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="copyInviteLink('${settings.invite_code}')">
+                                                        <i class="fas fa-copy"></i> Copy
+                                                    </button>
+                                                </div>
+                                                ` : ''}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- YouTube Player Settings -->
-                            <div class="tab-pane fade" id="youtube" role="tabpanel">
+                            <!-- Features Tab -->
+                            <div class="tab-pane fade" id="features" role="tabpanel">
                                 <div class="mt-3">
-                                    <div class="mb-4">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" id="settingsYouTubeEnabled"${settings.youtube_enabled ? ' checked' : ''}>
-                                            <label class="form-check-label" for="settingsYouTubeEnabled">
-                                                <i class="fab fa-youtube text-danger"></i> <strong>Enable YouTube Player</strong>
-                                            </label>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-4">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="settingsYouTubeEnabled"${settings.youtube_enabled ? ' checked' : ''}>
+                                                    <label class="form-check-label" for="settingsYouTubeEnabled">
+                                                        <i class="fab fa-youtube text-danger"></i> <strong>Enable YouTube Player</strong>
+                                                    </label>
+                                                </div>
+                                                <small class="form-text text-muted">Allow synchronized video playback for all users in the room</small>
+                                            </div>
+                                            
+                                            <div id="youtubePlayerInfo" style="display: ${settings.youtube_enabled ? 'block' : 'none'};">
+                                                <div class="alert" style="background: rgba(13, 110, 253, 0.1); border: 1px solid rgba(13, 110, 253, 0.3); color: #b3d4fc; border-radius: 8px;">
+                                                    <h6><i class="fas fa-info-circle"></i> YouTube Player Features:</h6>
+                                                    <ul class="mb-0" style="padding-left: 1.2rem;">
+                                                        <li><strong>Host Controls:</strong> Only hosts can control playback</li>
+                                                        <li><strong>Video Suggestions:</strong> Users can suggest videos for approval</li>
+                                                        <li><strong>Queue System:</strong> Approved videos are queued for playback</li>
+                                                        <li><strong>Real-time Sync:</strong> All users see the same video</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <small class="form-text text-muted">Allow synchronized video playback for all users in the room</small>
-                                    </div>
-                                    
-                                    <div id="youtubePlayerInfo" style="display: ${settings.youtube_enabled ? 'block' : 'none'};">
-                                        <div class="alert" style="background: rgba(13, 110, 253, 0.1); border: 1px solid rgba(13, 110, 253, 0.3); color: #b3d4fc; border-radius: 8px;">
-                                            <h6><i class="fas fa-info-circle"></i> YouTube Player Features:</h6>
-                                            <ul class="mb-0" style="padding-left: 1.2rem;">
-                                                <li><strong>Host Controls:</strong> Only hosts can control playback (play, pause, skip, stop)</li>
-                                                <li><strong>Video Suggestions:</strong> Users can suggest videos for host approval</li>
-                                                <li><strong>Queue System:</strong> Approved videos are queued for continuous playback</li>
-                                                <li><strong>Individual Toggle:</strong> Users can hide the player locally if they want</li>
-                                                <li><strong>Real-time Sync:</strong> All users see the same video at the same time</li>
-                                            </ul>
+                                        <div class="col-md-6">
+                                            <div class="mb-4">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="settingsDisappearingMessages"${settings.disappearing_messages ? ' checked' : ''}>
+                                                    <label class="form-check-label" for="settingsDisappearingMessages">
+                                                        <i class="fas fa-clock"></i> <strong>Disappearing Messages</strong>
+                                                    </label>
+                                                </div>
+                                                <small class="form-text text-muted">Messages automatically delete after a set time</small>
+                                            </div>
+                                            
+                                            <div class="mb-3" id="messageLifetimeFieldSettings" style="display: ${settings.disappearing_messages ? 'block' : 'none'};">
+                                                <label for="settingsMessageLifetime" class="form-label">Message Lifetime</label>
+                                                <select class="form-select" id="settingsMessageLifetime" style="background: #333; border: 1px solid #555; color: #fff;">
+                                                    <option value="5"${settings.message_lifetime_minutes == 5 ? ' selected' : ''}>5 minutes</option>
+                                                    <option value="15"${settings.message_lifetime_minutes == 15 ? ' selected' : ''}>15 minutes</option>
+                                                    <option value="30"${settings.message_lifetime_minutes == 30 ? ' selected' : ''}>30 minutes</option>
+                                                    <option value="60"${settings.message_lifetime_minutes == 60 ? ' selected' : ''}>1 hour</option>
+                                                    <option value="120"${settings.message_lifetime_minutes == 120 ? ' selected' : ''}>2 hours</option>
+                                                    <option value="360"${settings.message_lifetime_minutes == 360 ? ' selected' : ''}>6 hours</option>
+                                                    <option value="720"${settings.message_lifetime_minutes == 720 ? ' selected' : ''}>12 hours</option>
+                                                    <option value="1440"${settings.message_lifetime_minutes == 1440 ? ' selected' : ''}>24 hours</option>
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1691,6 +1777,14 @@ function setupRoomSettingsHandlers() {
             $('#youtubePlayerInfo').show();
         } else {
             $('#youtubePlayerInfo').hide();
+        }
+    });
+    
+    $('#settingsDisappearingMessages').on('change', function() {
+        if (this.checked) {
+            $('#messageLifetimeFieldSettings').show();
+        } else {
+            $('#messageLifetimeFieldSettings').hide();
         }
     });
 }
@@ -1787,16 +1881,33 @@ function saveRoomSettings() {
         name: $('#settingsRoomName').val().trim(),
         description: $('#settingsDescription').val().trim(),
         capacity: $('#settingsCapacity').val(),
+        theme: $('#settingsTheme').val(),
         has_password: $('#settingsHasPassword').is(':checked') ? 1 : 0,
         password: $('#settingsPassword').val(),
         allow_knocking: $('#settingsAllowKnocking').is(':checked') ? 1 : 0,
-        youtube_enabled: $('#settingsYouTubeEnabled').is(':checked') ? 1 : 0
+        youtube_enabled: $('#settingsYouTubeEnabled').is(':checked') ? 1 : 0,
+        is_rp: $('#settingsIsRP').is(':checked') ? 1 : 0,
+        friends_only: $('#settingsFriendsOnly').is(':checked') ? 1 : 0,
+        invite_only: $('#settingsInviteOnly').is(':checked') ? 1 : 0,
+        members_only: $('#settingsMembersOnly').is(':checked') ? 1 : 0,
+        disappearing_messages: $('#settingsDisappearingMessages').is(':checked') ? 1 : 0,
+        message_lifetime_minutes: $('#settingsDisappearingMessages').is(':checked') ? $('#settingsMessageLifetime').val() : 0
     };
+    
+    console.log('Saving room settings:', formData);
     
     if (!formData.name) {
         alert('Room name is required');
         $('#settingsRoomName').focus();
         return;
+    }
+    
+    if (formData.has_password && !formData.password) {
+        // Only require password if it's a new password protection (not just keeping existing)
+        if (!confirm('Password protection is enabled but no password was entered. Do you want to keep the existing password?')) {
+            $('#settingsPassword').focus();
+            return;
+        }
     }
     
     const saveButton = $('#roomSettingsModal .btn-primary');
@@ -1807,28 +1918,51 @@ function saveRoomSettings() {
         url: 'api/update_room.php',
         method: 'POST',
         data: formData,
+        dataType: 'json',
         success: function(response) {
-            try {
-                let res = JSON.parse(response);
-                if (res.status === 'success') {
-                    alert('Room settings updated successfully!');
-                    $('#roomSettingsModal').modal('hide');
+            console.log('Update room response:', response);
+            if (response.status === 'success') {
+                let message = 'Room settings updated successfully!';
+                
+                // Show invite link if generated
+                if (response.invite_code) {
+                    const inviteLink = window.location.origin + '/' + response.invite_link;
+                    message += '\\n\\nInvite link: ' + inviteLink;
                     
-                    const newYouTubeState = formData.youtube_enabled === 1;
-                    if (newYouTubeState !== youtubeEnabled) {
-                        showToast('YouTube player setting changed. Refreshing room...', 'info');
-                        setTimeout(() => {
-                            location.reload();
-                        }, 2000);
+                    // Try to copy to clipboard
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(inviteLink).then(() => {
+                            message += '\\n\\n(Invite link copied to clipboard!)';
+                            alert(message);
+                        }).catch(() => {
+                            alert(message);
+                        });
                     } else {
-                        location.reload();
+                        alert(message);
                     }
                 } else {
-                    alert('Error: ' + res.message);
+                    alert(message);
                 }
-            } catch (e) {
-                console.error('JSON parse error:', e);
-                alert('Invalid response from server');
+                
+                $('#roomSettingsModal').modal('hide');
+                
+                // Check if major changes require reload
+                const needsReload = 
+                    formData.youtube_enabled !== youtubeEnabled ||
+                    formData.theme !== (roomTheme || 'default') ||
+                    formData.disappearing_messages !== (typeof disappearingMessages !== 'undefined' ? disappearingMessages : false);
+                
+                if (needsReload) {
+                    showToast('Settings changed. Refreshing room...', 'info');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    loadMessages();
+                    loadUsers();
+                }
+            } else {
+                alert('Error: ' + response.message);
             }
         },
         error: function(xhr, status, error) {
@@ -3291,4 +3425,43 @@ if (typeof disappearingMessages !== 'undefined' && disappearingMessages && messa
     setTimeout(() => {
         showToast(`This room has disappearing messages enabled. Messages will be deleted after ${messageLifetimeMinutes} minutes.`, 'warning');
     }, 2000);
+}
+
+// Helper function to copy invite link
+function copyInviteLink(inviteCode) {
+    const inviteLink = `${window.location.origin}/lounge.php?invite=${inviteCode}`;
+    
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(inviteLink).then(() => {
+            showToast('Invite link copied to clipboard!', 'success');
+        }).catch(() => {
+            // Fallback for older browsers
+            fallbackCopyTextToClipboard(inviteLink);
+        });
+    } else {
+        // Fallback for older browsers
+        fallbackCopyTextToClipboard(inviteLink);
+    }
+}
+
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        document.execCommand('copy');
+        showToast('Invite link copied to clipboard!', 'success');
+    } catch (err) {
+        console.error('Fallback: Oops, unable to copy', err);
+        showToast('Unable to copy link automatically. Please copy manually.', 'warning');
+    }
+    
+    document.body.removeChild(textArea);
 }

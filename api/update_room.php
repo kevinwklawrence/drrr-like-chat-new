@@ -1,5 +1,5 @@
 <?php
-// api/update_room.php - Enhanced version
+// api/update_room.php - Enhanced version with all new features
 session_start();
 include '../db_connect.php';
 
@@ -24,6 +24,14 @@ $has_password = isset($_POST['has_password']) ? (int)$_POST['has_password'] : 0;
 $allow_knocking = isset($_POST['allow_knocking']) ? (int)$_POST['allow_knocking'] : 1;
 $permanent = isset($_POST['permanent']) ? (int)$_POST['permanent'] : 0;
 $youtube_enabled = isset($_POST['youtube_enabled']) ? (int)$_POST['youtube_enabled'] : 0;
+
+// NEW: Get new feature data
+$is_rp = isset($_POST['is_rp']) ? (int)$_POST['is_rp'] : 0;
+$friends_only = isset($_POST['friends_only']) ? (int)$_POST['friends_only'] : 0;
+$invite_only = isset($_POST['invite_only']) ? (int)$_POST['invite_only'] : 0;
+$members_only = isset($_POST['members_only']) ? (int)$_POST['members_only'] : 0;
+$disappearing_messages = isset($_POST['disappearing_messages']) ? (int)$_POST['disappearing_messages'] : 0;
+$message_lifetime_minutes = isset($_POST['message_lifetime_minutes']) ? (int)$_POST['message_lifetime_minutes'] : 0;
 
 if ($room_id <= 0 || empty($name) || $capacity <= 0) {
     error_log("Invalid input in update_room.php: room_id=$room_id, name=$name, capacity=$capacity");
@@ -57,6 +65,24 @@ if ($result->num_rows === 0 || $result->fetch_assoc()['is_host'] != 1) {
 }
 $stmt->close();
 
+// Validation
+if (!in_array($capacity, [5, 10, 20, 50])) {
+    echo json_encode(['status' => 'error', 'message' => 'Invalid capacity value']);
+    exit;
+}
+
+// NEW: Validate friends_only for guests
+if ($friends_only && $_SESSION['user']['type'] !== 'user') {
+    echo json_encode(['status' => 'error', 'message' => 'Only registered users can create friends-only rooms']);
+    exit;
+}
+
+// NEW: Validate disappearing messages
+if ($disappearing_messages && ($message_lifetime_minutes < 1 || $message_lifetime_minutes > 1440)) {
+    echo json_encode(['status' => 'error', 'message' => 'Message lifetime must be between 1 and 1440 minutes']);
+    exit;
+}
+
 try {
     $conn->begin_transaction();
     
@@ -68,45 +94,29 @@ try {
     }
     
     // Add missing columns if they don't exist
-    if (!in_array('theme', $existing_columns)) {
-        $conn->query("ALTER TABLE chatrooms ADD COLUMN theme VARCHAR(50) DEFAULT 'default'");
-        error_log("Added theme column to chatrooms table");
-    }
+    $required_columns = [
+        'theme' => 'VARCHAR(50) DEFAULT "default"',
+        'has_password' => 'TINYINT(1) DEFAULT 0',
+        'allow_knocking' => 'TINYINT(1) DEFAULT 1',
+        'youtube_enabled' => 'TINYINT(1) DEFAULT 0',
+        'youtube_current_video' => 'VARCHAR(255) DEFAULT NULL',
+        'youtube_current_time' => 'INT DEFAULT 0',
+        'youtube_is_playing' => 'TINYINT(1) DEFAULT 0',
+        'youtube_last_updated' => 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+        'is_rp' => 'TINYINT(1) DEFAULT 0',
+        'friends_only' => 'TINYINT(1) DEFAULT 0',
+        'invite_only' => 'TINYINT(1) DEFAULT 0',
+        'invite_code' => 'VARCHAR(32) DEFAULT NULL',
+        'members_only' => 'TINYINT(1) DEFAULT 0',
+        'disappearing_messages' => 'TINYINT(1) DEFAULT 0',
+        'message_lifetime_minutes' => 'INT DEFAULT 0'
+    ];
     
-    if (!in_array('has_password', $existing_columns)) {
-        $conn->query("ALTER TABLE chatrooms ADD COLUMN has_password TINYINT(1) DEFAULT 0");
-        error_log("Added has_password column to chatrooms table");
-    }
-    
-    if (!in_array('allow_knocking', $existing_columns)) {
-        $conn->query("ALTER TABLE chatrooms ADD COLUMN allow_knocking TINYINT(1) DEFAULT 1");
-        error_log("Added allow_knocking column to chatrooms table");
-    }
-    
-    // Add YouTube columns if they don't exist
-    if (!in_array('youtube_enabled', $existing_columns)) {
-        $conn->query("ALTER TABLE chatrooms ADD COLUMN youtube_enabled TINYINT(1) DEFAULT 0");
-        error_log("Added youtube_enabled column to chatrooms table");
-    }
-    
-    if (!in_array('youtube_current_video', $existing_columns)) {
-        $conn->query("ALTER TABLE chatrooms ADD COLUMN youtube_current_video VARCHAR(255) DEFAULT NULL");
-        error_log("Added youtube_current_video column to chatrooms table");
-    }
-    
-    if (!in_array('youtube_current_time', $existing_columns)) {
-        $conn->query("ALTER TABLE chatrooms ADD COLUMN youtube_current_time INT DEFAULT 0");
-        error_log("Added youtube_current_time column to chatrooms table");
-    }
-    
-    if (!in_array('youtube_is_playing', $existing_columns)) {
-        $conn->query("ALTER TABLE chatrooms ADD COLUMN youtube_is_playing TINYINT(1) DEFAULT 0");
-        error_log("Added youtube_is_playing column to chatrooms table");
-    }
-    
-    if (!in_array('youtube_last_updated', $existing_columns)) {
-        $conn->query("ALTER TABLE chatrooms ADD COLUMN youtube_last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
-        error_log("Added youtube_last_updated column to chatrooms table");
+    foreach ($required_columns as $column => $definition) {
+        if (!in_array($column, $existing_columns)) {
+            $conn->query("ALTER TABLE chatrooms ADD COLUMN $column $definition");
+            error_log("Added $column column to chatrooms table");
+        }
     }
     
     // Build the UPDATE query based on available fields
@@ -127,41 +137,28 @@ try {
     $param_types .= 'i';
     $param_values[] = $capacity;
     
-    // Add optional fields
-    if (in_array('background', $existing_columns)) {
-        $update_fields[] = 'background = ?';
-        $param_types .= 's';
-        $param_values[] = $background;
-    }
+    // Add all other fields
+    $field_mappings = [
+        'background' => [$background, 's'],
+        'theme' => [$theme, 's'],
+        'has_password' => [$has_password, 'i'],
+        'allow_knocking' => [$allow_knocking, 'i'],
+        'permanent' => [$permanent, 'i'],
+        'youtube_enabled' => [$youtube_enabled, 'i'],
+        'is_rp' => [$is_rp, 'i'],
+        'friends_only' => [$friends_only, 'i'],
+        'invite_only' => [$invite_only, 'i'],
+        'members_only' => [$members_only, 'i'],
+        'disappearing_messages' => [$disappearing_messages, 'i'],
+        'message_lifetime_minutes' => [$message_lifetime_minutes, 'i']
+    ];
     
-    if (in_array('theme', $existing_columns)) {
-        $update_fields[] = 'theme = ?';
-        $param_types .= 's';
-        $param_values[] = $theme;
-    }
-    
-    if (in_array('has_password', $existing_columns)) {
-        $update_fields[] = 'has_password = ?';
-        $param_types .= 'i';
-        $param_values[] = $has_password;
-    }
-    
-    if (in_array('allow_knocking', $existing_columns)) {
-        $update_fields[] = 'allow_knocking = ?';
-        $param_types .= 'i';
-        $param_values[] = $allow_knocking;
-    }
-    
-    if (in_array('permanent', $existing_columns)) {
-        $update_fields[] = 'permanent = ?';
-        $param_types .= 'i';
-        $param_values[] = $permanent;
-    }
-    
-    if (in_array('youtube_enabled', $existing_columns)) {
-        $update_fields[] = 'youtube_enabled = ?';
-        $param_types .= 'i';
-        $param_values[] = $youtube_enabled;
+    foreach ($field_mappings as $field => [$value, $type]) {
+        if (in_array($field, $existing_columns)) {
+            $update_fields[] = "$field = ?";
+            $param_types .= $type;
+            $param_values[] = $value;
+        }
     }
     
     // Handle password update separately if provided
@@ -178,6 +175,30 @@ try {
         if (in_array('password', $existing_columns)) {
             $update_fields[] = 'password = NULL';
         }
+    }
+    
+    // NEW: Generate invite code if invite_only is enabled and no code exists
+    if ($invite_only && in_array('invite_code', $existing_columns)) {
+        // Check if room already has an invite code
+        $check_stmt = $conn->prepare("SELECT invite_code FROM chatrooms WHERE id = ?");
+        if ($check_stmt) {
+            $check_stmt->bind_param("i", $room_id);
+            $check_stmt->execute();
+            $check_result = $check_stmt->get_result();
+            $current_room = $check_result->fetch_assoc();
+            $check_stmt->close();
+            
+            if (empty($current_room['invite_code'])) {
+                $invite_code = bin2hex(random_bytes(16)); // 32 character hex string
+                $update_fields[] = 'invite_code = ?';
+                $param_types .= 's';
+                $param_values[] = $invite_code;
+                error_log("Generated new invite code for room $room_id: $invite_code");
+            }
+        }
+    } elseif (!$invite_only && in_array('invite_code', $existing_columns)) {
+        // Clear invite code if invite_only is disabled
+        $update_fields[] = 'invite_code = NULL';
     }
     
     // Add room_id to parameters
@@ -246,6 +267,22 @@ try {
     if ($youtube_enabled) {
         $changes[] = "YouTube player enabled";
     }
+    if ($is_rp) {
+        $changes[] = "roleplay mode enabled";
+    }
+    if ($friends_only) {
+        $changes[] = "friends-only mode enabled";
+    }
+    if ($invite_only) {
+        $changes[] = "invite-only mode enabled";
+    }
+    if ($members_only) {
+        $changes[] = "members-only mode enabled";
+    }
+    if ($disappearing_messages) {
+        $changes[] = "disappearing messages enabled ($message_lifetime_minutes min)";
+    }
+    
     if (!empty($changes)) {
         $system_message .= " (" . implode(", ", $changes) . ")";
     }
@@ -265,8 +302,19 @@ try {
     
     $conn->commit();
     
-    error_log("Room settings updated: room_id=$room_id, name=$name, theme=$theme, has_password=$has_password, allow_knocking=$allow_knocking, youtube_enabled=$youtube_enabled, host=$host_name");
-    echo json_encode(['status' => 'success', 'message' => 'Room settings updated successfully']);
+    $response = [
+        'status' => 'success',
+        'message' => 'Room settings updated successfully'
+    ];
+    
+    // Include invite code in response if invite_only is enabled
+    if ($invite_only && isset($invite_code)) {
+        $response['invite_code'] = $invite_code;
+        $response['invite_link'] = "lounge.php?invite=" . $invite_code;
+    }
+    
+    error_log("Room settings updated: room_id=$room_id, name=$name, theme=$theme, host=$host_name");
+    echo json_encode($response);
     
 } catch (Exception $e) {
     $conn->rollback();
