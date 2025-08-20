@@ -160,12 +160,13 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
     <link href="css/style.css" rel="stylesheet">
     <link href="css/room.css" rel="stylesheet">
     <link href="css/iframe_styler.css" rel="stylesheet">
-    <link href="css/private.css" rel="stylesheet">
+    <link href="css/room.css" rel="stylesheet">
     <link href="css/whisper.css" rel="stylesheet">
-    <link href="css/profile_system.css" rel="stylesheet">
     <link href="css/profile_editor.css" rel="stylesheet">
-    <link href="css/profile_editor_colors.css" rel="stylesheet">
-    <link href="css/bubble_colors.css" rel="stylesheet">
+     <link href="css/profile_editor_colors.css" rel="stylesheet">
+     <link href="css/private.css" rel="stylesheet">
+     <link href="css/profile_system.css" rel="stylesheet">
+     <link href="css/bubble_colors.css" rel="stylesheet">
     <link href="css/color_previews.css" rel="stylesheet">
     <link href="css/private_bubble_colors.css" rel="stylesheet">
     <?php if ($room_theme !== 'default'): ?>

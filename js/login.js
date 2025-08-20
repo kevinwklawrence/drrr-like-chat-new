@@ -737,6 +737,7 @@ class PerformanceMonitor {
                 Failed: ${this.metrics.failedLoads} | 
                 Memory: ${this.metrics.memoryUsage}MB
             `;
+            
         }
     }
 

@@ -82,6 +82,7 @@ if (!empty($user_id_string)) {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
     <link href="css/lounge.css" rel="stylesheet">
+    <link href="css/room.css" rel="stylesheet">
     <link href="css/profile_editor.css" rel="stylesheet">
      <link href="css/profile_editor_colors.css" rel="stylesheet">
      <link href="css/private.css" rel="stylesheet">

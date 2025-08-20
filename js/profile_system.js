@@ -502,22 +502,24 @@ function displayProfileEditor(user) {
                                                 <i class="fas fa-paint-brush"></i> Preview
                                             </h6>
                                             <div class="mb-3">
-                                                <div id="colorPreviewCircle" class="mx-auto mb-3" style="width: 80px; height: 80px; border-radius: 8px; border: 3px solid rgba(255,255,255,0.3); background: linear-gradient(135deg, #2c3e50 0%, #34495e 25%, #2c3e50 50%, #1a252f 75%, #2c3e50 100%);"></div>
+                                                
+                                            <div id="colorPreviewCircle" class="mx-auto mb-3" style="width: 220px; height: 80px; border-radius: 8px; border: 3px solid rgba(255,255,255,0.3);"></div>
+                                            <br>
                                                 <h6 id="colorPreviewName" style="color: #e0e0e0;">Black</h6>
                                                 <p class="small text-muted">Your chat bubble color</p>
                                             </div>
-                                            
+                                            <br>
                                             <!-- Sample Message Preview -->
                                             <div class="mb-3">
                                                 <div class="sample-message-preview p-3" style="background: #222; border-radius: 12px; border: 1px solid #555;">
                                                     <small class="text-muted d-block mb-2">Message Preview:</small>
                                                     <div class="mini-message-bubble user-color-black" id="sampleMessageBubble" style="
                                                         background: var(--user-gradient);
+                                                        color: var(--user-text-color) !important;
                                                         border-radius: 12px;
                                                         padding: 8px 12px;
-                                                        border: 2px solid rgba(255,255,255,0.25);
+                                                        border: 2px solid var(--user-border-color);
                                                         position: relative;
-                                                        margin-left: 20px;
                                                     ">
                                                         <div style="color: var(--user-text-color); font-size: 0.8rem;">
                                                             Hello! This is how your messages will look.
@@ -684,21 +686,34 @@ function createAvatarSection(folderName, avatars, isPriority = false) {
 function loadColorsForEditor() {
     const colors = [
         { name: 'black', displayName: 'Black' },
+        { name: 'policeman2', displayName: 'Black?' },
+        { name: 'negative', displayName: 'Negative' },
+        { name: 'gray', displayName: 'Gray' },
+        { name: 'tan', displayName: 'Tan' },
         { name: 'blue', displayName: 'Blue' },
-        { name: 'purple', displayName: 'Purple' },
-        { name: 'pink', displayName: 'Pink' },
-        { name: 'cyan', displayName: 'Cyan' },
-        { name: 'mint', displayName: 'Mint' },
-        { name: 'orange', displayName: 'Orange' },
+        { name: 'cobalt', displayName: 'Cobalt' },
         { name: 'lavender', displayName: 'Lavender' },
+        { name: 'teal2', displayName: 'Teal' },
+        { name: 'navy', displayName: 'Navy' },
+        { name: 'purple', displayName: 'Purple' },
+        { name: 'lavender', displayName: 'Lavender' },
+        { name: 'lavender2', displayName: 'Lavender2' },
+        { name: 'pink', displayName: 'Pink' },
+        { name: 'orange', displayName: 'Orange' },
+        { name: 'orange2', displayName: 'Blorange' },
         { name: 'peach', displayName: 'Peach' },
         { name: 'green', displayName: 'Green' },
-        { name: 'yellow', displayName: 'Yellow' },
+        { name: 'urban', displayName: 'Urban' },
+        { name: 'mudgreen', displayName: 'Mud Green' },
+        { name: 'palegreen', displayName: 'Pale Green' },
         { name: 'red', displayName: 'Red' },
-        { name: 'teal', displayName: 'Teal' },
-        { name: 'indigo', displayName: 'Indigo' },
-        { name: 'emerald', displayName: 'Emerald' },
-        { name: 'rose', displayName: 'Rose' }
+        { name: 'toyred', displayName: 'Toy Red' },
+        { name: 'spooky', displayName: 'Spooky' },
+        { name: 'rose', displayName: 'Rose' },
+        { name: 'yellow', displayName: 'Yellow' },
+        { name: 'bbyellow', displayName: 'Yellow2' },
+        { name: 'brown', displayName: 'Brown' },
+        { name: 'deepbrown', displayName: 'Brown2' },
     ];
     
     let html = '';

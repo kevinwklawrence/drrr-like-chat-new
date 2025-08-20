@@ -288,17 +288,7 @@
     border: 2px solid rgba(255,255,255,0.3);
 }
 
-.private-message-bubble {
-    max-width: 70%;
-    border-radius: 12px;
-    padding: 10px 14px;
-    border: 2px solid rgba(255,255,255,0.25);
-    position: relative;
-    word-wrap: break-word;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    background-size: 200% 200%;
-    background-position: center;
-}
+
 
 .private-message-bubble.sent {
     margin-left: auto;
@@ -524,51 +514,8 @@
     border: 2px solid rgba(255,255,255,0.3);
 }
 
-.whisper-body .private-message-bubble {
-    max-width: 70%;
-    border-radius: 12px;
-    padding: 10px 14px;
-    border: 2px solid rgba(255,255,255,0.25);
-    position: relative;
-    word-wrap: break-word;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    background-size: 200% 200%;
-    background-position: center;
-}
 
-.whisper-body .private-message-bubble.sent {
-    margin-left: auto;
-}
 
-.whisper-body .private-message-bubble.received {
-    margin-right: auto;
-}
-
-.whisper-body .private-message-header-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-    font-size: 11px;
-    opacity: 0.9;
-}
-
-.whisper-body .private-message-author {
-    font-weight: 700;
-    color: inherit;
-    font-size: 12px;
-}
-
-.whisper-body .private-message-time {
-    font-size: 10px;
-    opacity: 0.7;
-}
-
-.whisper-body .private-message-content {
-    font-size: 14px;
-    line-height: 1.4;
-    color: inherit;
-}
 
 /* Whisper scrollbar */
 .whisper-body::-webkit-scrollbar {
@@ -743,4 +690,45 @@
 .private-message-form input:focus,
 .whisper-form input:focus {
     outline: none;
+}
+
+.whisper-body.private-message-bubble {
+    max-width: 70%;
+    border-radius: 18px;
+    padding: 8px 12px 8px 12px;
+    position: relative;
+    word-wrap: break-word;
+    box-shadow: 0px 0px 4px rgb(0 0 0 / 50%);
+    background: var(--user-gradient);
+    border: 4px solid var(--user-border-color);
+    width: fit-content;
+    box-sizing: border-box;
+}
+
+/* Add bubble tail for received messages */
+.whisper-body.private-message-bubble.received::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 12px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 8px 8px 8px 0;
+    border-color: transparent var(--user-tail-color) transparent transparent;
+    filter: drop-shadow(-1px 0 2px rgba(0,0,0,0.50));
+}
+
+/* Add bubble tail for sent messages (on the right) */
+.whisper-body.private-message-bubble.sent::before {
+    content: '';
+    position: absolute;
+    right: -12px;
+    top: 12px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 8px 0 8px 8px;
+    border-color: transparent transparent transparent var(--user-tail-color);
+    filter: drop-shadow(1px 0 2px rgba(0,0,0,0.50));
 }

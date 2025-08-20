@@ -419,3 +419,5 @@ body {
 .text-muted {
     color: #666 !important; 
 }
+
+#performance-stats {display: block; visibility: hidden;}

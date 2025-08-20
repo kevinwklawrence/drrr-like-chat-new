@@ -24,8 +24,3 @@ body.theme-cyberpunk .chat-messages {
     border: 1px solid rgba(0, 255, 255, 0.3);
 }
 
-body.theme-cyberpunk .message-bubble {
-    border: 1px solid rgba(0, 255, 255, 0.2);
-    box-shadow: 0 0 10px rgba(0, 255, 255, 0.1);
-}
-

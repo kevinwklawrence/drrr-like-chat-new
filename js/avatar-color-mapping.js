@@ -42,12 +42,12 @@ const AVATAR_COLOR_MAPPING = {
     'blue/': 'blue',
     'red/': 'red',
     'green/': 'green',
-    'purple/': 'purple',
+    'purple/': 'lavender',
     'pink/': 'pink',
     'orange/': 'orange',
     'yellow/': 'yellow',
-    'cyan/': 'cyan',
-    'mint/': 'mint',
+    'brown/': 'brown',
+    'gray/': 'gray',
     'teal/': 'teal',
     'indigo/': 'indigo'
 };

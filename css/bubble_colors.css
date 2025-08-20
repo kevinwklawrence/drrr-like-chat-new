@@ -235,7 +235,7 @@
 }
 
 .user-color-policeman2 { 
-    --user-gradient: linear-gradient(to right, rgba(53,117,131,1) 0%,rgba(36,80,65,1) 50%,rgba(3,9,3,1) 51%,rgba(7,3,5,1) 100%);
+    --user-gradient: linear-gradient(to bottom, rgba(53,117,131,1) 0%,rgba(36,80,65,1) 50%,rgba(3,9,3,1) 51%,rgba(7,3,5,1) 100%);
     --user-tail-color: #ffffff; 
     --user-text-color: #ffffff; 
     --user-border-color: #e4e4e4; 

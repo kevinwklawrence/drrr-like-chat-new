@@ -2619,6 +2619,7 @@ const bubbleSat = isOwn ? (currentUser.bubble_saturation || 100) : (msg.bubble_s
                     <div class="private-message-author">${author}</div>
                     <div class="private-message-time">${time}</div>
                 </div>
+                
                 <div class="private-message-content">${msg.message}</div>
             </div>
         </div>
