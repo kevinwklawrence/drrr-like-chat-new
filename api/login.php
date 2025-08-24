@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Updated query to include all customization fields
-    $stmt = $conn->prepare("SELECT id, username, user_id, email, password, is_admin, avatar, custom_av, avatar_memory, color, avatar_hue, avatar_saturation, bubble_hue, bubble_saturation FROM users WHERE username = ?");
+$stmt = $conn->prepare("SELECT id, username, user_id, email, password, is_admin, is_moderator, avatar, custom_av, avatar_memory, color, avatar_hue, avatar_saturation, bubble_hue, bubble_saturation FROM users WHERE username = ?");
     if (!$stmt) {
         error_log("Prepare failed in login.php: " . $conn->error);
         echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
@@ -152,20 +152,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // === SESSION CREATION ===
             $_SESSION['user'] = [
-                'type' => 'user',
-                'id' => $user['id'],
-                'username' => $user['username'],
-                'user_id' => $user['user_id'],
-                'email' => $user['email'],
-                'is_admin' => $user['is_admin'],
-                'avatar' => $final_avatar,
-                'color' => $final_color,
-                'avatar_hue' => $final_avatar_hue,
-                'avatar_saturation' => $final_avatar_saturation,
-                'bubble_hue' => $final_bubble_hue,
-                'bubble_saturation' => $final_bubble_saturation,
-                'ip' => $_SERVER['REMOTE_ADDR']
-            ];
+    'type' => 'user',
+    'id' => $user['id'],
+    'username' => $user['username'],
+    'user_id' => $user['user_id'],
+    'email' => $user['email'],
+    'is_admin' => $user['is_admin'],
+    'is_moderator' => $user['is_moderator'],
+    'avatar' => $final_avatar,
+    'color' => $final_color,
+    'avatar_hue' => $final_avatar_hue,
+    'avatar_saturation' => $final_avatar_saturation,
+    'bubble_hue' => $final_bubble_hue,
+    'bubble_saturation' => $final_bubble_saturation,
+    'ip' => $_SERVER['REMOTE_ADDR']
+];
             
             error_log("🎯 FINAL SESSION VALUES - avatar: $final_avatar, color: $final_color, hue: $final_avatar_hue, sat: $final_avatar_saturation, bubble_hue: $final_bubble_hue, bubble_sat: $final_bubble_saturation");
             

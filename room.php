@@ -10,10 +10,15 @@ if (!isset($_SESSION['user']) || !isset($_SESSION['room_id'])) {
     exit;
 }
 
+// First establish database connection
 include 'db_connect.php';
+
+// Then check site ban
+include 'check_site_ban.php';
+checkSiteBan($conn);
+
 $room_id = (int)$_SESSION['room_id'];
 error_log("room_id in room.php: $room_id"); // Debug
-
 
 // Handle invite-only room access
 if (isset($_GET['invite']) && !empty($_GET['invite'])) {
@@ -105,7 +110,6 @@ if (isset($_GET['invite']) && !empty($_GET['invite'])) {
     exit;
 }
 
-
 $stmt = $conn->prepare("SELECT name, background, youtube_enabled, theme, disappearing_messages, message_lifetime_minutes FROM chatrooms WHERE id = ?");
 if (!$stmt) {
     error_log("Prepare failed in room.php: " . $conn->error);
@@ -129,10 +133,14 @@ $disappearing_messages = (bool)($room['disappearing_messages'] ?? false);
 $message_lifetime_minutes = (int)($room['message_lifetime_minutes'] ?? 0);
 $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enabled'] : false;
 
-// Check if current user is host
+// Check if current user is host, admin, and moderator
 $user_id_string = $_SESSION['user']['user_id'] ?? '';
 $is_host = false;
+$is_admin = false;
+$is_moderator = false;
+
 if (!empty($user_id_string)) {
+    // Check host status
     $stmt = $conn->prepare("SELECT is_host FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");
     if ($stmt) {
         $stmt->bind_param("is", $room_id, $user_id_string);
@@ -143,6 +151,22 @@ if (!empty($user_id_string)) {
             $is_host = ($user_data['is_host'] == 1);
         }
         $stmt->close();
+    }
+    
+    // Check admin and moderator status (for registered users only)
+    if ($_SESSION['user']['type'] === 'user' && isset($_SESSION['user']['id'])) {
+        $stmt = $conn->prepare("SELECT is_admin, is_moderator FROM users WHERE id = ?");
+        if ($stmt) {
+            $stmt->bind_param("i", $_SESSION['user']['id']);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            if ($result->num_rows > 0) {
+                $user_data = $result->fetch_assoc();
+                $is_admin = ($user_data['is_admin'] == 1);
+                $is_moderator = ($user_data['is_moderator'] == 1);
+            }
+            $stmt->close();
+        }
     }
 }
 
@@ -187,6 +211,16 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
                             <i class="fas fa-crown"></i> Host
                         </span>
                     <?php endif; ?>
+                    <?php if ($is_admin): ?>
+                        <span class="badge bg-danger ms-2">
+                            <i class="fas fa-shield-alt"></i> Admin
+                        </span>
+                    <?php endif; ?>
+                    <?php if ($is_moderator && !$is_admin): ?>
+                        <span class="badge bg-warning ms-2">
+                            <i class="fas fa-gavel"></i> Moderator
+                        </span>
+                    <?php endif; ?>
                     <?php if ($youtube_enabled): ?>
                         <span class="badge bg-danger ms-2">
                             <i class="fab fa-youtube"></i> YouTube Enabled
@@ -194,6 +228,14 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
                     <?php endif; ?>
                 </div>
                 <div class="room-actions">
+                    <?php if ($is_admin || $is_moderator): ?>
+                        <button class="btn btn-warning me-2" onclick="showAnnouncementModal()">
+                            <i class="fas fa-bullhorn"></i> Announcement
+                        </button>
+                        <a href="moderator.php" class="btn btn-info me-2" target="_blank">
+                            <i class="fas fa-shield-alt"></i> Mod Panel
+                        </a>
+                    <?php endif; ?>
                     <?php if ($_SESSION['user']['type'] === 'user'): ?>
         <button class="btn btn-outline-primary" onclick="showFriendsPanel()">
             <i class="fas fa-user-friends"></i> Friends
@@ -403,14 +445,17 @@ if (roomTheme !== 'default') {
     <script>
     // Global variables
     const roomId = <?php echo json_encode($room_id); ?>;
-    const isAdmin = <?php echo isset($_SESSION['user']['is_admin']) && $_SESSION['user']['is_admin'] ? 'true' : 'false'; ?>;
+    const isAdmin = <?php echo $is_admin ? 'true' : 'false'; ?>;
+    const isModerator = <?php echo $is_moderator ? 'true' : 'false'; ?>;
     const isHost = <?php echo $is_host ? 'true' : 'false'; ?>;
     const currentUserIdString = <?php echo json_encode($_SESSION['user']['user_id'] ?? ''); ?>;
     const youtubeEnabledGlobal = <?php echo $youtube_enabled ? 'true' : 'false'; ?>;
     
     // Add currentUser for private messaging
     const currentUser = <?php echo json_encode(array_merge($_SESSION['user'], [
-        'color' => $_SESSION['user']['color'] ?? 'blue'
+        'color' => $_SESSION['user']['color'] ?? 'blue',
+        'is_admin' => $is_admin,
+        'is_moderator' => $is_moderator
     ])); ?>;
     
     if (!roomId) {
@@ -424,6 +469,79 @@ if (roomTheme !== 'default') {
             initializeYouTubePlayer();
         }
     };
+
+    // Add announcement modal functionality
+    function showAnnouncementModal() {
+        const modalHtml = `
+            <div class="modal fade" id="announcementModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
+                        <div class="modal-header" style="border-bottom: 1px solid #444;">
+                            <h5 class="modal-title">
+                                <i class="fas fa-bullhorn"></i> Send Site Announcement
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="announcementMessage" class="form-label">Announcement Message</label>
+                                <textarea class="form-control" id="announcementMessage" rows="4" maxlength="500" placeholder="Enter your announcement message..." style="background: #333; border: 1px solid #555; color: #fff;"></textarea>
+                                <div class="form-text text-muted">Maximum 500 characters. This will be sent to all active rooms.</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer" style="border-top: 1px solid #444;">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-warning" onclick="sendAnnouncement()">
+                                <i class="fas fa-bullhorn"></i> Send Announcement
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        $('#announcementModal').remove();
+        $('body').append(modalHtml);
+        $('#announcementModal').modal('show');
+    }
+
+    function sendAnnouncement() {
+        const message = $('#announcementMessage').val().trim();
+        
+        if (!message) {
+            alert('Please enter an announcement message');
+            return;
+        }
+        
+        const button = $('#announcementModal .btn-warning');
+        const originalText = button.html();
+        button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+        
+        $.ajax({
+            url: 'api/send_announcement.php',
+            method: 'POST',
+            data: { message: message },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    alert('Announcement sent successfully to all rooms!');
+                    $('#announcementModal').modal('hide');
+                    // Refresh messages if in a room
+                    if (typeof loadMessages === 'function') {
+                        setTimeout(loadMessages, 1000);
+                    }
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('Failed to send announcement: ' + error);
+            },
+            complete: function() {
+                button.prop('disabled', false).html(originalText);
+            }
+        });
+    }
 </script>
     
     <script src="js/room.js"></script>

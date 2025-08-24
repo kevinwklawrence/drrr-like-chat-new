@@ -45,36 +45,37 @@ try {
 
     // FIXED QUERY: Better logic to identify registered vs guest users
     $sql = "
-        SELECT 
-            cu.user_id_string,
-            cu.user_id,
-            cu.is_host,
-            cu.guest_name,
-            cu.guest_avatar,
-            cu.avatar,
-            cu.username as chatroom_username,
-            cu.avatar_hue,
-            cu.avatar_saturation,
-            u.username,
-            u.is_admin,
-            u.avatar as user_avatar,
-            u.avatar_hue as user_avatar_hue,
-            u.avatar_saturation as user_avatar_saturation,
-            -- Determine if user is registered by checking multiple conditions
-            CASE 
-                WHEN u.id IS NOT NULL THEN u.id
-                WHEN cu.user_id IS NOT NULL AND cu.user_id > 0 THEN cu.user_id
-                ELSE NULL 
-            END as final_user_id,
-            CASE 
-                WHEN u.id IS NOT NULL THEN 'registered'
-                WHEN cu.user_id IS NOT NULL AND cu.user_id > 0 THEN 'registered'
-                ELSE 'guest' 
-            END as user_type
-        FROM chatroom_users cu 
-        LEFT JOIN users u ON (cu.user_id = u.id OR (cu.username IS NOT NULL AND cu.username = u.username))
-        WHERE cu.room_id = ?
-    ";
+    SELECT 
+        cu.user_id_string,
+        cu.user_id,
+        cu.is_host,
+        cu.guest_name,
+        cu.guest_avatar,
+        cu.avatar,
+        cu.username as chatroom_username,
+        cu.avatar_hue,
+        cu.avatar_saturation,
+        u.username,
+        u.is_admin,
+        u.is_moderator,
+        u.avatar as user_avatar,
+        u.avatar_hue as user_avatar_hue,
+        u.avatar_saturation as user_avatar_saturation,
+        -- Determine if user is registered by checking multiple conditions
+        CASE 
+            WHEN u.id IS NOT NULL THEN u.id
+            WHEN cu.user_id IS NOT NULL AND cu.user_id > 0 THEN cu.user_id
+            ELSE NULL 
+        END as final_user_id,
+        CASE 
+            WHEN u.id IS NOT NULL THEN 'registered'
+            WHEN cu.user_id IS NOT NULL AND cu.user_id > 0 THEN 'registered'
+            ELSE 'guest' 
+        END as user_type
+    FROM chatroom_users cu 
+    LEFT JOIN users u ON (cu.user_id = u.id OR (cu.username IS NOT NULL AND cu.username = u.username))
+    WHERE cu.room_id = ?
+";
     
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
@@ -110,18 +111,19 @@ try {
         }
         
         $users[] = [
-            'user_id_string' => $row['user_id_string'],
-            'display_name' => $display_name,
-            'avatar' => $avatar,
-            'is_host' => (int)$row['is_host'],
-            'is_admin' => isset($row['is_admin']) ? (int)$row['is_admin'] : 0,
-            'user_type' => $row['user_type'], // This will be 'registered' or 'guest'
-            'username' => $row['username'],
-            'guest_name' => $row['guest_name'],
-            'user_id' => $row['final_user_id'], // Use the calculated user_id
-            'avatar_hue' => (int)($row['avatar_hue'] ?? 0),
-            'avatar_saturation' => (int)($row['avatar_saturation'] ?? 100)
-        ];
+    'user_id_string' => $row['user_id_string'],
+    'display_name' => $display_name,
+    'avatar' => $avatar,
+    'is_host' => (int)$row['is_host'],
+    'is_admin' => isset($row['is_admin']) ? (int)$row['is_admin'] : 0,
+    'is_moderator' => isset($row['is_moderator']) ? (int)$row['is_moderator'] : 0,
+    'user_type' => $row['user_type'],
+    'username' => $row['username'],
+    'guest_name' => $row['guest_name'],
+    'user_id' => $row['final_user_id'],
+    'avatar_hue' => (int)($row['avatar_hue'] ?? 0),
+    'avatar_saturation' => (int)($row['avatar_saturation'] ?? 100)
+];
     }
     
     $stmt->close();

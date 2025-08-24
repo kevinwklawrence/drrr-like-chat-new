@@ -1,6 +1,13 @@
 <?php
 session_start();
 
+
+include '../db_connect.php';
+include '../check_site_ban.php';
+
+// Check for site ban before processing
+checkSiteBan($conn);
+
 // ENHANCED duplicate submission prevention
 $submission_id = $_POST['submission_id'] ?? null;
 $processed_submissions = $_SESSION['processed_guest_submissions'] ?? [];
@@ -38,7 +45,7 @@ error_log("HTTP Referer: " . ($_SERVER['HTTP_REFERER'] ?? 'none'));
 error_log("User Agent: " . ($_SERVER['HTTP_USER_AGENT'] ?? 'unknown'));
 error_log("Raw POST count: " . count($_POST));
 error_log("POST keys: " . implode(', ', array_keys($_POST)));
-include '../db_connect.php';
+
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);

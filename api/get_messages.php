@@ -70,6 +70,10 @@ if (in_array('username', $users_columns)) {
 if (in_array('is_admin', $users_columns)) {
     $select_fields[] = 'u.is_admin';
 }
+if (in_array('is_moderator', $users_columns)) {
+    $select_fields[] = 'u.is_moderator';
+}
+
 
 // Add chatroom_users fields
 if (in_array('ip_address', $cu_columns)) {
@@ -112,17 +116,14 @@ $stmt->execute();
 $result = $stmt->get_result();
 $messages = [];
 
+// Update the message processing loop:
 while ($row = $result->fetch_assoc()) {
-    error_log("Raw message row: " . print_r($row, true)); // Debug
-    
-    // Use stored values from when the message was sent (no lookups needed)
     $avatar_hue = (int)($row['avatar_hue'] ?? 0);
     $avatar_saturation = (int)($row['avatar_saturation'] ?? 100);
     $user_color = $row['color'] ?? 'blue';
     $bubble_hue = (int)($row['bubble_hue'] ?? 0);
     $bubble_saturation = (int)($row['bubble_saturation'] ?? 100);
     
-    // Process the message data to ensure compatibility with frontend
     $processed_message = [
         'id' => $row['id'],
         'message' => $row['message'],
@@ -145,28 +146,26 @@ while ($row = $result->fetch_assoc()) {
         // STORED avatar customization (preserved from when message was sent)
         'avatar_hue' => $avatar_hue,
         'avatar_saturation' => $avatar_saturation,
-        'user_avatar_hue' => $avatar_hue,  // For compatibility
-        'user_avatar_saturation' => $avatar_saturation,  // For compatibility
+        'user_avatar_hue' => $avatar_hue,
+        'user_avatar_saturation' => $avatar_saturation,
         
         // STORED color information (preserved from when message was sent)
         'color' => $user_color,
-        'user_color' => $user_color,  // For compatibility
+        'user_color' => $user_color,
 
         // STORED bubble information (preserved from when message was sent)
-'bubble_hue' => $bubble_hue,
-'bubble_saturation' => $bubble_saturation,
+        'bubble_hue' => $bubble_hue,
+        'bubble_saturation' => $bubble_saturation,
         
         // Permissions and roles
         'is_admin' => (bool)($row['is_admin'] ?? false),
+        'is_moderator' => (bool)($row['is_moderator'] ?? false),
         'is_host' => (bool)($row['is_host'] ?? false),
         
         // Admin information
         'ip_address' => $row['ip_address'] ?? null
-
-        
     ];
     
-    error_log("Processed message: " . print_r($processed_message, true)); // Debug
     $messages[] = $processed_message;
 }
 

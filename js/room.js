@@ -256,7 +256,22 @@ function renderMessage(msg) {
     const hue = msg.user_avatar_hue !== undefined ? msg.user_avatar_hue : (msg.avatar_hue || 0);
     const saturation = msg.user_avatar_saturation !== undefined ? msg.user_avatar_saturation : (msg.avatar_saturation || 100);
     const bubbleHue = msg.bubble_hue || 0;
-const bubbleSat = msg.bubble_saturation || 100;
+    const bubbleSat = msg.bubble_saturation || 100;
+    
+    // Handle announcement messages
+    if (msg.type === 'announcement') {
+        return `
+            <div class="system-message announcement-message">
+                <div class="announcement-header">
+                    <i class="fas fa-bullhorn"></i>
+                    <span class="announcement-label">SITE ANNOUNCEMENT</span>
+                </div>
+                <div class="announcement-content">
+                    ${msg.message}
+                </div>
+            </div>
+        `;
+    }
     
     if (msg.type === 'system' || msg.is_system) {
         const systemHue = msg.avatar_hue || msg.user_avatar_hue || 0;
@@ -277,58 +292,72 @@ const bubbleSat = msg.bubble_saturation || 100;
         hour: '2-digit',
         minute: '2-digit'
     });
-    
-// In renderMessage function, update the avatar click handler:
-const isRegisteredUser = msg.user_id && msg.user_id > 0;
-const isCurrentUser = msg.user_id_string === currentUserIdString;
 
-let avatarClickHandler = '';
-if (isRegisteredUser) {
-    // Registered users - anyone can click to view profile
-    avatarClickHandler = `onclick="handleAvatarClick(event, ${msg.user_id}, '${(msg.username || '').replace(/'/g, "\\'")}')" style="cursor: pointer;"`;
-} else if (isCurrentUser) {
-    // Current guest user - can click to edit their own profile
-    avatarClickHandler = `onclick="showProfileEditor()" style="cursor: pointer;"`;
-}
+    const isRegisteredUser = msg.user_id && msg.user_id > 0;
+    const isCurrentUser = msg.user_id_string === currentUserIdString;
+
+    let avatarClickHandler = '';
+    if (isRegisteredUser) {
+        avatarClickHandler = `onclick="handleAvatarClick(event, ${msg.user_id}, '${(msg.username || '').replace(/'/g, "\\'")}')" style="cursor: pointer;"`;
+    } else if (isCurrentUser) {
+        avatarClickHandler = `onclick="showProfileEditor()" style="cursor: pointer;"`;
+    }
     
     let badges = '';
     if (msg.is_admin) {
         badges += '<span class="user-badge badge-admin"><i class="fas fa-shield-alt"></i> Admin</span>';
     }
+    if (msg.is_moderator) {
+        badges += '<span class="user-badge badge-moderator"><i class="fas fa-gavel"></i> Moderator</span>';
+    }
     if (msg.is_host) {
         badges += '<span class="user-badge badge-host"><i class="fas fa-crown"></i> Host</span>';
     }
-    if (msg.user_id && !msg.is_admin) {
+    if (msg.user_id && !msg.is_admin && !msg.is_moderator) {
         badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle"></i> Verified</span>';
     } else if (!msg.user_id) {
         badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
     }
     
     let adminInfo = '';
-    if (isAdmin && msg.user_id_string) {
-       // adminInfo = `<div class="admin-info"><span class="text-muted">IP: ${msg.user_id_string}</span></div>`;
+    let moderatorActions = '';
+    
+    // Add moderator actions for moderators/admins
+    if ((isAdmin || isModerator) && msg.user_id_string !== currentUserIdString) {
+        moderatorActions = `
+            <div class="moderator-actions">
+                <button class="btn btn-sm btn-outline-danger" onclick="showQuickBanModal('${msg.user_id_string}', '${name.replace(/'/g, "\\'")}', '${msg.ip_address || ''}')">
+                    <i class="fas fa-ban"></i> Site Ban
+                </button>
+            </div>
+        `;
+    }
+    
+    if (isAdmin && msg.ip_address) {
+        adminInfo = `<div class="admin-info"><span class="text-muted">IP: ${msg.ip_address}</span></div>`;
     }
     
     return `
-    <div class="chat-message">
-        <img src="images/${avatar}" 
-             class="message-avatar" 
-             style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); ${avatarClickHandler ? 'cursor: pointer;' : ''}"
-             ${avatarClickHandler}
-             alt="${name}'s avatar">
-        <div class="message-bubble ${userColorClass}" style="filter: hue-rotate(${bubbleHue}deg) saturate(${bubbleSat}%);">
-            <div class="message-header">
-                <div class="message-header-left">
-                    <div class="message-author">${name}</div>
-                    ${badges ? `<div class="message-badges">${badges}</div>` : ''}
+        <div class="chat-message" data-type="${msg.type || 'chat'}">
+            <img src="images/${avatar}" 
+                 class="message-avatar" 
+                 style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); ${avatarClickHandler ? 'cursor: pointer;' : ''}"
+                 ${avatarClickHandler}
+                 alt="${name}'s avatar">
+            <div class="message-bubble ${userColorClass}" style="filter: hue-rotate(${bubbleHue}deg) saturate(${bubbleSat}%);">
+                <div class="message-header">
+                    <div class="message-header-left">
+                        <div class="message-author">${name}</div>
+                        ${badges ? `<div class="message-badges">${badges}</div>` : ''}
+                    </div>
+                    <div class="message-time">${timestamp}</div>
                 </div>
-                <div class="message-time">${timestamp}</div>
+                <div class="message-content">${msg.message}</div>
+                ${adminInfo}
+                ${moderatorActions}
             </div>
-            <div class="message-content">${msg.message}</div>
-            ${adminInfo}
         </div>
-    </div>
-`;
+    `;
 }
 
 // ===== USER MANAGEMENT FUNCTIONS =====
@@ -398,44 +427,46 @@ function renderUser(user) {
     const name = user.display_name || user.username || user.guest_name || 'Unknown';
     const userIdString = user.user_id_string || 'unknown';
     const hue = user.avatar_hue || 0;
-const saturation = user.avatar_saturation || 100;
+    const saturation = user.avatar_saturation || 100;
 
-// In renderUser function, simplified logic:
-const isRegisteredUser = user.user_type === 'registered';
-const isCurrentUser = user.user_id_string === currentUserIdString;
+    const isRegisteredUser = user.user_type === 'registered';
+    const isCurrentUser = user.user_id_string === currentUserIdString;
 
-console.log(`User ${user.display_name}: user_type=${user.user_type}, user_id=${user.user_id}, isRegistered=${isRegisteredUser}`);
-
-let avatarClickHandler = '';
-if (isRegisteredUser) {
-    avatarClickHandler = `onclick="handleAvatarClick(event, ${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')" style="cursor: pointer;"`;
-} else if (isCurrentUser) {
-    avatarClickHandler = `onclick="showProfileEditor()" style="cursor: pointer;"`;
-}
+    let avatarClickHandler = '';
+    if (isRegisteredUser) {
+        avatarClickHandler = `onclick="handleAvatarClick(event, ${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')" style="cursor: pointer;"`;
+    } else if (isCurrentUser) {
+        avatarClickHandler = `onclick="showProfileEditor()" style="cursor: pointer;"`;
+    }
     
-let badges = '';
+    let badges = '';
 
-// "You" indicator first
-if (isCurrentUser) {
-    badges += '<span class="user-badge badge-you"><i class="fas fa-user-circle"></i> You</span>';
-}
+    // "You" indicator first
+    if (isCurrentUser) {
+        badges += '<span class="user-badge badge-you"><i class="fas fa-user-circle"></i> You</span>';
+    }
 
-// Admin badge
-if (user.is_admin) {
-    badges += '<span class="user-badge badge-admin"><i class="fas fa-shield-alt"></i> Admin</span>';
-}
+    // Admin badge (highest priority)
+    if (user.is_admin) {
+        badges += '<span class="user-badge badge-admin"><i class="fas fa-shield-alt"></i> Admin</span>';
+    }
 
-// Host badge
-if (user.is_host) {
-    badges += '<span class="user-badge badge-host"><i class="fas fa-crown"></i> Host</span>';
-}
+    // Moderator badge
+    if (user.is_moderator && !user.is_admin) {
+        badges += '<span class="user-badge badge-moderator"><i class="fas fa-gavel"></i> Moderator</span>';
+    }
 
-// User type badge
-if (isRegisteredUser && !user.is_admin) {
-    badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle"></i> Verified</span>';
-} else if (!isRegisteredUser) {
-    badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
-}
+    // Host badge
+    if (user.is_host) {
+        badges += '<span class="user-badge badge-host"><i class="fas fa-crown"></i> Host</span>';
+    }
+
+    // User type badge
+    if (isRegisteredUser && !user.is_admin && !user.is_moderator) {
+        badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle"></i> Verified</span>';
+    } else if (!isRegisteredUser) {
+        badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
+    }
     
     let actions = '';
     if (user.user_id_string !== currentUserIdString) {
@@ -451,7 +482,6 @@ if (isRegisteredUser && !user.is_admin) {
         
         // Friend/PM button for registered users
         if (user.user_id && currentUser.type === 'user') {
-            // Check cache first, render appropriate button immediately
             if (friendshipCache.has(user.user_id)) {
                 const isFriend = friendshipCache.get(user.user_id);
                 if (isFriend) {
@@ -468,14 +498,12 @@ if (isRegisteredUser && !user.is_admin) {
                     `;
                 }
             } else {
-                // Only show spinner if we don't have cached data
                 actions += `<div id="friend-action-${user.user_id}" class="d-inline">
                     <button class="btn btn-secondary btn-sm" disabled>
                         <i class="fas fa-spinner fa-spin"></i> Loading...
                     </button>
                 </div>`;
                 
-                // Check friendship status only if not cached
                 setTimeout(() => {
                     checkIfFriend(user.user_id, function(isFriend) {
                         const container = $(`#friend-action-${user.user_id}`);
@@ -499,11 +527,20 @@ if (isRegisteredUser && !user.is_admin) {
             }
         }
         
-        // Ban button only for hosts/admins, and not on other hosts/admins
-        if ((isHost || isAdmin) && !user.is_host && !user.is_admin) {
+        // Ban button for hosts/admins/moderators (but not on other staff)
+        if ((isHost || isAdmin || isModerator) && !user.is_host && !user.is_admin && !user.is_moderator) {
             actions += `
                 <button class="btn btn-ban-user" onclick="showBanModal('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
                     <i class="fas fa-ban"></i> Ban
+                </button>
+            `;
+        }
+
+        // Site ban button for moderators/admins
+        if ((isAdmin || isModerator) && !user.is_admin && !(user.is_moderator && !isAdmin)) {
+            actions += `
+                <button class="btn btn-site-ban-user" onclick="showQuickBanModal('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}', '')">
+                    <i class="fas fa-ban"></i> Site Ban
                 </button>
             `;
         }
@@ -511,30 +548,22 @@ if (isRegisteredUser && !user.is_admin) {
         actions += `</div>`;
     }
     
-     return `
-    <div class="user-item">
-        <div class="user-info-row">
-            <img src="images/${avatar}" 
-                 class="user-avatar" 
-                 style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); ${avatarClickHandler ? 'cursor: pointer;' : ''}"
-                 ${avatarClickHandler}
-                 alt="${name}'s avatar">
-            <div class="user-details">
-                <div class="user-name">${name}</div>
-                <div class="user-badges-row">${badges}</div>
+    return `
+        <div class="user-item">
+            <div class="user-info-row">
+                <img src="images/${avatar}" 
+                     class="user-avatar" 
+                     style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); ${avatarClickHandler ? 'cursor: pointer;' : ''}"
+                     ${avatarClickHandler}
+                     alt="${name}'s avatar">
+                <div class="user-details">
+                    <div class="user-name">${name}</div>
+                    <div class="user-badges-row">${badges}</div>
+                </div>
             </div>
+            ${actions}
         </div>
-        ${actions}
-    </div>
-`;
-    /* Apply avatar filter
-setTimeout(() => {
-    const imgElement = $(`.user-avatar[alt="${name}'s avatar"]`).last();
-    if (imgElement.length > 0) {
-        imgElement.attr('data-hue', hue).attr('data-saturation', saturation);
-        applyAvatarFilter(imgElement, hue, saturation);
-    }
-}, 100);*/
+    `;
 }
 
 // ===== YOUTUBE PLAYER SYSTEM =====
@@ -3465,4 +3494,172 @@ function fallbackCopyTextToClipboard(text) {
     }
     
     document.body.removeChild(textArea);
+}
+
+function showAnnouncementModal() {
+    const modalHtml = `
+        <div class="modal fade" id="announcementModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
+                    <div class="modal-header" style="border-bottom: 1px solid #444;">
+                        <h5 class="modal-title">
+                            <i class="fas fa-bullhorn"></i> Send Site Announcement
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="announcementMessage" class="form-label">Announcement Message</label>
+                            <textarea class="form-control" id="announcementMessage" rows="4" maxlength="500" placeholder="Enter your announcement message..." style="background: #333; border: 1px solid #555; color: #fff;"></textarea>
+                            <div class="form-text text-muted">Maximum 500 characters. This will be sent to all active rooms.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid #444;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-warning" onclick="sendAnnouncement()">
+                            <i class="fas fa-bullhorn"></i> Send Announcement
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#announcementModal').remove();
+    $('body').append(modalHtml);
+    $('#announcementModal').modal('show');
+}
+
+function sendAnnouncement() {
+    const message = $('#announcementMessage').val().trim();
+    
+    if (!message) {
+        alert('Please enter an announcement message');
+        return;
+    }
+    
+    const button = $('#announcementModal .btn-warning');
+    const originalText = button.html();
+    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+    
+    $.ajax({
+        url: 'api/send_announcement.php',
+        method: 'POST',
+        data: { message: message },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                alert('Announcement sent successfully to all rooms!');
+                $('#announcementModal').modal('hide');
+                // Refresh messages if in a room
+                if (typeof loadMessages === 'function') {
+                    setTimeout(loadMessages, 1000);
+                }
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            alert('Failed to send announcement: ' + error);
+        },
+        complete: function() {
+            button.prop('disabled', false).html(originalText);
+        }
+    });
+}
+
+function showQuickBanModal(userIdString, username, ipAddress) {
+    const modalHtml = `
+        <div class="modal fade" id="quickBanModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
+                    <div class="modal-header" style="border-bottom: 1px solid #444;">
+                        <h5 class="modal-title">
+                            <i class="fas fa-ban"></i> Site Ban User
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Warning:</strong> This will ban the user from the entire site, not just this room.
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">User to Ban</label>
+                            <input type="text" class="form-control" value="${username}" readonly style="background: #333; border: 1px solid #555; color: #fff;">
+                        </div>
+                        <div class="mb-3">
+                            <label for="quickBanDuration" class="form-label">Ban Duration</label>
+                            <select class="form-select" id="quickBanDuration" style="background: #333; border: 1px solid #555; color: #fff;">
+                                <option value="3600">1 Hour</option>
+                                <option value="21600">6 Hours</option>
+                                <option value="86400">24 Hours</option>
+                                <option value="604800">7 Days</option>
+                                <option value="permanent">Permanent</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quickBanReason" class="form-label">Reason</label>
+                            <textarea class="form-control" id="quickBanReason" rows="3" placeholder="Enter reason for ban..." style="background: #333; border: 1px solid #555; color: #fff;"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid #444;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" onclick="executeQuickBan('${userIdString}', '${username.replace(/'/g, "\\'")}', '${ipAddress}')">
+                            <i class="fas fa-ban"></i> Site Ban
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#quickBanModal').remove();
+    $('body').append(modalHtml);
+    $('#quickBanModal').modal('show');
+}
+
+function executeQuickBan(userIdString, username, ipAddress) {
+    const duration = $('#quickBanDuration').val();
+    const reason = $('#quickBanReason').val().trim();
+    
+    const button = $('#quickBanModal .btn-danger');
+    const originalText = button.html();
+    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Banning...');
+    
+    const banData = {
+        user_id_string: userIdString,
+        duration: duration,
+        reason: reason
+    };
+    
+    if (username) banData.username = username;
+    if (ipAddress) banData.ip_address = ipAddress;
+    
+    $.ajax({
+        url: 'api/site_ban_user.php',
+        method: 'POST',
+        data: banData,
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                alert(response.message);
+                $('#quickBanModal').modal('hide');
+                
+                // Refresh room data
+                setTimeout(() => {
+                    loadUsers();
+                    loadMessages();
+                }, 1000);
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            alert('Failed to ban user: ' + error);
+        },
+        complete: function() {
+            button.prop('disabled', false).html(originalText);
+        }
+    });
 }

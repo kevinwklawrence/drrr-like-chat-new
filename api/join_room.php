@@ -23,6 +23,10 @@ try {
 
     $user_session = $_SESSION['user'];
     include '../db_connect.php';
+include '../check_site_ban.php';
+
+// Check for site ban before processing
+checkSiteBan($conn);
 
     $room_id = (int)($_POST['room_id'] ?? 0);
     $password = $_POST['password'] ?? '';

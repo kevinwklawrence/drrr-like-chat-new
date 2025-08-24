@@ -527,7 +527,6 @@ function loadOnlineUsers() {
     });
 }
 
-// IMPROVED: Function to display online users with last activity info
 function displayOnlineUsers(users) {
     let html = '';
     
@@ -541,18 +540,15 @@ function displayOnlineUsers(users) {
             const hue = user.avatar_hue || 0;
             const saturation = user.avatar_saturation || 100;
             
-// In displayOnlineUsers function, update the avatar click handler:
-const isRegisteredUser = user.username && user.username.trim() !== '';
-const isCurrentUser = user.user_id_string === currentUser.user_id;
+            const isRegisteredUser = user.username && user.username.trim() !== '';
+            const isCurrentUser = user.user_id_string === currentUser.user_id;
 
-let avatarClickHandler = '';
-if (isRegisteredUser) {
-    // Registered users - anyone can click to view profile
-    avatarClickHandler = `onclick="handleAvatarClick(event, '${user.user_id_string}', '${user.username.replace(/'/g, "\\'")}')" style="cursor: pointer;"`;
-} else if (isCurrentUser) {
-    // Current guest user - can click to edit their own profile  
-    avatarClickHandler = `onclick="showProfileEditor()" style="cursor: pointer;"`;
-}
+            let avatarClickHandler = '';
+            if (isRegisteredUser) {
+                avatarClickHandler = `onclick="handleAvatarClick(event, '${user.user_id_string}', '${user.username.replace(/'/g, "\\'")}')" style="cursor: pointer;"`;
+            } else if (isCurrentUser) {
+                avatarClickHandler = `onclick="showProfileEditor()" style="cursor: pointer;"`;
+            }
             
             let activityIndicator = '';
             if (lastActivity) {
@@ -568,24 +564,32 @@ if (isRegisteredUser) {
                     activityIndicator = '<span class="badge bg-secondary badge-xs">Away</span>';
                 }
             }
+
+            let badges = '';
+            if (user.is_admin) {
+                badges += '<span class="badge bg-danger badge-xs">Admin</span> ';
+            }
+            if (user.is_moderator) {
+                badges += '<span class="badge bg-warning badge-xs">Mod</span> ';
+            }
             
             html += `
-    <div class="d-flex align-items-center mb-2">
-        <img src="images/${avatar}" 
-             width="30" height="30" 
-             class="me-2" 
-             style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); border-radius: 2px; ${avatarClickHandler ? 'cursor: pointer;' : ''}"
-             ${avatarClickHandler}
-             alt="${name}">
-        <div style="flex-grow: 1;">
-            <small class="fw-bold" style="color: #fff;">${name}</small>
-            <div>
-                ${user.is_admin ? '<span class="badge bg-danger badge-sm">Admin</span>' : ''}
-                ${activityIndicator}
-            </div>
-        </div>
-    </div>
-`;
+                <div class="d-flex align-items-center mb-2">
+                    <img src="images/${avatar}" 
+                         width="30" height="30" 
+                         class="me-2" 
+                         style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); border-radius: 2px; ${avatarClickHandler ? 'cursor: pointer;' : ''}"
+                         ${avatarClickHandler}
+                         alt="${name}">
+                    <div style="flex-grow: 1;">
+                        <small class="fw-bold" style="color: #fff;">${name}</small>
+                        <div>
+                            ${badges}
+                            ${activityIndicator}
+                        </div>
+                    </div>
+                </div>
+            `;
         });
     }
     
@@ -1616,3 +1620,75 @@ $(window).on('beforeunload', function() {
 window.showAvatarSelector = function() {
     showProfileEditor();
 };
+
+function showAnnouncementModal() {
+    const modalHtml = `
+        <div class="modal fade" id="announcementModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
+                    <div class="modal-header" style="border-bottom: 1px solid #444;">
+                        <h5 class="modal-title">
+                            <i class="fas fa-bullhorn"></i> Send Site Announcement
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="announcementMessage" class="form-label">Announcement Message</label>
+                            <textarea class="form-control" id="announcementMessage" rows="4" maxlength="500" placeholder="Enter your announcement message..." style="background: #333; border: 1px solid #555; color: #fff;"></textarea>
+                            <div class="form-text text-muted">Maximum 500 characters. This will be sent to all active rooms.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid #444;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-warning" onclick="sendAnnouncement()">
+                            <i class="fas fa-bullhorn"></i> Send Announcement
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#announcementModal').remove();
+    $('body').append(modalHtml);
+    $('#announcementModal').modal('show');
+}
+
+function sendAnnouncement() {
+    const message = $('#announcementMessage').val().trim();
+    
+    if (!message) {
+        alert('Please enter an announcement message');
+        return;
+    }
+    
+    const button = $('#announcementModal .btn-warning');
+    const originalText = button.html();
+    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+    
+    $.ajax({
+        url: 'api/send_announcement.php',
+        method: 'POST',
+        data: { message: message },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                alert('Announcement sent successfully to all rooms!');
+                $('#announcementModal').modal('hide');
+                // Refresh messages if in a room
+                if (typeof loadMessages === 'function') {
+                    setTimeout(loadMessages, 1000);
+                }
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            alert('Failed to send announcement: ' + error);
+        },
+        complete: function() {
+            button.prop('disabled', false).html(originalText);
+        }
+    });
+}

@@ -1,12 +1,19 @@
 <?php
 session_start();
+include 'db_connect.php';
+
+include 'check_site_ban.php';
+checkSiteBan($conn);
+
+// Add after the existing user data variables:
+$is_moderator = $_SESSION['user']['is_moderator'] ?? 0;
 
 if (!isset($_SESSION['user'])) {
     header("Location: index.php");
     exit;
 }
 echo '<script>console.log("Bubble values in session:", ' . json_encode($_SESSION['user']['bubble_hue'] ?? 'missing') . ', ' . json_encode($_SESSION['user']['bubble_saturation'] ?? 'missing') . ');</script>';
-include 'db_connect.php';
+
 
 $user_id_string = $_SESSION['user']['user_id'] ?? '';
 $username = $_SESSION['user']['username'] ?? null;
@@ -64,12 +71,13 @@ if (!empty($user_id_string)) {
     $existing_hue = $_SESSION['user']['avatar_hue'] ?? 0;
     $existing_sat = $_SESSION['user']['avatar_saturation'] ?? 100;
     
-    $stmt = $conn->prepare("INSERT INTO global_users (user_id_string, username, guest_name, avatar, guest_avatar, is_admin, ip_address, color, avatar_hue, avatar_saturation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE username = VALUES(username), guest_name = VALUES(guest_name), avatar = VALUES(avatar), guest_avatar = VALUES(guest_avatar), is_admin = VALUES(is_admin), ip_address = VALUES(ip_address), color = VALUES(color), last_activity = CURRENT_TIMESTAMP");
-    if ($stmt) {
-        $stmt->bind_param("ssssisssii", $user_id_string, $username, $guest_name, $avatar, $avatar, $is_admin, $ip_address, $color, $existing_hue, $existing_sat);
-        $stmt->execute();
-        $stmt->close();
-    }
+    $stmt = $conn->prepare("INSERT INTO global_users (user_id_string, username, guest_name, avatar, guest_avatar, is_admin, is_moderator, ip_address, color, avatar_hue, avatar_saturation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE username = VALUES(username), guest_name = VALUES(guest_name), avatar = VALUES(avatar), guest_avatar = VALUES(guest_avatar), is_admin = VALUES(is_admin), is_moderator = VALUES(is_moderator), ip_address = VALUES(ip_address), color = VALUES(color), last_activity = CURRENT_TIMESTAMP");
+if ($stmt) {
+    $stmt->bind_param("ssssissssii", $user_id_string, $username, $guest_name, $avatar, $avatar, $is_admin, $is_moderator, $ip_address, $color, $existing_hue, $existing_sat);
+    $stmt->execute();
+    $stmt->close();
+}
+
 }
 ?>
 <!DOCTYPE html>
@@ -98,18 +106,26 @@ if (!empty($user_id_string)) {
             <!-- Header -->
             <div class="lounge-header">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h1 class="lounge-title h3">
-                        <i class="fas fa-comments"></i> Chat Lounge
-                    </h1>
-                    <div>
-                        <button class="btn create-room-btn me-3" onclick="showCreateRoomModal()">
-                            <i class="fas fa-plus"></i> Create Room
-                        </button>
-                        <a href="logout.php" class="btn logout-btn">
-                            <i class="fas fa-sign-out-alt"></i> Logout
-                        </a>
-                    </div>
-                </div>
+    <h1 class="lounge-title h3">
+        <i class="fas fa-comments"></i> Chat Lounge
+    </h1>
+    <div>
+        <?php if ($is_admin || $is_moderator): ?>
+            <button class="btn btn-warning me-2" onclick="showAnnouncementModal()">
+                <i class="fas fa-bullhorn"></i> Announcement
+            </button>
+            <a href="moderator.php" class="btn btn-info me-2">
+                <i class="fas fa-shield-alt"></i> Moderator Panel
+            </a>
+        <?php endif; ?>
+        <button class="btn create-room-btn me-3" onclick="showCreateRoomModal()">
+            <i class="fas fa-plus"></i> Create Room
+        </button>
+        <a href="logout.php" class="btn logout-btn">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </div>
+</div>
             </div>
             
             <div class="row">
