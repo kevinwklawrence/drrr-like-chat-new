@@ -16,6 +16,9 @@ if (isset($_SESSION['user'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guest Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
@@ -46,7 +49,7 @@ if (isset($_SESSION['user'])) {
                                 <?php
                                 $image_base_dir = __DIR__ . '/images';
                                 $web_base_dir = 'images/';
-                                $priority_folders = ['time-limited', 'default', 'drrrjp'];
+                                $priority_folders = ['time-limited', 'default', 'mushoku', 'drrrjp'];
                                 $drrrx2 = ['drrrx2'];
                                 $allowed_ext = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
 
@@ -55,7 +58,7 @@ if (isset($_SESSION['user'])) {
                                     if (is_dir($folder_path)) {
                                         echo '<div class="avatar-section">';
                                         echo '<h6><i class="fas fa-star"></i> ' . ucfirst($folder) . ' Avatars</h6>';
-                                        echo '<div class="d-flex flex-wrap">';
+                                        echo '<div class="d-flex flex-wrap justify-content-center">';
                                         foreach (glob($folder_path . '/*.{png,jpg,jpeg,gif,webp}', GLOB_BRACE) as $img_path) {
                                             $img_file = basename($img_path);
                                             $ext = strtolower(pathinfo($img_file, PATHINFO_EXTENSION));
@@ -72,7 +75,7 @@ if (isset($_SESSION['user'])) {
                                     if (is_dir($folder_path)) {
                                         echo '<div class="avatar-section">';
                                         echo '<h6><i class="fas fa-star"></i> ' . ucfirst($folder) . ' Avatars</h6>';
-                                        echo '<div class="d-flex flex-wrap">';
+                                        echo '<div class="d-flex flex-wrap justify-content-center">';
                                         foreach (glob($folder_path . '/*.{png,jpg,jpeg,gif,webp}', GLOB_BRACE) as $img_path) {
                                             $img_file = basename($img_path);
                                             $ext = strtolower(pathinfo($img_file, PATHINFO_EXTENSION));
@@ -359,6 +362,31 @@ if (isset($_SESSION['user'])) {
 
                                 <div class="color-option color-deepbrown" data-color="deepbrown" onclick="selectColor('deepbrown', this)">
                                     <div class="color-name">Brown2</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-chiipink" data-color="chiipink" onclick="selectColor('chiipink', this)">
+                                    <div class="color-name">Pink2</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-forest" data-color="forest" onclick="selectColor('forest', this)">
+                                    <div class="color-name">Forest</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-rust" data-color="rust" onclick="selectColor('rust', this)">
+                                    <div class="color-name">Rust</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-babyblue" data-color="babyblue" onclick="selectColor('babyblue', this)">
+                                    <div class="color-name">Babyblue</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-sepia" data-color="sepia" onclick="selectColor('sepia', this)">
+                                    <div class="color-name">Sepia</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
                                 

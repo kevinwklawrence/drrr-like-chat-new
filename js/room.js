@@ -2855,7 +2855,7 @@ if (savedHidden === 'true') {
     }
 
     // Initialize other systems
-    setTimeout(checkUserStatus, 500);
+    setTimeout(checkUserStatus, 1000);
     kickDetectionInterval = setInterval(checkUserStatus, 5000);
     kickDetectionEnabled = true;
 
@@ -2871,7 +2871,7 @@ if (savedHidden === 'true') {
     loadMessages();
     loadUsers();
     
-    setInterval(loadMessages, 500);
+    setInterval(loadMessages, 1000);
     setInterval(loadUsers, 1000);
     
     $('#message').focus();
@@ -2879,9 +2879,9 @@ if (savedHidden === 'true') {
     debugLog('✅ Room initialization complete');
 
     // Add this line at the end of the existing $(document).ready function:
-setTimeout(initializePrivateMessaging, 500);
+setTimeout(initializePrivateMessaging, 1000);
 // Start whisper checking
-setInterval(checkForNewWhispers, 500);
+setInterval(checkForNewWhispers, 1000);
 
 });
 

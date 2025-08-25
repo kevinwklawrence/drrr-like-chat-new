@@ -1036,7 +1036,7 @@ window.createRoom = function() {
                 // Add a small delay before redirect to ensure modal closes
                 setTimeout(() => {
                     window.location.href = 'room.php';
-                }, 500);
+                }, 0);
             } else {
                 alert('Error: ' + response.message);
                 // Re-enable buttons on error

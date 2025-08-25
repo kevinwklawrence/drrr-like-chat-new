@@ -155,6 +155,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Member Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
@@ -233,7 +236,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $allowed_ext = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
                                 $excluded_folders = ['staff', 'bg', 'icon', 'covers'];
                                 $priority_folders = ['time-limited'];
-                                $nonpriority_folders = ['default', 'drrrjp'];
+                                $nonpriority_folders = ['default', 'drrrjp', 'mushoku'];
                                 $drrrx2 = ['drrrx2'];
                                 $total_avatars = 0;
 
@@ -247,7 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         
                                         echo '<div class="avatar-group" data-group="' . strtolower($folder) . '">';
                                         echo '<h6><i class="fas fa-star"></i> ' . ucfirst($folder) . ' Avatars <span class="avatar-count">' . $folder_count . '</span></h6>';
-                                        echo '<div class="d-flex flex-wrap">';
+                                        echo '<div class="d-flex flex-wrap justify-content-center">';
                                         
                                         foreach ($folder_avatars as $img_path) {
                                             $img_file = basename($img_path);
@@ -276,7 +279,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     
                                     echo '<div class="avatar-group" data-group="' . strtolower($color_name) . '">';
                                     echo '<h6><i class="fas fa-folder"></i> ' . ucfirst($color_name) . ' Avatars <span class="avatar-count">' . $folder_count . '</span></h6>';
-                                    echo '<div class="d-flex flex-wrap">';
+                                    echo '<div class="d-flex flex-wrap justify-content-center">';
                                     
                                     foreach ($folder_avatars as $img_path) {
                                         $img_file = basename($img_path);
@@ -298,7 +301,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         
                                         echo '<div class="avatar-group" data-group="' . strtolower($folder) . '">';
                                         echo '<h6><i class="fas fa-star"></i> ' . ucfirst($folder) . ' Avatars <span class="avatar-count">' . $folder_count . '</span></h6>';
-                                        echo '<div class="d-flex flex-wrap">';
+                                        echo '<div class="d-flex flex-wrap justify-content-center">';
                                         
                                         foreach ($folder_avatars as $img_path) {
                                             $img_file = basename($img_path);
@@ -321,7 +324,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         
                                         echo '<div class="avatar-group" data-group="' . strtolower($folder) . '">';
                                         echo '<h6><i class="fas fa-star"></i> ' . ucfirst($folder) . ' Avatars <span class="avatar-count">' . $folder_count . '</span></h6>';
-                                        echo '<div class="d-flex flex-wrap">';
+                                        echo '<div class="d-flex flex-wrap justify-content-center">';
                                         
                                         foreach ($folder_avatars as $img_path) {
                                             $img_file = basename($img_path);
@@ -631,6 +634,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                                 <div class="color-option color-deepbrown" data-color="deepbrown" onclick="selectColor('deepbrown', this)">
                                     <div class="color-name">Brown2</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-chiipink" data-color="chiipink" onclick="selectColor('chiipink', this)">
+                                    <div class="color-name">Pink2</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-forest" data-color="forest" onclick="selectColor('forest', this)">
+                                    <div class="color-name">Forest</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-rust" data-color="rust" onclick="selectColor('rust', this)">
+                                    <div class="color-name">Rust</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-babyblue" data-color="babyblue" onclick="selectColor('babyblue', this)">
+                                    <div class="color-name">Babyblue</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-sepia" data-color="sepia" onclick="selectColor('sepia', this)">
+                                    <div class="color-name">Sepia</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
                                 

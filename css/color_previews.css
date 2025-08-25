@@ -1,10 +1,28 @@
 /* Blue - Default */
 /*BLUE GLOSS 1*/
+#colorPreviewCircle {
+    width: 100% !important;
+    height: 80px ;
+    border-radius: 8px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+}
 
 .color-option {
-    width:100px !important;
+    width:100% !important;
      height: 32px !important;
     }
+
+/* Mobile Body Fix */
+@media (max-width: 768px) {
+    .color-option {
+    width:100% !important;
+     height: 32px !important;
+    }
+
+    #colorPreviewCircle {
+    width: 100% !important;
+}
+}
 
 .color-name {
     display: block !important;
@@ -192,5 +210,34 @@
 
 .color-navy { 
     background: linear-gradient(to bottom, rgba(125,149,195,1) 0%,rgba(87,112,179,1) 22%,rgba(75,99,163,1) 33%,rgba(70,91,154,1) 50%,rgba(65,87,145,1) 67%,rgba(41,51,83,1) 82%,rgba(33,31,57,1) 100%);
+
+}
+
+.color-lenn { 
+    background: linear-gradient(to bottom, rgba(255,255,255,1) 1%,rgba(147,185,184,1) 100%);
+}
+
+.color-chiipink { 
+    background: linear-gradient(to bottom, rgba(239,213,222,1) 0%,rgba(233,175,196,1) 50%,rgba(219,131,166,1) 51%,rgba(239,213,222,1) 100%);
+
+}
+
+.color-forest { 
+    background: linear-gradient(to bottom, rgba(26,82,16,1) 0%,rgba(43,115,21,1) 50%,rgba(37,107,17,1) 51%,rgba(36,96,18,1) 100%);
+
+}
+
+.color-rust { 
+    background: linear-gradient(to bottom, rgba(230,152,92,1) 0%,rgba(169,100,47,1) 50%,rgba(147,87,41,1) 51%,rgba(220,141,80,1) 100%);
+
+}
+
+.color-babyblue { 
+    background: linear-gradient(to bottom, rgba(150,202,218,1) 0%,rgba(140,196,218,1) 26%,rgba(129,192,219,1) 51%,rgba(108,184,214,1) 51%,rgba(115,188,219,1) 62%,rgba(121,195,227,1) 75%,rgba(99,174,207,1) 88%,rgba(74,157,190,1) 100%);
+
+}
+
+.color-sepia { 
+    background:linear-gradient(to bottom, rgba(164,138,96,1) 0%,rgba(102,91,72,1) 50%,rgba(89,79,63,1) 51%,rgba(150,129,94,1) 100%);
 
 }

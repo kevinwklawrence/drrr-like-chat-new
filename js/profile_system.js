@@ -706,7 +706,7 @@ function createAvatarSection(folderName, avatars, isPriority = false) {
                 <i class="${iconClass}"></i> ${displayName} 
                 <span class="badge bg-secondary ms-2">${avatars.length}</span>
             </h6>
-            <div class="d-flex flex-wrap">
+            <div class="d-flex flex-wrap justify-content-center">
     `;
     
     avatars.forEach(avatar => {
@@ -750,12 +750,17 @@ function loadColorsForEditor() {
         { name: 'palegreen', displayName: 'Pale Green' },
         { name: 'red', displayName: 'Red' },
         { name: 'toyred', displayName: 'Toy Red' },
-        { name: 'spooky', displayName: 'Spooky' },
+       // { name: 'spooky', displayName: 'Spooky' },
         { name: 'rose', displayName: 'Rose' },
         { name: 'yellow', displayName: 'Yellow' },
         { name: 'bbyellow', displayName: 'Yellow2' },
         { name: 'brown', displayName: 'Brown' },
         { name: 'deepbrown', displayName: 'Brown2' },
+        { name: 'chiipink', displayName: 'Brown2' },
+        { name: 'forest', displayName: 'Brown2' },
+        { name: 'babyblue', displayName: 'Babyblue' },
+        { name: 'rust', displayName: 'Rust' },
+        { name: 'sepia', displayName: 'Sepia' },
     ];
     
     let html = '';
