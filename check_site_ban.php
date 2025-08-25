@@ -1,6 +1,6 @@
 <?php
 // check_site_ban.php - Include this at the top of main pages
-function checkSiteBan($conn) {
+function checkSiteBan($conn, $return_json = false) {
     $ip_address = $_SERVER['REMOTE_ADDR'];
     $user_id = null;
     $user_id_string = '';
@@ -75,7 +75,19 @@ function checkSiteBan($conn) {
                 $ban_message .= "\n\nReason: " . htmlspecialchars($ban['reason']);
             }
             
-            // Show ban page
+            // Check if this is an AJAX request (for join_lounge.php)
+            if ($return_json || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest')) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => $ban_message,
+                    'banned' => true,
+                    'ban_details' => $ban
+                ]);
+                exit;
+            }
+            
+            // Show ban page for regular page loads
             showSiteBanPage($ban_message, $ban);
             exit;
         }

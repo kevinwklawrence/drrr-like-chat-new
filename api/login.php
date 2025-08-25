@@ -30,10 +30,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Validate color selection if provided
     $valid_colors = [
-        'black', 'blue', 'purple', 'pink', 'cyan', 'mint', 'orange', 
-        'lavender', 'peach', 'green', 'yellow', 'red', 'teal', 
-        'indigo', 'emerald', 'rose', 'spooky', 'bbyellow', 'lavender2', 'toyred', 'mudgreen', 'deepbrown', 'teal2', 'palegreen', 'negative', 'policeman2', 'brown', 'navy'
-    ];
+    'black', 'policeman2','negative','gray','tan','blue','cobalt','lavender','lavender2',
+    'teal2','navy','purple','pink','orange','orange2','peach','green','urban','mudgreen',
+    'palegreen','red','toyred','spooky','rose','yellow','bbyellow','brown','deepbrown'
+];
 
     if (!empty($selected_color) && !in_array($selected_color, $valid_colors)) {
         $selected_color = 'black'; // Default fallback

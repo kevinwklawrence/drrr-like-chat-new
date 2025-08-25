@@ -49,74 +49,35 @@ cleanupExpiredSiteBans($conn);
     <title>Moderator Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="css/lounge.css" rel="stylesheet">
+    <link href="css/moderator.css" rel="stylesheet">
     <style>
-        body {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            min-height: 100vh;
-            color: #e0e0e0;
-        }
-        
-        .dashboard-header {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 1rem 0;
-            margin-bottom: 2rem;
-        }
-        
+        /* Use lounge.css styling as base */
         .mod-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
-        
-        .mod-card .card-header {
-            background: rgba(255, 255, 255, 0.1);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 15px 15px 0 0 !important;
-        }
-        
-        .btn-mod-primary {
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            color: white;
+            background: #2a2a2a;
+            border: 1px solid #404040;
+            border-radius: 8px;
+            color: #e0e0e0;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
         }
         
-        .btn-mod-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
-            color: white;
-        }
-        
-        .btn-mod-danger {
-            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
-            border: none;
-            color: white;
-        }
-        
-        .btn-mod-danger:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(245, 87, 108, 0.4);
-            color: white;
+        .mod-card .card-header {
+            background: #333;
+            border-bottom: 1px solid #404040;
+            border-radius: 8px 8px 0 0 !important;
+            color: #e0e0e0;
+            padding: 12px 16px;
+            font-weight: 500;
         }
         
         .message-item {
             background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
+            border: 1px solid #404040;
+            border-radius: 8px;
             padding: 1rem;
             margin-bottom: 1rem;
             border-left: 4px solid #667eea;
-        }
-        
-        .message-item.whisper {
-            border-left-color: #f093fb;
-        }
-        
-        .message-item.private {
-            border-left-color: #4facfe;
         }
         
         .message-item.announcement {
@@ -125,75 +86,35 @@ cleanupExpiredSiteBans($conn);
         
         .message-meta {
             font-size: 0.85rem;
-            opacity: 0.8;
+            color: #aaa;
             margin-bottom: 0.5rem;
         }
         
         .message-content {
             background: rgba(0, 0, 0, 0.2);
             padding: 0.75rem;
-            border-radius: 8px;
+            border-radius: 6px;
             margin: 0.5rem 0;
+            color: #e0e0e0;
         }
         
         .ban-item {
             background: rgba(245, 87, 108, 0.1);
             border: 1px solid rgba(245, 87, 108, 0.3);
-            border-radius: 8px;
+            border-radius: 6px;
             padding: 1rem;
             margin-bottom: 1rem;
-        }
-        
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
-        
-        .form-control, .form-select {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #e0e0e0;
-        }
-        
-        .form-control:focus, .form-select:focus {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: #667eea;
-            color: #e0e0e0;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-        }
-        
-        .form-control::placeholder {
-            color: rgba(224, 224, 224, 0.6);
         }
     </style>
 </head>
 <body>
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
-        <div class="text-center text-white">
-            <div class="spinner-border mb-3" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <div>Loading...</div>
-        </div>
-    </div>
-
-    <!-- Dashboard Header -->
-    <div class="dashboard-header">
-        <div class="container-fluid">
-            <div class="row align-items-center">
-                <div class="col">
-                    <h1 class="h3 mb-0">
-                        <i class="fas fa-shield-alt"></i>
-                        Moderator Dashboard
+    <div class="container-fluid">
+        <!-- Dashboard Header -->
+        <div class="lounge-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="lounge-title h3">
+                        <i class="fas fa-shield-alt"></i> Moderator Dashboard
                         <?php if ($is_admin): ?>
                             <span class="badge bg-danger ms-2">Admin</span>
                         <?php else: ?>
@@ -202,16 +123,14 @@ cleanupExpiredSiteBans($conn);
                     </h1>
                     <small class="text-muted">Welcome back, <?php echo htmlspecialchars($username); ?></small>
                 </div>
-                <div class="col-auto">
-                    <a href="lounge.php" class="btn btn-outline-light">
+                <div>
+                    <a href="lounge.php" class="btn logout-btn">
                         <i class="fas fa-arrow-left"></i> Back to Lounge
                     </a>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="container-fluid">
         <div class="row">
             <!-- Left Sidebar - Quick Actions -->
             <div class="col-lg-3 col-md-4">
@@ -224,21 +143,21 @@ cleanupExpiredSiteBans($conn);
                     <div class="card-body">
                         <!-- Send Announcement -->
                         <div class="mb-3">
-                            <button class="btn btn-mod-primary w-100" onclick="showAnnouncementModal()">
+                            <button class="btn create-room-btn w-100" onclick="showAnnouncementModal()">
                                 <i class="fas fa-bullhorn"></i> Send Announcement
                             </button>
                         </div>
                         
                         <!-- Site Ban User -->
                         <div class="mb-3">
-                            <button class="btn btn-mod-danger w-100" onclick="showSiteBanModal()">
+                            <button class="btn btn-danger w-100" onclick="showSiteBanModal()">
                                 <i class="fas fa-ban"></i> Site Ban User
                             </button>
                         </div>
                         
                         <!-- Refresh Data -->
                         <div class="mb-3">
-                            <button class="btn btn-outline-light w-100" onclick="refreshAllData()">
+                            <button class="btn refresh-btn w-100" onclick="refreshAllData()">
                                 <i class="fas fa-sync-alt"></i> Refresh Data
                             </button>
                         </div>
@@ -258,7 +177,7 @@ cleanupExpiredSiteBans($conn);
                     <div class="card-body">
                         <div id="siteBansSummary">
                             <div class="text-center">
-                                <div class="spinner-border spinner-border-sm" role="status"></div>
+                                <div class="loading-spinner"></div>
                                 <div>Loading bans...</div>
                             </div>
                         </div>
@@ -281,8 +200,7 @@ cleanupExpiredSiteBans($conn);
                                 <select class="form-select" id="messageTypeFilter">
                                     <option value="all">All Messages</option>
                                     <option value="chat">Chat Messages</option>
-                                    <option value="whispers">Whispers</option>
-                                    <option value="private">Private Messages</option>
+                                    <option value="announcement">Announcements</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
@@ -297,7 +215,7 @@ cleanupExpiredSiteBans($conn);
                         </div>
                         <div class="row mt-3">
                             <div class="col">
-                                <button class="btn btn-mod-primary" onclick="loadMessages()">
+                                <button class="btn create-room-btn" onclick="loadMessages()">
                                     <i class="fas fa-search"></i> Apply Filters
                                 </button>
                                 <button class="btn btn-outline-light" onclick="clearFilters()">
@@ -319,7 +237,7 @@ cleanupExpiredSiteBans($conn);
                     <div class="card-body" style="max-height: 600px; overflow-y: auto;">
                         <div id="messagesContainer">
                             <div class="text-center py-4">
-                                <div class="spinner-border" role="status"></div>
+                                <div class="loading-spinner"></div>
                                 <div class="mt-2">Loading messages...</div>
                             </div>
                         </div>
@@ -333,23 +251,23 @@ cleanupExpiredSiteBans($conn);
     <!-- Announcement Modal -->
     <div class="modal fade" id="announcementModal" tabindex="-1">
         <div class="modal-dialog">
-            <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
-                <div class="modal-header" style="border-bottom: 1px solid #444;">
+            <div class="modal-content">
+                <div class="modal-header">
                     <h5 class="modal-title">
                         <i class="fas fa-bullhorn"></i> Send Site Announcement
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="announcementMessage" class="form-label">Announcement Message</label>
                         <textarea class="form-control" id="announcementMessage" rows="4" maxlength="500" placeholder="Enter your announcement message..."></textarea>
-                        <div class="form-text">Maximum 500 characters. This will be sent to all active rooms.</div>
+                        <div class="form-text text-muted">Maximum 500 characters. This will be sent to all active rooms.</div>
                     </div>
                 </div>
-                <div class="modal-footer" style="border-top: 1px solid #444;">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-mod-primary" onclick="sendAnnouncement()">
+                    <button type="button" class="btn create-room-btn" onclick="sendAnnouncement()">
                         <i class="fas fa-bullhorn"></i> Send Announcement
                     </button>
                 </div>
@@ -360,18 +278,18 @@ cleanupExpiredSiteBans($conn);
     <!-- Site Ban Modal -->
     <div class="modal fade" id="siteBanModal" tabindex="-1">
         <div class="modal-dialog">
-            <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
-                <div class="modal-header" style="border-bottom: 1px solid #444;">
+            <div class="modal-content">
+                <div class="modal-header">
                     <h5 class="modal-title">
                         <i class="fas fa-ban"></i> Site Ban User
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="banUserInput" class="form-label">User to Ban</label>
                         <input type="text" class="form-control" id="banUserInput" placeholder="Username, User ID, or IP Address">
-                        <div class="form-text">Enter username for registered users, or IP address for guests</div>
+                        <div class="form-text text-muted">Enter username for registered users, or IP address for guests</div>
                     </div>
                     <div class="mb-3">
                         <label for="banDuration" class="form-label">Ban Duration</label>
@@ -389,9 +307,9 @@ cleanupExpiredSiteBans($conn);
                         <textarea class="form-control" id="banReason" rows="3" placeholder="Enter reason for ban..."></textarea>
                     </div>
                 </div>
-                <div class="modal-footer" style="border-top: 1px solid #444;">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-mod-danger" onclick="siteBanUser()">
+                    <button type="button" class="btn btn-danger" onclick="siteBanUser()">
                         <i class="fas fa-ban"></i> Ban User
                     </button>
                 </div>
@@ -421,8 +339,6 @@ cleanupExpiredSiteBans($conn);
     
     // Load messages with filters
     function loadMessages() {
-        showLoading(true);
-        
         const filters = {
             type: $('#messageTypeFilter').val(),
             search: $('#searchFilter').val(),
@@ -445,10 +361,8 @@ cleanupExpiredSiteBans($conn);
                 }
             },
             error: function(xhr, status, error) {
+                console.error('Load messages error:', error);
                 $('#messagesContainer').html('<div class="alert alert-danger">Failed to load messages: ' + error + '</div>');
-            },
-            complete: function() {
-                showLoading(false);
             }
         });
     }
@@ -461,34 +375,43 @@ cleanupExpiredSiteBans($conn);
             html = '<div class="text-center py-4"><i class="fas fa-inbox fa-3x mb-3 text-muted"></i><div>No messages found</div></div>';
         } else {
             messages.forEach(msg => {
-                const typeClass = msg.message_type;
-                const typeIcon = getMessageTypeIcon(msg.message_type);
+                const typeClass = msg.type || 'chat';
+                const typeIcon = getMessageTypeIcon(typeClass);
                 const userName = msg.username || msg.guest_name || msg.user_id_string || 'Unknown';
                 const roomName = msg.room_name || 'Unknown Room';
                 const timestamp = new Date(msg.timestamp).toLocaleString();
+                
+                // Show user info with IP and user_id_string
+                let userInfo = `<strong>${userName}</strong>`;
+                if (msg.user_id_string) {
+                    userInfo += ` <small class="text-muted">(ID: ${msg.user_id_string})</small>`;
+                }
+                if (msg.ip_address) {
+                    userInfo += ` <small class="text-muted">(IP: ${msg.ip_address})</small>`;
+                }
                 
                 html += `
                     <div class="message-item ${typeClass}">
                         <div class="message-meta d-flex justify-content-between">
                             <div>
-                                ${typeIcon} <strong>${userName}</strong>
+                                ${typeIcon} ${userInfo}
                                 ${msg.room_name ? ` in <em>${roomName}</em>` : ''}
                                 ${msg.is_admin ? '<span class="badge bg-danger ms-1">Admin</span>' : ''}
-                                ${msg.is_host ? '<span class="badge bg-warning ms-1">Host</span>' : ''}
+                                ${msg.is_moderator ? '<span class="badge bg-warning ms-1">Mod</span>' : ''}
                             </div>
                             <div>
                                 <small>${timestamp}</small>
-                                ${msg.ip_address ? `<small class="text-muted ms-2">IP: ${msg.ip_address}</small>` : ''}
                             </div>
                         </div>
                         <div class="message-content">
                             ${msg.message}
                         </div>
-                        <div class="message-actions mt-2">
-                            <button class="btn btn-sm btn-outline-danger" onclick="showBanUserFromMessage('${msg.user_id_string}', '${userName}', '${msg.ip_address || ''}')">
-                                <i class="fas fa-ban"></i> Ban User
-                            </button>
-                        </div>
+                        ${msg.user_id_string && msg.user_id_string !== 'SYSTEM' && msg.user_id_string !== 'SYSTEM_ANNOUNCEMENT' ? 
+                            `<div class="message-actions mt-2">
+                                <button class="btn btn-sm btn-outline-danger" onclick="showBanUserFromMessage('${msg.user_id_string}', '${userName}', '${msg.ip_address || ''}')">
+                                    <i class="fas fa-ban"></i> Ban User
+                                </button>
+                            </div>` : ''}
                     </div>
                 `;
             });
@@ -501,9 +424,8 @@ cleanupExpiredSiteBans($conn);
     function getMessageTypeIcon(type) {
         const icons = {
             'chat': '<i class="fas fa-comment text-primary"></i>',
-            'whisper': '<i class="fas fa-user-secret text-warning"></i>',
-            'private': '<i class="fas fa-envelope text-info"></i>',
-            'announcement': '<i class="fas fa-bullhorn text-success"></i>'
+            'announcement': '<i class="fas fa-bullhorn text-success"></i>',
+            'system': '<i class="fas fa-cog text-info"></i>'
         };
         return icons[type] || '<i class="fas fa-comment"></i>';
     }
@@ -523,7 +445,7 @@ cleanupExpiredSiteBans($conn);
             return;
         }
         
-        const button = $('#announcementModal .btn-mod-primary');
+        const button = $('#announcementModal .create-room-btn');
         const originalText = button.html();
         button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
         
@@ -536,7 +458,7 @@ cleanupExpiredSiteBans($conn);
                 if (response.status === 'success') {
                     alert('Announcement sent successfully to all rooms!');
                     $('#announcementModal').modal('hide');
-                    loadMessages(); // Refresh to show the announcement
+                    setTimeout(loadMessages, 1000); // Refresh after 1 second
                 } else {
                     alert('Error: ' + response.message);
                 }
@@ -575,25 +497,16 @@ cleanupExpiredSiteBans($conn);
             return;
         }
         
-        const button = $('#siteBanModal .btn-mod-danger');
+        const button = $('#siteBanModal .btn-danger');
         const originalText = button.html();
         button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Banning...');
         
-        // Determine if input is IP address, username, or user ID
+        // Send as username - the API will handle the lookup
         const banData = {
+            username: userInput,
             duration: duration,
             reason: reason
         };
-        
-        // Simple IP regex
-        const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
-        if (ipRegex.test(userInput)) {
-            banData.ip_address = userInput;
-        } else if (/^\d+$/.test(userInput)) {
-            banData.user_id = parseInt(userInput);
-        } else {
-            banData.username = userInput;
-        }
         
         $.ajax({
             url: 'api/site_ban_user.php',
@@ -710,14 +623,6 @@ cleanupExpiredSiteBans($conn);
     function refreshAllData() {
         loadMessages();
         loadSiteBansSummary();
-    }
-    
-    function showLoading(show) {
-        if (show) {
-            $('#loadingOverlay').show();
-        } else {
-            $('#loadingOverlay').hide();
-        }
     }
     </script>
 </body>

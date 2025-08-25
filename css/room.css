@@ -198,6 +198,9 @@
         
         /* FIXED: Header layout with badges inline */
         .message-header {
+            background-color: rgb(0 0 0 / 0%);
+            padding: 4px 8px 4px 8px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -215,21 +218,24 @@
         
         /* FIXED: More pronounced name */
         .message-author {
-            font-weight: 700; /* Increased from 600 to 700 */
+            font-weight: 500; /* Increased from 600 to 700 */
             color: var(--user-text-color);
             font-size: 1rem; /* Increased from 0.9rem */
             text-shadow: 0 1px 2px rgba(0,0,0,0.3); /* Added text shadow */
+            font-style: italic;
         }
         
         .message-time {
             font-size: 0.75rem;
-            color: rgba(255,255,255,0.7);
+            color: var(--user-text-color);
             opacity: 0.8;
             white-space: nowrap;
+            text-shadow: 0 0 2px rgb(0 0 0 / 70%);
         }
         
         .message-content {
             color: var(--user-text-color);
+            text-shadow: 0px 0px 5px var(--user-text-shadow-color);
             line-height: 1.4;
             word-wrap: break-word;
             font-size: 0.95rem;
@@ -918,4 +924,8 @@
 
 .private-message-bubble {
     transition: filter 0.3s ease;
+}
+
+.message-content p {
+    margin: 0 !important;
 }

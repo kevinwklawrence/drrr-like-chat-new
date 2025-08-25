@@ -6,7 +6,7 @@ include 'check_site_ban.php';
 checkSiteBan($conn);
 
 // Add after the existing user data variables:
-$is_moderator = $_SESSION['user']['is_moderator'] ?? 0;
+
 
 if (!isset($_SESSION['user'])) {
     header("Location: index.php");
@@ -20,6 +20,7 @@ $username = $_SESSION['user']['username'] ?? null;
 $guest_name = $_SESSION['user']['name'] ?? null;
 $avatar = $_SESSION['user']['avatar'] ?? 'default_avatar.jpg';
 $is_admin = $_SESSION['user']['is_admin'] ?? 0;
+$is_moderator = $_SESSION['user']['is_moderator'] ?? 0;
 $ip_address = $_SERVER['REMOTE_ADDR'];
 
 // ADD this line after the existing variables:
@@ -99,6 +100,7 @@ if ($stmt) {
     <link href="css/color_previews.css" rel="stylesheet">
     <link href="css/private_bubble_colors.css" rel="stylesheet">
     <link href="css/room_stuff.css" rel="stylesheet">
+    <link href="css/moderator.css" rel="stylesheet">
 </head>
 <body>
     <div class="container-fluid">
@@ -215,6 +217,8 @@ if ($stmt) {
     ])); ?>;
     console.log('Current user:', currentUser);
 </script>
+
+
     <script>
 <?php if (isset($_SESSION['pending_invite'])): ?>
 // Show invite modal when page loads

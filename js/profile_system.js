@@ -735,7 +735,6 @@ function loadColorsForEditor() {
         { name: 'tan', displayName: 'Tan' },
         { name: 'blue', displayName: 'Blue' },
         { name: 'cobalt', displayName: 'Cobalt' },
-        { name: 'lavender', displayName: 'Lavender' },
         { name: 'teal2', displayName: 'Teal' },
         { name: 'navy', displayName: 'Navy' },
         { name: 'purple', displayName: 'Purple' },

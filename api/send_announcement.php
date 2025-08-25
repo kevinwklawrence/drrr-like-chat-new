@@ -1,5 +1,5 @@
 <?php
-// api/send_announcement.php
+// api/send_announcement.php - Final version after ENUM fix
 session_start();
 header('Content-Type: application/json');
 
@@ -13,6 +13,7 @@ include '../db_connect.php';
 // Check if user is moderator or admin
 $user_id = $_SESSION['user']['id'];
 $is_authorized = false;
+$username = '';
 
 $stmt = $conn->prepare("SELECT is_moderator, is_admin, username FROM users WHERE id = ?");
 if ($stmt) {
@@ -74,25 +75,29 @@ try {
     $rooms_stmt->execute();
     $rooms_result = $rooms_stmt->get_result();
     
-    $announcement_text = "📢 SITE ANNOUNCEMENT: " . $message . " - " . $username;
+    $announcement_text = $message . " <hr>- " . $username;
+    $system_user = 'SYSTEM_ANNOUNCEMENT';
     
-    // Insert announcement message into all active rooms
+    // Insert announcement message into all active rooms with 'announcement' type
     while ($room = $rooms_result->fetch_assoc()) {
         $room_id = $room['id'];
         
-        $msg_stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, 'SYSTEM_ANNOUNCEMENT', ?, 1, NOW(), 'announcement.png', 'announcement')");
+        $msg_stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, timestamp, type) VALUES (?, ?, ?, NOW(), 'announcement')");
         if ($msg_stmt) {
-            $msg_stmt->bind_param("is", $room_id, $announcement_text);
-            $msg_stmt->execute();
+            $msg_stmt->bind_param("iss", $room_id, $system_user, $announcement_text);
+            if (!$msg_stmt->execute()) {
+                error_log("Failed to insert announcement message into room $room_id: " . $msg_stmt->error);
+            }
             $msg_stmt->close();
         }
     }
     $rooms_stmt->close();
     
     // Log moderator action
-    $log_stmt = $conn->prepare("INSERT INTO moderator_logs (moderator_id, moderator_username, action_type, details) VALUES (?, ?, 'announcement', ?)");
+    $log_stmt = $conn->prepare("INSERT INTO moderator_logs (moderator_id, moderator_username, action_type, details) VALUES (?, ?, ?, ?)");
     if ($log_stmt) {
-        $log_stmt->bind_param("iss", $user_id, $username, $message);
+        $action_type = 'announcement';
+        $log_stmt->bind_param("isss", $user_id, $username, $action_type, $message);
         $log_stmt->execute();
         $log_stmt->close();
     }

@@ -1,12 +1,17 @@
 <?php
 session_start();
-
+header('Content-Type: application/json'); // Set JSON header early
 
 include '../db_connect.php';
 include '../check_site_ban.php';
 
-// Check for site ban before processing
-checkSiteBan($conn);
+// Check for site ban before processing - with JSON response
+try {
+    checkSiteBan($conn, true); // Pass true to get JSON response instead of HTML
+} catch (Exception $e) {
+    echo json_encode(['status' => 'error', 'message' => 'Security check failed']);
+    exit;
+}
 
 // ENHANCED duplicate submission prevention
 $submission_id = $_POST['submission_id'] ?? null;
@@ -46,7 +51,6 @@ error_log("User Agent: " . ($_SERVER['HTTP_USER_AGENT'] ?? 'unknown'));
 error_log("Raw POST count: " . count($_POST));
 error_log("POST keys: " . implode(', ', array_keys($_POST)));
 
-
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -81,7 +85,6 @@ if (!$has_customization_data) {
 error_log("Final guest values - avatar_hue: $avatar_hue, avatar_saturation: $avatar_saturation");
 error_log("Full POST data: " . print_r($_POST, true));
 
-
 if (empty($guest_name)) {
     echo json_encode(['status' => 'error', 'message' => 'Guest name required']);
     exit;
@@ -94,9 +97,9 @@ if (empty($avatar)) {
 
 // ADDED: Validate color selection
 $valid_colors = [
-    'black', 'blue', 'purple', 'pink', 'cyan', 'mint', 'orange', 
-    'lavender', 'peach', 'green', 'yellow', 'red', 'teal', 
-    'indigo', 'emerald', 'rose', 'spooky', 'bbyellow', 'lavender2', 'toyred', 'mudgreen', 'deepbrown', 'teal2', 'palegreen', 'negative', 'policeman2', 'brown', 'navy'
+    'black', 'policeman2','negative','gray','tan','blue','cobalt','lavender','lavender2',
+    'teal2','navy','purple','pink','orange','orange2','peach','green','urban','mudgreen',
+    'palegreen','red','toyred','spooky','rose','yellow','bbyellow','brown','deepbrown'
 ];
 
 if (!in_array($color, $valid_colors)) {
@@ -142,10 +145,10 @@ try {
         $conn->query("ALTER TABLE global_users ADD COLUMN avatar_saturation INT DEFAULT 100 NOT NULL");
     }
     
-$stmt = $conn->prepare("INSERT INTO global_users (user_id_string, username, guest_name, avatar, color, guest_avatar, avatar_hue, avatar_saturation, bubble_hue, bubble_saturation, is_admin, ip_address) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?) ON DUPLICATE KEY UPDATE guest_name = VALUES(guest_name), avatar = VALUES(avatar), guest_avatar = VALUES(guest_avatar), color = VALUES(color), avatar_hue = VALUES(avatar_hue), avatar_saturation = VALUES(avatar_saturation), bubble_hue = VALUES(bubble_hue), bubble_saturation = VALUES(bubble_saturation), ip_address = VALUES(ip_address), last_activity = CURRENT_TIMESTAMP");
+    $stmt = $conn->prepare("INSERT INTO global_users (user_id_string, username, guest_name, avatar, color, guest_avatar, avatar_hue, avatar_saturation, bubble_hue, bubble_saturation, is_admin, ip_address) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?) ON DUPLICATE KEY UPDATE guest_name = VALUES(guest_name), avatar = VALUES(avatar), guest_avatar = VALUES(guest_avatar), color = VALUES(color), avatar_hue = VALUES(avatar_hue), avatar_saturation = VALUES(avatar_saturation), bubble_hue = VALUES(bubble_hue), bubble_saturation = VALUES(bubble_saturation), ip_address = VALUES(ip_address), last_activity = CURRENT_TIMESTAMP");
 
     if ($stmt) {
-$stmt->bind_param("sssssiiiis", $guest_user_id, $guest_name, $avatar, $color, $avatar, $avatar_hue, $avatar_saturation, $bubble_hue, $bubble_saturation, $ip_address);
+        $stmt->bind_param("sssssiiiis", $guest_user_id, $guest_name, $avatar, $color, $avatar, $avatar_hue, $avatar_saturation, $bubble_hue, $bubble_saturation, $ip_address);
         $stmt->execute();
         $stmt->close();
         error_log("Guest stored in global_users with avatar customization: hue=$avatar_hue, sat=$avatar_saturation");

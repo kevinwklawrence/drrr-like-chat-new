@@ -193,6 +193,7 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
      <link href="css/bubble_colors.css" rel="stylesheet">
     <link href="css/color_previews.css" rel="stylesheet">
     <link href="css/private_bubble_colors.css" rel="stylesheet">
+    <link href="css/moderator.css" rel="stylesheet">
     <?php if ($room_theme !== 'default'): ?>
     <link href="css/themes/<?php echo htmlspecialchars($room_theme); ?>.css" rel="stylesheet">
 <?php endif; ?>

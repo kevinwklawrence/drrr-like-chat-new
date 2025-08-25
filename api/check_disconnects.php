@@ -130,7 +130,7 @@ try {
                 
                 // Add system message
                 $transfer_message = "$display_name disconnected due to inactivity. Host privileges transferred to $new_host_name.";
-                $add_system_message = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, '', ?, 1, NOW(), 'crown.png', 'system')");
+                $add_system_message = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, '', ?, 1, NOW(), 'disconnect.png', 'system')");
                 if ($add_system_message) {
                     $add_system_message->bind_param("is", $room_id, $transfer_message);
                     $add_system_message->execute();

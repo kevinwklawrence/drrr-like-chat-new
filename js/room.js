@@ -329,13 +329,15 @@ function renderMessage(msg) {
                 <button class="btn btn-sm btn-outline-danger" onclick="showQuickBanModal('${msg.user_id_string}', '${name.replace(/'/g, "\\'")}', '${msg.ip_address || ''}')">
                     <i class="fas fa-ban"></i> Site Ban
                 </button>
+                <small class="text-danger">IP: ${msg.ip_address}</small>
             </div>
+            
         `;
     }
     
-    if (isAdmin && msg.ip_address) {
-        adminInfo = `<div class="admin-info"><span class="text-muted">IP: ${msg.ip_address}</span></div>`;
-    }
+   /* if (isAdmin && msg.ip_address) {
+        adminInfo = `<div class="admin-info"><span class="text-light">IP: ${msg.ip_address}</span></div>`;
+    }*/
     
     return `
         <div class="chat-message" data-type="${msg.type || 'chat'}">
