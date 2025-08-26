@@ -110,11 +110,13 @@ if ($stmt) {
         <div class="lounge-container">
             <!-- Header -->
             <div class="lounge-header">
-                <div class="d-flex justify-content-between align-items-center">
-    <h1 class="lounge-title h3">
-        <i class="fas fa-comments"></i> Chat Lounge
-    </h1>
-    <div>
+    <div class="header-centered-logo">
+        <img src="images/duranu.png" alt="Duranu Logo" class="site-logo">
+        <h1 class="lounge-title h4">
+            <i class="fas fa-comments"></i> Chat Lounge
+        </h1>
+    </div>
+    <div class="text-center">
         <?php if ($is_admin || $is_moderator): ?>
             <button class="btn btn-warning me-2" onclick="showAnnouncementModal()">
                 <i class="fas fa-bullhorn"></i> Announcement
@@ -123,7 +125,7 @@ if ($stmt) {
                 <i class="fas fa-shield-alt"></i> Moderator Panel
             </a>
         <?php endif; ?>
-        <button class="btn create-room-btn me-3" onclick="showCreateRoomModal()">
+        <button class="btn create-room-btn me-2" onclick="showCreateRoomModal()">
             <i class="fas fa-plus"></i> Create Room
         </button>
         <a href="logout.php" class="btn logout-btn">
@@ -131,7 +133,6 @@ if ($stmt) {
         </a>
     </div>
 </div>
-            </div>
             
             <div class="row">
                 <!-- User Profile Sidebar -->

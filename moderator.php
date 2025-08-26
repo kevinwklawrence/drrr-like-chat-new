@@ -114,26 +114,24 @@ cleanupExpiredSiteBans($conn);
     <div class="container-fluid">
         <!-- Dashboard Header -->
         <div class="lounge-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="lounge-title h3">
-                        <i class="fas fa-shield-alt"></i> Moderator Dashboard
-                        <?php if ($is_admin): ?>
-                            <span class="badge bg-danger ms-2">Admin</span>
-                        <?php else: ?>
-                            <span class="badge bg-warning ms-2">Moderator</span>
-                        <?php endif; ?>
-                    </h1>
-                    <small class="text-muted">Welcome back, <?php echo htmlspecialchars($username); ?></small>
-                </div>
-                <div>
-                    <a href="lounge.php" class="btn logout-btn">
-                        <i class="fas fa-arrow-left"></i> Back to Lounge
-                    </a>
-                </div>
-            </div>
-        </div>
-
+    <div class="header-centered-logo">
+        <img src="images/duranu.png" alt="Duranu Logo" class="site-logo">
+        <h1 class="lounge-title h4">
+            <i class="fas fa-shield-alt"></i> Moderator Dashboard
+            <?php if ($is_admin): ?>
+                <span class="badge bg-danger ms-2">Admin</span>
+            <?php else: ?>
+                <span class="badge bg-warning ms-2">Moderator</span>
+            <?php endif; ?>
+        </h1>
+        <small class="text-muted">Welcome back, <?php echo htmlspecialchars($username); ?></small>
+    </div>
+    <div class="text-center">
+        <a href="lounge.php" class="btn logout-btn">
+            <i class="fas fa-arrow-left"></i> Back to Lounge
+        </a>
+    </div>
+</div>
         <div class="row">
             <!-- Left Sidebar - Quick Actions -->
             <div class="col-lg-3 col-md-4">

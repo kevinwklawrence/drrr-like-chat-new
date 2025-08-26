@@ -183,11 +183,14 @@ error_log("User registered with avatar and avatar_memory set to: $default_avatar
         <div class="register-container">
             <!-- Header -->
             <div class="register-header">
-                <h1 class="register-title h3">
-                    <i class="fas fa-user-plus"></i> Create Account
-                </h1>
-                <p class="text-muted mb-0">Join our chat community</p>
-            </div>
+    <div class="header-logo-section">
+        <img src="images/duranu.png" alt="Duranu Logo" class="site-logo">
+        <h1 class="register-title h4">
+            <i class="fas fa-user-plus"></i> Create Account
+        </h1>
+        <p class="text-muted mb-0">Join our chat community</p>
+    </div>
+</div>
             
             <div class="row">
                 <!-- Registration Form -->

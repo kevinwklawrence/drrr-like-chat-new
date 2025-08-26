@@ -32,11 +32,14 @@ if (isset($_SESSION['user'])) {
         <div class="login-container">
             <!-- Header -->
             <div class="login-header">
-                <h1 class="login-title h3">
-                    <i class="fas fa-user-plus"></i> Guest Login
-                </h1>
-                <p class="text-muted mb-0">Join the chat as a guest user</p>
-            </div>
+    <div class="header-logo-section">
+        <img src="images/duranu.png" alt="Duranu Logo" class="site-logo">
+        <h1 class="login-title h4">
+            <i class="fas fa-user-plus"></i> Guest Login
+        </h1>
+        <p class="text-muted mb-0">Join the chat as a guest user</p>
+    </div>
+</div>
             
             <form id="guestLoginForm">
                 <div class="row">

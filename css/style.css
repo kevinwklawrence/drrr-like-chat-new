@@ -406,3 +406,144 @@ body {
 
 
 
+/* Logo Styles - Add to your main CSS files */
+.site-logo {
+    height: 64px;
+    width: auto;
+    margin-bottom: 12px;
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
+    transition: all 0.3s ease;
+    display: block;
+}
+
+.site-logo:hover {
+    filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5));
+    transform: scale(1.03);
+}
+
+/* Centered logo container for login/register pages */
+.header-logo-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    /* margin-bottom: 16px; */
+}
+
+.header-logo-section .login-title,
+.header-logo-section .register-title {
+    font-size: 1rem;
+    margin: 0 0 6px 0;
+}
+
+.header-logo-section .text-muted {
+    font-size: 0.75rem;
+}
+
+/* Horizontal layout for lounge/moderator pages */
+.header-with-logo {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-with-logo .site-logo {
+    height: 48px;
+    margin-bottom: 0;
+    margin-right: 0;
+}
+
+.header-with-logo .lounge-title {
+    margin: 0;
+}
+
+/* Center logo version for lounge/moderator when desired */
+.header-centered-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.header-centered-logo .site-logo {
+    height: 56px;
+    margin-bottom: 8px;
+}
+
+.header-centered-logo .lounge-title {
+    font-size: 1.75rem;
+    margin: 0 0 4px 0;
+}
+
+.header-centered-logo small {
+    font-size: 0.85rem;
+}
+
+/* Lounge/Moderator button adjustments for centered layout */
+.lounge-header .text-center {
+    margin-top: 8px;
+}
+
+.lounge-header .text-center .btn {
+    margin: 0 4px 8px 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .site-logo {
+        height: 48px;
+    }
+    
+    .header-with-logo .site-logo {
+        height: 36px;
+    }
+    
+    .header-centered-logo .site-logo {
+        height: 44px;
+    }
+    
+    .header-logo-section .login-title,
+    .header-logo-section .register-title {
+        font-size: 1.3rem;
+    }
+    
+    .header-centered-logo .lounge-title {
+        font-size: 1.5rem;
+    }
+    
+    /* Stack buttons vertically on mobile */
+    .lounge-header .text-center .btn {
+        display: block;
+        width: 100%;
+        max-width: 280px;
+        margin: 4px auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .site-logo {
+        height: 40px;
+    }
+    
+    .header-with-logo .site-logo {
+        height: 32px;
+    }
+    
+    .header-centered-logo .site-logo {
+        height: 36px;
+    }
+    
+    .header-logo-section .login-title,
+    .header-logo-section .register-title {
+        font-size: 1.2rem;
+    }
+    
+    .header-centered-logo .lounge-title {
+        font-size: 1.3rem;
+    }
+    
+    .header-centered-logo small {
+        font-size: 0.8rem;
+    }
+}

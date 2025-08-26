@@ -172,11 +172,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="login-container">
             <!-- Header -->
             <div class="login-header">
-                <h1 class="login-title h3">
-                    <i class="fas fa-user"></i> Member Login
-                </h1>
-                <p class="text-muted mb-0">Sign in to your account</p>
-            </div>
+    <div class="header-logo-section">
+        <img src="images/duranu.png" alt="Duranu Logo" class="site-logo">
+        <h1 class="login-title h4">
+            <i class="fas fa-user"></i> Member Login
+        </h1>
+        <p class="text-muted mb-0">Sign in to your account</p>
+    </div>
+</div>
             
             <form id="userLoginForm">
                 <div class="row">
