@@ -198,6 +198,8 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
     <link href="css/private_bubble_colors.css" rel="stylesheet">
     <link href="css/moderator.css" rel="stylesheet">
         <link href="css/mentions_replies.css" rel="stylesheet">
+        <link href="css/afk.css" rel="stylesheet">
+
 
     <?php if ($room_theme !== 'default'): ?>
     <link href="css/themes/<?php echo htmlspecialchars($room_theme); ?>.css" rel="stylesheet">
@@ -234,6 +236,9 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
                     <?php endif; ?>
                 </div>
                 <div class="room-actions">
+                    <button class="btn btn-outline-warning btn-toggle-afk" onclick="toggleAFK()" title="Toggle AFK Status">
+                        <i class="fas fa-bed"></i> Go AFK
+                    </button>
                     <?php if ($is_admin || $is_moderator): ?>
                         <button class="btn btn-warning me-2" onclick="showAnnouncementModal()">
                             <i class="fas fa-bullhorn"></i> Announcement

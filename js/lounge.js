@@ -774,7 +774,6 @@ window.showCreateRoomModal = function() {
                                             <select class="form-select" id="roomTheme" 
                                                     style="background: #333; border: 1px solid #555; color: #fff;">
                                                 <option value="default">Default</option>
-                                                <option value="dark">Dark</option>
                                                 <option value="cyberpunk">Cyberpunk</option>
                                                 <option value="forest">Forest</option>
                                                 <option value="ocean">Ocean</option>

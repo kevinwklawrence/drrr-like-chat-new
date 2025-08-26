@@ -1,11 +1,12 @@
 <?php
-// api/check_disconnects.php - Main disconnect detection system
+// api/check_disconnects.php - Enhanced with AFK detection
 header('Content-Type: application/json');
 
 include '../db_connect.php';
 
 // Configuration
-$DISCONNECT_TIMEOUT = 15 * 60; // 15 minutes in seconds
+$DISCONNECT_TIMEOUT = 60 * 60; // 60 minutes in seconds  
+$AFK_TIMEOUT = 10 * 60; // 10 minutes in seconds
 $DEBUG_MODE = true; // Set to false in production
 
 function logMessage($message) {
@@ -15,12 +16,12 @@ function logMessage($message) {
     }
 }
 
-logMessage("Starting disconnect check...");
+logMessage("Starting disconnect and AFK check...");
 
 try {
     $conn->begin_transaction();
     
-    // First, ensure last_activity column exists
+    // Ensure required columns exist
     $columns_check = $conn->query("SHOW COLUMNS FROM chatroom_users LIKE 'last_activity'");
     if ($columns_check->num_rows === 0) {
         logMessage("Creating last_activity column...");
@@ -34,7 +35,140 @@ try {
         logMessage("Initialized last_activity for existing users");
     }
     
-    // Find users who have been inactive for more than the timeout
+    // Add AFK columns if they don't exist
+    $afk_check = $conn->query("SHOW COLUMNS FROM chatroom_users LIKE 'is_afk'");
+    if ($afk_check->num_rows === 0) {
+        logMessage("Creating AFK columns...");
+        $conn->query("ALTER TABLE chatroom_users ADD COLUMN is_afk TINYINT(1) DEFAULT 0");
+        $conn->query("ALTER TABLE chatroom_users ADD COLUMN afk_since TIMESTAMP NULL DEFAULT NULL");
+        $conn->query("ALTER TABLE chatroom_users ADD COLUMN manual_afk TINYINT(1) DEFAULT 0");
+        logMessage("AFK columns created");
+    }
+    
+    // First, handle AFK detection (10 minutes of inactivity)
+    $afk_sql = "SELECT 
+        cu.room_id, 
+        cu.user_id_string, 
+        cu.guest_name, 
+        cu.username,
+        cu.is_host,
+        cu.last_activity,
+        cu.is_afk,
+        cu.manual_afk,
+        c.name as room_name,
+        TIMESTAMPDIFF(SECOND, cu.last_activity, NOW()) as inactive_seconds
+    FROM chatroom_users cu 
+    JOIN chatrooms c ON cu.room_id = c.id 
+    WHERE cu.last_activity < DATE_SUB(NOW(), INTERVAL ? SECOND)
+    AND cu.last_activity >= DATE_SUB(NOW(), INTERVAL ? SECOND)
+    AND cu.is_afk = 0
+    AND cu.manual_afk = 0
+    ORDER BY cu.room_id, cu.is_host DESC";
+    
+    $afk_stmt = $conn->prepare($afk_sql);
+    if (!$afk_stmt) {
+        throw new Exception('AFK prepare failed: ' . $conn->error);
+    }
+    
+    $afk_stmt->bind_param("ii", $AFK_TIMEOUT, $DISCONNECT_TIMEOUT);
+    $afk_stmt->execute();
+    $afk_result = $afk_stmt->get_result();
+    
+    $afk_users = [];
+    while ($row = $afk_result->fetch_assoc()) {
+        $afk_users[] = $row;
+    }
+    $afk_stmt->close();
+    
+    logMessage("Found " . count($afk_users) . " users to mark as AFK");
+    
+    // Mark users as AFK and send system messages
+    foreach ($afk_users as $user) {
+        $room_id = $user['room_id'];
+        $user_id_string = $user['user_id_string'];
+        $display_name = $user['username'] ?: $user['guest_name'] ?: 'Unknown User';
+        $inactive_minutes = round($user['inactive_seconds'] / 60, 1);
+        
+        logMessage("Marking user as AFK: $display_name - Inactive for $inactive_minutes minutes");
+        
+        // Mark user as AFK
+        $afk_update = $conn->prepare("UPDATE chatroom_users SET is_afk = 1, afk_since = NOW() WHERE room_id = ? AND user_id_string = ?");
+        $afk_update->bind_param("is", $room_id, $user_id_string);
+        $afk_update->execute();
+        $afk_update->close();
+        
+        // Add system message
+        $afk_message = "$display_name is now AFK due to inactivity.";
+        $add_system_message = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, '', ?, 1, NOW(), 'afk.png', 'system')");
+        if ($add_system_message) {
+            $add_system_message->bind_param("is", $room_id, $afk_message);
+            $add_system_message->execute();
+            $add_system_message->close();
+        }
+        
+        logMessage("✅ User marked as AFK: $display_name");
+    }
+    
+    // Handle users returning from AFK (active again)
+    $return_sql = "SELECT 
+        cu.room_id, 
+        cu.user_id_string, 
+        cu.guest_name, 
+        cu.username,
+        cu.is_afk,
+        cu.manual_afk,
+        c.name as room_name
+    FROM chatroom_users cu 
+    JOIN chatrooms c ON cu.room_id = c.id 
+    WHERE cu.last_activity >= DATE_SUB(NOW(), INTERVAL ? SECOND)
+    AND cu.is_afk = 1
+    AND cu.manual_afk = 0
+    ORDER BY cu.room_id";
+    
+    $return_stmt = $conn->prepare($return_sql);
+    if (!$return_stmt) {
+        throw new Exception('Return prepare failed: ' . $conn->error);
+    }
+    
+    $return_stmt->bind_param("i", $AFK_TIMEOUT);
+    $return_stmt->execute();
+    $return_result = $return_stmt->get_result();
+    
+    $return_users = [];
+    while ($row = $return_result->fetch_assoc()) {
+        $return_users[] = $row;
+    }
+    $return_stmt->close();
+    
+    logMessage("Found " . count($return_users) . " users returning from AFK");
+    
+    // Mark users as no longer AFK
+    foreach ($return_users as $user) {
+        $room_id = $user['room_id'];
+        $user_id_string = $user['user_id_string'];
+        $display_name = $user['username'] ?: $user['guest_name'] ?: 'Unknown User';
+        
+        logMessage("Marking user as active (no longer AFK): $display_name");
+        
+        // Remove AFK status
+        $active_update = $conn->prepare("UPDATE chatroom_users SET is_afk = 0, afk_since = NULL WHERE room_id = ? AND user_id_string = ?");
+        $active_update->bind_param("is", $room_id, $user_id_string);
+        $active_update->execute();
+        $active_update->close();
+        
+        // Add system message
+        $active_message = "$display_name is back from AFK.";
+        $add_system_message = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, '', ?, 1, NOW(), 'active.png', 'system')");
+        if ($add_system_message) {
+            $add_system_message->bind_param("is", $room_id, $active_message);
+            $add_system_message->execute();
+            $add_system_message->close();
+        }
+        
+        logMessage("✅ User marked as active: $display_name");
+    }
+    
+    // Now handle disconnections (60 minutes of inactivity)
     $timeout_sql = "SELECT 
         cu.room_id, 
         cu.user_id_string, 
@@ -64,7 +198,7 @@ try {
     }
     $stmt->close();
     
-    logMessage("Found " . count($inactive_users) . " inactive users");
+    logMessage("Found " . count($inactive_users) . " inactive users for disconnection");
     
     $disconnected_users = [];
     $rooms_processed = [];
@@ -222,18 +356,25 @@ try {
         'status' => 'success',
         'timestamp' => date('Y-m-d H:i:s'),
         'timeout_minutes' => $DISCONNECT_TIMEOUT / 60,
+        'afk_timeout_minutes' => $AFK_TIMEOUT / 60,
         'total_checked' => count($inactive_users),
+        'afk_users_detected' => count($afk_users),
+        'users_returned_from_afk' => count($return_users),
         'disconnected_users' => $disconnected_users,
         'host_transfers' => $host_transfers,
         'rooms_deleted' => $rooms_deleted,
         'summary' => [
+            'users_marked_afk' => count($afk_users),
+            'users_returned_from_afk' => count($return_users),
             'users_disconnected' => count($disconnected_users),
             'hosts_transferred' => count($host_transfers),
             'rooms_deleted' => count($rooms_deleted)
         ]
     ];
     
-    logMessage("Disconnect check completed successfully:");
+    logMessage("Disconnect and AFK check completed successfully:");
+    logMessage("- Users marked AFK: " . count($afk_users));
+    logMessage("- Users returned from AFK: " . count($return_users));
     logMessage("- Users disconnected: " . count($disconnected_users));
     logMessage("- Host transfers: " . count($host_transfers));
     logMessage("- Rooms deleted: " . count($rooms_deleted));
@@ -242,10 +383,10 @@ try {
     
 } catch (Exception $e) {
     $conn->rollback();
-    logMessage("❌ Error during disconnect check: " . $e->getMessage());
+    logMessage("❌ Error during disconnect/AFK check: " . $e->getMessage());
     echo json_encode([
         'status' => 'error',
-        'message' => 'Disconnect check failed: ' . $e->getMessage(),
+        'message' => 'Disconnect/AFK check failed: ' . $e->getMessage(),
         'timestamp' => date('Y-m-d H:i:s')
     ]);
 }

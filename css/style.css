@@ -177,7 +177,7 @@ body {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-    #chatbox img { height:40px; width:40px; }
+    #chatbox img {height: 58px;width: 58px;top: 70px;}
     #chatbox { padding: 10px; }
     .knock-notification {
         position: fixed;

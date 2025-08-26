@@ -187,11 +187,11 @@
         .message-avatar {
             position: absolute;
             left: 0;
-            top: 0;
+            top: 30px;
             width: 58px;
             height: 58px;
             border-radius: 4px; /* FIXED: Changed from 50% to 4px */
-            border: 3px solid var(--user-border-color);
+            /* border: 3px solid var(--user-border-color); */
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             background: #2a2a2a;
         }
@@ -691,7 +691,7 @@
     /* Chat Main Mobile */
     .chat-main {
         flex: 1;
-        max-height: 400px;
+        max-height: 800px;
         display: flex;
         flex-direction: column;
     }
@@ -769,6 +769,7 @@
     
     .message-content {
         font-size: 0.9rem;
+        padding: 0.5rem !important;
     }
     
     .message-time {
@@ -828,7 +829,7 @@
     }
     
     .sidebar-content.mobile-collapsible.expanded {
-        max-height: 400px;
+        min-height: fit-content;
         padding: 10px 15px;
     }
     
@@ -928,4 +929,166 @@
 
 .message-content p {
     margin: 0 !important;
+}
+
+/* External Message Header Styles */
+.message-header-external {
+    margin-left: 70px;
+    margin-bottom: 4px;
+    padding: 2px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: calc(100% - 60px);
+    box-sizing: border-box;
+}
+
+.message-header-external .message-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.message-header-external .message-author {
+    font-weight: 600;
+    color: var(--user-text-color);
+    font-size: 0.9rem;
+    text-shadow: 0 1px 2px var(--user-text-shadow-color);
+    font-style: italic;
+}
+
+.message-header-external .message-time {
+    font-size: 0.75rem;
+    color: #cccccc;
+    opacity: 0.9;
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.message-header-external .message-badges {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* Remove the old header styles from inside the bubble */
+.message-bubble .message-header {
+    display: none;
+}
+
+/* Update message bubble to account for external header */
+.message-bubble {
+    background: var(--user-gradient);
+    border-radius: 18px;
+    padding: 8px 12px 12px 12px; /* Adjusted padding since header is now external */
+    margin-left: 70px;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    border: 4px solid var(--user-border-color);
+    width: fit-content;
+    max-width: calc(100% - 60px);
+    box-sizing: border-box;
+}
+
+/* Message content wrapper to neutralize bubble filters */
+.message-content-wrapper {
+    /* The filter values are set inline in the JavaScript to counteract the bubble's filters */
+    position: relative;
+}
+/*
+
+
+/* Ensure moderator actions and admin info work with new structure */
+.message-content-wrapper .moderator-actions {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+.message-content-wrapper .admin-info {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Reply content styling */
+.message-reply {
+    margin-bottom: 8px;
+    padding: 6px 8px;
+    background: rgba(0,0,0,0.2);
+    border-left: 3px solid rgba(255,255,255,0.3);
+    border-radius: 4px;
+}
+
+.reply-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.reply-author-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 2px;
+}
+
+.reply-author-name {
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.reply-jump-icon {
+    margin-left: auto;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.reply-jump-icon:hover {
+    opacity: 1;
+}
+
+.reply-content {
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .message-header-external {
+        margin-left: 70px;
+        max-width: calc(100% - 45px);
+        font-size: 0.85rem;
+    }
+    
+    .message-header-external .message-author {
+        font-size: 0.8rem;
+    }
+    
+    .message-header-external .message-time {
+        font-size: 0.7rem;
+    }
+    
+    .message-bubble {
+        margin-left: 70px;
+        max-width: calc(100% - 45px);
+        padding: 6px 10px 10px 10px;
+    }
+    
+    .message-content-wrapper .message-content {
+        font-size: 0.9rem;
+    }
+}
+
+.messageimg {
+    margin-top: 12px; margin-bottom: 12px; max-height: 400px; max-width: 800px; border: 2px solid white; border-radius: 4px; height: auto !important; width: auto !important;
+}
+
+.messagelink {
+    background:#534dffb3; color: var(--user-text-color); padding:2px;
 }

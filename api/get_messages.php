@@ -99,6 +99,7 @@ if (in_array('user_id_string', $cu_columns)) {
 $reply_fields = [];
 if (in_array('reply_to_message_id', $msg_columns)) {
     $reply_fields = [
+        'rm.color as reply_original_color',
         'rm.id as reply_original_id',
         'rm.message as reply_original_message',
         'rm.user_id_string as reply_original_user_id_string',
@@ -217,6 +218,7 @@ while ($row = $result->fetch_assoc()) {
                        ($row['reply_original_avatar'] ?: 'default_avatar.jpg');
         
         $processed_message['reply_data'] = [
+            'color' => $row['reply_original_color'],
             'id' => $row['reply_original_id'],
             'message' => $row['reply_original_message'],
             'author' => $reply_author,

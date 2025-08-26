@@ -1,0 +1,193 @@
+/* css/afk.css - AFK System Styles */
+
+/* AFK User Styles */
+.user-item.afk-user {
+    opacity: 0.75;
+    transition: opacity 0.3s ease;
+}
+
+.user-item.afk-user:hover {
+    opacity: 0.9;
+}
+
+.user-item.afk-user .user-avatar {
+    opacity: 0.7;
+    filter: grayscale(40%) blur(0.5px) !important;
+    transition: all 0.3s ease;
+}
+
+.user-item.afk-user:hover .user-avatar {
+    opacity: 0.9;
+    filter: grayscale(20%) blur(0px) !important;
+}
+
+.user-item.afk-user .user-name {
+    color: #999 !important;
+    font-style: italic;
+}
+
+.user-item.afk-user .user-badges-row {
+    opacity: 0.8;
+}
+
+/* AFK Badge */
+.badge-afk {
+    background: linear-gradient(135deg, #6c757d, #5a6268) !important;
+    color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@keyframes afkPulse {
+    0%, 100% { 
+        opacity: 0.8; 
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 1; 
+        transform: scale(1.02);
+    }
+}
+
+/* AFK Toggle Button */
+.btn-toggle-afk {
+    position: relative;
+    transition: all 0.3s ease;
+    border-width: 2px;
+}
+
+.btn-toggle-afk:not(.btn-warning) {
+    border-color: #ffc107;
+    color: #ffc107;
+}
+
+.btn-toggle-afk:not(.btn-warning):hover {
+    background-color: rgba(255, 193, 7, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.2);
+}
+
+.btn-toggle-afk.btn-warning {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+    border-color: #d39e00;
+}
+
+@keyframes afkActiveGlow {
+    0%, 100% { 
+        box-shadow: 0 0 5px rgba(255, 193, 7, 0.5);
+    }
+    50% { 
+        box-shadow: 0 0 15px rgba(255, 193, 7, 0.8), 0 0 25px rgba(255, 193, 7, 0.3);
+    }
+}
+
+/* Buttons when interacting with AFK users */
+.btn.afk-user {
+    opacity: 0.7;
+    border-color: #6c757d !important;
+    color: #6c757d !important;
+    position: relative;
+}
+
+.btn.afk-user:before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, transparent, rgba(108, 117, 125, 0.3), transparent);
+    border-radius: inherit;
+    z-index: -1;
+}
+
+.btn.afk-user:hover {
+    opacity: 0.9;
+    background-color: rgba(108, 117, 125, 0.1) !important;
+}
+
+/* System Messages for AFK */
+.system-message img[src*="afk.png"] {
+    filter: hue-rotate(30deg) brightness(0.8);
+}
+
+.system-message img[src*="active.png"] {
+    filter: hue-rotate(120deg) brightness(1.2);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .btn-toggle-afk {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    .btn-toggle-afk .fas {
+        font-size: 0.8rem;
+    }
+    
+    .user-item.afk-user .user-name {
+        font-size: 0.9rem;
+    }
+    
+    .badge-afk {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+    }
+}
+
+/* Tooltip for AFK duration */
+.afk-tooltip {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.afk-tooltip.show {
+    opacity: 1;
+}
+
+/* Dark theme adjustments */
+.theme-dark .user-item.afk-user .user-name {
+    color: #666 !important;
+}
+
+.theme-dark .btn.afk-user {
+    border-color: #555 !important;
+    color: #555 !important;
+}
+
+/* AFK status indicator in chat messages */
+.message-author-afk {
+    color: #888 !important;
+    font-style: italic;
+}
+
+.message-author-afk:after {
+    content: ' (AFK)';
+    font-size: 0.8em;
+    color: #666;
+    font-weight: normal;
+}
+
+/* Loading states */
+.btn-toggle-afk:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-toggle-afk .fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

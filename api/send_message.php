@@ -59,7 +59,7 @@ function sanitizeMarkup($message) {
         $alt = htmlspecialchars($matches[1], ENT_QUOTES, 'UTF-8');
         $url = trim($matches[2]);
         if ($validateUrl($url)) {
-            return '<img src="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" alt="' . $alt . '" style="max-height: 400px; max-width: 800px; border: 2px solid white;" loading="lazy">';
+            return '<br><img src="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" alt="' . $alt . '" class="messageimg" loading="lazy"><br>';
         }
         return $matches[0]; // Return original if URL is invalid
     }, $message);
@@ -69,7 +69,7 @@ function sanitizeMarkup($message) {
         $text = htmlspecialchars($matches[1], ENT_QUOTES, 'UTF-8');
         $url = trim($matches[2]);
         if ($validateUrl($url)) {
-            return '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener noreferrer">' . $text . '</a>';
+            return '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" class="messagelink" target="_blank" rel="noopener noreferrer">' . $text . '</a>';
         }
         return $matches[0]; // Return original if URL is invalid
     }, $message);
@@ -222,7 +222,51 @@ $bubble_saturation = (int)($_SESSION['user']['bubble_saturation'] ?? 100);
 try {
     $conn->begin_transaction();
     
-    // Insert the message
+    // CHECK AND CLEAR AFK STATUS WHEN SENDING MESSAGE
+    $afk_check_stmt = $conn->prepare("SELECT is_afk, manual_afk, username, guest_name FROM chatroom_users WHERE room_id = ? AND user_id_string = ? AND is_afk = 1");
+    if ($afk_check_stmt) {
+        $afk_check_stmt->bind_param("is", $room_id, $user_id_string);
+        $afk_check_stmt->execute();
+        $afk_result = $afk_check_stmt->get_result();
+        
+        if ($afk_result->num_rows > 0) {
+            // User is currently AFK, clear it
+            $afk_data = $afk_result->fetch_assoc();
+            $display_name = $afk_data['username'] ?: $afk_data['guest_name'] ?: 'Unknown User';
+            
+            error_log("Clearing AFK status for user sending message: $display_name");
+            
+            // Clear AFK status
+            $clear_afk_stmt = $conn->prepare("UPDATE chatroom_users SET is_afk = 0, manual_afk = 0, afk_since = NULL, last_activity = NOW() WHERE room_id = ? AND user_id_string = ?");
+            if ($clear_afk_stmt) {
+                $clear_afk_stmt->bind_param("is", $room_id, $user_id_string);
+                $clear_afk_stmt->execute();
+                $clear_afk_stmt->close();
+                
+                // Add system message about returning from AFK
+                $return_message = "$display_name is back from AFK.";
+                $afk_system_msg = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, '', ?, 1, NOW(), 'active.png', 'system')");
+                if ($afk_system_msg) {
+                    $afk_system_msg->bind_param("is", $room_id, $return_message);
+                    $afk_system_msg->execute();
+                    $afk_system_msg->close();
+                }
+                
+                error_log("✅ Cleared AFK status for user: $display_name");
+            }
+        }
+        $afk_check_stmt->close();
+    }
+    
+    // Update user activity (this is important for the activity tracking system)
+    $activity_stmt = $conn->prepare("UPDATE chatroom_users SET last_activity = NOW() WHERE room_id = ? AND user_id_string = ?");
+    if ($activity_stmt) {
+        $activity_stmt->bind_param("is", $room_id, $user_id_string);
+        $activity_stmt->execute();
+        $activity_stmt->close();
+    }
+    
+    // Insert the actual message
     $stmt = $conn->prepare("
         INSERT INTO messages (
             room_id, user_id, guest_name, message, avatar, user_id_string, 
@@ -309,7 +353,11 @@ try {
     }
     
     $conn->commit();
-    echo json_encode(['status' => 'success', 'message_id' => $message_id]);
+    echo json_encode([
+        'status' => 'success', 
+        'message_id' => $message_id,
+        'afk_cleared' => isset($afk_data) ? true : false
+    ]);
     
 } catch (Exception $e) {
     $conn->rollback();

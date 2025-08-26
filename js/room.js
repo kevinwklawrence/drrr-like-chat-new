@@ -75,6 +75,9 @@ let currentReplyTo = null;
 let mentionCheckInterval = null;
 let mentionPanelOpen = false;
 
+let currentUserAFK = false;
+let manualAFK = false;
+
 function checkIfFriend(userId, callback) {
     if (!userId || currentUser.type !== 'user') {
         callback(false);
@@ -174,6 +177,23 @@ function sendMessage() {
                 if (res.status === 'success') {
                     messageInput.val('');
                     clearReplyInterface(); // Clear reply interface after sending
+                    
+                    // Handle AFK status clearing
+                    if (res.afk_cleared) {
+                        debugLog('🔄 AFK status was cleared due to sending message');
+                        currentUserAFK = false;
+                        manualAFK = false;
+                        updateAFKButton();
+                        
+                        // Show a subtle notification
+                        showToast('You are no longer AFK', 'info');
+                        
+                        // Refresh user list to show updated status
+                        setTimeout(() => {
+                            loadUsers();
+                        }, 500);
+                    }
+                    
                     loadMessages();
                     
                     setTimeout(() => {
@@ -354,7 +374,7 @@ function renderMessage(msg) {
     if (msg.reply_data) {
         const replyData = msg.reply_data;
         replyContent = `
-            <div class="message-reply">
+            <div class="message-reply user-color-${replyData.color}">
                 <div class="reply-header">
                     <img src="images/${replyData.avatar}" 
                          class="reply-author-avatar"
@@ -386,7 +406,7 @@ function renderMessage(msg) {
     let processedMessage = processMentionsInContent(msg.message, msg.user_id_string);
     
     return `
-        <div class="chat-message ${msg.reply_data ? 'has-reply' : ''}" 
+        <div class="chat-message ${userColorClass} ${msg.reply_data ? 'has-reply' : ''}" 
              data-message-id="${msg.id}" 
              data-type="${msg.type || 'chat'}"
              style="position: relative;">
@@ -396,18 +416,25 @@ function renderMessage(msg) {
                  style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); ${avatarClickHandler ? 'cursor: pointer;' : ''}"
                  ${avatarClickHandler}
                  alt="${name}'s avatar">
-            <div class="message-bubble ${userColorClass}" style="filter: hue-rotate(${bubbleHue}deg) saturate(${bubbleSat}%);">
-                <div class="message-header">
-                    <div class="message-header-left">
-                        <div class="message-author">${name}</div>
-                        ${badges ? `<div class="message-badges">${badges}</div>` : ''}
-                    </div>
-                    <div class="message-time">${timestamp}</div>
+            
+            <!-- Message header moved outside the bubble -->
+            <div class="message-header-external">
+                <div class="message-header-left">
+                    <div class="message-author">${name}</div>
+                    ${badges ? `<div class="message-badges">${badges}</div>` : ''}
                 </div>
+                <div class="message-time">${timestamp}</div>
+            </div>
+            
+            <!-- Message bubble with filters, but content isolated from filters -->
+            <div class="message-bubble " style="filter: hue-rotate(${bubbleHue}deg) saturate(${bubbleSat}%);">
                 ${replyContent}
-                <div class="message-content">${processedMessage}</div>
-                ${adminInfo}
-                ${moderatorActions}
+                <!-- Message content wrapper that resets filters -->
+                <div class="message-content-wrapper" style="filter: hue-rotate(${-bubbleHue}deg) saturate(${bubbleSat > 0 ? (10000/bubbleSat) : 100}%);">
+                    <div class="message-content">${processedMessage}</div>
+                    ${adminInfo}
+                    ${moderatorActions}
+                </div>
             </div>
         </div>
     `;
@@ -509,6 +536,16 @@ function renderUser(user) {
     // "You" indicator first
     if (isCurrentUser) {
         badges += '<span class="user-badge badge-you"><i class="fas fa-user-circle"></i> You</span>';
+        // Update current user AFK status
+        currentUserAFK = user.is_afk;
+        manualAFK = user.manual_afk;
+    }
+
+    // AFK Badge (high priority, shows before other badges)
+    if (user.is_afk) {
+        const afkType = user.manual_afk ? 'Manual' : 'Auto';
+        const afkDuration = user.afk_duration_minutes > 0 ? ` (${formatAFKDuration(user.afk_duration_minutes)})` : '';
+        badges += `<span class="user-badge badge-afk" title="${afkType} AFK${afkDuration}"><i class="fas fa-bed"></i> AFK</span>`;
     }
 
     // Admin badge (highest priority)
@@ -537,11 +574,12 @@ function renderUser(user) {
     if (user.user_id_string !== currentUserIdString) {
         actions = `<div class="user-actions">`;
         
-        // Whisper button for all users
+        // Whisper button for all users (but show if they're AFK)
         const displayName = user.display_name || user.username || user.guest_name || 'Unknown';
+        const whisperText = user.is_afk ? 'Whisper (AFK)' : 'Whisper';
         actions += `
-            <button class="btn whisper-btn" onclick="openWhisper('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
-                <i class="fas fa-comment"></i> Whisper
+            <button class="btn whisper-btn ${user.is_afk ? 'afk-user' : ''}" onclick="openWhisper('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
+                <i class="fas fa-comment"></i> ${whisperText}
             </button>
         `;
         
@@ -550,9 +588,10 @@ function renderUser(user) {
             if (friendshipCache.has(user.user_id)) {
                 const isFriend = friendshipCache.get(user.user_id);
                 if (isFriend) {
+                    const pmText = user.is_afk ? 'PM (AFK)' : 'PM';
                     actions += `
-                        <button class="btn btn-primary" onclick="openPrivateMessage(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
-                            <i class="fas fa-envelope"></i> PM
+                        <button class="btn btn-primary ${user.is_afk ? 'afk-user' : ''}" onclick="openPrivateMessage(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
+                            <i class="fas fa-envelope"></i> ${pmText}
                         </button>
                     `;
                 } else {
@@ -574,9 +613,10 @@ function renderUser(user) {
                         const container = $(`#friend-action-${user.user_id}`);
                         if (container.length > 0) {
                             if (isFriend) {
+                                const pmText = user.is_afk ? 'PM (AFK)' : 'PM';
                                 container.html(`
-                                    <button class="btn btn-primary" onclick="openPrivateMessage(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
-                                        <i class="fas fa-envelope"></i> PM
+                                    <button class="btn btn-primary ${user.is_afk ? 'afk-user' : ''}" onclick="openPrivateMessage(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
+                                        <i class="fas fa-envelope"></i> ${pmText}
                                     </button>
                                 `);
                             } else {
@@ -611,18 +651,30 @@ function renderUser(user) {
         }
         
         actions += `</div>`;
+    } else if (isCurrentUser) {
+        // AFK toggle for current user
+       /* actions = `
+            <div class="user-actions">
+                <button class="btn btn-toggle-afk ${currentUserAFK ? 'btn-warning' : 'btn-outline-warning'}" onclick="toggleAFK()">
+                    ${currentUserAFK ? '<i class="fas fa-eye"></i> Back from AFK' : '<i class="fas fa-bed"></i> Go AFK'}
+                </button>
+            </div>
+        `;*/
     }
     
+    // Apply dimmed styling for AFK users
+    const userItemClass = user.is_afk ? 'user-item afk-user' : 'user-item';
+    
     return `
-        <div class="user-item">
+        <div class="${userItemClass}">
             <div class="user-info-row">
                 <img src="images/${avatar}" 
-                     class="user-avatar" 
+                     class="user-avatar ${user.is_afk ? 'afk-avatar' : ''}" 
                      style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); ${avatarClickHandler ? 'cursor: pointer;' : ''}"
                      ${avatarClickHandler}
                      alt="${name}'s avatar">
                 <div class="user-details">
-                    <div class="user-name">${name}</div>
+                    <div class="user-name ${user.is_afk ? 'afk-name' : ''}">${name}</div>
                     <div class="user-badges-row">${badges}</div>
                 </div>
             </div>
@@ -631,22 +683,6 @@ function renderUser(user) {
     `;
 }
 
-// ===== YOUTUBE PLAYER SYSTEM =====
-
-function loadYouTubeAPI() {
-    if (window.YT && window.YT.Player) {
-        youtubeAPIReady = true;
-        initializeYouTubePlayer();
-        return;
-    }
-    
-    debugLog('🎬 Loading YouTube IFrame API...');
-    
-    const tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-}
 
 function initializeYouTubePlayer() {
     if (!youtubeAPIReady || !youtubeEnabled) {
@@ -1512,6 +1548,20 @@ function updateUserActivity(activityType = 'general') {
         success: function(response) {
             if (response.status === 'success') {
                 debugLog(`✅ Activity updated: ${activityType}`);
+                
+                // Handle AFK status changes
+                if (response.afk_status_changed) {
+                    debugLog('🔄 User returned from AFK automatically');
+                    currentUserAFK = false;
+                    manualAFK = false;
+                    updateAFKButton();
+                    
+                    // Refresh user list to show updated status
+                    setTimeout(() => {
+                        loadUsers();
+                        loadMessages();
+                    }, 500);
+                }
             } else if (response.status === 'not_in_room') {
                 debugLog('❌ Not in room - stopping activity tracking');
                 stopActivityTracking();
@@ -1660,7 +1710,6 @@ function displayRoomSettingsModal(settings) {
                                                 <label for="settingsTheme" class="form-label">Theme</label>
                                                 <select class="form-select" id="settingsTheme" style="background: #333; border: 1px solid #555; color: #fff;">
                                                     <option value="default"${settings.theme === 'default' ? ' selected' : ''}>Default</option>
-                                                    <option value="dark"${settings.theme === 'dark' ? ' selected' : ''}>Dark</option>
                                                     <option value="cyberpunk"${settings.theme === 'cyberpunk' ? ' selected' : ''}>Cyberpunk</option>
                                                     <option value="forest"${settings.theme === 'forest' ? ' selected' : ''}>Forest</option>
                                                     <option value="ocean"${settings.theme === 'ocean' ? ' selected' : ''}>Ocean</option>
@@ -2871,6 +2920,12 @@ $(document).ready(function() {
         }
     });
 
+    // Add AFK CSS styles
+    addAFKStyles();
+    
+    // Initialize AFK button state
+    setTimeout(updateAFKButton, 1000);
+
     $(document).on('scroll', '#chatbox', function() {
         userIsScrolling = true;
         setTimeout(function() {
@@ -2939,7 +2994,7 @@ if (savedHidden === 'true') {
     loadMessages();
     loadUsers();
     
-    setInterval(loadMessages, 1000);
+    setInterval(loadMessages, 51000);
     setInterval(loadUsers, 1000);
     
     $('#message').focus();
@@ -4073,6 +4128,118 @@ function addMentionHighlightCSS() {
         }
         
 
+        </style>
+    `;
+    
+    $('head').append(css);
+}
+
+// ===== AFK FUNCTIONS =====
+function toggleAFK() {
+    const button = $('.btn-toggle-afk');
+    const originalText = button.html();
+    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+    
+    $.ajax({
+        url: 'api/toggle_afk.php',
+        method: 'POST',
+        data: { action: 'toggle' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                currentUserAFK = response.is_afk;
+                manualAFK = response.manual_afk;
+                
+                updateAFKButton();
+                
+                // Refresh user list and messages after a short delay
+                setTimeout(() => {
+                    loadUsers();
+                    loadMessages();
+                }, 500);
+                
+                showToast(response.message, 'success');
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AFK toggle error:', error);
+            alert('Failed to toggle AFK status: ' + error);
+        },
+        complete: function() {
+            button.prop('disabled', false);
+            updateAFKButton(); // Restore button text
+        }
+    });
+}
+
+function updateAFKButton() {
+    const button = $('.btn-toggle-afk');
+    
+    if (currentUserAFK) {
+        button.removeClass('btn-outline-warning')
+              .addClass('btn-warning')
+              .html('<i class="fas fa-eye"></i> Back from AFK');
+    } else {
+        button.removeClass('btn-warning')
+              .addClass('btn-outline-warning')
+              .html('<i class="fas fa-bed"></i> Go AFK');
+    }
+}
+
+function formatAFKDuration(minutes) {
+    if (minutes < 60) {
+        return `${minutes}m`;
+    } else {
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+    }
+}
+
+function addAFKStyles() {
+    if ($('#afkStylesCSS').length > 0) return;
+    
+    const css = `
+        <style id="afkStylesCSS">
+        .user-item.afk-user {
+            opacity: 0.7;
+        }
+        
+        .user-item.afk-user .user-avatar {
+            opacity: 0.6;
+            filter: grayscale(30%) !important;
+        }
+        
+        .user-item.afk-user .user-name {
+            color: #888 !important;
+        }
+        
+        .badge-afk {
+            background-color: #6c757d !important;
+            color: white !important;
+        }
+        
+        .btn.afk-user {
+            opacity: 0.8;
+            border-color: #6c757d !important;
+            color: #6c757d !important;
+        }
+        
+        .btn.afk-user:hover {
+            background-color: rgba(108, 117, 125, 0.1) !important;
+        }
+        
+        .btn-toggle-afk {
+            margin-top: 5px;
+        }
+        
+        .system-message img[src*="afk.png"],
+        .system-message img[src*="active.png"] {
+            width: 16px;
+            height: 16px;
+        }
         </style>
     `;
     

@@ -328,10 +328,10 @@
     --user-border-color: #ffffff; 
 }
 
-.user-color-lenn { 
+.user-color-lenn {
     --user-gradient: linear-gradient(to bottom, rgba(255,255,255,1) 1%,rgba(147,185,184,1) 100%);
-    --user-tail-color: #bae2e1; 
-    --user-text-color: #c6491c; 
-    --user-text-shadow-color: #d69d85;
-    --user-border-color: #bae2e1; 
+    --user-tail-color: #bae2e1;
+    --user-text-color: #c6491c;
+    --user-text-shadow-color: #bd7a5e9c;
+    --user-border-color: #bae2e1;
 }
