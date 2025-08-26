@@ -235,7 +235,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $web_base_dir = 'images/';
                                 $allowed_ext = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
                                 $excluded_folders = ['staff', 'bg', 'icon', 'covers'];
-                                $priority_folders = ['time-limited'];
+                                $priority_folders = ['time-limited', 'community'];
                                 $nonpriority_folders = ['default', 'drrrjp', 'mushoku'];
                                 $drrrx2 = ['drrrx2'];
                                 $total_avatars = 0;

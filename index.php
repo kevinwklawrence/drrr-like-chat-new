@@ -49,7 +49,7 @@ if (isset($_SESSION['user'])) {
                                 <?php
                                 $image_base_dir = __DIR__ . '/images';
                                 $web_base_dir = 'images/';
-                                $priority_folders = ['time-limited', 'default', 'mushoku', 'drrrjp'];
+                                $priority_folders = ['time-limited', 'community', 'default', 'mushoku', 'drrrjp'];
                                 $drrrx2 = ['drrrx2'];
                                 $allowed_ext = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
 

@@ -197,6 +197,8 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
     <link href="css/color_previews.css" rel="stylesheet">
     <link href="css/private_bubble_colors.css" rel="stylesheet">
     <link href="css/moderator.css" rel="stylesheet">
+        <link href="css/mentions_replies.css" rel="stylesheet">
+
     <?php if ($room_theme !== 'default'): ?>
     <link href="css/themes/<?php echo htmlspecialchars($room_theme); ?>.css" rel="stylesheet">
 <?php endif; ?>
@@ -547,7 +549,193 @@ if (roomTheme !== 'default') {
         });
     }
 </script>
+    <script>
+// Declare mentionAutocomplete in global scope
+let mentionAutocomplete = null;
+
+// Add mention autocomplete functionality to message input
+$(document).ready(function() {
+    const messageInput = $('#message');
     
+    // Handle @ symbol for mention autocomplete
+    messageInput.on('input', function(e) {
+        const cursorPos = this.selectionStart;
+        const textBefore = this.value.substring(0, cursorPos);
+        const lastAtSymbol = textBefore.lastIndexOf('@');
+        
+        if (lastAtSymbol >= 0) {
+            const query = textBefore.substring(lastAtSymbol + 1);
+            
+            // Only show autocomplete if query is reasonable length and no spaces
+            if (query.length >= 0 && query.length <= 20 && !query.includes(' ')) {
+                showMentionAutocomplete(query, lastAtSymbol, cursorPos);
+            } else {
+                hideMentionAutocomplete();
+            }
+        } else {
+            hideMentionAutocomplete();
+        }
+    });
+    
+    // Handle keyboard navigation in autocomplete
+    messageInput.on('keydown', function(e) {
+        if (mentionAutocomplete && mentionAutocomplete.is(':visible')) {
+            const items = mentionAutocomplete.find('.mention-autocomplete-item');
+            const active = items.filter('.active');
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (active.length === 0) {
+                    items.first().addClass('active');
+                } else {
+                    const next = active.removeClass('active').next();
+                    if (next.length > 0) {
+                        next.addClass('active');
+                    } else {
+                        items.first().addClass('active');
+                    }
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (active.length === 0) {
+                    items.last().addClass('active');
+                } else {
+                    const prev = active.removeClass('active').prev();
+                    if (prev.length > 0) {
+                        prev.addClass('active');
+                    } else {
+                        items.last().addClass('active');
+                    }
+                }
+            } else if (e.key === 'Tab' || e.key === 'Enter') {
+                e.preventDefault();
+                if (active.length > 0) {
+                    active.click();
+                }
+            } else if (e.key === 'Escape') {
+                hideMentionAutocomplete();
+            }
+        }
+    });
+    
+    // Hide autocomplete when clicking outside
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('#message, .mention-autocomplete').length) {
+            hideMentionAutocomplete();
+        }
+    });
+});
+
+function showMentionAutocomplete(query, startPos, cursorPos) {
+    // Get current users in room for autocomplete
+    const users = [];
+    $('#userList .user-item').each(function() {
+        const userName = $(this).find('.user-name').text().trim();
+        const userAvatar = $(this).find('.user-avatar').attr('src');
+        const userIdString = $(this).find('.user-avatar').attr('onclick');
+        
+        if (userName && userName.toLowerCase().includes(query.toLowerCase())) {
+            users.push({
+                name: userName,
+                avatar: userAvatar,
+                id: userIdString
+            });
+        }
+    });
+    
+    if (users.length === 0) {
+        hideMentionAutocomplete();
+        return;
+    }
+    
+    // Create or update autocomplete dropdown
+    if (!mentionAutocomplete || mentionAutocomplete.length === 0) {
+        mentionAutocomplete = $(`
+            <div class="mention-autocomplete" style="
+                position: absolute;
+                background: #36393f;
+                border: 1px solid #40444b;
+                border-radius: 8px;
+                max-height: 200px;
+                overflow-y: auto;
+                z-index: 1000;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+                min-width: 200px;
+            "></div>
+        `);
+        $('body').append(mentionAutocomplete);
+    }
+    
+    // Populate with users
+    let html = '';
+    users.slice(0, 6).forEach(user => {
+        html += `
+            <div class="mention-autocomplete-item" style="
+                padding: 8px 12px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                transition: background 0.2s;
+                color: #dcddde;
+            " onmouseover="$(this).addClass('active').siblings().removeClass('active')" 
+               onclick="insertMention('${user.name}', ${startPos}, ${cursorPos})">
+                <img src="${user.avatar}" style="width: 20px; height: 20px; border-radius: 10px; margin-right: 8px;">
+                <span>${user.name}</span>
+            </div>
+        `;
+    });
+    
+    mentionAutocomplete.html(html);
+    
+    // Position the autocomplete
+    const messageInput = $('#message');
+    const inputPos = messageInput.offset();
+    const inputHeight = messageInput.outerHeight();
+    
+    mentionAutocomplete.css({
+        top: inputPos.top - mentionAutocomplete.outerHeight() - 5,
+        left: inputPos.left,
+        display: 'block'
+    });
+    
+    // Add hover effects
+    mentionAutocomplete.find('.mention-autocomplete-item').hover(
+        function() { $(this).css('background', '#40444b'); },
+        function() { $(this).css('background', 'transparent'); }
+    );
+}
+
+function hideMentionAutocomplete() {
+    if (mentionAutocomplete && mentionAutocomplete.length > 0) {
+        mentionAutocomplete.hide();
+    }
+}
+
+function insertMention(username, startPos, cursorPos) {
+    const messageInput = $('#message')[0];
+    const currentValue = messageInput.value;
+    const beforeAt = currentValue.substring(0, startPos);
+    const afterCursor = currentValue.substring(cursorPos);
+    
+    const newValue = beforeAt + '@' + username + ' ' + afterCursor;
+    messageInput.value = newValue;
+    
+    // Set cursor position after the mention
+    const newCursorPos = startPos + username.length + 2;
+    messageInput.setSelectionRange(newCursorPos, newCursorPos);
+    
+    hideMentionAutocomplete();
+    messageInput.focus();
+}
+
+// Add custom CSS for autocomplete active state
+$('<style>').text(`
+    .mention-autocomplete-item.active {
+        background: #5865f2 !important;
+        color: #ffffff !important;
+    }
+`).appendTo('head');
+</script>
     <script src="js/room.js"></script>
     <script src="js/profile_system.js"></script>
 </body>

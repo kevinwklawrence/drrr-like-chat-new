@@ -69,6 +69,12 @@ let playerQueue = [];
 let playerSuggestions = [];
 let youtubeAPIReady = false;
 
+
+let mentionNotifications = [];
+let currentReplyTo = null;
+let mentionCheckInterval = null;
+let mentionPanelOpen = false;
+
 function checkIfFriend(userId, callback) {
     if (!userId || currentUser.type !== 'user') {
         callback(false);
@@ -147,18 +153,27 @@ function sendMessage() {
     
     updateUserActivity('message_send');
     
+    // Prepare data for sending
+    const sendData = {
+        room_id: roomId,
+        message: message
+    };
+    
+    // Add reply information if replying
+    if (currentReplyTo) {
+        sendData.reply_to = currentReplyTo;
+    }
+    
     $.ajax({
         url: 'api/send_message.php',
         method: 'POST',
-        data: {
-            room_id: roomId,
-            message: message
-        },
+        data: sendData,
         success: function(response) {
             try {
                 let res = JSON.parse(response);
                 if (res.status === 'success') {
                     messageInput.val('');
+                    clearReplyInterface(); // Clear reply interface after sending
                     loadMessages();
                     
                     setTimeout(() => {
@@ -331,16 +346,51 @@ function renderMessage(msg) {
                 </button>
                 <small class="text-danger">IP: ${msg.ip_address}</small>
             </div>
-            
         `;
     }
     
-   /* if (isAdmin && msg.ip_address) {
-        adminInfo = `<div class="admin-info"><span class="text-light">IP: ${msg.ip_address}</span></div>`;
-    }*/
+    // Build reply content if this is a reply
+    let replyContent = '';
+    if (msg.reply_data) {
+        const replyData = msg.reply_data;
+        replyContent = `
+            <div class="message-reply">
+                <div class="reply-header">
+                    <img src="images/${replyData.avatar}" 
+                         class="reply-author-avatar"
+                         style="filter: hue-rotate(${replyData.avatar_hue}deg) saturate(${replyData.avatar_saturation}%);"
+                         alt="${replyData.author}">
+                    <span class="reply-author-name">${replyData.author}</span>
+                    <i class="fas fa-external-link-alt reply-jump-icon" 
+                       onclick="jumpToMessage(${replyData.id})" 
+                       title="Jump to original message"></i>
+                </div>
+                <div class="reply-content">${replyData.message}</div>
+            </div>
+        `;
+    }
+    
+    // Message actions
+    let messageActions = '';
+    if (!msg.is_system && msg.type !== 'system' && msg.type !== 'announcement') {
+        messageActions = `
+            <div class="message-actions">
+                <button class="message-action-btn" onclick="showReplyInterface(${msg.id}, '${name.replace(/'/g, "\\'")}', '${msg.message.replace(/<[^>]*>/g, '').replace(/'/g, "\\'").substring(0, 50)}...')" title="Reply">
+                    <i class="fas fa-reply"></i>
+                </button>
+            </div>
+        `;
+    }
+    
+    // Process mentions in message content
+    let processedMessage = processMentionsInContent(msg.message, msg.user_id_string);
     
     return `
-        <div class="chat-message" data-type="${msg.type || 'chat'}">
+        <div class="chat-message ${msg.reply_data ? 'has-reply' : ''}" 
+             data-message-id="${msg.id}" 
+             data-type="${msg.type || 'chat'}"
+             style="position: relative;">
+            ${messageActions}
             <img src="images/${avatar}" 
                  class="message-avatar" 
                  style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); ${avatarClickHandler ? 'cursor: pointer;' : ''}"
@@ -354,12 +404,25 @@ function renderMessage(msg) {
                     </div>
                     <div class="message-time">${timestamp}</div>
                 </div>
-                <div class="message-content">${msg.message}</div>
+                ${replyContent}
+                <div class="message-content">${processedMessage}</div>
                 ${adminInfo}
                 ${moderatorActions}
             </div>
         </div>
     `;
+}
+
+function processMentionsInContent(content, senderUserId) {
+    // Highlight mentions of current user
+    if (content.includes(`data-user="${currentUserIdString}"`)) {
+        content = content.replace(
+            new RegExp(`<span class="mention" data-user="${currentUserIdString}"`, 'g'),
+            '<span class="mention mention-self" data-user="' + currentUserIdString + '"'
+        );
+    }
+    
+    return content;
 }
 
 // ===== USER MANAGEMENT FUNCTIONS =====
@@ -2868,6 +2931,11 @@ if (savedHidden === 'true') {
         setTimeout(checkForKnocks, 1000);
     }
 
+     setTimeout(() => {
+        initializeMentionsAndReplies();
+        addMentionHighlightCSS();
+    }, 1000);
+
     loadMessages();
     loadUsers();
     
@@ -2886,6 +2954,10 @@ setInterval(checkForNewWhispers, 1000);
 });
 
 $(window).on('beforeunload', function() {
+     if (mentionCheckInterval) {
+        clearInterval(mentionCheckInterval);
+        mentionCheckInterval = null;
+    }
     stopYouTubePlayer();
     stopActivityTracking();
     stopKickDetection();
@@ -3664,4 +3736,345 @@ function executeQuickBan(userIdString, username, ipAddress) {
             button.prop('disabled', false).html(originalText);
         }
     });
+}
+
+
+// Initialize mentions and replies system
+function initializeMentionsAndReplies() {
+    debugLog('🏷️ Initializing mentions and replies system...');
+    
+    // Start checking for mentions
+    mentionCheckInterval = setInterval(checkForMentions, 1000);
+    
+    // Set up event handlers
+    setupMentionsEventHandlers();
+    
+    debugLog('✅ Mentions and replies system initialized');
+}
+
+function setupMentionsEventHandlers() {
+    // Close mention panel when clicking outside
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.mentions-panel, .mentions-counter').length) {
+            closeMentionsPanel();
+        }
+    });
+    
+    // Handle ESC key to close reply interface
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape') {
+            clearReplyInterface();
+        }
+    });
+}
+
+// ===== MENTION FUNCTIONS =====
+
+function checkForMentions() {
+    if (!mentionCheckInterval) return;
+    
+    $.ajax({
+        url: 'api/get_mentions.php',
+        method: 'GET',
+        dataType: 'json',
+        timeout: 5000,
+        success: function(response) {
+            if (response.status === 'success') {
+                mentionNotifications = response.mentions;
+                updateMentionCounter(response.unread_count);
+                
+                // Show new mentions notification
+                if (response.unread_count > 0 && !mentionPanelOpen) {
+                    showNewMentionNotification(response.unread_count);
+                }
+            }
+        },
+        error: function() {
+            // Silently fail
+        }
+    });
+}
+
+function updateMentionCounter(count) {
+    const counter = $('.mentions-counter');
+    
+    if (count > 0) {
+        if (counter.length === 0) {
+            const counterHtml = `
+                <div class="mentions-counter" onclick="toggleMentionsPanel()">
+                    <i class="fas fa-at"></i> <span class="mention-count">${count}</span> mention${count !== 1 ? 's' : ''}
+                </div>
+            `;
+            $('body').append(counterHtml);
+            setTimeout(() => $('.mentions-counter').addClass('show'), 100);
+        } else {
+            counter.find('.mention-count').text(count);
+            counter.addClass('show');
+        }
+    } else {
+        counter.removeClass('show');
+        setTimeout(() => counter.remove(), 200);
+    }
+}
+
+function showNewMentionNotification(count) {
+    // Show a brief notification about new mentions
+    const notification = $(`
+        <div class="mention-notification-toast" style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #faa61a;
+            color: #000;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            z-index: 1060;
+            animation: slideInFromRight 0.3s ease-out;
+        ">
+            <i class="fas fa-at"></i> ${count} new mention${count !== 1 ? 's' : ''}!
+        </div>
+    `);
+    
+    $('body').append(notification);
+    
+    setTimeout(() => {
+        notification.fadeOut(300, function() {
+            $(this).remove();
+        });
+    }, 3000);
+}
+
+function toggleMentionsPanel() {
+    if (mentionPanelOpen) {
+        closeMentionsPanel();
+    } else {
+        openMentionsPanel();
+    }
+}
+
+function openMentionsPanel() {
+    if ($('.mentions-panel').length > 0) {
+        $('.mentions-panel').addClass('show');
+        mentionPanelOpen = true;
+        return;
+    }
+    
+    const panelHtml = `
+        <div class="mentions-panel">
+            <div class="mentions-panel-header">
+                <h6 class="mentions-panel-title">
+                    <i class="fas fa-at"></i> Mentions & Replies
+                </h6>
+                <button class="mentions-panel-close" onclick="closeMentionsPanel()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="mentions-panel-content" id="mentionsContent">
+                Loading mentions...
+            </div>
+        </div>
+    `;
+    
+    $('body').append(panelHtml);
+    
+    setTimeout(() => {
+        $('.mentions-panel').addClass('show');
+        mentionPanelOpen = true;
+        displayMentions();
+    }, 50);
+}
+
+function closeMentionsPanel() {
+    const panel = $('.mentions-panel');
+    if (panel.length > 0) {
+        panel.removeClass('show');
+        mentionPanelOpen = false;
+        
+        setTimeout(() => panel.remove(), 300);
+    }
+}
+
+function displayMentions() {
+    const container = $('#mentionsContent');
+    
+    if (mentionNotifications.length === 0) {
+        container.html(`
+            <div class="mentions-empty">
+                <i class="fas fa-bell"></i>
+                <p>No mentions yet</p>
+                <small>You'll see @mentions and replies here</small>
+            </div>
+        `);
+        return;
+    }
+    
+    let html = '';
+    mentionNotifications.forEach(mention => {
+        const timeAgo = getTimeAgo(new Date(mention.created_at));
+        const typeIcon = mention.type === 'reply' ? 'fa-reply' : 'fa-at';
+        const typeName = mention.type === 'reply' ? 'Reply' : 'Mention';
+        
+        html += `
+            <div class="mention-notification unread ${mention.type}" 
+                 onclick="jumpToMessage(${mention.message_id}, ${mention.id})">
+                <div class="mention-notification-header">
+                    <img src="images/${mention.sender_avatar}" class="mention-notification-avatar" alt="Avatar">
+                    <span class="mention-notification-author">${mention.sender_name}</span>
+                    <span class="mention-notification-type ${mention.type}">
+                        <i class="fas ${typeIcon}"></i> ${typeName}
+                    </span>
+                </div>
+                <div class="mention-notification-content">
+                    ${mention.message}
+                </div>
+                <div class="mention-notification-time">${timeAgo}</div>
+            </div>
+        `;
+    });
+    
+    container.html(html);
+}
+
+function jumpToMessage(messageId, mentionId) {
+    // Mark mention as read
+    markMentionAsRead(mentionId);
+    
+    // Find and highlight the message
+    const messageElement = $(`.chat-message[data-message-id="${messageId}"]`);
+    if (messageElement.length > 0) {
+        // Scroll to message
+        const chatbox = $('#chatbox');
+        const messageTop = messageElement.position().top + chatbox.scrollTop();
+        chatbox.animate({ scrollTop: messageTop - 100 }, 300);
+        
+        // Highlight the message
+        messageElement.addClass('mentioned-highlight');
+        setTimeout(() => {
+            messageElement.removeClass('mentioned-highlight');
+        }, 3000);
+    }
+    
+    closeMentionsPanel();
+}
+
+function markMentionAsRead(mentionId) {
+    $.ajax({
+        url: 'api/mark_mentions_read.php',
+        method: 'POST',
+        data: { mention_id: mentionId },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                // Remove the mention from local array
+                mentionNotifications = mentionNotifications.filter(m => m.id !== mentionId);
+                updateMentionCounter(mentionNotifications.length);
+            }
+        }
+    });
+}
+
+function markAllMentionsAsRead() {
+    $.ajax({
+        url: 'api/mark_mentions_read.php',
+        method: 'POST',
+        data: { mark_all: true },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                mentionNotifications = [];
+                updateMentionCounter(0);
+                displayMentions();
+            }
+        }
+    });
+}
+
+// ===== REPLY FUNCTIONS =====
+
+function showReplyInterface(messageId, author, content) {
+    // Clear any existing reply interface
+    clearReplyInterface();
+    
+    const replyHtml = `
+        <div class="reply-interface" id="replyInterface">
+            <div class="reply-interface-header">
+                <div class="reply-interface-label">
+                    <i class="fas fa-reply"></i>
+                    Replying to ${author}
+                </div>
+                <button class="reply-interface-close" onclick="clearReplyInterface()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="reply-interface-preview">
+                <div class="reply-preview-author">${author}</div>
+                <div class="reply-preview-content">${content}</div>
+            </div>
+        </div>
+    `;
+    
+    $('.chat-input-container').before(replyHtml);
+    currentReplyTo = messageId;
+    
+    // Focus on message input
+    $('#message').focus();
+}
+
+function clearReplyInterface() {
+    $('.reply-interface').remove();
+    currentReplyTo = null;
+}
+
+function getTimeAgo(date) {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    
+    return date.toLocaleDateString();
+}
+
+// Add CSS for mention highlights
+function addMentionHighlightCSS() {
+    if ($('#mentionHighlightCSS').length > 0) return;
+    
+    const css = `
+        <style id="mentionHighlightCSS">
+        @keyframes mentionHighlight {
+            0% { background-color: rgba(250, 166, 26, 0.4); }
+            100% { background-color: transparent; }
+        }
+
+        @keyframes mentionHighlightBorder {
+            0% {--user-border-color: #faa61a !important;
+            --user-tail-color: #faa61a !important;}
+        100% {--user-border-color: transparent !important;
+            --user-tail-color: transparent !important;}
+        }
+
+            @keyframes mentionHighlightBorder {
+        0% {--user-border-color: #faa61a !important;
+            --user-tail-color: #faa61a !important;}
+        100% {--user-border-color: transparent !important;
+            --user-tail-color: transparent !important;}
+        }
+        
+        .mentioned-highlight {
+            animation: mentionHighlight 5s ease-out;
+        }
+        
+        .mentioned-highlight .message-bubble {
+            --user-border-color: #faa61a !important;
+            --user-tail-color: #faa61a !important; 
+        }
+        
+
+        </style>
+    `;
+    
+    $('head').append(css);
 }

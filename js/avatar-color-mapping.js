@@ -102,6 +102,7 @@ const AVATAR_COLOR_MAPPING = {
     'drrrjp/yellow3.png': 'bbyellow',
     'drrrjp/yellow4.png': 'bbyellow',
     'drrrjp/yellow5.png': 'bbyellow',
+    'community/rat_chef.png': 'gray',
     
     
     

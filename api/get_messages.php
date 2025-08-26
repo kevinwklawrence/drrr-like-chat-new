@@ -13,9 +13,9 @@ if ($room_id <= 0) {
     exit;
 }
 
-error_log("Fetching messages for room_id=$room_id"); // Debug
+error_log("Fetching messages for room_id=$room_id");
 
-// Check what columns exist in both tables
+// Check what columns exist in tables
 $msg_columns_query = $conn->query("SHOW COLUMNS FROM messages");
 $msg_columns = [];
 while ($row = $msg_columns_query->fetch_assoc()) {
@@ -55,12 +55,19 @@ if (in_array('avatar_hue', $msg_columns)) {
 if (in_array('avatar_saturation', $msg_columns)) {
     $select_fields[] = 'm.avatar_saturation';
 }
-
 if (in_array('bubble_hue', $msg_columns)) {
     $select_fields[] = 'm.bubble_hue';
 }
 if (in_array('bubble_saturation', $msg_columns)) {
     $select_fields[] = 'm.bubble_saturation';
+}
+
+// Add reply and mention fields
+if (in_array('reply_to_message_id', $msg_columns)) {
+    $select_fields[] = 'm.reply_to_message_id';
+}
+if (in_array('mentions', $msg_columns)) {
+    $select_fields[] = 'm.mentions';
 }
 
 // Add user fields if they exist
@@ -73,7 +80,6 @@ if (in_array('is_admin', $users_columns)) {
 if (in_array('is_moderator', $users_columns)) {
     $select_fields[] = 'u.is_moderator';
 }
-
 
 // Add chatroom_users fields
 if (in_array('ip_address', $cu_columns)) {
@@ -89,6 +95,24 @@ if (in_array('user_id_string', $cu_columns)) {
     $select_fields[] = 'cu.user_id_string';
 }
 
+// Add reply message fields
+$reply_fields = [];
+if (in_array('reply_to_message_id', $msg_columns)) {
+    $reply_fields = [
+        'rm.id as reply_original_id',
+        'rm.message as reply_original_message',
+        'rm.user_id_string as reply_original_user_id_string',
+        'rm.guest_name as reply_original_guest_name',
+        'rm.avatar as reply_original_avatar',
+        'rm.avatar_hue as reply_original_avatar_hue',
+        'rm.avatar_saturation as reply_original_avatar_saturation',
+        'ru.username as reply_original_registered_username',
+        'ru.avatar as reply_original_registered_avatar',
+        'rcu.username as reply_original_chatroom_username'
+    ];
+    $select_fields = array_merge($select_fields, $reply_fields);
+}
+
 $sql = "SELECT " . implode(', ', $select_fields) . "
         FROM messages m 
         LEFT JOIN users u ON m.user_id = u.id 
@@ -97,11 +121,24 @@ $sql = "SELECT " . implode(', ', $select_fields) . "
                 (m.user_id IS NOT NULL AND m.user_id = cu.user_id) OR 
                 (m.user_id IS NULL AND m.guest_name = cu.guest_name) OR
                 (m.user_id IS NULL AND m.user_id_string = cu.user_id_string)
-            )
-        WHERE m.room_id = ? 
-        ORDER BY m.timestamp ASC";
+            )";
 
-error_log("Messages query: " . $sql); // Debug
+// Add reply message join if column exists
+if (in_array('reply_to_message_id', $msg_columns)) {
+    $sql .= " LEFT JOIN messages rm ON m.reply_to_message_id = rm.id
+              LEFT JOIN users ru ON rm.user_id = ru.id
+              LEFT JOIN chatroom_users rcu ON rm.room_id = rcu.room_id 
+                AND (
+                    (rm.user_id IS NOT NULL AND rm.user_id = rcu.user_id) OR 
+                    (rm.user_id IS NULL AND rm.guest_name = rcu.guest_name) OR
+                    (rm.user_id IS NULL AND rm.user_id_string = rcu.user_id_string)
+                )";
+}
+
+$sql .= " WHERE m.room_id = ? 
+          ORDER BY m.timestamp ASC";
+
+error_log("Messages query: " . $sql);
 
 $stmt = $conn->prepare($sql);
 
@@ -163,20 +200,42 @@ while ($row = $result->fetch_assoc()) {
         'is_host' => (bool)($row['is_host'] ?? false),
         
         // Admin information
-        'ip_address' => $row['ip_address'] ?? null
+        'ip_address' => $row['ip_address'] ?? null,
+        
+        // Reply and mention information
+        'reply_to_message_id' => $row['reply_to_message_id'] ?? null,
+        'mentions' => $row['mentions'] ?? null
     ];
+    
+    // Add reply information if this is a reply
+    if (!empty($row['reply_to_message_id']) && !empty($row['reply_original_id'])) {
+        $reply_author = $row['reply_original_registered_username'] ?: 
+                       ($row['reply_original_chatroom_username'] ?: 
+                        $row['reply_original_guest_name'] ?: 'Unknown');
+        
+        $reply_avatar = $row['reply_original_registered_avatar'] ?: 
+                       ($row['reply_original_avatar'] ?: 'default_avatar.jpg');
+        
+        $processed_message['reply_data'] = [
+            'id' => $row['reply_original_id'],
+            'message' => $row['reply_original_message'],
+            'author' => $reply_author,
+            'user_id_string' => $row['reply_original_user_id_string'],
+            'avatar' => $reply_avatar,
+            'avatar_hue' => (int)($row['reply_original_avatar_hue'] ?? 0),
+            'avatar_saturation' => (int)($row['reply_original_avatar_saturation'] ?? 100)
+        ];
+    }
     
     $messages[] = $processed_message;
 }
 
 $stmt->close();
 
-
-
-error_log("Retrieved " . count($messages) . " messages for room_id=$room_id"); // Debug
+error_log("Retrieved " . count($messages) . " messages for room_id=$room_id");
 echo json_encode($messages);
 
-// NEW: Handle disappearing messages cleanup during message loading
+// Handle disappearing messages cleanup during message loading
 if (isset($_GET['room_id'])) {
     $room_id_for_cleanup = (int)$_GET['room_id'];
     
@@ -214,5 +273,4 @@ if (isset($_GET['room_id'])) {
         $cleanup_check->close();
     }
 }
-
 ?>
