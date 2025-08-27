@@ -116,22 +116,7 @@ if ($stmt) {
             <i class="fas fa-comments"></i> Chat Lounge
         </h1>
     </div>
-    <div class="text-center">
-        <?php if ($is_admin || $is_moderator): ?>
-            <button class="btn btn-warning me-2" onclick="showAnnouncementModal()">
-                <i class="fas fa-bullhorn"></i> Announcement
-            </button>
-            <a href="moderator.php" class="btn btn-info me-2">
-                <i class="fas fa-shield-alt"></i> Moderator Panel
-            </a>
-        <?php endif; ?>
-        <button class="btn create-room-btn me-2" onclick="showCreateRoomModal()">
-            <i class="fas fa-plus"></i> Create Room
-        </button>
-        <a href="logout.php" class="btn logout-btn">
-            <i class="fas fa-sign-out-alt"></i> Logout
-        </a>
-    </div>
+ 
 </div>
             
             <div class="row">
@@ -181,12 +166,32 @@ if ($stmt) {
                 <div class="col-lg-9">
                     <div class="rooms-section-header">
                         <div class="d-flex justify-content-between align-items-center">
+                            <div>
                             <h3 class="rooms-section-title">
-                                <i class="fas fa-door-open"></i> Available Rooms
-                            </h3>
-                            <button class="btn btn-outline-secondary refresh-btn" onclick="loadRoomsWithUsers()">
-                                <i class="fas fa-sync-alt"></i> Refresh
+                                <i class="fas fa-door-open"></i> Rooms
+                                <button class="btn btn-outline-secondary refresh-btn" onclick="loadRoomsWithUsers()">
+                                <i class="fas fa-sync-alt"></i>
                             </button>
+                            </h3>
+                            
+                            </div>
+                            <div>
+                                <?php if ($is_admin || $is_moderator): ?>
+            <button class="btn btn-warning me-2" onclick="showAnnouncementModal()">
+                <i class="fas fa-bullhorn"></i> Announce
+            </button>
+            <a href="moderator.php" class="btn btn-info me-2">
+                <i class="fas fa-shield-alt"></i> Dashboard
+            </a>
+        <?php endif; ?>
+        <button class="btn create-room-btn me-2" onclick="showCreateRoomModal()">
+            <i class="fas fa-plus"></i> Create
+        </button>
+        <a href="logout.php" class="btn logout-btn">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+                            
+                            </div>
                         </div>
                     </div>
                     <div id="roomsList">

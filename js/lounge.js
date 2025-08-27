@@ -870,7 +870,7 @@ window.showCreateRoomModal = function() {
                                             <div class="form-check form-switch">
                                                 <input class="form-check-input" type="checkbox" id="youtubeEnabled">
                                                 <label class="form-check-label" for="youtubeEnabled">
-                                                    <i class="fab fa-youtube text-danger"></i> <strong>Enable YouTube Player</strong>
+                                                    <i class="fab fa-youtube text-danger"></i> <strong>Enable YouTube Player</strong> <span class="betatext" />
                                                 </label>
                                             </div>
                                             <small class="form-text text-muted">Allow synchronized video playback for all users</small>

@@ -217,6 +217,7 @@
     color: white;
     font-weight: 500;
     transition: all 0.3s ease;
+    padding: 9px 12px;
 }
 
 .btn-info:hover {
@@ -232,6 +233,7 @@
     color: white;
     font-weight: 500;
     transition: all 0.3s ease;
+    padding: 9px 12px;
 }
 
 .btn-warning:hover {

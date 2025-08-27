@@ -8,16 +8,25 @@ body {
         .container-fluid {
             background-color: #1a1a1a;
             min-height: 100vh;
-            padding: 20px;
+            padding: 0 !important;
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            align-content: center;
         }
         
         .lounge-container {
             background: #222;
             border: 1px solid #333;
-            border-radius: 8px;
-            padding: 20px;
+            border-radius: 15px;
+            padding: 40px;
             margin: 0 auto;
-            max-width: 1200px;
+            max-width: 1400px;
+            width: 100%;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            padding-bottom: 10px;
         }
         
         .user-profile-card {
@@ -70,7 +79,7 @@ body {
             border: 1px solid #404040;
             border-radius: 8px;
             padding: 20px;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
         
         .lounge-title {

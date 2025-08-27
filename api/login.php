@@ -28,6 +28,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Stop people from using Lenn's color.
+    if (($username !== 'Lenn') && ($selected_color === 'lenn')) {
+        error_log("Invalid selection");
+        echo json_encode(['status' => 'error', 'message' => 'Designated username and color do not match.']);
+        exit;
+    }
+
     // Validate color selection if provided
     $valid_colors = [
     'black', 'policeman2','negative','gray','tan','blue','cobalt','lavender','lavender2',

@@ -4,14 +4,6 @@ let userHasInteractedWithBubbleSliders = false;
 let loadedUserCustomization = null; // Store loaded user settings
 
 $(document).ready(function() {
-    $('#customizeCollapse').on('show.bs.collapse', function () {
-        $('#customizeChevron').removeClass('fa-chevron-down').addClass('fa-chevron-up');
-    });
-
-    $('#customizeCollapse').on('hide.bs.collapse', function () {
-        $('#customizeChevron').removeClass('fa-chevron-up').addClass('fa-chevron-down');
-    });
-
     // NUCLEAR OPTION: Completely disable native form submission
     $('#userLoginForm').attr('onsubmit', 'return false;');
     $('#userLoginForm').removeAttr('action');
@@ -80,7 +72,7 @@ $(document).ready(function() {
         
         // Auto-select color based on avatar (only if user hasn't manually changed it)
         if (!userManuallySelectedColor) {
-            const defaultColor = getAvatarDefaultColor(avatarPath);
+            const defaultColor = typeof getAvatarDefaultColor === 'function' ? getAvatarDefaultColor(avatarPath) : 'black';
             selectColor(defaultColor, document.querySelector(`[data-color="${defaultColor}"]`), true);
         }
         
@@ -89,6 +81,7 @@ $(document).ready(function() {
         $('#noAvatarSelected').hide();
         
         updateAvatarFilter();
+        syncModalPreviews(); // Sync with modals
     });
 
     // Filter dropdown
@@ -113,6 +106,16 @@ $(document).ready(function() {
             // Clear preview when username is too short
             clearUserCustomizationPreview();
         }
+    });
+
+    $('#customizationModal').on('show.bs.modal', function() {
+    syncModalPreviews();
+});
+
+    // Add this to track manual color clicks
+    $(document).on('click', '.color-option', function() {
+        const colorName = $(this).data('color');
+        selectColor(colorName, this, false); // false = manual selection
     });
 
     function fetchUserCustomization(username) {
@@ -169,6 +172,7 @@ $(document).ready(function() {
         
         // Add visual indicator that settings are loaded
         showSettingsLoadedIndicator();
+        syncModalPreviews(); // Sync with modals
     }
 
     function clearUserCustomizationPreview() {
@@ -200,6 +204,7 @@ $(document).ready(function() {
         }
         
         hideSettingsLoadedIndicator();
+        syncModalPreviews(); // Sync with modals
     }
 
     function showSettingsLoadedIndicator() {
@@ -385,7 +390,7 @@ function randomAvatar() {
 }
 
 function selectColor(colorName, element, isAutomatic = false) {
-    // Track if this was a manual selection (not automatic from avatar or saved settings)
+    // Track if this was a manual selection (not automatic from avatar)
     if (!isAutomatic) {
         userManuallySelectedColor = true;
     }
@@ -401,14 +406,22 @@ function selectColor(colorName, element, isAutomatic = false) {
     // Update hidden input
     document.getElementById('selectedColor').value = colorName;
     
-    // Update preview
+    // Update main preview
     const preview = document.getElementById('selectedColorPreview');
     preview.className = `preview-circle color-${colorName}`;
     
-    // Update color name
-    document.getElementById('selectedColorName').textContent = colorName.charAt(0).toUpperCase() + colorName.slice(1);
+    // Update modal preview
+    const modalPreview = document.getElementById('modalSelectedColorPreview');
+    if (modalPreview) {
+        modalPreview.className = `preview-circle color-${colorName}`;
+    }
     
-    // Update bubble filter preview
+    // Update color name (if element exists)
+    const colorNameElement = document.getElementById('selectedColorName');
+    if (colorNameElement) {
+        colorNameElement.textContent = colorName.charAt(0).toUpperCase() + colorName.slice(1);
+    }
+    
     updateColorPreview();
 }
 
@@ -419,19 +432,25 @@ function updateAvatarFilter() {
     $('#hueValue').text(hue + '°');
     $('#saturationValue').text(saturation + '%');
     
-    // Apply filter to any selected avatar
+    const filter = `hue-rotate(${hue}deg) saturate(${saturation}%)`;
+    
+    // Apply filter to main selected avatar
     const selectedAvatar = $('.avatar.selected');
     if (selectedAvatar.length > 0) {
-        const filter = `hue-rotate(${hue}deg) saturate(${saturation/100})`;
         selectedAvatar.css('filter', filter);
         selectedAvatar.addClass('avatar-customized');
     }
     
-    // Also apply to preview image if it exists
+    // Apply to main preview image
     const previewImg = $('#selectedAvatarImg');
     if (previewImg.length > 0 && previewImg.is(':visible')) {
-        const filter = `hue-rotate(${hue}deg) saturate(${saturation/100})`;
         previewImg.css('filter', filter);
+    }
+    
+    // Apply to modal preview image
+    const modalAvatarImg = $('#modalSelectedAvatarImg');
+    if (modalAvatarImg.length > 0) {
+        modalAvatarImg.css('filter', filter);
     }
 }
 
@@ -451,9 +470,55 @@ function updateColorPreview() {
     const hue = $('#bubbleHueSlider').val() || 0;
     const saturation = $('#bubbleSaturationSlider').val() || 100;
     
-    const preview = $('#selectedColorPreview');
     const filter = `hue-rotate(${hue}deg) saturate(${saturation}%)`;
+    
+    // Update main preview
+    const preview = $('#selectedColorPreview');
     preview.css('filter', filter);
+    
+    // Update modal preview
+    const modalPreview = $('#modalSelectedColorPreview');
+    if (modalPreview.length > 0) {
+        modalPreview.css('filter', filter);
+    }
+}
+
+// Updated individual reset functions
+function resetAvatarSliders() {
+    $('#hueSlider').val(0);
+    $('#saturationSlider').val(100);
+    $('#hueValue').text('0°');
+    $('#saturationValue').text('100%');
+    updateAvatarFilter(); // This will automatically update modal preview
+    
+    // For login.js - mark as interacted so it gets saved
+    if (typeof userHasInteractedWithSliders !== 'undefined') {
+        userHasInteractedWithSliders = true;
+    }
+}
+
+function resetChatColorSettings() {
+    // Reset to black color
+    const blackOption = document.querySelector('[data-color="black"]');
+    if (blackOption) {
+        selectColor('black', blackOption, true); // This will automatically update modal preview
+        // For login.js - mark as manually selected
+        if (typeof userManuallySelectedColor !== 'undefined') {
+            userManuallySelectedColor = true;
+        }
+    }
+    
+    // Reset sliders
+    $('#bubbleHueSlider').val(0);
+    $('#bubbleSaturationSlider').val(100);
+    $('#bubbleHueValue').text('0°');
+    $('#bubbleSaturationValue').text('100%');
+    updateBubbleFilter(); // This will automatically update modal preview
+    
+    // For login.js - mark as interacted so it gets saved
+    if (typeof userHasInteractedWithBubbleSliders !== 'undefined') {
+        userHasInteractedWithBubbleSliders = true;
+    }
 }
 
 // Add this to track manual color clicks:
@@ -462,8 +527,8 @@ $(document).on('click', '.color-option', function() {
     selectColor(colorName, this, false); // false = manual selection
 });
 
-// Add this to your login.js file
-
+// Add performance optimization classes (keeping the existing code)
+// ... (keep all the existing performance optimization classes from the original login.js)
 class LazyAvatarLoader {
     constructor() {
         this.observer = null;
@@ -852,3 +917,47 @@ document.addEventListener('DOMContentLoaded', function() {
     statsDiv.style.cssText = 'position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-size: 12px; z-index: 1000;';
     document.body.appendChild(statsDiv);
 });
+
+
+function syncModalPreviews() {
+    // Sync avatar previews
+    const mainAvatarPreview = $('#selectedAvatarPreview');
+    const mainAvatarImg = $('#selectedAvatarImg');
+    const mainNoAvatar = $('#noAvatarSelected');
+    
+    // Modal preview elements
+    const modalAvatarPreview = $('#modalSelectedAvatarPreview');
+    const modalAvatarImg = $('#modalSelectedAvatarImg');
+    const modalNoAvatar = $('#modalNoAvatarSelected');
+    
+    if (mainAvatarPreview.is(':visible')) {
+        // Avatar is selected - show in modal
+        modalAvatarImg.attr('src', mainAvatarImg.attr('src'));
+        
+        // Apply current avatar filter to modal image
+        const currentFilter = mainAvatarImg.css('filter') || '';
+        modalAvatarImg.css('filter', currentFilter);
+        
+        modalAvatarPreview.show();
+        modalNoAvatar.hide();
+    } else {
+        // No avatar selected
+        modalAvatarPreview.hide();
+        modalNoAvatar.show();
+    }
+    
+    // Sync color previews
+    const mainColorPreview = $('#selectedColorPreview');
+    const modalColorPreview = $('#modalSelectedColorPreview');
+    
+    // Copy class and filter from main preview
+    modalColorPreview.attr('class', mainColorPreview.attr('class'));
+    
+    const currentColorFilter = mainColorPreview.css('filter') || '';
+    modalColorPreview.css('filter', currentColorFilter);
+}
+
+function resetAllSettings() {
+    resetAvatarSliders();
+    resetChatColorSettings();
+}

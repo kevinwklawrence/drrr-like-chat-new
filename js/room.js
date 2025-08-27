@@ -1819,7 +1819,7 @@ function displayRoomSettingsModal(settings) {
                                                 <div class="form-check form-switch">
                                                     <input class="form-check-input" type="checkbox" id="settingsYouTubeEnabled"${settings.youtube_enabled ? ' checked' : ''}>
                                                     <label class="form-check-label" for="settingsYouTubeEnabled">
-                                                        <i class="fab fa-youtube text-danger"></i> <strong>Enable YouTube Player</strong>
+                                                        <i class="fab fa-youtube text-danger"></i> <strong>Enable YouTube Player</strong> <span class="betatext" />
                                                     </label>
                                                 </div>
                                                 <small class="form-text text-muted">Allow synchronized video playback for all users in the room</small>
@@ -2994,7 +2994,7 @@ if (savedHidden === 'true') {
     loadMessages();
     loadUsers();
     
-    setInterval(loadMessages, 51000);
+    setInterval(loadMessages, 1000);
     setInterval(loadUsers, 1000);
     
     $('#message').focus();

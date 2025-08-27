@@ -605,7 +605,7 @@ body {
         .container-fluid {
             background-color: #1a1a1a;
             min-height: 100vh;
-            padding: 20px;
+            padding: 0;
         }
         
         .lounge-container {

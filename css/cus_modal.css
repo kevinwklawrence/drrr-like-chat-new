@@ -1,0 +1,721 @@
+/* CORRECTED CSS - Add these styles to your guest_login.css and member_login.css files */
+
+/* Keep the original preview row structure intact */
+.selected-preview-row {
+    display: flex;
+    align-items: center;
+    gap: 24px; /* space between avatar and color preview */
+}
+
+.selected-color-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.selected-avatar-preview,
+.selected-color-preview {
+    margin-bottom: 0;
+}
+
+/* NEW: Settings buttons row */
+.settings-buttons-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.settings-btn {
+    background: #404040;
+    border: 1px solid #666;
+    color: #e0e0e0;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.settings-btn:hover {
+    background: #555;
+    color: #fff;
+    border-color: #777;
+    transform: translateY(-1px);
+}
+
+.settings-btn:active {
+    transform: translateY(0);
+}
+
+/* Modal customizations */
+.modal-content {
+    background: #2a2a2a !important;
+    border: 1px solid #404040;
+    color: #e0e0e0;
+}
+
+.modal-header {
+    border-bottom: 1px solid #404040;
+    background: #333;
+}
+
+.modal-body {
+    background: #2a2a2a;
+    padding: 25px;
+}
+
+.modal-footer {
+    border-top: 1px solid #404040;
+    background: #333;
+}
+
+.modal-title {
+    color: #fff;
+}
+
+/* Color slider improvements */
+.color-slider-container {
+    margin-bottom: 25px;
+}
+
+.color-slider {
+    width: 100%;
+    height: 8px;
+    background: #555;
+    border-radius: 5px;
+    outline: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
+
+.color-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #007bff;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.color-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #007bff;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.slider-value {
+    background: #555;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    min-width: 40px;
+    text-align: center;
+}
+
+/* Modal color grid adjustments */
+.modal .color-grid {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid #555;
+    border-radius: 8px;
+    background: #1a1a1a;
+}
+
+.modal .color-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal .color-grid::-webkit-scrollbar-track {
+    background: #333;
+}
+
+.modal .color-grid::-webkit-scrollbar-thumb {
+    background: #666;
+    border-radius: 3px;
+}
+
+/* Button styling in modals */
+.modal .btn-secondary {
+    background: #6c757d;
+    border-color: #6c757d;
+}
+
+.modal .btn-secondary:hover {
+    background: #5a6268;
+    border-color: #545b62;
+}
+
+.modal .btn-primary {
+    background: #28a745;
+    border-color: #28a745;
+}
+
+.modal .btn-primary:hover {
+    background: #218838;
+    border-color: #1e7e34;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .selected-preview-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .settings-buttons-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .settings-btn {
+        font-size: 0.85rem;
+        padding: 8px 12px;
+    }
+
+    .modal-dialog {
+        margin: 10px;
+    }
+
+    .modal-lg {
+        max-width: calc(100vw - 20px);
+    }
+}
+
+@media (max-width: 480px) {
+    .selected-color-preview {
+        width: 220px;
+    }
+    
+    .modal .color-grid {
+        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+        gap: 8px;
+        max-height: 150px;
+    }
+    
+    .settings-btn {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+    }
+}
+
+/* Modal Preview Styles - Add to both guest_login.css and member_login.css */
+
+/* Modal Preview Section */
+.modal-preview-section {
+    background: #1a1a1a;
+    border: 2px solid #404040;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.modal-preview-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.modal-avatar-preview,
+.modal-color-preview {
+    text-align: center;
+}
+
+.modal-avatar-display {
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 8px;
+    padding: 20px;
+    width: 140px;
+    height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-avatar-img {
+    border: 2px solid #007bff;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.modal-color-display {
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 8px;
+    padding: 20px;
+    width: 140px;
+    height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-preview-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+    border: 3px solid rgb(255 255 255);
+    background-size: 100% 100%;
+    transition: all 0.3s ease;
+}
+
+/* Modal sizing adjustments */
+.modal-xl {
+    max-width: 1200px;
+}
+
+/* Responsive modal previews */
+@media (max-width: 768px) {
+    .modal-preview-row {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .modal-avatar-display,
+    .modal-color-display {
+        width: 120px;
+        height: 120px;
+        padding: 15px;
+    }
+    
+    .modal-preview-circle {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .modal-avatar-img {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .modal-xl {
+        max-width: calc(100vw - 20px);
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-preview-section {
+        padding: 15px;
+    }
+    
+    .modal-avatar-display,
+    .modal-color-display {
+        width: 100px;
+        height: 100px;
+        padding: 10px;
+    }
+    
+    .modal-preview-circle {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .modal-avatar-img {
+        width: 50px;
+        height: 50px;
+    }
+}
+
+/* Combined Modal CSS - Add to both guest_login.css and member_login.css */
+
+/* Keep existing preview row structure */
+.selected-preview-row {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.selected-color-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.selected-avatar-preview,
+.selected-color-preview {
+    margin-bottom: 0;
+    gap: 0;
+}
+
+/* Single settings button */
+.settings-buttons-row {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.settings-btn {
+    background: #404040;
+    border: 1px solid #666;
+    color: #e0e0e0;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+    width: 100%;
+}
+
+.settings-btn:hover {
+    background: #555;
+    color: #fff;
+    border-color: #777;
+    transform: translateY(-1px);
+}
+
+.settings-btn:active {
+    transform: translateY(0);
+}
+
+/* Modal customizations */
+.modal-content {
+    background: #2a2a2a !important;
+    border: 1px solid #404040;
+    color: #e0e0e0;
+}
+
+.modal-header {
+    border-bottom: 1px solid #404040;
+    background: #333;
+}
+
+.modal-body {
+    background: #2a2a2a;
+    padding: 25px;
+}
+
+.modal-footer {
+    border-top: 1px solid #404040;
+    background: #333;
+}
+
+.modal-title {
+    color: #fff;
+}
+
+/* Modal Preview Section */
+.modal-preview-section {
+    background: #1a1a1a;
+    border: 2px solid #404040;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.modal-preview-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.modal-avatar-preview,
+.modal-color-preview {
+    text-align: center;
+}
+
+.modal-avatar-display {
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 8px;
+    padding: 20px;
+    width: 140px;
+    height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-avatar-img {
+    border: 2px solid #007bff;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.modal-color-display {
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 8px;
+    padding: 20px;
+    width: 252px;
+    height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-preview-circle {
+    width: 80px !important;
+    height: 80px;
+    border-radius: 12px;
+    border: 3px solid rgb(255 255 255);
+    background-size: 100% 100%;
+    transition: all 0.3s ease;
+}
+
+/* Tab styling for modal */
+.nav-tabs {
+    border-bottom: 1px solid #404040;
+}
+
+.nav-tabs .nav-link {
+    background: #333;
+    border: 1px solid #404040;
+    color: #e0e0e0;
+    margin-bottom: -1px;
+    border-radius: 8px 8px 0 0;
+    margin-right: 5px;
+    transition: all 0.2s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    background: #404040;
+    border-color: #555;
+    color: #fff;
+}
+
+.nav-tabs .nav-link.active {
+    background: #2a2a2a;
+    border-color: #404040 #404040 #2a2a2a;
+    color: #007bff;
+    font-weight: 600;
+}
+
+.tab-content {
+    background: #2a2a2a;
+    padding: 20px;
+    border-radius: 0 0 8px 8px;
+    min-height: 300px;
+}
+
+/* Color slider improvements */
+.color-slider-container {
+    margin-bottom: 25px;
+}
+
+.color-slider {
+    width: 100%;
+    height: 8px;
+    background: #555;
+    border-radius: 5px;
+    outline: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
+
+.color-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #007bff;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.color-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #007bff;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.slider-value {
+    background: #555;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    min-width: 40px;
+    text-align: center;
+}
+
+/* Modal color grid adjustments */
+.modal .color-grid {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid #555;
+    border-radius: 8px;
+    background: #1a1a1a;
+}
+
+.modal .color-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal .color-grid::-webkit-scrollbar-track {
+    background: #333;
+}
+
+.modal .color-grid::-webkit-scrollbar-thumb {
+    background: #666;
+    border-radius: 3px;
+}
+
+/* Button styling in modals */
+.modal .btn-secondary {
+    background: #6c757d;
+    border-color: #6c757d;
+}
+
+.modal .btn-secondary:hover {
+    background: #5a6268;
+    border-color: #545b62;
+}
+
+.modal .btn-outline-secondary {
+    background: transparent;
+    border-color: #6c757d;
+    color: #6c757d;
+}
+
+.modal .btn-outline-secondary:hover {
+    background: #6c757d;
+    border-color: #6c757d;
+    color: #fff;
+}
+
+.modal .btn-primary {
+    background: #28a745;
+    border-color: #28a745;
+}
+
+.modal .btn-primary:hover {
+    background: #218838;
+    border-color: #1e7e34;
+}
+
+.modal-xl {
+    max-width: 1200px;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .selected-preview-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .settings-buttons-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .settings-btn {
+        font-size: 0.85rem;
+        padding: 8px 12px;
+    }
+
+    .modal-dialog {
+        margin: 10px;
+    }
+
+    .modal-xl {
+        max-width: calc(100vw - 20px);
+    }
+    
+    .modal-preview-row {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .modal-avatar-display,
+    .modal-color-display {
+        width: 120px;
+        height: 120px;
+        padding: 15px;
+    }
+    
+    .modal-preview-circle {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .modal-avatar-img {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .nav-tabs .nav-link {
+        font-size: 0.85rem;
+        padding: 8px 12px;
+    }
+    
+    .tab-content {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .selected-color-preview {
+        width: 220px;
+    }
+    
+    .modal .color-grid {
+        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+        gap: 8px;
+        max-height: 150px;
+    }
+    
+    .settings-btn {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+    }
+    
+    .modal-preview-section {
+        padding: 15px;
+    }
+    
+    .modal-avatar-display,
+    .modal-color-display {
+        width: 100px;
+        height: 100px;
+        padding: 10px;
+    }
+    
+    .modal-preview-circle {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .modal-avatar-img {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .nav-tabs {
+        flex-direction: column;
+    }
+    
+    .nav-tabs .nav-link {
+        margin-right: 0;
+        margin-bottom: 2px;
+        border-radius: 6px;
+    }
+}

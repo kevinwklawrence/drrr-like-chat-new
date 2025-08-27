@@ -26,6 +26,7 @@ if (isset($_SESSION['user'])) {
     <link href="css/bubble_colors.css" rel="stylesheet">
     <link href="css/color_previews.css" rel="stylesheet">
     <link href="css/private_bubble_colors.css" rel="stylesheet">
+    <link href="css/cus_modal.css" rel="stylesheet">
 </head>
 <body>
     <div class="container-fluid">
@@ -102,122 +103,169 @@ if (isset($_SESSION['user'])) {
                         <!-- Color Selection -->
                          <div class="avatar-selection-card">
                             <div class="mb-4">
-                                <label for="guestName" class="form-label">
-                                    <i class="fas fa-user"></i> Display Name
-                                </label>
-                                <input type="text" 
-                                       class="form-control form-control-lg" 
-                                       id="guestName" 
-                                       placeholder="Enter your display name"
-                                       required 
-                                       maxlength="30">
-                                <div class="form-text text-muted">This is how others will see you in chat</div>
-                            </div>
-                            
-                            <div class="mb-4">
-                                <label class="form-label">
-                                    <i class="fas fa-image"></i> Selected Avatar
-                                </label>
-                                <div class="selected-preview-row mb-4">
-    <div class="selected-avatar-preview">
-        <div id="selectedAvatarPreview" style="display: none;">
-            <img id="selectedAvatarImg" src="" width="58" height="58" class="avatar-sel" style="border-color: #007bff !important;">
-            <p class="mt-2 mb-0 small text-muted">Avatar selected</p>
-        </div>
-        <div id="noAvatarSelected">
-            <div class="text-muted">
-                <i class="fas fa-image fa-2x mb-2"></i>
-                <p class="mb-0 small">No avatar selected</p>
+    <label for="guestName" class="form-label">
+        <i class="fas fa-user"></i> Display Name
+    </label>
+    <input type="text" 
+           class="form-control form-control-lg" 
+           id="guestName" 
+           placeholder="Enter your display name"
+           required 
+           maxlength="30">
+    <div class="form-text text-muted">This is how others will see you in chat</div>
+</div>
+
+<!-- Replace both separate modals with this single combined modal -->
+
+<!-- Updated preview section with single settings button -->
+<div class="mb-4">
+    <label class="form-label">
+        <i class="fas fa-image"></i> Selected Avatar & Chat Color
+    </label>
+    
+    <!-- Keep the original preview row structure -->
+    <div class="selected-preview-row mb-3">
+        <div class="selected-avatar-preview">
+            <div id="selectedAvatarPreview" style="display: none;">
+                <img id="selectedAvatarImg" src="" width="58" height="58" class="avatar-sel" style="border-color: #007bff !important;">
+                <p class="mt-2 mb-0 small text-muted">Avatar selected</p>
+            </div>
+            <div id="noAvatarSelected">
+                <div class="text-muted">
+                    <i class="fas fa-image fa-2x mb-2"></i>
+                    <p class="mb-0 small">No avatar selected</p>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="selected-color-preview">
-        <div class="preview-circle color-black" id="selectedColorPreview"></div>
+        
+        <div class="selected-color-preview">
+            <div class="preview-circle color-black" id="selectedColorPreview"></div>
             <strong id="selectedColorName" style="width:0;height:0;visibility:hidden;display:flex;"></strong>
+        </div>
+    </div>
+    
+    <!-- Single settings button -->
+    <div class="settings-buttons-row mb-3">
+        <button type="button" class="settings-btn" data-bs-toggle="modal" data-bs-target="#customizationModal">
+            <i class="fas fa-cogs"></i> Customize Appearance
+        </button>
     </div>
 </div>
+
+<div class="d-grid gap-2 mb-4">
+    <button type="submit" class="btn btn-primary btn-lg">
+        <i class="fas fa-sign-in-alt"></i> Enter Lounge
+    </button>
+</div>
+
+<!-- Single Combined Customization Modal -->
+<div class="modal fade" id="customizationModal" tabindex="-1" aria-labelledby="customizationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="customizationModalLabel">
+                    <i class="fas fa-cogs"></i> Customize Your Appearance
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: invert(1);"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Combined Preview Section -->
+                <div class="modal-preview-section mb-4">
+                    <label class="form-label">
+                        <i class="fas fa-eye"></i> Live Preview
+                    </label>
+                    <div class="modal-preview-row">
+                        <div class="modal-avatar-preview">
+                            <div id="modalAvatarPreview" class="modal-avatar-display">
+                                <div id="modalSelectedAvatarPreview" style="display: none;">
+                                    <img id="modalSelectedAvatarImg" src="" width="80" height="80" class="modal-avatar-img">
+                                    <p class="mt-2 mb-0 small text-muted">Your Avatar</p>
+                                </div>
+                                <div id="modalNoAvatarSelected">
+                                    <div class="text-muted">
+                                        <i class="fas fa-image fa-3x mb-2"></i>
+                                        <p class="mb-0 small">No Avatar Selected</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="modal-color-preview">
+                            <div class="modal-color-display">
+                                <div class="modal-preview-circle color-black" id="modalSelectedColorPreview"></div>
+                                <p class="mt-2 mb-0 small text-muted">Chat Color</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabbed Interface for Settings -->
+                <ul class="nav nav-tabs mb-4" id="customizationTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="avatar-tab" data-bs-toggle="tab" data-bs-target="#avatar-panel" type="button" role="tab" aria-controls="avatar-panel" aria-selected="true">
+                            <i class="fas fa-user-edit"></i> Avatar Settings
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="chat-color-tab" data-bs-toggle="tab" data-bs-target="#chat-color-panel" type="button" role="tab" aria-controls="chat-color-panel" aria-selected="false">
+                            <i class="fas fa-palette"></i> Chat Color
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content" id="customizationTabContent">
+                    <!-- Avatar Settings Panel -->
+                    <div class="tab-pane fade show active" id="avatar-panel" role="tabpanel" aria-labelledby="avatar-tab">
+                        <div class="avatar-color-sliders">
+                            <label class="form-label">
+                                <i class="fas fa-adjust"></i> Avatar Color Adjustment
+                            </label>
+                            
+                            <div class="color-slider-container">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label for="hueSlider" class="form-label mb-0">
+                                        <i class="fas fa-adjust"></i> Hue Shift
+                                    </label>
+                                    <span class="slider-value" id="hueValue">0°</span>
+                                </div>
+                                <input type="range" class="color-slider" id="hueSlider" name="avatar_hue" 
+                                       min="0" max="360" value="0">
                             </div>
                             
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-sign-in-alt"></i> Enter Lounge
+                            <div class="color-slider-container">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label for="saturationSlider" class="form-label mb-0">
+                                        <i class="fas fa-tint"></i> Saturation
+                                    </label>
+                                    <span class="slider-value" id="saturationValue">100%</span>
+                                </div>
+                                <input type="range" class="color-slider" id="saturationSlider" name="avatar_saturation" 
+                                       min="0" max="300" value="100">
+                            </div>
+                            
+                            <div class="form-text text-muted mt-3">
+                                <i class="fas fa-info-circle"></i> Adjust hue and saturation to customize your avatar's colors
+                            </div>
+                            
+                            <div class="mt-3">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetAvatarSliders()">
+                                    <i class="fas fa-undo"></i> Reset Avatar Colors
                                 </button>
                             </div>
                         </div>
-
-<div class="customize-section">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <label class="form-label mb-0">
-            <i class="fas fa-cog"></i> Customize Appearance
-        </label>
-        <button class="btn btn-outline-primary btn-md" type="button" data-bs-toggle="collapse" data-bs-target="#customizeCollapse" aria-expanded="false" aria-controls="customizeCollapse">
-            <i class="fas fa-chevron-down" id="customizeChevron"></i> Options
-        </button>
-    </div>
-    
-    <div class="collapse" id="customizeCollapse">
-        <div class="customize-content">
-            <!-- Avatar Color Customization -->
-            <div class="avatar-color-sliders">
-                <label class="form-label">
-                    <i class="fas fa-adjust"></i> Customize Avatar Color
-                </label>
-                
-                <div class="color-slider-container">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <label for="hueSlider" class="form-label mb-0">Hue Shift</label>
-                        <span class="slider-value" id="hueValue">0°</span>
                     </div>
-                    <input type="range" class="color-slider" id="hueSlider" name="avatar_hue" 
-                           min="0" max="360" value="0" oninput="updateAvatarFilter()">
-                </div>
-                
-                <div class="color-slider-container">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <label for="saturationSlider" class="form-label mb-0">Saturation</label>
-                        <span class="slider-value" id="saturationValue">100%</span>
-                    </div>
-                    <input type="range" class="color-slider" id="saturationSlider" name="avatar_saturation" 
-                           min="0" max="300" value="100" oninput="updateAvatarFilter()">
-                </div>
-<hr>
-                <label class="form-label">
-                    <i class="fas fa-adjust"></i> Customize Bubble Color
-                </label>
-                <!-- Add after the avatar saturation slider -->
-<div class="color-slider-container">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <label for="bubbleHueSlider" class="form-label mb-0">Bubble Hue</label>
-        <span class="slider-value" id="bubbleHueValue">0°</span>
-    </div>
-    <input type="range" class="color-slider" id="bubbleHueSlider" name="bubble_hue" 
-           min="0" max="360" value="0" oninput="updateBubbleFilter()">
-</div>
 
-<div class="color-slider-container">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <label for="bubbleSaturationSlider" class="form-label mb-0">Bubble Saturation</label>
-        <span class="slider-value" id="bubbleSaturationValue">100%</span>
-    </div>
-    <input type="range" class="color-slider" id="bubbleSaturationSlider" name="bubble_saturation" 
-           min="0" max="300" value="100" oninput="updateBubbleFilter()">
-</div>
-                
-                <div class="form-text text-muted">
-                    <i class="fas fa-info-circle"></i> Adjust hue and saturation to customize your avatar's colors
-                </div>
-            </div>
-
-            <hr class="my-4">
-
-                        <!-- Chat Color Selection -->
-            <div class="color-selection-section">
-                <label class="form-label">
-                    <i class="fas fa-palette"></i> Choose Your Chat Color
-                </label>
-                
-                <div class="color-grid">
-                                <!-- Default: Black -->
+                    <!-- Chat Color Panel -->
+                    <div class="tab-pane fade" id="chat-color-panel" role="tabpanel" aria-labelledby="chat-color-tab">
+                        <!-- Color Selection Grid -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-swatchbook"></i> Choose Your Chat Color
+                            </label>
+                            
+                            <div class="color-grid">
+                                <!-- All your existing color options -->
                                 <div class="color-option color-black" data-color="black" onclick="selectColor('black', this)">
                                     <div class="color-name">Black</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
@@ -282,16 +330,6 @@ if (isset($_SESSION['user'])) {
                                     <div class="color-name">Pink</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
-                                
-                                <!--<div class="color-option color-cyan" data-color="cyan" onclick="selectColor('cyan', this)">
-                                    <div class="color-name">Cyan</div>
-                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
-                                </div>
-                                
-                                <div class="color-option color-mint" data-color="mint" onclick="selectColor('mint', this)">
-                                    <div class="color-name">Mint</div>
-                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
-                                </div>-->
                                 
                                 <div class="color-option color-orange" data-color="orange" onclick="selectColor('orange', this)">
                                     <div class="color-name">Orange</div>
@@ -392,28 +430,71 @@ if (isset($_SESSION['user'])) {
                                     <div class="color-name">Sepia</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
-                                
-                                <!--<div class="color-option color-teal" data-color="teal" onclick="selectColor('teal', this)">
-                                    <div class="color-name">Teal</div>
-                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Bubble Color Customization -->
+                        <div class="bubble-color-sliders">
+                            <label class="form-label">
+                                <i class="fas fa-comment"></i> Fine-tune Bubble Color
+                            </label>
+
+                            <div class="color-slider-container">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label for="bubbleHueSlider" class="form-label mb-0">
+                                        <i class="fas fa-adjust"></i> Bubble Hue
+                                    </label>
+                                    <span class="slider-value" id="bubbleHueValue">0°</span>
                                 </div>
-                                
-                                <div class="color-option color-indigo" data-color="indigo" onclick="selectColor('indigo', this)">
-                                    <div class="color-name">Indigo</div>
-                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
-                                </div>-->
+                                <input type="range" class="color-slider" id="bubbleHueSlider" name="bubble_hue" 
+                                       min="0" max="360" value="0">
+                            </div>
+
+                            <div class="color-slider-container">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label for="bubbleSaturationSlider" class="form-label mb-0">
+                                        <i class="fas fa-tint"></i> Bubble Saturation
+                                    </label>
+                                    <span class="slider-value" id="bubbleSaturationValue">100%</span>
+                                </div>
+                                <input type="range" class="color-slider" id="bubbleSaturationSlider" name="bubble_saturation" 
+                                       min="0" max="300" value="100">
                             </div>
                             
-                           <input type="hidden" id="selectedColor" name="color" value="">
-
+                            <div class="form-text text-muted mt-3">
+                                <i class="fas fa-info-circle"></i> Select a base color above, then fine-tune with hue and saturation
+                            </div>
                             
-                             </div>
-                            
+                            <div class="mt-3">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetChatColorSettings()">
+                                    <i class="fas fa-undo"></i> Reset Chat Colors
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="resetAllSettings()">
+                    <i class="fas fa-undo-alt"></i> Reset All
+                </button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                    <i class="fas fa-check"></i> Apply Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
-                
+<input type="hidden" id="selectedColor" name="color" value="">
+<input type="hidden" id="selectedAvatar" name="avatar" required>
+
+                            
+                            
+
+
             </form>
             
             <!-- Links Section -->

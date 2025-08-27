@@ -54,6 +54,7 @@ cleanupExpiredSiteBans($conn);
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="css/lounge.css" rel="stylesheet">
     <link href="css/moderator.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
     <style>
         /* Use lounge.css styling as base */
         .mod-card {
