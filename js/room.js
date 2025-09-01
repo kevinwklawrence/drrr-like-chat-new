@@ -374,8 +374,8 @@ function renderMessage(msg) {
     if (msg.reply_data) {
         const replyData = msg.reply_data;
         replyContent = `
-            <div class="message-reply user-color-${replyData.color}">
-                <div class="reply-header">
+            <div class="message-reply user-color-${replyData.color}" style="filter: hue-rotate(${replyData.bubble_hue}deg) saturate(${replyData.bubble_saturation}%);">
+                <div class="reply-header" style="filter: hue-rotate(${-replyData.bubble_hue}deg) saturate(${replyData.bubble_saturation > 0 ? (10000/replyData.bubble_saturation) : 100}%);">
                     <img src="images/${replyData.avatar}" 
                          class="reply-author-avatar"
                          style="filter: hue-rotate(${replyData.avatar_hue}deg) saturate(${replyData.avatar_saturation}%);"
@@ -385,7 +385,7 @@ function renderMessage(msg) {
                        onclick="jumpToMessage(${replyData.id})" 
                        title="Jump to original message"></i>
                 </div>
-                <div class="reply-content">${replyData.message}</div>
+                <div class="reply-content"  >${replyData.message}</div>
             </div>
         `;
     }
@@ -1661,7 +1661,7 @@ function displayRoomSettingsModal(settings) {
     
     const modalHtml = `
         <div class="modal fade" id="roomSettingsModal" tabindex="-1">
-            <div class="modal-dialog modal-xl">
+            <div class="modal-dialog modal-lg">
                 <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
                     <div class="modal-header" style="background: #333; border-bottom: 1px solid #444;">
                         <h5 class="modal-title">

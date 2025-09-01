@@ -107,6 +107,8 @@ if (in_array('reply_to_message_id', $msg_columns)) {
         'rm.avatar as reply_original_avatar',
         'rm.avatar_hue as reply_original_avatar_hue',
         'rm.avatar_saturation as reply_original_avatar_saturation',
+        'rm.bubble_hue as reply_original_bubble_hue',
+        'rm.bubble_saturation as reply_original_bubble_saturation',
         'ru.username as reply_original_registered_username',
         'ru.avatar as reply_original_registered_avatar',
         'rcu.username as reply_original_chatroom_username'
@@ -225,7 +227,9 @@ while ($row = $result->fetch_assoc()) {
             'user_id_string' => $row['reply_original_user_id_string'],
             'avatar' => $reply_avatar,
             'avatar_hue' => (int)($row['reply_original_avatar_hue'] ?? 0),
-            'avatar_saturation' => (int)($row['reply_original_avatar_saturation'] ?? 100)
+            'avatar_saturation' => (int)($row['reply_original_avatar_saturation'] ?? 100),
+            'bubble_hue' => (int)($row['reply_original_bubble_hue'] ?? 0),
+            'bubble_saturation' => (int)($row['reply_original_bubble_saturation'] ?? 100),
         ];
     }
     

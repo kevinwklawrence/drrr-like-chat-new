@@ -1,4 +1,11 @@
 /*body {  font-family: "Roboto Flex", sans-serif !important;}*/
+body::-webkit-scrollbar {
+    display:none;
+}
+.modal::-webkit-scrollbar {
+    display:none;
+}
+
 .avatar { width: 58px; height: 58px; cursor: pointer; margin: 3px; }
 .chatroom { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
 #chatbox { height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }

@@ -727,7 +727,7 @@ window.showCreateRoomModal = function() {
 
     const modalHtml = `
         <div class="modal fade" id="createRoomModal" tabindex="-1">
-            <div class="modal-dialog modal-xl">
+            <div class="modal-dialog modal-lg">
                 <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
                     <div class="modal-header" style="background: #333; border-bottom: 1px solid #444;">
                         <h5 class="modal-title">

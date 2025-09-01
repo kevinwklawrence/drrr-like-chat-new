@@ -76,7 +76,7 @@ body {
         }
         
         .avatar-container::-webkit-scrollbar {
-            width: 6px;
+            width: 3px;
         }
         
         .avatar-container::-webkit-scrollbar-track {
