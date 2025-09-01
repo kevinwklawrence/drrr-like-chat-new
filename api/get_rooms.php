@@ -1,37 +1,92 @@
 <?php
-session_start();
-header('Content-Type: application/json');
+// 1. REPLACE api/get_rooms.php completely with this version:
 
+header('Content-Type: application/json');
 include '../db_connect.php';
 
 try {
-    // Get available columns in chatrooms table
-    $available_columns = getAvailableColumns($conn, 'chatrooms');
-    
-    // Build and execute rooms query
-    $rooms_query = buildRoomsQuery($available_columns);
-    $result = $conn->query($rooms_query);
-    
-    if (!$result) {
-        throw new Exception('Database error: ' . $conn->error);
+    // Check what columns exist in the chatrooms table
+    $columns_query = $conn->query("SHOW COLUMNS FROM chatrooms");
+    $available_columns = [];
+    while ($row = $columns_query->fetch_assoc()) {
+        $available_columns[] = $row['Field'];
     }
     
+    // Build the SELECT query based on available columns - INCLUDE PERMANENT
+    $select_fields = ['id', 'name', 'description', 'capacity', 'created_at'];
+    
+    // Add optional fields if they exist - MAKE SURE PERMANENT IS INCLUDED
+    $optional_fields = [
+        'background', 'has_password', 'allow_knocking', 'theme', 
+        'youtube_enabled', 'is_rp', 'friends_only', 'invite_only', 
+        'members_only', 'disappearing_messages', 'message_lifetime_minutes',
+        'permanent', 'invite_code', 'host_user_id_string'
+    ];
+    
+    foreach ($optional_fields as $field) {
+        if (in_array($field, $available_columns)) {
+            $select_fields[] = $field;
+        }
+    }
+    
+    // Make sure permanent column exists
+    if (!in_array('permanent', $available_columns)) {
+        error_log("Adding permanent column to chatrooms table");
+        $conn->query("ALTER TABLE chatrooms ADD COLUMN permanent TINYINT(1) DEFAULT 0");
+        $select_fields[] = 'permanent';
+    }
+    
+    // Get all rooms - ORDER BY PERMANENT DESC FIRST
+    $sql = "SELECT " . implode(', ', $select_fields) . " FROM chatrooms ORDER BY 
+            permanent DESC, id DESC";
+    
+    error_log("GET_ROOMS SQL: " . $sql);
+    
+    $result = $conn->query($sql);
     $rooms = [];
-    while ($row = $result->fetch_assoc()) {
-        $room = processRoom($conn, $row);
-        if ($room) {
+    
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            // Ensure all expected fields exist with default values
+            $room = [
+                'id' => (int)$row['id'],
+                'name' => $row['name'],
+                'description' => $row['description'] ?? '',
+                'capacity' => (int)$row['capacity'],
+                'created_at' => $row['created_at'],
+                'background' => $row['background'] ?? '',
+                'has_password' => isset($row['has_password']) ? (bool)$row['has_password'] : false,
+                'allow_knocking' => isset($row['allow_knocking']) ? (bool)$row['allow_knocking'] : true,
+                'theme' => $row['theme'] ?? 'default',
+                'youtube_enabled' => isset($row['youtube_enabled']) ? (bool)$row['youtube_enabled'] : false,
+                'is_rp' => isset($row['is_rp']) ? (bool)$row['is_rp'] : false,
+                'friends_only' => isset($row['friends_only']) ? (bool)$row['friends_only'] : false,
+                'invite_only' => isset($row['invite_only']) ? (bool)$row['invite_only'] : false,
+                'members_only' => isset($row['members_only']) ? (bool)$row['members_only'] : false,
+                'disappearing_messages' => isset($row['disappearing_messages']) ? (bool)$row['disappearing_messages'] : false,
+                'message_lifetime_minutes' => isset($row['message_lifetime_minutes']) ? (int)$row['message_lifetime_minutes'] : 0,
+                'permanent' => isset($row['permanent']) ? (bool)$row['permanent'] : false,
+                'invite_code' => $row['invite_code'] ?? null,
+                'host_user_id_string' => $row['host_user_id_string'] ?? null
+            ];
+            
+            // DEBUG LOG
+            error_log("Room {$room['name']} permanent status: " . ($room['permanent'] ? 'TRUE' : 'FALSE'));
+            
             $rooms[] = $room;
         }
     }
     
+    error_log("Total rooms returned: " . count($rooms));
     echo json_encode($rooms);
     
 } catch (Exception $e) {
-    error_log("Get rooms error: " . $e->getMessage());
-    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    error_log("Error in get_rooms.php: " . $e->getMessage());
+    echo json_encode(['status' => 'error', 'message' => 'Failed to fetch rooms: ' . $e->getMessage()]);
 }
 
 $conn->close();
+
 
 // ==================== HELPER FUNCTIONS ====================
 

@@ -856,4 +856,141 @@ body {
             font-weight: normal;
         }
 
-        
+        /* 1. ADD to css/lounge.css - Permanent Room Styles */
+
+/* Permanent Room Indicators */
+.permanent-indicator {
+    background: linear-gradient(135deg, #ffd700, #ffa500) !important;
+    color: #000 !important;
+    font-weight: bold !important;
+    box-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
+    border: 1px solid #ffd700;
+}
+
+.permanent-star {
+    color: #ffd700 !important;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    animation: permanentGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes permanentGlow {
+    from {
+        text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+    to {
+        text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+    }
+}
+
+/* Permanent Room Header Styling */
+.room-header-enhanced.permanent-room {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 165, 0, 0.1));
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+}
+
+.room-header-enhanced.permanent-room .room-title {
+    color: #ffd700;
+}
+
+/* Permanent Room Meta Info */
+.permanent-info {
+    background: rgba(255, 215, 0, 0.2);
+    color: #ffd700 !important;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: 500;
+    border: 1px solid rgba(255, 215, 0, 0.4);
+}
+
+/* Permanent Room Card Enhancements */
+.room-card-enhanced:has(.permanent-room) {
+    position: relative;
+    overflow: visible;
+}
+
+.room-card-enhanced:has(.permanent-room)::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, #ffd700, #ffa500, #ffd700);
+    border-radius: 12px;
+    z-index: -1;
+    opacity: 0.3;
+    animation: permanentBorderGlow 3s linear infinite;
+}
+
+@keyframes permanentBorderGlow {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Host Status for Permanent Rooms */
+.room-host .badge.bg-warning {
+    background: #ffc107 !important;
+    color: #000 !important;
+}
+
+/* Enhanced Room Indicator Styling */
+.room-indicator {
+    display: inline-block;
+    padding: 2px 6px;
+    margin: 1px 2px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Make sure permanent indicator stands out */
+.room-features .permanent-indicator {
+    order: -1; /* Always first */
+    margin-right: 6px;
+    font-size: 0.8em;
+    padding: 3px 8px;
+}
+
+/* Permanent Room Animation */
+.permanent-room .room-title .permanent-star {
+    display: inline-block;
+    animation: permanentPulse 2s ease-in-out infinite;
+}
+
+@keyframes permanentPulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 768px) {
+    .permanent-indicator {
+        font-size: 0.7em;
+        padding: 2px 4px;
+    }
+    
+    .permanent-info {
+        font-size: 0.7em;
+    }
+    
+    .permanent-star {
+        font-size: 0.9em;
+    }
+}

@@ -23,10 +23,10 @@ try {
 
     $user_session = $_SESSION['user'];
     include '../db_connect.php';
-include '../check_site_ban.php';
+    include '../check_site_ban.php';
 
-// Check for site ban before processing
-checkSiteBan($conn);
+    // Check for site ban before processing
+    checkSiteBan($conn);
 
     $room_id = (int)($_POST['room_id'] ?? 0);
     $password = $_POST['password'] ?? '';
@@ -87,9 +87,8 @@ checkSiteBan($conn);
     
     error_log("JOIN_ROOM_DEBUG: Room keys column check passed");
     
-
     // Get room information
-    $select_fields = "id, name, capacity, password, has_password";
+    $select_fields = "id, name, capacity, password, has_password, permanent, host_user_id_string, invite_only, invite_code, members_only, friends_only";
     if ($room_keys_column_exists) {
         $select_fields .= ", room_keys";
     }
@@ -114,81 +113,84 @@ checkSiteBan($conn);
     
     error_log("JOIN_ROOM_DEBUG: Room found - name: {$room['name']}, has_password: {$room['has_password']}");
 
-
-    if (isset($room['invite_only']) && $room['invite_only']) {
-    $provided_invite = $_POST['invite_code'] ?? $_GET['invite'] ?? '';
-    $room_invite_code = $room['invite_code'] ?? '';
+    // NEW: Check if this is a permanent room and user is the original host
+    $is_returning_permanent_host = false;
+    $is_permanent = (bool)($room['permanent'] ?? false);
+    $original_host_id = $room['host_user_id_string'] ?? '';
     
-    error_log("JOIN_ROOM: Invite check - provided: '$provided_invite', expected: '$room_invite_code'");
-    
-    if (empty($provided_invite) || $provided_invite !== $room_invite_code) {
-        echo json_encode(['status' => 'error', 'message' => 'This room requires a valid invite code']);
-        exit;
-    } else {
-        error_log("JOIN_ROOM: Valid invite code provided");
+    if ($is_permanent && $original_host_id === $user_id_string) {
+        error_log("JOIN_ROOM_DEBUG: Permanent room original host rejoining");
+        $is_returning_permanent_host = true;
+        error_log("JOIN_ROOM_DEBUG: Original host of permanent room granted automatic access and host privileges");
     }
-}
-    
-// Add this section after line 85 in join_room.php (after room information is fetched)
 
-    // NEW: Check access restrictions
-    $access_denied_reason = null;
-    
-    // Check invite-only access
-    if ($room['invite_only']) {
+    // Check invite-only access (unless returning permanent host)
+    if (!$is_returning_permanent_host && isset($room['invite_only']) && $room['invite_only']) {
         $provided_invite = $_POST['invite_code'] ?? $_GET['invite'] ?? '';
-        if (empty($provided_invite) || $provided_invite !== $room['room_keys']) {
-            $access_denied_reason = 'This room requires a valid invite code';
-        }
-    }
-    
-    // Check members-only access
-    if (!$access_denied_reason && $room['members_only']) {
-        if ($user_session['type'] !== 'user') {
-            $access_denied_reason = 'This room is for registered members only';
-        }
-    }
-    
-    // Check friends-only access
-    if (!$access_denied_reason && $room['friends_only']) {
-        if ($user_session['type'] !== 'user') {
-            $access_denied_reason = 'This room is for friends only';
+        $room_invite_code = $room['invite_code'] ?? '';
+        
+        error_log("JOIN_ROOM: Invite check - provided: '$provided_invite', expected: '$room_invite_code'");
+        
+        if (empty($provided_invite) || $provided_invite !== $room_invite_code) {
+            echo json_encode(['status' => 'error', 'message' => 'This room requires a valid invite code']);
+            exit;
         } else {
-            // Check if current user is friend of host
-            $current_user_id = $user_session['id'] ?? null;
-            $host_user_id_string = $room['host_user_id_string'] ?? '';
-            
-            if ($current_user_id && $host_user_id_string) {
-                $friend_check = $conn->prepare("
-                    SELECT COUNT(*) as is_friend 
-                    FROM friends f
-                    JOIN users u ON (f.user_id = u.id OR f.friend_user_id = u.id)
-                    WHERE f.status = 'accepted' 
-                    AND ((f.user_id = ? AND u.user_id_string = ?) 
-                         OR (f.friend_user_id = ? AND u.user_id_string = ?))
-                ");
-                if ($friend_check) {
-                    $friend_check->bind_param("isis", $current_user_id, $host_user_id_string, $current_user_id, $host_user_id_string);
-                    $friend_check->execute();
-                    $friend_result = $friend_check->get_result();
-                    $friend_data = $friend_result->fetch_assoc();
-                    if ($friend_data['is_friend'] == 0) {
-                        $access_denied_reason = 'This room is for friends of the host only';
-                    }
-                    $friend_check->close();
-                } else {
-                    $access_denied_reason = 'Unable to verify friend status';
-                }
-            } else {
-                $access_denied_reason = 'This room is for friends only';
+            error_log("JOIN_ROOM: Valid invite code provided");
+        }
+    }
+    
+    // Check access restrictions (unless returning permanent host)
+    if (!$is_returning_permanent_host) {
+        $access_denied_reason = null;
+        
+        // Check members-only access
+        if ($room['members_only']) {
+            if ($user_session['type'] !== 'user') {
+                $access_denied_reason = 'This room is for registered members only';
             }
         }
-    }
-    
-    // If access is denied, return error
-    if ($access_denied_reason) {
-        echo json_encode(['status' => 'error', 'message' => $access_denied_reason]);
-        exit;
+        
+        // Check friends-only access
+        if (!$access_denied_reason && $room['friends_only']) {
+            if ($user_session['type'] !== 'user') {
+                $access_denied_reason = 'This room is for friends only';
+            } else {
+                // Check if current user is friend of host
+                $current_user_id = $user_session['id'] ?? null;
+                $host_user_id_string = $room['host_user_id_string'] ?? '';
+                
+                if ($current_user_id && $host_user_id_string) {
+                    $friend_check = $conn->prepare("
+                        SELECT COUNT(*) as is_friend 
+                        FROM friends f
+                        JOIN users u ON (f.user_id = u.id OR f.friend_user_id = u.id)
+                        WHERE f.status = 'accepted' 
+                        AND ((f.user_id = ? AND u.user_id_string = ?) 
+                             OR (f.friend_user_id = ? AND u.user_id_string = ?))
+                    ");
+                    if ($friend_check) {
+                        $friend_check->bind_param("isis", $current_user_id, $host_user_id_string, $current_user_id, $host_user_id_string);
+                        $friend_check->execute();
+                        $friend_result = $friend_check->get_result();
+                        $friend_data = $friend_result->fetch_assoc();
+                        if ($friend_data['is_friend'] == 0) {
+                            $access_denied_reason = 'This room is for friends of the host only';
+                        }
+                        $friend_check->close();
+                    } else {
+                        $access_denied_reason = 'Unable to verify friend status';
+                    }
+                } else {
+                    $access_denied_reason = 'This room is for friends only';
+                }
+            }
+        }
+        
+        // If access is denied, return error
+        if ($access_denied_reason) {
+            echo json_encode(['status' => 'error', 'message' => $access_denied_reason]);
+            exit;
+        }
     }
 
     // Check if user is already in the room
@@ -227,14 +229,15 @@ checkSiteBan($conn);
     
     error_log("JOIN_ROOM_DEBUG: Room capacity check passed");
     
-    // Handle password protection and room keys
+    // Handle password protection and room keys (unless returning permanent host)
     $requires_password = ($room['has_password'] == 1);
-    $access_granted = false;
+    $access_granted = $is_returning_permanent_host; // Permanent hosts get automatic access
     $used_room_key = false;
     
     error_log("JOIN_ROOM_DEBUG: Requires password: " . ($requires_password ? 'YES' : 'NO'));
+    error_log("JOIN_ROOM_DEBUG: Is returning permanent host: " . ($is_returning_permanent_host ? 'YES' : 'NO'));
     
-    if ($requires_password) {
+    if (!$access_granted && $requires_password) {
         // Check for room key first
         if ($room_keys_column_exists && isset($room['room_keys']) && !empty($room['room_keys']) && $room['room_keys'] !== 'null') {
             error_log("JOIN_ROOM_DEBUG: Checking room keys...");
@@ -292,7 +295,7 @@ checkSiteBan($conn);
             
             $access_granted = true;
         }
-    } else {
+    } else if (!$access_granted) {
         $access_granted = true;
     }
     
@@ -316,9 +319,9 @@ checkSiteBan($conn);
     $conn->begin_transaction();
     
     $insert_fields = ['room_id', 'user_id_string', 'is_host'];
-    $insert_values = ['?', '?', '0'];
-    $param_types = 'is';
-    $param_values = [$room_id, $user_id_string];
+    $insert_values = ['?', '?', '?'];
+    $param_types = 'isi';
+    $param_values = [$room_id, $user_id_string, $is_returning_permanent_host ? 1 : 0];
     
     // Add optional fields if they exist
     if (in_array('user_id', $available_columns)) {
@@ -371,54 +374,54 @@ checkSiteBan($conn);
     }
 
     // Add avatar customization columns if they don't exist
-if (!in_array('avatar_hue', $available_columns)) {
-    $conn->query("ALTER TABLE chatroom_users ADD COLUMN avatar_hue INT DEFAULT 0 NOT NULL");
-    $available_columns[] = 'avatar_hue';
-}
+    if (!in_array('avatar_hue', $available_columns)) {
+        $conn->query("ALTER TABLE chatroom_users ADD COLUMN avatar_hue INT DEFAULT 0 NOT NULL");
+        $available_columns[] = 'avatar_hue';
+    }
 
-if (!in_array('avatar_saturation', $available_columns)) {
-    $conn->query("ALTER TABLE chatroom_users ADD COLUMN avatar_saturation INT DEFAULT 100 NOT NULL");
-    $available_columns[] = 'avatar_saturation';
-}
+    if (!in_array('avatar_saturation', $available_columns)) {
+        $conn->query("ALTER TABLE chatroom_users ADD COLUMN avatar_saturation INT DEFAULT 100 NOT NULL");
+        $available_columns[] = 'avatar_saturation';
+    }
 
-if (!in_array('bubble_hue', $available_columns)) {
-    $conn->query("ALTER TABLE chatroom_users ADD COLUMN bubble_hue INT DEFAULT 0 NOT NULL");
-    $available_columns[] = 'bubble_hue';
-}
+    if (!in_array('bubble_hue', $available_columns)) {
+        $conn->query("ALTER TABLE chatroom_users ADD COLUMN bubble_hue INT DEFAULT 0 NOT NULL");
+        $available_columns[] = 'bubble_hue';
+    }
 
-if (!in_array('bubble_saturation', $available_columns)) {
-    $conn->query("ALTER TABLE chatroom_users ADD COLUMN bubble_saturation INT DEFAULT 100 NOT NULL");
-    $available_columns[] = 'bubble_saturation';
-}
+    if (!in_array('bubble_saturation', $available_columns)) {
+        $conn->query("ALTER TABLE chatroom_users ADD COLUMN bubble_saturation INT DEFAULT 100 NOT NULL");
+        $available_columns[] = 'bubble_saturation';
+    }
 
-// Add avatar customization to the INSERT
-if (in_array('avatar_hue', $available_columns)) {
-    $insert_fields[] = 'avatar_hue';
-    $insert_values[] = '?';
-    $param_types .= 'i';
-    $param_values[] = (int)($user_session['avatar_hue'] ?? 0);
-}
+    // Add avatar customization to the INSERT
+    if (in_array('avatar_hue', $available_columns)) {
+        $insert_fields[] = 'avatar_hue';
+        $insert_values[] = '?';
+        $param_types .= 'i';
+        $param_values[] = (int)($user_session['avatar_hue'] ?? 0);
+    }
 
-if (in_array('avatar_saturation', $available_columns)) {
-    $insert_fields[] = 'avatar_saturation';
-    $insert_values[] = '?';
-    $param_types .= 'i';
-    $param_values[] = (int)($user_session['avatar_saturation'] ?? 100);
-}
+    if (in_array('avatar_saturation', $available_columns)) {
+        $insert_fields[] = 'avatar_saturation';
+        $insert_values[] = '?';
+        $param_types .= 'i';
+        $param_values[] = (int)($user_session['avatar_saturation'] ?? 100);
+    }
 
-if (in_array('bubble_hue', $available_columns)) {
-    $insert_fields[] = 'bubble_hue';
-    $insert_values[] = '?';
-    $param_types .= 'i';
-    $param_values[] = (int)($user_session['bubble_hue'] ?? 0);
-}
+    if (in_array('bubble_hue', $available_columns)) {
+        $insert_fields[] = 'bubble_hue';
+        $insert_values[] = '?';
+        $param_types .= 'i';
+        $param_values[] = (int)($user_session['bubble_hue'] ?? 0);
+    }
 
-if (in_array('bubble_saturation', $available_columns)) {
-    $insert_fields[] = 'bubble_saturation';
-    $insert_values[] = '?';
-    $param_types .= 'i';
-    $param_values[] = (int)($user_session['bubble_saturation'] ?? 100);
-}
+    if (in_array('bubble_saturation', $available_columns)) {
+        $insert_fields[] = 'bubble_saturation';
+        $insert_values[] = '?';
+        $param_types .= 'i';
+        $param_values[] = (int)($user_session['bubble_saturation'] ?? 100);
+    }
     
     $insert_sql = "INSERT INTO chatroom_users (" . implode(', ', $insert_fields) . ") VALUES (" . implode(', ', $insert_values) . ")";
     
@@ -442,7 +445,14 @@ if (in_array('bubble_saturation', $available_columns)) {
     
     // Add join message
     $display_name = $user_session['name'] ?? $user_session['username'] ?? 'Unknown User';
-    $join_method = $used_room_key ? ' (using permanent room key)' : '';
+    $join_method = '';
+    
+    if ($used_room_key) {
+        $join_method = ' (using permanent room key)';
+    } elseif ($is_returning_permanent_host) {
+        $join_method = ' (permanent room host returned)';
+    }
+    
     $join_message = $display_name . ' joined the room' . $join_method;
     
     // Check if messages table has required columns
@@ -454,71 +464,76 @@ if (in_array('bubble_saturation', $available_columns)) {
     
     if (in_array('is_system', $msg_columns)) {
         $stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, ?, ?, 1, NOW(), ?, 'system')");
-if ($stmt) {
-    $avatar = $user_session['avatar'] ?? 'default_avatar.jpg';
-    $stmt->bind_param("isss", $room_id, $user_id_string, $join_message, $avatar);
-    $stmt->execute();
-    $stmt->close();
-}
+        if ($stmt) {
+            $avatar = $user_session['avatar'] ?? 'default_avatar.jpg';
+            $stmt->bind_param("isss", $room_id, $user_id_string, $join_message, $avatar);
+            $stmt->execute();
+            $stmt->close();
+        }
     }
     
     $_SESSION['room_id'] = $room_id;
     
     $conn->commit();
 
-// Sync avatar customization - prioritize users table for registered users
-if ($user_session['type'] === 'user' && isset($user_session['id'])) {
-    // For registered users, get data from users table
-    try {
-        $user_sync_stmt = $conn->prepare("UPDATE chatroom_users cu 
-                                 JOIN users u ON cu.user_id = u.id 
-                                 SET cu.avatar_hue = u.avatar_hue, 
-                                     cu.avatar_saturation = u.avatar_saturation,
-                                     cu.bubble_hue = u.bubble_hue,
-                                     cu.bubble_saturation = u.bubble_saturation,
-                                     cu.avatar = u.avatar
+    // Sync avatar customization - prioritize users table for registered users
+    if ($user_session['type'] === 'user' && isset($user_session['id'])) {
+        // For registered users, get data from users table
+        try {
+            $user_sync_stmt = $conn->prepare("UPDATE chatroom_users cu 
+                                     JOIN users u ON cu.user_id = u.id 
+                                     SET cu.avatar_hue = u.avatar_hue, 
+                                         cu.avatar_saturation = u.avatar_saturation,
+                                         cu.bubble_hue = u.bubble_hue,
+                                         cu.bubble_saturation = u.bubble_saturation,
+                                         cu.avatar = u.avatar
+                                     WHERE cu.room_id = ? AND cu.user_id_string = ?");
+            if ($user_sync_stmt) {
+                $user_sync_stmt->bind_param("is", $room_id, $user_id_string);
+                $user_sync_stmt->execute();
+                $affected_rows = $user_sync_stmt->affected_rows;
+                if ($affected_rows > 0) {
+                    error_log("JOIN_ROOM_DEBUG: Synced avatar data from users table");
+                }
+                $user_sync_stmt->close();
+            }
+        } catch (Exception $e) {
+            error_log("JOIN_ROOM_DEBUG: User table sync failed (non-critical): " . $e->getMessage());
+        }
+    } else {
+        // For guests, sync from global_users as fallback
+        try {
+            $sync_stmt = $conn->prepare("UPDATE chatroom_users cu 
+                                 JOIN global_users gu ON cu.user_id_string = gu.user_id_string 
+                                 SET cu.avatar_hue = gu.avatar_hue, cu.avatar_saturation = gu.avatar_saturation, cu.bubble_hue = gu.bubble_hue, cu.bubble_saturation = gu.bubble_saturation 
                                  WHERE cu.room_id = ? AND cu.user_id_string = ?");
-        if ($user_sync_stmt) {
-            $user_sync_stmt->bind_param("is", $room_id, $user_id_string);
-            $user_sync_stmt->execute();
-            $affected_rows = $user_sync_stmt->affected_rows;
-            if ($affected_rows > 0) {
-                error_log("JOIN_ROOM_DEBUG: Synced avatar data from users table");
+            if ($sync_stmt) {
+                $sync_stmt->bind_param("is", $room_id, $user_id_string);
+                $sync_stmt->execute();
+                $affected_rows = $sync_stmt->affected_rows;
+                if ($affected_rows > 0) {
+                    error_log("JOIN_ROOM_DEBUG: Synced avatar customization from global_users");
+                }
+                $sync_stmt->close();
             }
-            $user_sync_stmt->close();
+        } catch (Exception $e) {
+            error_log("JOIN_ROOM_DEBUG: Avatar sync failed (non-critical): " . $e->getMessage());
         }
-    } catch (Exception $e) {
-        error_log("JOIN_ROOM_DEBUG: User table sync failed (non-critical): " . $e->getMessage());
     }
-} else {
-    // For guests, sync from global_users as fallback
-    try {
-        $sync_stmt = $conn->prepare("UPDATE chatroom_users cu 
-                             JOIN global_users gu ON cu.user_id_string = gu.user_id_string 
-                             SET cu.avatar_hue = gu.avatar_hue, cu.avatar_saturation = gu.avatar_saturation, cu.bubble_hue = gu.bubble_hue, cu.bubble_saturation = gu.bubble_saturation 
-                             WHERE cu.room_id = ? AND cu.user_id_string = ?");
-        if ($sync_stmt) {
-            $sync_stmt->bind_param("is", $room_id, $user_id_string);
-            $sync_stmt->execute();
-            $affected_rows = $sync_stmt->affected_rows;
-            if ($affected_rows > 0) {
-                error_log("JOIN_ROOM_DEBUG: Synced avatar customization from global_users");
-            }
-            $sync_stmt->close();
-        }
-    } catch (Exception $e) {
-        error_log("JOIN_ROOM_DEBUG: Avatar sync failed (non-critical): " . $e->getMessage());
-    }
-}
 
-error_log("JOIN_ROOM_DEBUG: Successfully joined room $room_id" . ($used_room_key ? ' using permanent room key' : ''));
+    $success_message = 'Joined room successfully';
+    if ($is_returning_permanent_host) {
+        $success_message = 'Rejoined as host of permanent room';
+    }
+
+    error_log("JOIN_ROOM_DEBUG: Successfully joined room $room_id" . ($used_room_key ? ' using permanent room key' : '') . ($is_returning_permanent_host ? ' as returning permanent host' : ''));
     
-    error_log("JOIN_ROOM_DEBUG: Successfully joined room $room_id" . ($used_room_key ? ' using permanent room key' : ''));
     echo json_encode([
         'status' => 'success', 
-        'message' => 'Joined room successfully',
+        'message' => $success_message,
         'used_room_key' => $used_room_key,
-        'permanent_access' => $used_room_key
+        'permanent_access' => $used_room_key,
+        'is_host' => $is_returning_permanent_host
     ]);
 
 } catch (Exception $e) {

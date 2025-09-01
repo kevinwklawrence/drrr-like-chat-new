@@ -1,5 +1,6 @@
 <?php
-// api/update_room.php - Enhanced version with all new features
+// UPDATE api/update_room.php - Replace the existing update_room.php with this version:
+
 session_start();
 include '../db_connect.php';
 
@@ -47,23 +48,56 @@ if (empty($user_id_string)) {
     exit;
 }
 
-// Check if user is a host
+// Check if user is a host OR admin/moderator (for permanent room settings)
+$is_authorized = false;
+
+// Check if user is host of the room
 $stmt = $conn->prepare("SELECT is_host FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");
-if (!$stmt) {
-    error_log("Prepare failed in update_room.php: " . $conn->error);
-    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
-    exit;
-}
-$stmt->bind_param("is", $room_id, $user_id_string);
-$stmt->execute();
-$result = $stmt->get_result();
-if ($result->num_rows === 0 || $result->fetch_assoc()['is_host'] != 1) {
-    error_log("User not a host in update_room.php: room_id=$room_id, user_id_string=$user_id_string");
-    echo json_encode(['status' => 'error', 'message' => 'Only hosts can update room settings']);
+if ($stmt) {
+    $stmt->bind_param("is", $room_id, $user_id_string);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0 && $result->fetch_assoc()['is_host'] == 1) {
+        $is_authorized = true;
+    }
     $stmt->close();
+}
+
+// Check if user is admin or moderator (for permanent room settings)
+$is_admin = false;
+$is_moderator = false;
+if ($_SESSION['user']['type'] === 'user' && isset($_SESSION['user']['id'])) {
+    $stmt = $conn->prepare("SELECT is_admin, is_moderator FROM users WHERE id = ?");
+    if ($stmt) {
+        $stmt->bind_param("i", $_SESSION['user']['id']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $user_data = $result->fetch_assoc();
+            $is_admin = ($user_data['is_admin'] == 1);
+            $is_moderator = ($user_data['is_moderator'] == 1);
+            
+            // Allow admins/moderators to update room settings
+            if ($is_admin || $is_moderator) {
+                $is_authorized = true;
+            }
+        }
+        $stmt->close();
+    }
+}
+
+if (!$is_authorized) {
+    error_log("Unauthorized user in update_room.php: room_id=$room_id, user_id_string=$user_id_string");
+    echo json_encode(['status' => 'error', 'message' => 'Only hosts, moderators, or administrators can update room settings']);
     exit;
 }
-$stmt->close();
+
+// Only allow admins/moderators to change permanent setting
+if (isset($_POST['permanent']) && !($is_admin || $is_moderator)) {
+    error_log("Non-admin/moderator attempting to change permanent setting: user_id_string=$user_id_string");
+    echo json_encode(['status' => 'error', 'message' => 'Only administrators and moderators can change permanent room settings']);
+    exit;
+}
 
 // Validation
 if (!in_array($capacity, [5, 10, 20, 50])) {
@@ -98,6 +132,7 @@ try {
         'theme' => 'VARCHAR(50) DEFAULT "default"',
         'has_password' => 'TINYINT(1) DEFAULT 0',
         'allow_knocking' => 'TINYINT(1) DEFAULT 1',
+        'permanent' => 'TINYINT(1) DEFAULT 0',
         'youtube_enabled' => 'TINYINT(1) DEFAULT 0',
         'youtube_current_video' => 'VARCHAR(255) DEFAULT NULL',
         'youtube_current_time' => 'INT DEFAULT 0',
@@ -282,6 +317,9 @@ try {
     if ($disappearing_messages) {
         $changes[] = "disappearing messages enabled ($message_lifetime_minutes min)";
     }
+    if ($permanent) {
+        $changes[] = "room marked as permanent";
+    }
     
     if (!empty($changes)) {
         $system_message .= " (" . implode(", ", $changes) . ")";
@@ -313,7 +351,7 @@ try {
         $response['invite_link'] = "lounge.php?invite=" . $invite_code;
     }
     
-    error_log("Room settings updated: room_id=$room_id, name=$name, theme=$theme, host=$host_name");
+    error_log("Room settings updated: room_id=$room_id, name=$name, theme=$theme, permanent=$permanent, host=$host_name");
     echo json_encode($response);
     
 } catch (Exception $e) {

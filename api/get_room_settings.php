@@ -1,5 +1,8 @@
 <?php
-// api/get_room_settings.php - Updated version with all new features
+// UPDATE api/get_room_settings.php - Include permanent field
+
+// Replace the existing get_room_settings.php content with this updated version:
+
 session_start();
 include '../db_connect.php';
 
@@ -27,22 +30,48 @@ if (empty($user_id_string)) {
     exit;
 }
 
-// Check if user is the host of the room
+// Check if user is the host of the room OR admin/moderator
+$is_authorized = false;
+
+// Check if user is host
 $stmt = $conn->prepare("SELECT is_host FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");
-if (!$stmt) {
-    error_log("Prepare failed in get_room_settings.php: " . $conn->error);
-    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
-    exit;
-}
-$stmt->bind_param("is", $room_id, $user_id_string);
-$stmt->execute();
-$result = $stmt->get_result();
-if ($result->num_rows === 0 || $result->fetch_assoc()['is_host'] != 1) {
-    echo json_encode(['status' => 'error', 'message' => 'Only hosts can view room settings']);
+if ($stmt) {
+    $stmt->bind_param("is", $room_id, $user_id_string);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0 && $result->fetch_assoc()['is_host'] == 1) {
+        $is_authorized = true;
+    }
     $stmt->close();
+}
+
+// Check if user is admin or moderator
+$is_admin = false;
+$is_moderator = false;
+if ($_SESSION['user']['type'] === 'user' && isset($_SESSION['user']['id'])) {
+    $stmt = $conn->prepare("SELECT is_admin, is_moderator FROM users WHERE id = ?");
+    if ($stmt) {
+        $stmt->bind_param("i", $_SESSION['user']['id']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $user_data = $result->fetch_assoc();
+            $is_admin = ($user_data['is_admin'] == 1);
+            $is_moderator = ($user_data['is_moderator'] == 1);
+            
+            // Allow admins/moderators to view room settings
+            if ($is_admin || $is_moderator) {
+                $is_authorized = true;
+            }
+        }
+        $stmt->close();
+    }
+}
+
+if (!$is_authorized) {
+    echo json_encode(['status' => 'error', 'message' => 'Only hosts, moderators, or administrators can view room settings']);
     exit;
 }
-$stmt->close();
 
 // Check what columns exist in the chatrooms table
 $columns_query = $conn->query("SHOW COLUMNS FROM chatrooms");
@@ -104,7 +133,8 @@ $settings = [
     'members_only' => isset($room_settings['members_only']) ? (bool)$room_settings['members_only'] : false,
     'disappearing_messages' => isset($room_settings['disappearing_messages']) ? (bool)$room_settings['disappearing_messages'] : false,
     'message_lifetime_minutes' => isset($room_settings['message_lifetime_minutes']) ? (int)$room_settings['message_lifetime_minutes'] : 0,
-    'invite_code' => $room_settings['invite_code'] ?? null
+    'invite_code' => $room_settings['invite_code'] ?? null,
+    'can_modify_permanent' => $is_admin || $is_moderator // Include permission info
 ];
 
 error_log("Retrieved room settings for room_id=$room_id: " . json_encode($settings));

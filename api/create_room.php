@@ -33,6 +33,38 @@ $members_only = (int)($_POST['members_only'] ?? 0);
 $disappearing_messages = (int)($_POST['disappearing_messages'] ?? 0);
 $message_lifetime_minutes = (int)($_POST['message_lifetime_minutes'] ?? 0);
 
+// NEW: Add permanent room setting (only for admins/moderators)
+$permanent = 0;
+if (isset($_POST['permanent']) && (int)$_POST['permanent'] === 1) {
+    // Check if user is admin or moderator
+    $is_admin = false;
+    $is_moderator = false;
+    
+    if ($_SESSION['user']['type'] === 'user' && isset($_SESSION['user']['id'])) {
+        $admin_check_stmt = $conn->prepare("SELECT is_admin, is_moderator FROM users WHERE id = ?");
+        if ($admin_check_stmt) {
+            $admin_check_stmt->bind_param("i", $_SESSION['user']['id']);
+            $admin_check_stmt->execute();
+            $admin_result = $admin_check_stmt->get_result();
+            if ($admin_result->num_rows > 0) {
+                $admin_data = $admin_result->fetch_assoc();
+                $is_admin = ($admin_data['is_admin'] == 1);
+                $is_moderator = ($admin_data['is_moderator'] == 1);
+            }
+            $admin_check_stmt->close();
+        }
+    }
+    
+    if ($is_admin || $is_moderator) {
+        $permanent = 1;
+        error_log("CREATE_ROOM_DEBUG: Permanent room authorized by admin/moderator");
+    } else {
+        error_log("CREATE_ROOM_DEBUG: Permanent room denied - user not admin/moderator");
+        echo json_encode(['status' => 'error', 'message' => 'Only administrators and moderators can create permanent rooms']);
+        exit;
+    }
+}
+
 $user_id_string = $_SESSION['user']['user_id'] ?? '';
 $host_user_id = $_SESSION['user']['type'] === 'registered' ? $_SESSION['user']['user_id'] : null;
 
@@ -155,6 +187,15 @@ if ($password_column_name) {
     $param_types .= 's';
     $param_values[] = $has_password ? $hashed_password : null;
     error_log("CREATE_ROOM_DEBUG: Added password field '$password_column_name' with value: " . ($has_password && $hashed_password ? 'HASHED_PASSWORD(' . strlen($hashed_password) . ')' : 'NULL'));
+}
+
+    // In the existing column checking section, add permanent to the list:
+if (in_array('permanent', $chatroom_columns)) {
+    $insert_fields[] = 'permanent';
+    $insert_values[] = '?';
+    $param_types .= 'i';
+    $param_values[] = $permanent;
+    error_log("CREATE_ROOM_DEBUG: Adding permanent = $permanent");
 }
     
     // Add other existing fields
@@ -446,6 +487,9 @@ if ($has_password && $hashed_password) {
     $display_name = $_SESSION['user']['name'] ?? $_SESSION['user']['username'] ?? 'Host';
     $password_status = $has_password ? ' (password protected)' : '';
     $creation_message = "Room '{$name}' has been created by {$display_name}{$password_status}";
+if ($permanent) {
+    $creation_message .= " (permanent room)";
+}
     
     // Check if messages table has the right columns
     $message_columns_query = $conn->query("SHOW COLUMNS FROM messages");

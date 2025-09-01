@@ -1685,6 +1685,13 @@ function displayRoomSettingsModal(settings) {
                                     <i class="fas fa-ban"></i> Banlist
                                 </button>
                             </li>
+                            ${(isAdmin || isModerator) ? `
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="admin-settings-tab" data-bs-toggle="tab" data-bs-target="#admin-settings" type="button" role="tab" style="color: #fff; background: transparent; border: none;">
+                                    <i class="fas fa-shield-alt"></i> Admin
+                                </button>
+                            </li>
+                            ` : ''}
                         </ul>
                         
                         <div class="tab-content" id="settingsTabsContent">
@@ -1875,6 +1882,48 @@ function displayRoomSettingsModal(settings) {
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Admin Settings Tab (only for moderators/admins) -->
+                            ${(isAdmin || isModerator) ? `
+                            <div class="tab-pane fade" id="admin-settings" role="tabpanel">
+                                <div class="mt-3">
+                                    <div class="alert alert-warning" style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); color: #ffc107;">
+                                        <i class="fas fa-shield-alt"></i> <strong>Administrator Settings</strong><br>
+                                        These options are only available to moderators and administrators.
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="mb-4">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="settingsPermanentRoom"${settings.permanent ? ' checked' : ''}>
+                                                    <label class="form-check-label" for="settingsPermanentRoom">
+                                                        <i class="fas fa-star text-warning"></i> <strong>Permanent Room</strong>
+                                                    </label>
+                                                </div>
+                                                <small class="form-text text-muted">
+                                                    This room will never be automatically deleted, even when empty. 
+                                                    It will be displayed at the top of the room list with a special indicator.
+                                                </small>
+                                                <div class="mt-2">
+                                                    <small class="text-info">
+                                                        <i class="fas fa-info-circle"></i> 
+                                                        When the host of a permanent room leaves, they retain host privileges even while offline.
+                                                    </small>
+                                                </div>
+                                                ${settings.permanent ? `
+                                                <div class="mt-2">
+                                                    <div class="alert alert-info" style="background: rgba(13, 110, 253, 0.1); border: 1px solid rgba(13, 110, 253, 0.3); color: #b3d4fc;">
+                                                        <i class="fas fa-star"></i> This room is currently marked as permanent.
+                                                    </div>
+                                                </div>
+                                                ` : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            ` : ''}
                         </div>
                     </div>
                     <div class="modal-footer" style="border-top: 1px solid #444;">
@@ -2034,7 +2083,8 @@ function saveRoomSettings() {
         invite_only: $('#settingsInviteOnly').is(':checked') ? 1 : 0,
         members_only: $('#settingsMembersOnly').is(':checked') ? 1 : 0,
         disappearing_messages: $('#settingsDisappearingMessages').is(':checked') ? 1 : 0,
-        message_lifetime_minutes: $('#settingsDisappearingMessages').is(':checked') ? $('#settingsMessageLifetime').val() : 0
+        message_lifetime_minutes: $('#settingsDisappearingMessages').is(':checked') ? $('#settingsMessageLifetime').val() : 0,
+        permanent: $('#settingsPermanentRoom').is(':checked') ? 1 : 0  // NEW: Add permanent setting
     };
     
     console.log('Saving room settings:', formData);
@@ -2066,6 +2116,10 @@ function saveRoomSettings() {
             console.log('Update room response:', response);
             if (response.status === 'success') {
                 let message = 'Room settings updated successfully!';
+                
+                if (formData.permanent) {
+                    message += ' This room is now permanent.';
+                }
                 
                 // Show invite link if generated
                 if (response.invite_code) {
@@ -2133,7 +2187,37 @@ function leaveRoom() {
             try {
                 let res = JSON.parse(response);
                 
-                if (res.status === 'host_leaving') {
+                if (res.status === 'permanent_room_leave') {
+                    // Handle permanent room leave
+                    if (confirm(res.message + ' Are you sure you want to leave?')) {
+                        $.ajax({
+                            url: 'api/leave_room.php',
+                            method: 'POST',
+                            data: { 
+                                room_id: roomId,
+                                action: 'permanent_room_leave'
+                            },
+                            success: function(leaveResponse) {
+                                try {
+                                    let leaveRes = JSON.parse(leaveResponse);
+                                    if (leaveRes.status === 'success') {
+                                        alert(leaveRes.message || 'Left room successfully');
+                                        window.location.href = 'lounge.php';
+                                    } else {
+                                        alert('Error: ' + leaveRes.message);
+                                    }
+                                } catch (e) {
+                                    console.error('JSON parse error:', e, leaveResponse);
+                                    alert('Error leaving room');
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                console.error('AJAX error leaving permanent room:', error);
+                                alert('Error leaving room: ' + error);
+                            }
+                        });
+                    }
+                } else if (res.status === 'host_leaving') {
                     showHostLeavingModal(
                         res.other_users || [], 
                         res.show_transfer !== false, 
@@ -4229,10 +4313,6 @@ function addAFKStyles() {
         
         .btn.afk-user:hover {
             background-color: rgba(108, 117, 125, 0.1) !important;
-        }
-        
-        .btn-toggle-afk {
-            margin-top: 5px;
         }
         
         .system-message img[src*="afk.png"],

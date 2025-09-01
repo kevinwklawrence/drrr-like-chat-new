@@ -256,6 +256,21 @@ function displayRoomsWithUsers(rooms) {
             </div>
         `;
     } else {
+        // Sort rooms: permanent rooms first, then by user count (descending)
+        rooms.sort((a, b) => {
+            const aIsPermanent = parseInt(a.permanent || 0) === 1;
+            const bIsPermanent = parseInt(b.permanent || 0) === 1;
+            
+            // Permanent rooms always come first
+            if (aIsPermanent && !bIsPermanent) return -1;
+            if (!aIsPermanent && bIsPermanent) return 1;
+            
+            // Within same category (both permanent or both non-permanent), sort by user count
+            const aUserCount = a.user_count || 0;
+            const bUserCount = b.user_count || 0;
+            return bUserCount - aUserCount;
+        });
+        
         html += '<div class="row">';
         
         rooms.forEach((room, index) => {
@@ -267,6 +282,7 @@ function displayRoomsWithUsers(rooms) {
                 const hasKey = hasRoomKey(room.id);
                 const host = room.host;
                 const regularUsers = room.regularUsers || [];
+                const isPermanent = parseInt(room.permanent || 0) === 1;
 
                 const isRP = parseInt(room.is_rp || 0) === 1;
                 const youtubeEnabled = parseInt(room.youtube_enabled || 0) === 1;
@@ -278,6 +294,11 @@ function displayRoomsWithUsers(rooms) {
 
                 let headerClass = 'room-header-enhanced';
                 let actionButtons = '';
+
+                // Add permanent room styling
+                if (isPermanent) {
+                    headerClass += ' permanent-room';
+                }
 
                 // FIXED: Simple access checking with no async operations
                 if (inviteOnly) {
@@ -304,6 +325,10 @@ function displayRoomsWithUsers(rooms) {
 
                 // Build feature indicators
                 let featureIndicators = '';
+                
+                // Permanent indicator comes first and is more prominent
+                if (isPermanent) featureIndicators += '<span class="room-indicator permanent-indicator" title="Permanent Room - Never deleted"><i class="fas fa-star"></i> PERMANENT</span>';
+                
                 if (isRP) featureIndicators += '<span class="room-indicator rp-indicator" title="Roleplay Room"><i class="fas fa-theater-masks"></i> RP</span>';
                 if (youtubeEnabled) featureIndicators += '<span class="room-indicator youtube-indicator" title="YouTube Player Enabled"><i class="fab fa-youtube"></i> Video</span>';
                 if (friendsOnly) featureIndicators += '<span class="room-indicator friends-indicator" title="Friends Only"><i class="fas fa-user-friends"></i> Friends</span>';
@@ -331,8 +356,20 @@ function displayRoomsWithUsers(rooms) {
                                     <div class="user-badges">
                                         ${parseInt(host.is_admin) === 1 ? '<span class="badge bg-danger badge-sm">Admin</span>' : ''}
                                         ${host.user_type === 'registered' || host.user_id ? '<span class="badge bg-success badge-sm">Verified</span>' : '<span class="badge bg-secondary badge-sm">Guest</span>'}
+                                        ${isPermanent ? '<span class="badge bg-warning badge-sm">Offline Host</span>' : ''}
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    `;
+                } else if (isPermanent) {
+                    // Show offline host indicator for permanent rooms
+                    hostHtml = `
+                        <div class="room-host">
+                            <h6><i class="fas fa-crown"></i> Host</h6>
+                            <div class="text-warning">
+                                <i class="fas fa-user-slash"></i> Host is offline
+                                <br><small class="text-muted">This is a permanent room</small>
                             </div>
                         </div>
                     `;
@@ -381,6 +418,7 @@ function displayRoomsWithUsers(rooms) {
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div class="room-title-section">
                                         <h5 class="room-title">
+                                            ${isPermanent ? '<i class="fas fa-star permanent-star"></i>' : ''}
                                             ${room.name}
                                             ${isPasswordProtected ? '<i class="fas fa-lock" title="Password protected"></i>' : ''}
                                             ${allowsKnocking ? '<i class="fas fa-hand-paper" title="Knocking allowed"></i>' : ''}
@@ -389,6 +427,7 @@ function displayRoomsWithUsers(rooms) {
                                         <div class="room-meta">
                                             <span class="capacity-info">${userCount}/${capacity} users</span>
                                             ${room.theme && room.theme !== 'default' ? `<span class="theme-info">Theme: ${room.theme}</span>` : ''}
+                                            ${isPermanent ? '<span class="permanent-info">Permanent Room</span>' : ''}
                                         </div>
                                         ${featureIndicators ? `<div class="room-features mt-1">${featureIndicators}</div>` : ''}
                                         ${hasKey ? '<div class="mt-1"><span class="badge bg-success"><i class="fas fa-key"></i> Access Granted</span></div>' : ''}
@@ -723,7 +762,7 @@ window.joinRoomWithPassword = function(roomId) {
 // Replace these functions in your lounge.js file
 
 window.showCreateRoomModal = function() {
-        $('#createRoomModal').remove();
+    $('#createRoomModal').remove();
 
     const modalHtml = `
         <div class="modal fade" id="createRoomModal" tabindex="-1">
@@ -747,6 +786,13 @@ window.showCreateRoomModal = function() {
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" id="features-tab" data-bs-toggle="tab" data-bs-target="#features" type="button" role="tab" style="color: #fff; background: transparent; border: none;">Features</button>
                             </li>
+                            ${(currentUser.is_admin || currentUser.is_moderator) ? `
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" type="button" role="tab" style="color: #fff; background: transparent; border: none;">
+                                    <i class="fas fa-shield-alt"></i> Admin
+                                </button>
+                            </li>
+                            ` : ''}
                         </ul>
 
                         <div class="tab-content" id="createRoomTabsContent">
@@ -904,6 +950,39 @@ window.showCreateRoomModal = function() {
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Admin Tab (only for moderators/admins) -->
+                            ${(currentUser.is_admin || currentUser.is_moderator) ? `
+                            <div class="tab-pane fade" id="admin" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="alert alert-warning" style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); color: #ffc107;">
+                                            <i class="fas fa-shield-alt"></i> <strong>Administrator Settings</strong><br>
+                                            These options are only available to moderators and administrators.
+                                        </div>
+                                        
+                                        <div class="mb-4">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="permanentRoom">
+                                                <label class="form-check-label" for="permanentRoom">
+                                                    <i class="fas fa-star text-warning"></i> <strong>Permanent Room</strong>
+                                                </label>
+                                            </div>
+                                            <small class="form-text text-muted">
+                                                This room will never be automatically deleted, even when empty. 
+                                                It will be displayed at the top of the room list with a special indicator.
+                                            </small>
+                                            <div class="mt-2">
+                                                <small class="text-info">
+                                                    <i class="fas fa-info-circle"></i> 
+                                                    When the host of a permanent room leaves, they retain host privileges even while offline.
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            ` : ''}
                         </div>
                     </div>
                     <div class="modal-footer" style="border-top: 1px solid #444;">
@@ -976,7 +1055,8 @@ window.createRoom = function() {
         invite_only: $('#inviteOnly').is(':checked') ? 1 : 0,
         members_only: $('#membersOnly').is(':checked') ? 1 : 0,
         disappearing_messages: $('#disappearingMessages').is(':checked') ? 1 : 0,
-        message_lifetime_minutes: $('#disappearingMessages').is(':checked') ? $('#messageLifetime').val() : 0
+        message_lifetime_minutes: $('#disappearingMessages').is(':checked') ? $('#messageLifetime').val() : 0,
+        permanent: $('#permanentRoom').is(':checked') ? 1 : 0  // NEW: Add permanent setting
     };
     
     // Debug log the form data
@@ -1013,6 +1093,9 @@ window.createRoom = function() {
                 $('#createRoomModal').modal('hide');
                 
                 let message = 'Room created successfully!';
+                if (formData.permanent) {
+                    message += ' This is now a permanent room.';
+                }
                 if (response.invite_code) {
                     const inviteLink = window.location.origin + '/' + response.invite_link;
                     message += '\\n\\nInvite link: ' + inviteLink;

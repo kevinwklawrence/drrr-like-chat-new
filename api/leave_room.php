@@ -1,4 +1,6 @@
 <?php
+// 1. UPDATE api/leave_room.php - Replace the existing leave_room.php content with this:
+
 session_start();
 include '../db_connect.php';
 
@@ -33,6 +35,21 @@ if (empty($user_id_string)) {
 try {
     $conn->begin_transaction();
     
+    // Check if room is permanent
+    $permanent_stmt = $conn->prepare("SELECT permanent FROM chatrooms WHERE id = ?");
+    $permanent_stmt->bind_param("i", $room_id);
+    $permanent_stmt->execute();
+    $permanent_result = $permanent_stmt->get_result();
+    $is_permanent = false;
+    
+    if ($permanent_result->num_rows > 0) {
+        $room_data = $permanent_result->fetch_assoc();
+        $is_permanent = (bool)$room_data['permanent'];
+    }
+    $permanent_stmt->close();
+    
+    error_log("Room permanent status: " . ($is_permanent ? 'true' : 'false'));
+    
     // Check if user is currently in the room
     $check_stmt = $conn->prepare("SELECT is_host FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");
     $check_stmt->bind_param("is", $room_id, $user_id_string);
@@ -61,7 +78,14 @@ try {
     $other_users_stmt->close();
     
     if ($action === 'check_options') {
-        if ($is_host && count($other_users) > 0) {
+        if ($is_permanent) {
+            // For permanent rooms, host just leaves normally - no special options
+            echo json_encode([
+                'status' => 'permanent_room_leave',
+                'is_permanent' => true,
+                'message' => ''
+            ]);
+        } elseif ($is_host && count($other_users) > 0) {
             echo json_encode([
                 'status' => 'host_leaving',
                 'other_users' => $other_users,
@@ -91,6 +115,11 @@ try {
     if ($action === 'delete_room') {
         if (!$is_host) {
             echo json_encode(['status' => 'error', 'message' => 'Only the host can delete the room']);
+            exit;
+        }
+        
+        if ($is_permanent) {
+            echo json_encode(['status' => 'error', 'message' => 'Permanent rooms cannot be deleted']);
             exit;
         }
         
@@ -124,6 +153,11 @@ try {
     if ($action === 'transfer_host') {
         if (!$is_host) {
             echo json_encode(['status' => 'error', 'message' => 'Only the host can transfer privileges']);
+            exit;
+        }
+        
+        if ($is_permanent) {
+            echo json_encode(['status' => 'error', 'message' => 'Host privileges in permanent rooms cannot be transferred']);
             exit;
         }
         
@@ -185,6 +219,31 @@ try {
         $conn->commit();
         echo json_encode(['status' => 'success', 'message' => 'Host transferred successfully']);
         exit;
+    }
+    
+    if ($action === 'permanent_room_leave') {
+        // Special action for permanent rooms - just remove from chatroom_users but keep host record if they're host
+        if ($is_permanent && $is_host) {
+            // For permanent rooms, host leaves but keeps their privileges
+            $leave_stmt = $conn->prepare("DELETE FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");
+            $leave_stmt->bind_param("is", $room_id, $user_id_string);
+            $leave_stmt->execute();
+            $leave_stmt->close();
+            
+            // Add system message
+            $display_name = $_SESSION['user']['name'] ?? $_SESSION['user']['username'] ?? 'Host';
+            $leave_message = $display_name . " has left the room (retaining host privileges).";
+            $system_stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, timestamp, type) VALUES (?, 'SYSTEM', ?, NOW(), 'system')");
+            if ($system_stmt) {
+                $system_stmt->bind_param("is", $room_id, $leave_message);
+                $system_stmt->execute();
+                $system_stmt->close();
+            }
+            
+            $conn->commit();
+            echo json_encode(['status' => 'success', 'message' => 'Left permanent room (host privileges retained)']);
+            exit;
+        }
     }
     
     // Default leave action
