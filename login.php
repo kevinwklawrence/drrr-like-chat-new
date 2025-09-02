@@ -814,15 +814,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="js/script.js"></script>
     <!-- Add this script tag before the closing </body> tag -->
 <script src="js/avatar-color-mapping.js"></script>
-<script>
-$(document).ready(function() {
-    // Terms of Service link handler
-    $('a[href="forgot.php"]').on('click', function(e) {
-        e.preventDefault();
-        $('#forgotModal').modal('show');
-    });
-});
-</script>
+
 <?php include 'terms_privacy_modals.php'; ?>
+<?php include 'forgot_password.php'; ?>
 </body>
 </html>

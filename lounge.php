@@ -165,11 +165,13 @@ if (!empty($user_id_string)) {
                         <?php endif; ?>
                         
                         <button class="btn change-avatar-btn w-100" onclick="showAvatarSelector()">
-                            <i class="fas fa-user-edit"></i> Change Avatar
+                            <i class="fas fa-user-edit"></i> Edit Profile
                         </button>
+                        <?php if ($_SESSION['user']['type'] === 'user'): ?>
                         <button class="btn btn-outline-primary w-100 mt-2" onclick="showFriendsPanel()">
                             <i class="fas fa-user-friends"></i> Friends
                         </button>
+                        <?php endif; ?>
                     </div>
                     
                     <!-- Online Users -->

@@ -29,14 +29,20 @@ if (file_exists('db_connect.php')) {
     }
 }
 
-// Clear all session data
-session_unset();
-session_destroy();
+// Preserve firewall session while clearing user data
+$preserve_firewall = $_SESSION['firewall_passed'] ?? false;
 
-// Redirect to login page
-header("Location: firewall.php");
+// Clear user-specific session data only
+unset($_SESSION['user']);
+unset($_SESSION['room_id']);
+unset($_SESSION['pending_invite']);
 
+// Restore firewall session
+if ($preserve_firewall) {
+    $_SESSION['firewall_passed'] = true;
+}
 
-//header("Location: index.php");
+// Redirect to index page (user can now use guest login)
+header("Location: index.php");
 exit;
 ?>
