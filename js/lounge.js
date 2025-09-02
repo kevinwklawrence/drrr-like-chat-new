@@ -29,7 +29,7 @@ $(document).ready(function() {
         loadRoomsWithUsers();
         loadUserRoomKeys();
         sendHeartbeat();
-    }, 500000); // Every 5 seconds
+    }, 5000); // Every 5 seconds
     
     // Fast knock checking for hosts
     setInterval(checkForKnocks, 3000); // Every 3 seconds

@@ -17,18 +17,18 @@ $fake_ip = '192.168.1.' . rand(100, 200);
 $fake_user_id = 'TEST_' . substr(md5($fake_ip . time()), 0, 12);
 $fake_name = 'TestUser' . rand(0000, 9999);
 $test_avatars =  ['m1.png', 'm2.png', 'm3.png', 'm4.png', 'm5.png', 'm6.png', 'm7.png', 'f1.png', 'f2.png', 'f3.png', 'f4.png', 'f5.png', 'f6.png', 'f7.png'];
-$fake_avatar = '/default//' . $test_avatars[array_rand($test_avatars)];
+$fake_avatar = 'default/' . $test_avatars[array_rand($test_avatars)];
 
 try {
     $conn->begin_transaction();
     
     // Add test user to the current room (following the existing pattern)
-    $stmt = $conn->prepare("INSERT INTO chatroom_users (room_id, user_id, guest_name, guest_avatar, user_id_string, is_host, ip_address) VALUES (?, NULL, ?, ?, ?, 0, ?)");
+    $stmt = $conn->prepare("INSERT INTO chatroom_users (room_id, user_id, guest_name, guest_avatar, user_id_string, is_host, ip_address, avatar) VALUES (?, NULL, ?, ?, ?, 0, ?, ?)");
     if (!$stmt) {
         throw new Exception('Prepare failed: ' . $conn->error);
     }
     
-    $stmt->bind_param("issss", $room_id, $fake_name, $fake_avatar, $fake_user_id, $fake_ip);
+    $stmt->bind_param("isssss", $room_id, $fake_name, $fake_avatar, $fake_user_id, $fake_ip, $fake_avatar);
     
     if (!$stmt->execute()) {
         throw new Exception('Execute failed: ' . $stmt->error);

@@ -138,6 +138,7 @@ $user_id_string = $_SESSION['user']['user_id'] ?? '';
 $is_host = false;
 $is_admin = false;
 $is_moderator = false;
+$ghost_mode = false;
 
 if (!empty($user_id_string)) {
     // Check host status
@@ -153,9 +154,9 @@ if (!empty($user_id_string)) {
         $stmt->close();
     }
     
-    // Check admin and moderator status (for registered users only)
+    // Check admin, moderator status, and ghost mode (for registered users only)
     if ($_SESSION['user']['type'] === 'user' && isset($_SESSION['user']['id'])) {
-        $stmt = $conn->prepare("SELECT is_admin, is_moderator FROM users WHERE id = ?");
+        $stmt = $conn->prepare("SELECT is_admin, is_moderator, ghost_mode FROM users WHERE id = ?");
         if ($stmt) {
             $stmt->bind_param("i", $_SESSION['user']['id']);
             $stmt->execute();
@@ -164,6 +165,10 @@ if (!empty($user_id_string)) {
                 $user_data = $result->fetch_assoc();
                 $is_admin = ($user_data['is_admin'] == 1);
                 $is_moderator = ($user_data['is_moderator'] == 1);
+                $ghost_mode = ($user_data['ghost_mode'] == 1);
+                
+                // Update session with current ghost mode status
+                $_SESSION['user']['ghost_mode'] = $ghost_mode;
             }
             $stmt->close();
         }
@@ -199,7 +204,7 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
     <link href="css/moderator.css" rel="stylesheet">
         <link href="css/mentions_replies.css" rel="stylesheet">
         <link href="css/afk.css" rel="stylesheet">
-
+        <link href="css/ghost_mode.css" rel="stylesheet">
 
     <?php if ($room_theme !== 'default'): ?>
     <link href="css/themes/<?php echo htmlspecialchars($room_theme); ?>.css" rel="stylesheet">
@@ -229,6 +234,11 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
                             <i class="fas fa-gavel"></i> Moderator
                         </span>
                     <?php endif; ?>
+                    <?php if ($ghost_mode): ?>
+                        <span class="badge bg-secondary ms-2" title="You are invisible to other users">
+                            <i class="fas fa-ghost"></i> Ghost Mode
+                        </span>
+                    <?php endif; ?>
                     <?php if ($youtube_enabled): ?>
                         <span class="badge bg-danger ms-2">
                             <i class="fab fa-youtube"></i> YouTube Enabled
@@ -239,6 +249,15 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
                     <button class="btn btn-outline-warning btn-toggle-afk" onclick="toggleAFK()" title="Toggle AFK Status">
                         <i class="fas fa-bed"></i> Go AFK
                     </button>
+                    
+                    <!-- Ghost Mode Toggle for Staff -->
+                    <?php if ($is_admin || $is_moderator): ?>
+                    <button class="btn <?php echo $ghost_mode ? 'btn-secondary' : 'btn-outline-secondary'; ?> ghost-mode-toggle" onclick="toggleGhostMode()" title="Toggle Ghost Mode - Become invisible to other users">
+                        <i class="fas fa-ghost"></i> 
+                        <?php echo $ghost_mode ? 'Visible' : 'Ghost'; ?>
+                    </button>
+                    <?php endif; ?>
+                    
                     <?php if ($is_admin || $is_moderator): ?>
                         <button class="btn btn-warning me-2" onclick="showAnnouncementModal()">
                             <i class="fas fa-bullhorn"></i> Announcement
@@ -466,7 +485,8 @@ if (roomTheme !== 'default') {
     const currentUser = <?php echo json_encode(array_merge($_SESSION['user'], [
         'color' => $_SESSION['user']['color'] ?? 'blue',
         'is_admin' => $is_admin,
-        'is_moderator' => $is_moderator
+        'is_moderator' => $is_moderator,
+        'ghost_mode' => $ghost_mode
     ])); ?>;
     
     if (!roomId) {
@@ -480,6 +500,62 @@ if (roomTheme !== 'default') {
             initializeYouTubePlayer();
         }
     };
+
+    // Ghost Mode Toggle Function
+    function toggleGhostMode() {
+        <?php if (!$is_admin && !$is_moderator): ?>
+        alert('Only moderators and administrators can use ghost mode.');
+        return;
+        <?php endif; ?>
+        
+        const button = $('.ghost-mode-toggle');
+        const originalText = button.html();
+        button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+        
+        $.ajax({
+            url: 'api/toggle_ghost_mode.php',
+            method: 'POST',
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    // Update UI
+                    const isGhost = response.ghost_mode;
+                    
+                    if (isGhost) {
+                        button.removeClass('btn-outline-secondary').addClass('btn-secondary');
+                        button.html('<i class="fas fa-ghost"></i> Visible');
+                        
+                        // Add or update ghost mode badge in room header
+                        if ($('.badge:contains("Ghost Mode")').length === 0) {
+                            $('.room-title').append('<span class="badge bg-secondary ms-2" title="You are invisible to other users"><i class="fas fa-ghost"></i> Ghost Mode</span>');
+                        }
+                    } else {
+                        button.removeClass('btn-secondary').addClass('btn-outline-secondary');
+                        button.html('<i class="fas fa-ghost"></i> Ghost');
+                        
+                        // Remove ghost mode badge
+                        $('.badge:contains("Ghost Mode")').remove();
+                    }
+                    
+                    // Update global currentUser object
+                    currentUser.ghost_mode = isGhost;
+                    
+                    // Show success message
+                    showToast(response.message, 'info');
+                    
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Ghost mode toggle error:', error);
+                alert('Failed to toggle ghost mode: ' + error);
+            },
+            complete: function() {
+                button.prop('disabled', false);
+            }
+        });
+    }
 
     // Add announcement modal functionality
     function showAnnouncementModal() {

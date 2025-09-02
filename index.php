@@ -1,6 +1,11 @@
 <?php
 session_start();
 // Add to index.php - right after session_start()
+if (!isset($_SESSION['firewall_passed'])) {
+    header("Location: firewall.php");
+    exit;
+}
+
 if (isset($_SESSION['user'])) {
     if (isset($_SESSION['room_id'])) {
         header("Location: room.php");
@@ -315,6 +320,11 @@ if (isset($_SESSION['user'])) {
                                     <div class="color-name">Navy</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
+
+                                <div class="color-option color-cyan" data-color="cyan" onclick="selectColor('cyan', this)">
+                                    <div class="color-name">Cyan</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
                                 
                                 <div class="color-option color-purple" data-color="purple" onclick="selectColor('purple', this)">
                                     <div class="color-name">Purple</div>
@@ -521,12 +531,13 @@ if (isset($_SESSION['user'])) {
                 
                 </div>
     </div>
-    
+        
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/index.js"></script>
     <script src="js/script.js"></script>
     <script src="js/avatar-color-mapping.js"></script>
-
+<?php include 'terms_privacy_modals.php'; ?>
 </body>
 </html>

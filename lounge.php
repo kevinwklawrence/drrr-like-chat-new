@@ -5,15 +5,10 @@ include 'db_connect.php';
 include 'check_site_ban.php';
 checkSiteBan($conn);
 
-// Add after the existing user data variables:
-
-
 if (!isset($_SESSION['user'])) {
     header("Location: index.php");
     exit;
 }
-echo '<script>console.log("Bubble values in session:", ' . json_encode($_SESSION['user']['bubble_hue'] ?? 'missing') . ', ' . json_encode($_SESSION['user']['bubble_saturation'] ?? 'missing') . ');</script>';
-
 
 $user_id_string = $_SESSION['user']['user_id'] ?? '';
 $username = $_SESSION['user']['username'] ?? null;
@@ -22,15 +17,30 @@ $avatar = $_SESSION['user']['avatar'] ?? 'default_avatar.jpg';
 $is_admin = $_SESSION['user']['is_admin'] ?? 0;
 $is_moderator = $_SESSION['user']['is_moderator'] ?? 0;
 $ip_address = $_SERVER['REMOTE_ADDR'];
-
-// ADD this line after the existing variables:
 $color = $_SESSION['user']['color'] ?? 'black';
 
+// Check ghost mode status for admins/moderators
+$ghost_mode = false;
+if (($_SESSION['user']['type'] === 'user') && ($is_admin || $is_moderator) && isset($_SESSION['user']['id'])) {
+    $ghost_check = $conn->prepare("SELECT ghost_mode FROM users WHERE id = ?");
+    if ($ghost_check) {
+        $ghost_check->bind_param("i", $_SESSION['user']['id']);
+        $ghost_check->execute();
+        $ghost_result = $ghost_check->get_result();
+        if ($ghost_result->num_rows > 0) {
+            $ghost_data = $ghost_result->fetch_assoc();
+            $ghost_mode = (bool)$ghost_data['ghost_mode'];
+            $_SESSION['user']['ghost_mode'] = $ghost_mode; // Update session
+        }
+        $ghost_check->close();
+    }
+}
+
+// Handle invite processing (existing code)
 if (isset($_GET['invite']) && !empty($_GET['invite'])) {
     $invite_code = trim($_GET['invite']);
     error_log("INVITE_LINK: Processing invite code: $invite_code");
     
-    // Find room by invite code
     $invite_stmt = $conn->prepare("SELECT id, name, invite_code FROM chatrooms WHERE invite_code = ? AND invite_only = 1");
     if ($invite_stmt) {
         $invite_stmt->bind_param("s", $invite_code);
@@ -41,7 +51,6 @@ if (isset($_GET['invite']) && !empty($_GET['invite'])) {
             $invited_room = $invite_result->fetch_assoc();
             error_log("INVITE_LINK: Found room: " . $invited_room['name']);
             
-            // Store invite data in session for modal display
             $_SESSION['pending_invite'] = [
                 'room_id' => $invited_room['id'],
                 'room_name' => $invited_room['name'],
@@ -49,7 +58,6 @@ if (isset($_GET['invite']) && !empty($_GET['invite'])) {
             ];
         } else {
             error_log("INVITE_LINK: Invalid invite code: $invite_code");
-            // Redirect with error
             header("Location: lounge.php?error=invalid_invite");
             exit;
         }
@@ -57,28 +65,30 @@ if (isset($_GET['invite']) && !empty($_GET['invite'])) {
     }
 }
 
-// FIXED: Include color field in the global_users INSERT/UPDATE
+// Update global_users (respect ghost mode)
 if (!empty($user_id_string)) {
     error_log("LOUNGE.PHP: Updating global_users for user: $user_id_string");
     
-    // Preserve existing avatar customization values
     $existing_hue = $_SESSION['user']['avatar_hue'] ?? 0;
     $existing_sat = $_SESSION['user']['avatar_saturation'] ?? 100;
     
-    error_log("LOUNGE.PHP: Using session values - hue: $existing_hue, sat: $existing_sat");
-    
-
-    // Preserve existing avatar customization values
-    $existing_hue = $_SESSION['user']['avatar_hue'] ?? 0;
-    $existing_sat = $_SESSION['user']['avatar_saturation'] ?? 100;
-    
-    $stmt = $conn->prepare("INSERT INTO global_users (user_id_string, username, guest_name, avatar, guest_avatar, is_admin, is_moderator, ip_address, color, avatar_hue, avatar_saturation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE username = VALUES(username), guest_name = VALUES(guest_name), avatar = VALUES(avatar), guest_avatar = VALUES(guest_avatar), is_admin = VALUES(is_admin), is_moderator = VALUES(is_moderator), ip_address = VALUES(ip_address), color = VALUES(color), last_activity = CURRENT_TIMESTAMP");
-if ($stmt) {
-    $stmt->bind_param("ssssissssii", $user_id_string, $username, $guest_name, $avatar, $avatar, $is_admin, $is_moderator, $ip_address, $color, $existing_hue, $existing_sat);
-    $stmt->execute();
-    $stmt->close();
-}
-
+    // Only add to global_users if not in ghost mode
+    if (!$ghost_mode) {
+        $stmt = $conn->prepare("INSERT INTO global_users (user_id_string, username, guest_name, avatar, guest_avatar, is_admin, is_moderator, ip_address, color, avatar_hue, avatar_saturation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE username = VALUES(username), guest_name = VALUES(guest_name), avatar = VALUES(avatar), guest_avatar = VALUES(guest_avatar), is_admin = VALUES(is_admin), is_moderator = VALUES(is_moderator), ip_address = VALUES(ip_address), color = VALUES(color), last_activity = CURRENT_TIMESTAMP");
+        if ($stmt) {
+            $stmt->bind_param("ssssissssii", $user_id_string, $username, $guest_name, $avatar, $avatar, $is_admin, $is_moderator, $ip_address, $color, $existing_hue, $existing_sat);
+            $stmt->execute();
+            $stmt->close();
+        }
+    } else {
+        // Remove from global_users if in ghost mode
+        $stmt = $conn->prepare("DELETE FROM global_users WHERE user_id_string = ?");
+        if ($stmt) {
+            $stmt->bind_param("s", $user_id_string);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -110,14 +120,13 @@ if ($stmt) {
         <div class="lounge-container">
             <!-- Header -->
             <div class="lounge-header">
-    <div class="header-centered-logo">
-        <img src="images/duranu.png" alt="Duranu Logo" class="site-logo">
-        <h1 class="lounge-title h4">
-            <i class="fas fa-comments"></i> Chat Lounge
-        </h1>
-    </div>
- 
-</div>
+                <div class="header-centered-logo">
+                    <img src="images/duranu.png" alt="Duranu Logo" class="site-logo">
+                    <h1 class="lounge-title h4">
+                        <i class="fas fa-comments"></i> Chat Lounge
+                    </h1>
+                </div>
+            </div>
             
             <div class="row">
                 <!-- User Profile Sidebar -->
@@ -137,9 +146,24 @@ if ($stmt) {
                                     <?php if ($is_admin): ?>
                                         <br><span class="badge bg-danger">Admin</span>
                                     <?php endif; ?>
+                                    <?php if ($is_moderator && !$is_admin): ?>
+                                        <br><span class="badge bg-warning">Moderator</span>
+                                    <?php endif; ?>
+                                    <?php if ($ghost_mode): ?>
+                                        <br><span class="badge bg-secondary"><i class="fas fa-ghost"></i> Ghost Mode</span>
+                                    <?php endif; ?>
                                 </small>
                             </div>
                         </div>
+                        
+                        <!-- Ghost Mode Toggle for Staff -->
+                        <?php if ($is_admin || $is_moderator): ?>
+                        <button class="btn <?php echo $ghost_mode ? 'btn-warning' : 'btn-outline-secondary'; ?> w-100 mb-2" onclick="toggleGhostMode()">
+                            <i class="fas fa-ghost"></i> 
+                            <?php echo $ghost_mode ? 'Disable Ghost Mode' : 'Enable Ghost Mode'; ?>
+                        </button>
+                        <?php endif; ?>
+                        
                         <button class="btn change-avatar-btn w-100" onclick="showAvatarSelector()">
                             <i class="fas fa-user-edit"></i> Change Avatar
                         </button>
@@ -222,11 +246,72 @@ if ($stmt) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     const currentUser = <?php echo json_encode(array_merge($_SESSION['user'], [
-        'color' => $color
+        'color' => $color,
+        'ghost_mode' => $ghost_mode
     ])); ?>;
     console.log('Current user:', currentUser);
+    
+    // Ghost Mode Toggle Function
+    function toggleGhostMode() {
+        <?php if (!$is_admin && !$is_moderator): ?>
+        alert('Only moderators and administrators can use ghost mode.');
+        return;
+        <?php endif; ?>
+        
+        const button = $('button[onclick="toggleGhostMode()"]');
+        const originalText = button.html();
+        button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+        
+        $.ajax({
+            url: 'api/toggle_ghost_mode.php',
+            method: 'POST',
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    // Update UI
+                    const isGhost = response.ghost_mode;
+                    
+                    if (isGhost) {
+                        button.removeClass('btn-outline-secondary').addClass('btn-warning');
+                        button.html('<i class="fas fa-ghost"></i> Disable Ghost Mode');
+                        
+                        // Add ghost mode badge if it doesn't exist
+                        if ($('.badge:contains("Ghost Mode")').length === 0) {
+                            $('.text-muted').append('<br><span class="badge bg-secondary"><i class="fas fa-ghost"></i> Ghost Mode</span>');
+                        }
+                    } else {
+                        button.removeClass('btn-warning').addClass('btn-outline-secondary');
+                        button.html('<i class="fas fa-ghost"></i> Enable Ghost Mode');
+                        
+                        // Remove ghost mode badge
+                        $('.badge:contains("Ghost Mode")').remove();
+                    }
+                    
+                    // Update global currentUser object
+                    currentUser.ghost_mode = isGhost;
+                    
+                    // Show success message
+                    alert(response.message);
+                    
+                    // Refresh online users list after a short delay to see the effect
+                    setTimeout(() => {
+                        loadOnlineUsers();
+                    }, 1000);
+                    
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Ghost mode toggle error:', error);
+                alert('Failed to toggle ghost mode: ' + error);
+            },
+            complete: function() {
+                button.prop('disabled', false);
+            }
+        });
+    }
 </script>
-
 
     <script>
 <?php if (isset($_SESSION['pending_invite'])): ?>

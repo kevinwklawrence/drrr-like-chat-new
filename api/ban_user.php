@@ -55,6 +55,28 @@ if ($user_id_string === $current_user_id_string) {
     exit;
 }
 
+// BAN IMMUNITY: Check if target user is admin or moderator
+$target_is_staff = false;
+if (is_numeric($user_id_string)) {
+    $staff_check = $conn->prepare("SELECT is_admin, is_moderator, username FROM users WHERE user_id = ?");
+    if ($staff_check) {
+        $staff_check->bind_param("s", $user_id_string);
+        $staff_check->execute();
+        $staff_result = $staff_check->get_result();
+        if ($staff_result->num_rows > 0) {
+            $staff_data = $staff_result->fetch_assoc();
+            if ($staff_data['is_admin'] || $staff_data['is_moderator']) {
+                $target_is_staff = true;
+                $staff_title = $staff_data['is_admin'] ? 'administrator' : 'moderator';
+                echo json_encode(['status' => 'error', 'message' => 'Cannot ban ' . $staff_data['username'] . ' - they are an ' . $staff_title]);
+                $staff_check->close();
+                exit;
+            }
+        }
+        $staff_check->close();
+    }
+}
+
 // Check if user exists in the room (allow banning even if user has left)
 $stmt = $conn->prepare("SELECT * FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");
 if (!$stmt) {

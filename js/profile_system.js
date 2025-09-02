@@ -738,6 +738,7 @@ function loadColorsForEditor() {
         { name: 'cobalt', displayName: 'Cobalt' },
         { name: 'teal2', displayName: 'Teal' },
         { name: 'navy', displayName: 'Navy' },
+        { name: 'cyan', displayName: 'Cyan' },
         { name: 'purple', displayName: 'Purple' },
         { name: 'lavender', displayName: 'Lavender' },
         { name: 'lavender2', displayName: 'Lavender2' },

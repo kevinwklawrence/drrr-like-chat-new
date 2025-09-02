@@ -1,6 +1,12 @@
 <?php
 session_start();
 // Add to index.php - right after session_start()
+
+if (!isset($_SESSION['firewall_passed'])) {
+    header("Location: firewall.php");
+    exit;
+}
+
 if (isset($_SESSION['user'])) {
     if (isset($_SESSION['room_id'])) {
         header("Location: room.php");
@@ -241,7 +247,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $web_base_dir = 'images/';
                                 $allowed_ext = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
                                 $excluded_folders = ['staff', 'bg', 'icon', 'covers'];
-                                $priority_folders = ['time-limited', 'community'];
+                                $priority_folders = ['time-limited', 'community', 'recolored'];
                                 $nonpriority_folders = ['default', 'drrrjp', 'mushoku'];
                                 $drrrx2 = ['drrrx2'];
                                 $total_avatars = 0;
@@ -587,6 +593,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="color-name">Navy</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
+
+                                <div class="color-option color-cyan" data-color="cyan" onclick="selectColor('cyan', this)">
+                                    <div class="color-name">Cyan</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
                                 
                                 <div class="color-option color-purple" data-color="purple" onclick="selectColor('purple', this)">
                                     <div class="color-name">Purple</div>
@@ -784,6 +795,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <a href="register.php" class="btn btn-outline-light">
                         <i class="fas fa-user-plus"></i> Create Account
                     </a>
+                    <a href="forgot.php" class="btn btn-outline-light text-danger">
+                        <i class="fas fa-lock"></i> Forgot Password
+                    </a>
                 </div>
             </div>
             <div>
@@ -793,12 +807,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 </div>
     </div>
-    
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/login.js"></script>
     <script src="js/script.js"></script>
     <!-- Add this script tag before the closing </body> tag -->
 <script src="js/avatar-color-mapping.js"></script>
+<script>
+$(document).ready(function() {
+    // Terms of Service link handler
+    $('a[href="forgot.php"]').on('click', function(e) {
+        e.preventDefault();
+        $('#forgotModal').modal('show');
+    });
+});
+</script>
+<?php include 'terms_privacy_modals.php'; ?>
 </body>
 </html>

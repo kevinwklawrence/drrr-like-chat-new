@@ -25,52 +25,77 @@ try {
     include '../db_connect.php';
     include '../check_site_ban.php';
 
-    // Check for site ban before processing
-    checkSiteBan($conn);
+    // Check for site ban before processing (but skip for admins/moderators)
+    $is_admin = false;
+    $is_moderator = false;
+    $ghost_mode = false;
+    
+    if ($user_session['type'] === 'user' && isset($user_session['id'])) {
+        $admin_check = $conn->prepare("SELECT is_admin, is_moderator, ghost_mode FROM users WHERE id = ?");
+        if ($admin_check) {
+            $admin_check->bind_param("i", $user_session['id']);
+            $admin_check->execute();
+            $admin_result = $admin_check->get_result();
+            if ($admin_result->num_rows > 0) {
+                $admin_data = $admin_result->fetch_assoc();
+                $is_admin = (bool)$admin_data['is_admin'];
+                $is_moderator = (bool)$admin_data['is_moderator'];
+                $ghost_mode = (bool)$admin_data['ghost_mode'];
+            }
+            $admin_check->close();
+        }
+    }
+    
+    // Only check site ban for non-staff members
+    if (!$is_admin && !$is_moderator) {
+        checkSiteBan($conn);
+    }
 
     $room_id = (int)($_POST['room_id'] ?? 0);
     $password = $_POST['password'] ?? '';
     $user_id_string = $user_session['user_id'] ?? '';
 
-    error_log("JOIN_ROOM_DEBUG: Starting - room_id: $room_id, user: $user_id_string, password_provided: " . (!empty($password) ? 'YES' : 'NO'));
+    error_log("JOIN_ROOM_DEBUG: Starting - room_id: $room_id, user: $user_id_string, is_admin: " . ($is_admin ? 'YES' : 'NO') . ", is_moderator: " . ($is_moderator ? 'YES' : 'NO') . ", ghost_mode: " . ($ghost_mode ? 'YES' : 'NO'));
 
     if ($room_id <= 0 || empty($user_id_string)) {
         echo json_encode(['status' => 'error', 'message' => 'Invalid parameters']);
         exit;
     }
 
-    // CRITICAL FIX: Check if user is banned FIRST before any other checks
-    $ban_check_result = checkUserBanStatus($conn, $room_id, $user_id_string);
-    if ($ban_check_result['banned']) {
-        error_log("JOIN_ROOM_DEBUG: User $user_id_string is banned from room $room_id");
-        
-        $ban_message = "You are banned from this room";
-        if ($ban_check_result['permanent']) {
-            $ban_message .= " permanently";
-        } else {
-            if (isset($ban_check_result['expires'])) {
-                $expires_time = strtotime($ban_check_result['expires']);
-                $remaining_time = $expires_time - time();
-                if ($remaining_time > 0) {
-                    $minutes_remaining = ceil($remaining_time / 60);
-                    $ban_message .= " for $minutes_remaining more minute" . ($minutes_remaining != 1 ? 's' : '');
+    // BYPASS: Skip ban check for admins and moderators
+    if (!$is_admin && !$is_moderator) {
+        $ban_check_result = checkUserBanStatus($conn, $room_id, $user_id_string);
+        if ($ban_check_result['banned']) {
+            error_log("JOIN_ROOM_DEBUG: User $user_id_string is banned from room $room_id");
+            
+            $ban_message = "You are banned from this room";
+            if ($ban_check_result['permanent']) {
+                $ban_message .= " permanently";
+            } else {
+                if (isset($ban_check_result['expires'])) {
+                    $expires_time = strtotime($ban_check_result['expires']);
+                    $remaining_time = $expires_time - time();
+                    if ($remaining_time > 0) {
+                        $minutes_remaining = ceil($remaining_time / 60);
+                        $ban_message .= " for $minutes_remaining more minute" . ($minutes_remaining != 1 ? 's' : '');
+                    }
                 }
             }
+            if (!empty($ban_check_result['reason'])) {
+                $ban_message .= ". Reason: " . $ban_check_result['reason'];
+            }
+            
+            echo json_encode([
+                'status' => 'error', 
+                'message' => $ban_message,
+                'banned' => true,
+                'ban_info' => $ban_check_result
+            ]);
+            exit;
         }
-        if (!empty($ban_check_result['reason'])) {
-            $ban_message .= ". Reason: " . $ban_check_result['reason'];
-        }
-        
-        echo json_encode([
-            'status' => 'error', 
-            'message' => $ban_message,
-            'banned' => true,
-            'ban_info' => $ban_check_result
-        ]);
-        exit;
+    } else {
+        error_log("JOIN_ROOM_DEBUG: Ban check bypassed for admin/moderator");
     }
-    
-    error_log("JOIN_ROOM_DEBUG: Ban check passed");
     
     // Ensure room_keys column exists
     $columns_check = $conn->query("SHOW COLUMNS FROM chatrooms LIKE 'room_keys'");
@@ -84,8 +109,6 @@ try {
             error_log("JOIN_ROOM_DEBUG: room_keys column created successfully");
         }
     }
-    
-    error_log("JOIN_ROOM_DEBUG: Room keys column check passed");
     
     // Get room information
     $select_fields = "id, name, capacity, password, has_password, permanent, host_user_id_string, invite_only, invite_code, members_only, friends_only";
@@ -113,7 +136,7 @@ try {
     
     error_log("JOIN_ROOM_DEBUG: Room found - name: {$room['name']}, has_password: {$room['has_password']}");
 
-    // NEW: Check if this is a permanent room and user is the original host
+    // Check if this is a permanent room and user is the original host
     $is_returning_permanent_host = false;
     $is_permanent = (bool)($room['permanent'] ?? false);
     $original_host_id = $room['host_user_id_string'] ?? '';
@@ -124,23 +147,26 @@ try {
         error_log("JOIN_ROOM_DEBUG: Original host of permanent room granted automatic access and host privileges");
     }
 
-    // Check invite-only access (unless returning permanent host)
-    if (!$is_returning_permanent_host && isset($room['invite_only']) && $room['invite_only']) {
-        $provided_invite = $_POST['invite_code'] ?? $_GET['invite'] ?? '';
-        $room_invite_code = $room['invite_code'] ?? '';
-        
-        error_log("JOIN_ROOM: Invite check - provided: '$provided_invite', expected: '$room_invite_code'");
-        
-        if (empty($provided_invite) || $provided_invite !== $room_invite_code) {
-            echo json_encode(['status' => 'error', 'message' => 'This room requires a valid invite code']);
-            exit;
-        } else {
-            error_log("JOIN_ROOM: Valid invite code provided");
-        }
-    }
+    // BYPASS: Skip all access restrictions for admins and moderators
+    $access_granted = $is_admin || $is_moderator || $is_returning_permanent_host;
     
-    // Check access restrictions (unless returning permanent host)
-    if (!$is_returning_permanent_host) {
+    if (!$access_granted) {
+        // Check invite-only access
+        if (isset($room['invite_only']) && $room['invite_only']) {
+            $provided_invite = $_POST['invite_code'] ?? $_GET['invite'] ?? '';
+            $room_invite_code = $room['invite_code'] ?? '';
+            
+            error_log("JOIN_ROOM: Invite check - provided: '$provided_invite', expected: '$room_invite_code'");
+            
+            if (empty($provided_invite) || $provided_invite !== $room_invite_code) {
+                echo json_encode(['status' => 'error', 'message' => 'This room requires a valid invite code']);
+                exit;
+            } else {
+                error_log("JOIN_ROOM: Valid invite code provided");
+            }
+        }
+        
+        // Check access restrictions
         $access_denied_reason = null;
         
         // Check members-only access
@@ -191,6 +217,10 @@ try {
             echo json_encode(['status' => 'error', 'message' => $access_denied_reason]);
             exit;
         }
+        
+        $access_granted = true;
+    } else {
+        error_log("JOIN_ROOM_DEBUG: Access restrictions bypassed for admin/moderator");
     }
 
     // Check if user is already in the room
@@ -209,39 +239,33 @@ try {
         $stmt->close();
     }
     
-    error_log("JOIN_ROOM_DEBUG: User not already in room");
-    
-    // Check room capacity
-    $stmt = $conn->prepare("SELECT COUNT(*) as user_count FROM chatroom_users WHERE room_id = ?");
-    if ($stmt) {
-        $stmt->bind_param("i", $room_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $count_data = $result->fetch_assoc();
-        
-        if ($count_data['user_count'] >= $room['capacity']) {
-            echo json_encode(['status' => 'error', 'message' => 'Room is full']);
+    // BYPASS: Skip capacity check for admins and moderators
+    if (!$is_admin && !$is_moderator) {
+        $stmt = $conn->prepare("SELECT COUNT(*) as user_count FROM chatroom_users WHERE room_id = ?");
+        if ($stmt) {
+            $stmt->bind_param("i", $room_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $count_data = $result->fetch_assoc();
+            
+            if ($count_data['user_count'] >= $room['capacity']) {
+                echo json_encode(['status' => 'error', 'message' => 'Room is full']);
+                $stmt->close();
+                exit;
+            }
             $stmt->close();
-            exit;
         }
-        $stmt->close();
+    } else {
+        error_log("JOIN_ROOM_DEBUG: Capacity check bypassed for admin/moderator");
     }
     
-    error_log("JOIN_ROOM_DEBUG: Room capacity check passed");
-    
-    // Handle password protection and room keys (unless returning permanent host)
+    // BYPASS: Skip password check for admins and moderators
     $requires_password = ($room['has_password'] == 1);
-    $access_granted = $is_returning_permanent_host; // Permanent hosts get automatic access
     $used_room_key = false;
     
-    error_log("JOIN_ROOM_DEBUG: Requires password: " . ($requires_password ? 'YES' : 'NO'));
-    error_log("JOIN_ROOM_DEBUG: Is returning permanent host: " . ($is_returning_permanent_host ? 'YES' : 'NO'));
-    
-    if (!$access_granted && $requires_password) {
+    if (!$access_granted && $requires_password && !$is_admin && !$is_moderator) {
         // Check for room key first
         if ($room_keys_column_exists && isset($room['room_keys']) && !empty($room['room_keys']) && $room['room_keys'] !== 'null') {
-            error_log("JOIN_ROOM_DEBUG: Checking room keys...");
-            
             $room_keys = json_decode($room['room_keys'], true);
             if (json_last_error() === JSON_ERROR_NONE && is_array($room_keys)) {
                 if (isset($room_keys[$user_id_string])) {
@@ -295,7 +319,8 @@ try {
             
             $access_granted = true;
         }
-    } else if (!$access_granted) {
+    } else if ($is_admin || $is_moderator) {
+        error_log("JOIN_ROOM_DEBUG: Password check bypassed for admin/moderator");
         $access_granted = true;
     }
     
@@ -304,16 +329,12 @@ try {
         exit;
     }
     
-    error_log("JOIN_ROOM_DEBUG: Access granted");
-    
     // Get available columns in chatroom_users table
     $columns_query = $conn->query("SHOW COLUMNS FROM chatroom_users");
     $available_columns = [];
     while ($row = $columns_query->fetch_assoc()) {
         $available_columns[] = $row['Field'];
     }
-    
-    error_log("JOIN_ROOM_DEBUG: Available columns: " . implode(', ', $available_columns));
     
     // Build dynamic INSERT statement
     $conn->begin_transaction();
@@ -425,10 +446,6 @@ try {
     
     $insert_sql = "INSERT INTO chatroom_users (" . implode(', ', $insert_fields) . ") VALUES (" . implode(', ', $insert_values) . ")";
     
-    error_log("JOIN_ROOM_DEBUG: Insert SQL: $insert_sql");
-    error_log("JOIN_ROOM_DEBUG: Param types: $param_types");
-    error_log("JOIN_ROOM_DEBUG: Param values: " . print_r($param_values, true));
-    
     $stmt = $conn->prepare($insert_sql);
     if (!$stmt) {
         throw new Exception('Database error: ' . $conn->error);
@@ -441,35 +458,39 @@ try {
     }
     $stmt->close();
     
-    error_log("JOIN_ROOM_DEBUG: User inserted into chatroom_users");
-    
-    // Add join message
-    $display_name = $user_session['name'] ?? $user_session['username'] ?? 'Unknown User';
-    $join_method = '';
-    
-    if ($used_room_key) {
-        $join_method = ' (using permanent room key)';
-    } elseif ($is_returning_permanent_host) {
-        $join_method = ' (permanent room host returned)';
-    }
-    
-    $join_message = $display_name . ' joined the room' . $join_method;
-    
-    // Check if messages table has required columns
-    $msg_columns_query = $conn->query("SHOW COLUMNS FROM messages");
-    $msg_columns = [];
-    while ($row = $msg_columns_query->fetch_assoc()) {
-        $msg_columns[] = $row['Field'];
-    }
-    
-    if (in_array('is_system', $msg_columns)) {
-        $stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, ?, ?, 1, NOW(), ?, 'system')");
-        if ($stmt) {
-            $avatar = $user_session['avatar'] ?? 'default_avatar.jpg';
-            $stmt->bind_param("isss", $room_id, $user_id_string, $join_message, $avatar);
-            $stmt->execute();
-            $stmt->close();
+    // GHOST MODE: Only add join message if user is not in ghost mode
+    if (!$ghost_mode) {
+        $display_name = $user_session['name'] ?? $user_session['username'] ?? 'Unknown User';
+        $join_method = '';
+        
+        if ($used_room_key) {
+            $join_method = ' (using permanent room key)';
+        } elseif ($is_returning_permanent_host) {
+            $join_method = ' (permanent room host returned)';
+        } elseif ($is_admin || $is_moderator) {
+            $join_method = ' (staff access)';
         }
+        
+        $join_message = $display_name . ' joined the room' . $join_method;
+        
+        // Check if messages table has required columns
+        $msg_columns_query = $conn->query("SHOW COLUMNS FROM messages");
+        $msg_columns = [];
+        while ($row = $msg_columns_query->fetch_assoc()) {
+            $msg_columns[] = $row['Field'];
+        }
+        
+        if (in_array('is_system', $msg_columns)) {
+            $stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, ?, ?, 1, NOW(), ?, 'system')");
+            if ($stmt) {
+                $avatar = $user_session['avatar'] ?? 'default_avatar.jpg';
+                $stmt->bind_param("isss", $room_id, $user_id_string, $join_message, $avatar);
+                $stmt->execute();
+                $stmt->close();
+            }
+        }
+    } else {
+        error_log("JOIN_ROOM_DEBUG: Ghost mode active - join message suppressed");
     }
     
     $_SESSION['room_id'] = $room_id;
@@ -491,49 +512,31 @@ try {
             if ($user_sync_stmt) {
                 $user_sync_stmt->bind_param("is", $room_id, $user_id_string);
                 $user_sync_stmt->execute();
-                $affected_rows = $user_sync_stmt->affected_rows;
-                if ($affected_rows > 0) {
-                    error_log("JOIN_ROOM_DEBUG: Synced avatar data from users table");
-                }
                 $user_sync_stmt->close();
             }
         } catch (Exception $e) {
             error_log("JOIN_ROOM_DEBUG: User table sync failed (non-critical): " . $e->getMessage());
-        }
-    } else {
-        // For guests, sync from global_users as fallback
-        try {
-            $sync_stmt = $conn->prepare("UPDATE chatroom_users cu 
-                                 JOIN global_users gu ON cu.user_id_string = gu.user_id_string 
-                                 SET cu.avatar_hue = gu.avatar_hue, cu.avatar_saturation = gu.avatar_saturation, cu.bubble_hue = gu.bubble_hue, cu.bubble_saturation = gu.bubble_saturation 
-                                 WHERE cu.room_id = ? AND cu.user_id_string = ?");
-            if ($sync_stmt) {
-                $sync_stmt->bind_param("is", $room_id, $user_id_string);
-                $sync_stmt->execute();
-                $affected_rows = $sync_stmt->affected_rows;
-                if ($affected_rows > 0) {
-                    error_log("JOIN_ROOM_DEBUG: Synced avatar customization from global_users");
-                }
-                $sync_stmt->close();
-            }
-        } catch (Exception $e) {
-            error_log("JOIN_ROOM_DEBUG: Avatar sync failed (non-critical): " . $e->getMessage());
         }
     }
 
     $success_message = 'Joined room successfully';
     if ($is_returning_permanent_host) {
         $success_message = 'Rejoined as host of permanent room';
+    } elseif ($is_admin || $is_moderator) {
+        $success_message = 'Joined room with staff privileges';
+        if ($ghost_mode) {
+            $success_message .= ' (ghost mode active)';
+        }
     }
-
-    error_log("JOIN_ROOM_DEBUG: Successfully joined room $room_id" . ($used_room_key ? ' using permanent room key' : '') . ($is_returning_permanent_host ? ' as returning permanent host' : ''));
     
     echo json_encode([
         'status' => 'success', 
         'message' => $success_message,
         'used_room_key' => $used_room_key,
         'permanent_access' => $used_room_key,
-        'is_host' => $is_returning_permanent_host
+        'is_host' => $is_returning_permanent_host,
+        'ghost_mode' => $ghost_mode,
+        'bypassed_restrictions' => $is_admin || $is_moderator
     ]);
 
 } catch (Exception $e) {
@@ -554,10 +557,9 @@ if (isset($conn)) {
     $conn->close();
 }
 
-// CRITICAL FUNCTION: Check if user is banned from room
+// Ban check function remains the same but is bypassed for admins/moderators
 function checkUserBanStatus($conn, $room_id, $user_id_string) {
     try {
-        // Get banlist from chatrooms table (simple version)
         $stmt = $conn->prepare("SELECT banlist FROM chatrooms WHERE id = ?");
         if (!$stmt) {
             error_log("Failed to prepare ban check query: " . $conn->error);
@@ -581,19 +583,15 @@ function checkUserBanStatus($conn, $room_id, $user_id_string) {
             return ['banned' => false];
         }
         
-        // Check if user is in banlist
         foreach ($banlist as $ban) {
             if ($ban['user_id_string'] === $user_id_string) {
-                // Check if ban is still active
                 if ($ban['ban_until'] === null) {
-                    // Permanent ban
                     return [
                         'banned' => true,
                         'permanent' => true,
                         'reason' => $ban['reason'] ?? ''
                     ];
                 } else {
-                    // Temporary ban - check if still valid
                     if ($ban['ban_until'] > time()) {
                         return [
                             'banned' => true,
@@ -602,7 +600,6 @@ function checkUserBanStatus($conn, $room_id, $user_id_string) {
                             'reason' => $ban['reason'] ?? ''
                         ];
                     }
-                    // Ban expired, should clean it up but for now just ignore
                 }
             }
         }

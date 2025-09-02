@@ -1,6 +1,4 @@
 <?php
-// 1. UPDATE api/leave_room.php - Replace the existing leave_room.php content with this:
-
 session_start();
 include '../db_connect.php';
 
@@ -25,7 +23,23 @@ if ($room_id <= 0) {
 $user_id = ($_SESSION['user']['type'] === 'user') ? $_SESSION['user']['id'] : null;
 $user_id_string = $_SESSION['user']['user_id'] ?? '';
 
-error_log("Leave room: user_id=$user_id, user_id_string=$user_id_string, room_id=$room_id, action=$action");
+// Check if user is in ghost mode
+$ghost_mode = false;
+if ($user_id) {
+    $ghost_check = $conn->prepare("SELECT ghost_mode FROM users WHERE id = ?");
+    if ($ghost_check) {
+        $ghost_check->bind_param("i", $user_id);
+        $ghost_check->execute();
+        $ghost_result = $ghost_check->get_result();
+        if ($ghost_result->num_rows > 0) {
+            $ghost_data = $ghost_result->fetch_assoc();
+            $ghost_mode = (bool)$ghost_data['ghost_mode'];
+        }
+        $ghost_check->close();
+    }
+}
+
+error_log("Leave room: user_id=$user_id, user_id_string=$user_id_string, room_id=$room_id, action=$action, ghost_mode=" . ($ghost_mode ? 'true' : 'false'));
 
 if (empty($user_id_string)) {
     echo json_encode(['status' => 'error', 'message' => 'Invalid user session']);
@@ -105,6 +119,18 @@ try {
             $leave_stmt->bind_param("is", $room_id, $user_id_string);
             $leave_stmt->execute();
             $leave_stmt->close();
+            
+            // GHOST MODE: Only add leave message if user is not in ghost mode
+            if (!$ghost_mode) {
+                $display_name = $_SESSION['user']['name'] ?? $_SESSION['user']['username'] ?? 'Unknown User';
+                $leave_message = $display_name . " left the room.";
+                $system_stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, timestamp, type) VALUES (?, 'SYSTEM', ?, NOW(), 'system')");
+                if ($system_stmt) {
+                    $system_stmt->bind_param("is", $room_id, $leave_message);
+                    $system_stmt->execute();
+                    $system_stmt->close();
+                }
+            }
             
             $conn->commit();
             echo json_encode(['status' => 'success']);
@@ -230,14 +256,16 @@ try {
             $leave_stmt->execute();
             $leave_stmt->close();
             
-            // Add system message
-            $display_name = $_SESSION['user']['name'] ?? $_SESSION['user']['username'] ?? 'Host';
-            $leave_message = $display_name . " has left the room (retaining host privileges).";
-            $system_stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, timestamp, type) VALUES (?, 'SYSTEM', ?, NOW(), 'system')");
-            if ($system_stmt) {
-                $system_stmt->bind_param("is", $room_id, $leave_message);
-                $system_stmt->execute();
-                $system_stmt->close();
+            // GHOST MODE: Only add leave message if user is not in ghost mode
+            if (!$ghost_mode) {
+                $display_name = $_SESSION['user']['name'] ?? $_SESSION['user']['username'] ?? 'Host';
+                $leave_message = $display_name . " has left the room (retaining host privileges).";
+                $system_stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, timestamp, type) VALUES (?, 'SYSTEM', ?, NOW(), 'system')");
+                if ($system_stmt) {
+                    $system_stmt->bind_param("is", $room_id, $leave_message);
+                    $system_stmt->execute();
+                    $system_stmt->close();
+                }
             }
             
             $conn->commit();
@@ -251,6 +279,18 @@ try {
     $leave_stmt->bind_param("is", $room_id, $user_id_string);
     $leave_stmt->execute();
     $leave_stmt->close();
+    
+    // GHOST MODE: Only add leave message if user is not in ghost mode
+    if (!$ghost_mode) {
+        $display_name = $_SESSION['user']['name'] ?? $_SESSION['user']['username'] ?? 'Unknown User';
+        $leave_message = $display_name . " left the room.";
+        $system_stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, timestamp, type) VALUES (?, 'SYSTEM', ?, NOW(), 'system')");
+        if ($system_stmt) {
+            $system_stmt->bind_param("is", $room_id, $leave_message);
+            $system_stmt->execute();
+            $system_stmt->close();
+        }
+    }
     
     $conn->commit();
     echo json_encode(['status' => 'success']);

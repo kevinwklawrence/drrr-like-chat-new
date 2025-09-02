@@ -1,6 +1,12 @@
 <?php
 session_start();
 // Add to index.php - right after session_start()
+
+if (!isset($_SESSION['firewall_passed'])) {
+    header("Location: firewall.php");
+    exit;
+}
+
 if (isset($_SESSION['user'])) {
     if (isset($_SESSION['room_id'])) {
         header("Location: room.php");
@@ -302,9 +308,11 @@ error_log("User registered with avatar and avatar_memory set to: $default_avatar
                 </div>
         </div>
     </div>
-    
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/register.js"></script>
+
+    <?php include 'terms_privacy_modals.php'; ?>
 </body>
 </html>
