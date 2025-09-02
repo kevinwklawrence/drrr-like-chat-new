@@ -262,6 +262,14 @@
     --user-border-color: #000000; 
 }
 
+.user-color-cnegative { 
+    --user-gradient:  linear-gradient(to bottom, rgba(255,255,255,1) 0%,rgba(246,246,246,1) 47%,rgba(237,237,237,1) 100%);
+    --user-tail-color: #da0053; 
+    --user-text-color: #000000; 
+    --user-text-shadow-color: #ffffff;
+    --user-border-color: #da0053; 
+}
+
 .user-color-policeman2 { 
     --user-gradient: linear-gradient(to bottom, rgba(53,117,131,1) 0%,rgba(36,80,65,1) 50%,rgba(3,9,3,1) 51%,rgba(7,3,5,1) 100%);
     --user-tail-color: #ffffff; 

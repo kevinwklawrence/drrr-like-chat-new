@@ -553,6 +553,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
 
+                                <div class="color-option color-cnegative" data-color="cnegative" onclick="selectColor('cnegative', this)">
+                                    <div class="color-name">Color-Negative</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
                                 <div class="color-option color-gray" data-color="gray" onclick="selectColor('gray', this)">
                                     <div class="color-name">Gray</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>

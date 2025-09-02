@@ -731,6 +731,7 @@ function loadColorsForEditor() {
         { name: 'black', displayName: 'Black' },
         { name: 'policeman2', displayName: 'Black?' },
         { name: 'negative', displayName: 'Negative' },
+        { name: 'cnegative', displayName: 'Color-Negative' },
         { name: 'gray', displayName: 'Gray' },
         { name: 'tan', displayName: 'Tan' },
         { name: 'blue', displayName: 'Blue' },
