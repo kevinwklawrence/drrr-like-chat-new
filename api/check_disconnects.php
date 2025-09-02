@@ -1,5 +1,6 @@
 <?php
 // api/check_disconnects.php - Fixed disconnect and AFK detection system
+// PHP 8.0+ Compatible Version
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/../db_connect.php';
@@ -12,6 +13,11 @@ try {
     
     // Ensure required columns exist
     ensureActivityColumns($conn);
+    
+    // Convert constants to variables (PHP 8.0+ compatibility)
+    $afk_timeout = AFK_TIMEOUT;
+    $disconnect_timeout = DISCONNECT_TIMEOUT;
+    $session_timeout = SESSION_TIMEOUT;
     
     // ===== PHASE 1: MARK USERS AS AFK =====
     // Find users who should be marked as AFK (inactive for AFK_TIMEOUT but not yet disconnected)
@@ -39,7 +45,7 @@ try {
         throw new Exception('AFK prepare failed: ' . $conn->error);
     }
     
-    $afk_stmt->bind_param("ii", AFK_TIMEOUT, DISCONNECT_TIMEOUT);
+    $afk_stmt->bind_param("ii", $afk_timeout, $disconnect_timeout);
     $afk_stmt->execute();
     $afk_result = $afk_stmt->get_result();
     
@@ -99,7 +105,7 @@ try {
         throw new Exception('Disconnect prepare failed: ' . $conn->error);
     }
     
-    $disconnect_stmt->bind_param("i", DISCONNECT_TIMEOUT);
+    $disconnect_stmt->bind_param("i", $disconnect_timeout);
     $disconnect_stmt->execute();
     $disconnect_result = $disconnect_stmt->get_result();
     
@@ -291,7 +297,7 @@ try {
     // ===== PHASE 3: CLEAN UP GLOBAL SESSIONS =====
     // Remove inactive users from global_users (session timeout)
     $session_cleanup = $conn->prepare("DELETE FROM global_users WHERE last_activity < DATE_SUB(NOW(), INTERVAL ? SECOND)");
-    $session_cleanup->bind_param("i", SESSION_TIMEOUT);
+    $session_cleanup->bind_param("i", $session_timeout);
     $session_cleanup->execute();
     $session_cleanups = $session_cleanup->affected_rows;
     $session_cleanup->close();
@@ -319,9 +325,9 @@ try {
         'status' => 'success',
         'timestamp' => date('Y-m-d H:i:s'),
         'configuration' => [
-            'afk_timeout_minutes' => AFK_TIMEOUT / 60,
-            'disconnect_timeout_minutes' => DISCONNECT_TIMEOUT / 60,
-            'session_timeout_minutes' => SESSION_TIMEOUT / 60
+            'afk_timeout_minutes' => $afk_timeout / 60,
+            'disconnect_timeout_minutes' => $disconnect_timeout / 60,
+            'session_timeout_minutes' => $session_timeout / 60
         ],
         'total_checked' => count($inactive_users),
         'afk_users_detected' => count($afk_users),
