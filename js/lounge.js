@@ -29,7 +29,7 @@ $(document).ready(function() {
         loadRoomsWithUsers();
         loadUserRoomKeys();
         sendHeartbeat();
-    }, 5000); // Every 5 seconds
+    }, 500000); // Every 5 seconds
     
     // Fast knock checking for hosts
     setInterval(checkForKnocks, 3000); // Every 3 seconds
@@ -243,6 +243,11 @@ function loadUsersForRoom(room, callback) {
 
 // Replace the displayRoomsWithUsers function in lounge.js with this safer version
 
+// FIXED: Replace the displayRoomsWithUsers function in lounge.js with this version
+
+// FIXED: Replace the displayRoomsWithUsers function with this corrected version
+// The issue was parseInt(true) returns NaN, not 1
+
 function displayRoomsWithUsers(rooms) {
     debugLog('displayRoomsWithUsers called with:', rooms);
     let html = '';
@@ -256,16 +261,16 @@ function displayRoomsWithUsers(rooms) {
             </div>
         `;
     } else {
-        // Sort rooms: permanent rooms first, then by user count (descending)
+        // FIXED: Sort rooms with Boolean logic for permanent check
         rooms.sort((a, b) => {
-            const aIsPermanent = parseInt(a.permanent || 0) === 1;
-            const bIsPermanent = parseInt(b.permanent || 0) === 1;
+            const aIsPermanent = Boolean(a.permanent);  // FIXED: Use Boolean() instead of parseInt()
+            const bIsPermanent = Boolean(b.permanent);  // FIXED: Use Boolean() instead of parseInt()
             
             // Permanent rooms always come first
             if (aIsPermanent && !bIsPermanent) return -1;
             if (!aIsPermanent && bIsPermanent) return 1;
             
-            // Within same category (both permanent or both non-permanent), sort by user count
+            // Within same category, sort by user count
             const aUserCount = a.user_count || 0;
             const bUserCount = b.user_count || 0;
             return bUserCount - aUserCount;
@@ -275,66 +280,100 @@ function displayRoomsWithUsers(rooms) {
         
         rooms.forEach((room, index) => {
             try {
-                const isPasswordProtected = parseInt(room.has_password) === 1;
-                const allowsKnocking = parseInt(room.allow_knocking) === 1;
+                // FIXED: Use Boolean() for ALL boolean checks instead of parseInt()
+                const isPermanent = Boolean(room.permanent);
+                const isPasswordProtected = Boolean(room.has_password);
+                const allowsKnocking = Boolean(room.allow_knocking);
+                const isRP = Boolean(room.is_rp);
+                const youtubeEnabled = Boolean(room.youtube_enabled);
+                const friendsOnly = Boolean(room.friends_only);
+                const inviteOnly = Boolean(room.invite_only);
+                const membersOnly = Boolean(room.members_only);
+                const disappearingMessages = Boolean(room.disappearing_messages);
+                
                 const userCount = room.user_count || 0;
                 const capacity = room.capacity || 10;
                 const hasKey = hasRoomKey(room.id);
                 const host = room.host;
                 const regularUsers = room.regularUsers || [];
-                const isPermanent = parseInt(room.permanent || 0) === 1;
-
-                const isRP = parseInt(room.is_rp || 0) === 1;
-                const youtubeEnabled = parseInt(room.youtube_enabled || 0) === 1;
-                const friendsOnly = parseInt(room.friends_only || 0) === 1;
-                const inviteOnly = parseInt(room.invite_only || 0) === 1;
-                const membersOnly = parseInt(room.members_only || 0) === 1;
-                const disappearingMessages = parseInt(room.disappearing_messages || 0) === 1;
                 const canAccessFriendsOnly = room.can_access_friends_only !== false;
+
+                console.log(`🔍 Room "${room.name}": permanent=${isPermanent}, rp=${isRP}, youtube=${youtubeEnabled}, friends=${friendsOnly}`);
 
                 let headerClass = 'room-header-enhanced';
                 let actionButtons = '';
+                let cardClass = 'room-card-enhanced';
 
                 // Add permanent room styling
                 if (isPermanent) {
-                    headerClass += ' permanent-room';
+                 //   headerClass += ' permanent-room';
+                    cardClass += ' permanent-room-card';
+                   // console.log(`🌟 Applied permanent styling to room: ${room.name}`);
                 }
 
-                // FIXED: Simple access checking with no async operations
+                // Access checking logic
                 if (inviteOnly) {
                     headerClass += ' access-denied';
-                    actionButtons = `<button class="btn btn-danger btn-sm"  onclick="alert('This room requires a valid invite code')"><i class="fas fa-ban"></i> Invite Required</button>`;
+                    actionButtons = `<button class="btn btn-danger btn-sm" onclick="alert('This room requires a valid invite code')"><i class="fas fa-ban"></i> Invite Required</button>`;
                 } else if (membersOnly && currentUser.type !== 'user') {
                     headerClass += ' access-denied';
-                    actionButtons = `<button class="btn btn-danger btn-sm"  onclick="alert('This room is for registered members only')"><i class="fas fa-ban" ></i> Members Only</button>`;
+                    actionButtons = `<button class="btn btn-danger btn-sm" onclick="alert('This room is for registered members only')"><i class="fas fa-ban"></i> Members Only</button>`;
                 } else if (friendsOnly && !canAccessFriendsOnly) {
                     headerClass += ' access-denied';
                     actionButtons = `<button class="btn btn-danger btn-sm" onclick="alert('This room is for friends of the host only')"><i class="fas fa-ban"></i> Friends Only</button>`;
                 } else if (isPasswordProtected && hasKey) {
                     headerClass += ' has-access';
-                    actionButtons = `<button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})"><i class="fas fa-key"></i> Join Room</button>`;
+                    actionButtons = `<button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})"><i class="fas fa-key"></i> Enter Room</button>`;
                 } else if (isPasswordProtected) {
                     headerClass += allowsKnocking ? ' knock-available' : ' password-protected';
-                    actionButtons = `<button class="btn btn-primary btn-sm me-2" onclick="showPasswordModal(${room.id}, '${room.name.replace(/'/g, "\\'")}')"><i class="fas fa-key"></i> Enter Password</button>`;
+                    actionButtons = `<button class="btn btn-warning btn-sm" onclick="showPasswordModal(${room.id}, '${room.name.replace(/'/g, "\\'")}')"><i class="fas fa-key"></i> Enter Room</button>`;
                     if (allowsKnocking) {
                         actionButtons += `<button class="btn btn-outline-primary btn-sm" onclick="knockOnRoom(${room.id}, '${room.name.replace(/'/g, "\\'")}')"><i class="fas fa-hand-paper"></i> Knock</button>`;
                     }
                 } else {
-                    actionButtons = `<button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})"><i class="fas fa-sign-in-alt"></i> Join Room</button>`;
+                    actionButtons = `<button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})"><i class="fas fa-sign-in-alt"></i> Enter Room</button>`;
                 }
 
-                // Build feature indicators
+                // FIXED: Build ALL feature indicators with proper boolean logic
                 let featureIndicators = '';
                 
-                // Permanent indicator comes first and is more prominent
-                if (isPermanent) featureIndicators += '<span class="room-indicator permanent-indicator" title="Permanent Room - Never deleted"><i class="fas fa-star"></i> PERMANENT</span>';
+                // Permanent indicator comes first and is most prominent
+                if (isPermanent) {
+                   // featureIndicators += '<span class="room-indicator permanent-indicator" title="Permanent Room - Never deleted automatically"><i class="fas fa-star"></i> PERMANENT</span>';
+                   // console.log(`✅ Added permanent indicator for: ${room.name}`);
+                }
                 
-                if (isRP) featureIndicators += '<span class="room-indicator rp-indicator" title="Roleplay Room"><i class="fas fa-theater-masks"></i> RP</span>';
-                if (youtubeEnabled) featureIndicators += '<span class="room-indicator youtube-indicator" title="YouTube Player Enabled"><i class="fab fa-youtube"></i> Video</span>';
-                if (friendsOnly) featureIndicators += '<span class="room-indicator friends-indicator" title="Friends Only"><i class="fas fa-user-friends"></i> Friends</span>';
-                if (inviteOnly) featureIndicators += '<span class="room-indicator invite-indicator" title="Invite Only"><i class="fas fa-link"></i> Invite</span>';
-                if (membersOnly) featureIndicators += '<span class="room-indicator members-indicator" title="Members Only"><i class="fas fa-user-check"></i> Members</span>';
-                if (disappearingMessages) featureIndicators += '<span class="room-indicator disappearing-indicator" title="Disappearing Messages"><i class="fas fa-clock"></i> Temp</span>';
+                // Other feature indicators
+                if (isRP) {
+                    featureIndicators += '<span class="room-indicator rp-indicator" style="background: #e91e63; color: white;" title="Roleplay Room"><i class="fas fa-theater-masks"></i> RP</span>';
+                    console.log(`✅ Added RP indicator for: ${room.name}`);
+                }
+                
+                if (youtubeEnabled) {
+                    featureIndicators += '<span class="room-indicator youtube-indicator" style="background: #f44336; color: white;" title="YouTube Player Enabled"><i class="fab fa-youtube"></i> VIDEO</span>';
+                    console.log(`✅ Added YouTube indicator for: ${room.name}`);
+                }
+                
+                if (friendsOnly) {
+                    featureIndicators += '<span class="room-indicator friends-indicator" style="background: #2196f3; color: white;" title="Friends Only"><i class="fas fa-user-friends"></i> FRIENDS</span>';
+                    console.log(`✅ Added Friends Only indicator for: ${room.name}`);
+                }
+                
+                if (inviteOnly) {
+                    featureIndicators += '<span class="room-indicator invite-indicator" style="background: #ff9800; color: white;" title="Invite Only"><i class="fas fa-link"></i> INVITE</span>';
+                    console.log(`✅ Added Invite Only indicator for: ${room.name}`);
+                }
+                
+                if (membersOnly) {
+                    featureIndicators += '<span class="room-indicator members-indicator" style="background: #4caf50; color: white;" title="Members Only"><i class="fas fa-user-check"></i> MEMBERS</span>';
+                    console.log(`✅ Added Members Only indicator for: ${room.name}`);
+                }
+                
+                if (disappearingMessages) {
+                    const lifetime = room.message_lifetime_minutes || 30;
+                    featureIndicators += `<span class="room-indicator disappearing-indicator" style="background: #9c27b0; color: white;" title="Disappearing Messages (${lifetime} minutes)"><i class="fas fa-clock"></i> TEMP</span>`;
+                    console.log(`✅ Added Disappearing Messages indicator for: ${room.name}`);
+                }
 
                 let themeClass = (room.theme && room.theme !== 'default') ? `theme-${room.theme}` : '';
 
@@ -367,9 +406,11 @@ function displayRoomsWithUsers(rooms) {
                     hostHtml = `
                         <div class="room-host">
                             <h6><i class="fas fa-crown"></i> Host</h6>
-                            <div class="text-warning">
-                                <i class="fas fa-user-slash"></i> Host is offline
-                                <br><small class="text-muted">This is a permanent room</small>
+                            <div class="d-flex align-items-center text-warning">
+                                <i class="fas fa-user-slash fa-2x me-3"></i>
+                                <div>
+                                    <div class="fw-bold">Host is offline</div>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -394,8 +435,8 @@ function displayRoomsWithUsers(rooms) {
                                 <div class="user-info">
                                     <div class="user-name">${userName}</div>
                                     <div class="user-badges">
-                                        ${parseInt(user.is_admin) === 1 ? '<span class="badge bg-danger badge-xs">Admin</span>' : ''}
-                                        ${user.user_type === 'registered' || user.user_id ? '<span class="badge bg-success badge-xs">Verified</span>' : '<span class="badge bg-secondary badge-xs">Guest</span>'}
+                                        ${parseInt(user.is_admin) === 1 ? '<span class="badge bg-danger badge-sm">Admin</span>' : ''}
+                                        ${user.user_type === 'registered' || user.user_id ? '<span class="badge bg-success badge-sm">Verified</span>' : '<span class="badge bg-secondary badge-sm">Guest</span>'}
                                     </div>
                                 </div>
                             </div>
@@ -411,29 +452,30 @@ function displayRoomsWithUsers(rooms) {
                     usersHtml = `<div class="room-users"><h6><i class="fas fa-users"></i> Users (0)</h6><div class="text-muted small">No other users in room</div></div>`;
                 }
 
+                // Build the room card HTML
                 html += `
                     <div class="col-lg-6 col-12 room-card-wrapper">
-                        <div class="room-card-enhanced ${themeClass}">
+                        <div class="${cardClass} ${themeClass}">
                             <div class="${headerClass}">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div class="room-title-section">
                                         <h5 class="room-title">
-                                            ${isPermanent ? '<i class="fas fa-star permanent-star"></i>' : ''}
+                                            ${isPermanent ? '<i class="fas fa-star permanent-star" title="Permanent Room"></i>' : ''}
                                             ${room.name}
                                             ${isPasswordProtected ? '<i class="fas fa-lock" title="Password protected"></i>' : ''}
-                                            ${allowsKnocking ? '<i class="fas fa-hand-paper" title="Knocking allowed"></i>' : ''}
                                             ${hasKey ? '<i class="fas fa-key" title="You have access"></i>' : ''}
                                         </h5>
                                         <div class="room-meta">
-                                            <span class="capacity-info">${userCount}/${capacity} users</span>
-                                            ${room.theme && room.theme !== 'default' ? `<span class="theme-info">Theme: ${room.theme}</span>` : ''}
-                                            ${isPermanent ? '<span class="permanent-info">Permanent Room</span>' : ''}
+                                            <span class="capacity-info"><i class="fas fa-users"></i> ${userCount}/${capacity}</span>
+                                            ${room.theme && room.theme !== 'default' ? `<span class="theme-info"><i class="fas fa-palette"></i> ${room.theme}</span>` : ''}
+                                            ${isPermanent ? '<span class="permanent-info"><i class="fas fa-star"></i> Permanent</span>' : ''}
                                         </div>
-                                        ${featureIndicators ? `<div class="room-features mt-1">${featureIndicators}</div>` : ''}
-                                        ${hasKey ? '<div class="mt-1"><span class="badge bg-success"><i class="fas fa-key"></i> Access Granted</span></div>' : ''}
+                                        
                                     </div>
                                     <div class="action-buttons">${actionButtons}</div>
                                 </div>
+                                ${featureIndicators ? `<div class="room-features mt-2">${featureIndicators}</div>` : ''}
+                                ${hasKey ? '<div class="mt-2"><span class="badge bg-success"><i class="fas fa-key"></i> Access Granted</span></div>' : ''}
                             </div>
                             <div class="room-content">
                                 <div class="room-description"><p>${room.description || 'No description'}</p></div>
@@ -448,7 +490,28 @@ function displayRoomsWithUsers(rooms) {
                 
             } catch (error) {
                 console.error('Error rendering room:', room, error);
-                html += `<div class="col-lg-6 col-12 room-card-wrapper"><div class="room-card-enhanced"><div class="room-header-enhanced"><div class="d-flex justify-content-between align-items-start"><div class="room-title-section"><h5 class="room-title">${room.name}</h5></div><div class="action-buttons"><button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})"><i class="fas fa-sign-in-alt"></i> Join Room</button></div></div></div></div></div>`;
+                // Fallback room card
+                html += `
+                    <div class="col-lg-6 col-12 room-card-wrapper">
+                        <div class="room-card-enhanced">
+                            <div class="room-header-enhanced">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="room-title-section">
+                                        <h5 class="room-title">${room.name || 'Unknown Room'}</h5>
+                                        <div class="room-meta">
+                                            <span class="text-danger">Error loading room details</span>
+                                        </div>
+                                    </div>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})">
+                                            <i class="fas fa-sign-in-alt"></i> Join Room
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
             }
         });
         
@@ -465,29 +528,15 @@ function displayRoomsWithUsers(rooms) {
     } else {
         $roomsList.html(html);
     }
+    
+    // Debug: Log permanent rooms processed with FIXED counting
+    const permanentCount = rooms.filter(r => Boolean(r.permanent)).length;
+    const rpCount = rooms.filter(r => Boolean(r.is_rp)).length;
+    const youtubeCount = rooms.filter(r => Boolean(r.youtube_enabled)).length;
+    const friendsCount = rooms.filter(r => Boolean(r.friends_only)).length;
+    
 }
 
-// Also add this simple debugging function to check the API response
-function testRoomsAPI() {
-    console.log('Testing rooms API...');
-    $.ajax({
-        url: 'api/get_rooms.php',
-        method: 'GET',
-        dataType: 'json',
-        success: function(response) {
-            console.log('API Response:', response);
-            if (response.status === 'error') {
-                console.error('API Error:', response.message);
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('AJAX Error:', error);
-            console.error('Response Text:', xhr.responseText);
-        }
-    });
-}
-
-// Call this in the browser console to debug: testRoomsAPI()
 
 // Enhanced joinRoom function
 window.joinRoom = function(roomId) {
@@ -596,20 +645,20 @@ function displayOnlineUsers(users) {
                 const diffMinutes = Math.floor((now - lastActiveTime) / (1000 * 60));
                 
                 if (diffMinutes < 1) {
-                    activityIndicator = '<span class="badge bg-success badge-xs">Online</span>';
+                    activityIndicator = '<span class="badge bg-success badge-sm">Online</span>';
                 } else if (diffMinutes < 5) {
-                    activityIndicator = `<span class="badge bg-warning badge-xs">${diffMinutes}m ago</span>`;
+                    activityIndicator = `<span class="badge bg-warning badge-sm">${diffMinutes}m ago</span>`;
                 } else {
-                    activityIndicator = '<span class="badge bg-secondary badge-xs">Away</span>';
+                    activityIndicator = '<span class="badge bg-secondary badge-sm">Away</span>';
                 }
             }
 
             let badges = '';
             if (user.is_admin) {
-                badges += '<span class="badge bg-danger badge-xs">Admin</span> ';
+                badges += '<span class="badge bg-danger badge-sm">Admin</span> ';
             }
             if (user.is_moderator) {
-                badges += '<span class="badge bg-warning badge-xs">Mod</span> ';
+                badges += '<span class="badge bg-warning badge-sm">Mod</span> ';
             }
             
             html += `
@@ -911,12 +960,12 @@ window.showCreateRoomModal = function() {
                             <!-- Features Tab -->
                             <div class="tab-pane fade" id="features" role="tabpanel">
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-12">
                                         <div class="mb-4">
                                             <div class="form-check form-switch">
                                                 <input class="form-check-input" type="checkbox" id="youtubeEnabled">
                                                 <label class="form-check-label" for="youtubeEnabled">
-                                                    <i class="fab fa-youtube text-danger"></i> <strong>Enable YouTube Player</strong> <span class="betatext" />
+                                                    <i class="fab fa-youtube text-danger"></i> <strong>Enable YouTube Player</strong> <span class="betatext" /> <span class="betatext2" />
                                                 </label>
                                             </div>
                                             <small class="form-text text-muted">Allow synchronized video playback for all users</small>

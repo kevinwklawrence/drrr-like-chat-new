@@ -58,12 +58,12 @@
 }
 
 /* Moderator panel button styling */
-.btn-info {
+.btn-mod-info {
     background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
     border: none;
 }
 
-.btn-warning {
+.btn-mod-warning {
     background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
     border: none;
 }
@@ -211,7 +211,7 @@
 }
 
 /* Moderator Panel Button */
-.btn-info {
+.btn-mod-info {
     background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
     border: none;
     color: white;
@@ -220,14 +220,14 @@
     padding: 9px 12px;
 }
 
-.btn-info:hover {
+.btn-mod-info:hover {
     background: linear-gradient(45deg, #764ba2 0%, #667eea 100%);
     color: white;
     transform: translateY(-2px);
     box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
 }
 
-.btn-warning {
+.btn-mod-warning {
     background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
     border: none;
     color: white;
@@ -236,7 +236,7 @@
     padding: 9px 12px;
 }
 
-.btn-warning:hover {
+.btn-mod-warning:hover {
     background: linear-gradient(45deg, #f5576c 0%, #f093fb 100%);
     color: white;
     transform: translateY(-2px);

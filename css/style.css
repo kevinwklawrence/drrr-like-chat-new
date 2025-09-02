@@ -566,3 +566,14 @@ body {
     border-radius: 8px;
     font-weight: 600;
 }
+
+.betatext2::before {
+    content: '[Unstable]'
+}
+.betatext2 {
+    color:#d12121;
+    padding-left: 4px;
+    padding-right: 4px;
+    border-radius: 8px;
+    font-weight: 600;
+}

@@ -43,7 +43,21 @@ let kickDetectionEnabled = true;
 let lastStatusCheck = 0;
 let consecutiveErrors = 0;
 
-// Activity Tracking System
+// ===== ACTIVITY CONFIGURATION =====
+const ACTIVITY_CONFIG = {
+    HEARTBEAT_INTERVAL: 30000,        // 30 seconds
+    ACTIVITY_UPDATE_INTERVAL: 5000,   // 5 seconds for interaction tracking
+    DISCONNECT_CHECK_INTERVAL: 60000, // 60 seconds
+    STATUS_CHECK_INTERVAL: 5000,      // 5 seconds
+    MIN_ACTIVITY_INTERVAL: 3000,      // Minimum 3 seconds between activity updates
+    
+    // These match the PHP constants
+    AFK_TIMEOUT_MINUTES: 20,          // 20 minutes to AFK
+    DISCONNECT_TIMEOUT_MINUTES: 80,   // 80 minutes total to disconnect
+    SESSION_TIMEOUT_MINUTES: 60       // 60 minutes for session timeout
+};
+
+// Activity Tracking System (keep existing variables for compatibility)
 let activityInterval = null;
 let disconnectCheckInterval = null;
 let lastActivityUpdate = 0;
@@ -77,6 +91,349 @@ let mentionPanelOpen = false;
 
 let currentUserAFK = false;
 let manualAFK = false;
+
+
+
+// ===== ACTIVITY TRACKING SYSTEM =====
+let activityTracker = {
+    enabled: false,
+    intervals: {
+        heartbeat: null,
+        activityUpdate: null,
+        disconnectCheck: null,
+        statusCheck: null
+    },
+    lastActivityUpdate: 0,
+    lastInteraction: 0,
+    userIsActive: false,
+    activityQueue: [],
+    
+    // Initialize the activity tracking system
+    init() {
+        if (this.enabled) {
+            debugLog('🔄 Activity tracking already initialized');
+            return;
+        }
+        
+        debugLog('🔄 Initializing activity tracking system...');
+        this.enabled = true;
+        
+        // Clear any existing intervals
+        this.cleanup();
+        
+        // Start heartbeat - keeps session alive
+        this.intervals.heartbeat = setInterval(() => {
+            this.sendHeartbeat();
+        }, ACTIVITY_CONFIG.HEARTBEAT_INTERVAL);
+        
+        // Start activity monitoring - tracks user interactions
+        this.intervals.activityUpdate = setInterval(() => {
+            this.processActivityQueue();
+        }, ACTIVITY_CONFIG.ACTIVITY_UPDATE_INTERVAL);
+        
+        // Start disconnect checking - triggers server-side cleanup
+        this.intervals.disconnectCheck = setInterval(() => {
+            this.triggerDisconnectCheck();
+        }, ACTIVITY_CONFIG.DISCONNECT_CHECK_INTERVAL);
+        
+        // Start status checking - monitors user's room status
+        this.intervals.statusCheck = setInterval(() => {
+            this.checkUserStatus();
+        }, ACTIVITY_CONFIG.STATUS_CHECK_INTERVAL);
+        
+        // Set up activity listeners
+        this.setupActivityListeners();
+        
+        // Send initial activity update
+        this.recordActivity('system_start');
+        
+        debugLog('✅ Activity tracking system initialized');
+    },
+    
+    // Clean up intervals
+    cleanup() {
+        debugLog('🛑 Cleaning up activity tracking intervals');
+        Object.keys(this.intervals).forEach(key => {
+            if (this.intervals[key]) {
+                clearInterval(this.intervals[key]);
+                this.intervals[key] = null;
+            }
+        });
+        this.enabled = false;
+    },
+    
+    // Set up event listeners for user interactions
+    setupActivityListeners() {
+        debugLog('🎯 Setting up activity listeners...');
+        
+        // Remove existing listeners
+        $(document).off('mousemove.activity keypress.activity scroll.activity click.activity');
+        $(window).off('focus.activity blur.activity');
+        
+        let activityTimeout;
+        const markUserActive = () => {
+            const now = Date.now();
+            
+            // Throttle activity recording to prevent spam
+            if (now - this.lastInteraction < 1000) return;
+            
+            this.lastInteraction = now;
+            this.userIsActive = true;
+            
+            // Debounce activity updates
+            clearTimeout(activityTimeout);
+            activityTimeout = setTimeout(() => {
+                this.recordActivity('interaction');
+            }, 2000);
+        };
+        
+        // Mouse and keyboard activity
+        $(document).on('mousemove.activity keypress.activity scroll.activity click.activity', markUserActive);
+        
+        // Page focus/blur
+        $(window).on('focus.activity', () => {
+            this.recordActivity('window_focus');
+        });
+        
+        // Visibility change
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                this.recordActivity('page_focus');
+            }
+        });
+        
+        debugLog('✅ Activity listeners set up');
+    },
+    
+    // Record an activity in the queue
+    recordActivity(activityType) {
+        if (!this.enabled) return;
+        
+        const now = Date.now();
+        
+        // Add to activity queue if not too recent
+        if (now - this.lastActivityUpdate >= ACTIVITY_CONFIG.MIN_ACTIVITY_INTERVAL) {
+            this.activityQueue.push({
+                type: activityType,
+                timestamp: now
+            });
+            
+            debugLog(`📝 Recorded activity: ${activityType}`);
+        }
+    },
+    
+    // Process queued activities
+    processActivityQueue() {
+        if (!this.enabled || this.activityQueue.length === 0) return;
+        
+        // Get the most recent activity type
+        const latestActivity = this.activityQueue[this.activityQueue.length - 1];
+        this.activityQueue = []; // Clear queue
+        
+        const now = Date.now();
+        
+        // Only send if enough time has passed
+        if (now - this.lastActivityUpdate >= ACTIVITY_CONFIG.MIN_ACTIVITY_INTERVAL) {
+            this.sendActivityUpdate(latestActivity.type);
+            this.lastActivityUpdate = now;
+        }
+    },
+    
+    // Send activity update to server
+    sendActivityUpdate(activityType) {
+        if (!this.enabled) return;
+        
+        debugLog(`📡 Sending activity update: ${activityType}`);
+        
+        $.ajax({
+            url: 'api/update_activity.php',
+            method: 'POST',
+            data: { activity_type: activityType },
+            dataType: 'json',
+            timeout: 5000,
+            success: (response) => {
+                if (response.status === 'success') {
+                    debugLog(`✅ Activity updated: ${activityType}`);
+                    
+                    // Handle AFK status changes
+                    if (response.afk_status_changed && response.returned_from_afk) {
+                        debugLog('🔄 User returned from AFK automatically');
+                        this.handleAFKStatusChange(false);
+                        
+                        // Show notification
+                        if (typeof showToast === 'function') {
+                            showToast('You are no longer AFK', 'info');
+                        }
+                        
+                        // Refresh UI
+                        setTimeout(() => {
+                            if (typeof loadUsers === 'function') loadUsers();
+                            if (typeof loadMessages === 'function') loadMessages();
+                        }, 500);
+                    }
+                } else if (response.status === 'not_in_room') {
+                    debugLog('❌ Not in room - stopping activity tracking');
+                    this.cleanup();
+                    
+                    // Trigger status check
+                    if (typeof checkUserStatus === 'function') {
+                        checkUserStatus();
+                    }
+                }
+            },
+            error: (xhr, status, error) => {
+                debugError(`⚠️ Activity update failed: ${status} - ${error}`);
+                
+                // If we get a 403 or session error, user might be logged out
+                if (xhr.status === 403 || xhr.status === 401) {
+                    this.cleanup();
+                }
+            }
+        });
+    },
+    
+    // Send heartbeat to maintain session
+    sendHeartbeat() {
+        if (!this.enabled) return;
+        
+        debugLog('💓 Sending heartbeat');
+        
+        $.ajax({
+            url: 'api/heartbeat.php',
+            method: 'POST',
+            dataType: 'json',
+            timeout: 10000,
+            success: (response) => {
+                if (response.status === 'success') {
+                    debugLog('💓 Heartbeat successful');
+                } else {
+                    debugError('💔 Heartbeat failed:', response.message);
+                }
+            },
+            error: (xhr, status, error) => {
+                debugError(`💔 Heartbeat error: ${status} - ${error}`);
+                
+                // If heartbeat fails repeatedly, user might be disconnected
+                if (xhr.status === 403 || xhr.status === 401) {
+                    debugError('💔 Session appears to be invalid');
+                    this.cleanup();
+                }
+            }
+        });
+    },
+    
+    // Trigger server-side disconnect checking
+    triggerDisconnectCheck() {
+        if (!this.enabled) return;
+        
+        debugLog('🔍 Triggering disconnect check...');
+        
+        $.ajax({
+            url: 'api/check_disconnects.php',
+            method: 'GET',
+            dataType: 'json',
+            timeout: 15000,
+            success: (response) => {
+                if (response.status === 'success') {
+                    const summary = response.summary;
+                    debugLog('📊 Disconnect check completed:', summary);
+                    
+                    // If there were changes, refresh UI
+                    const totalChanges = summary.users_marked_afk + summary.users_disconnected + 
+                                       summary.hosts_transferred + summary.rooms_deleted;
+                    
+                    if (totalChanges > 0) {
+                        debugLog(`👥 ${totalChanges} changes detected, refreshing UI`);
+                        
+                        setTimeout(() => {
+                            if (typeof loadUsers === 'function') loadUsers();
+                            if (typeof loadMessages === 'function') loadMessages();
+                        }, 1000);
+                    }
+                } else {
+                    debugError('❌ Disconnect check failed:', response.message);
+                }
+            },
+            error: (xhr, status, error) => {
+                debugError('⚠️ Disconnect check error:', error);
+            }
+        });
+    },
+    
+    // Check user's current status
+    checkUserStatus() {
+        if (!kickDetectionEnabled) return;
+        
+        const now = Date.now();
+        if (now - lastStatusCheck < 1000) return;
+        lastStatusCheck = now;
+        
+        $.ajax({
+            url: 'api/check_user_status.php',
+            method: 'GET',
+            dataType: 'json',
+            timeout: 5000,
+            success: (response) => {
+                consecutiveErrors = 0;
+                
+                switch(response.status) {
+                    case 'banned':
+                        this.cleanup();
+                        if (typeof handleUserBanned === 'function') {
+                            handleUserBanned(response);
+                        }
+                        break;
+                    case 'removed':
+                        this.cleanup();
+                        if (typeof handleUserKicked === 'function') {
+                            handleUserKicked(response);
+                        }
+                        break;
+                    case 'room_deleted':
+                        this.cleanup();
+                        if (typeof handleRoomDeleted === 'function') {
+                            handleRoomDeleted(response);
+                        }
+                        break;
+                    case 'not_in_room':
+                        debugLog('👤 User not in room, redirecting to lounge');
+                        this.cleanup();
+                        window.location.href = 'lounge.php';
+                        break;
+                    case 'active':
+                        debugLog('✅ User status: Active');
+                        break;
+                    case 'error':
+                        debugError('❌ Server error:', response.message);
+                        consecutiveErrors++;
+                        break;
+                }
+            },
+            error: (xhr, status, error) => {
+                debugError('🔌 Status check failed:', { status, error });
+                consecutiveErrors++;
+                
+                if (consecutiveErrors >= 5) {
+                    debugError('🔥 Too many consecutive errors, redirecting');
+                    this.cleanup();
+                    alert('Connection lost. Redirecting to lounge.');
+                    window.location.href = 'lounge.php';
+                }
+            }
+        });
+    },
+    
+    // Handle AFK status changes
+    handleAFKStatusChange(isAFK) {
+        currentUserAFK = isAFK;
+        
+        if (typeof updateAFKButton === 'function') {
+            updateAFKButton();
+        }
+    }
+};
+
+
 
 function checkIfFriend(userId, callback) {
     if (!userId || currentUser.type !== 'user') {
@@ -154,7 +511,8 @@ function sendMessage() {
     const originalText = sendBtn.html();
     sendBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
     
-    updateUserActivity('message_send');
+    // Record message sending activity
+    activityTracker.recordActivity('message_send');
     
     // Prepare data for sending
     const sendData = {
@@ -171,45 +529,44 @@ function sendMessage() {
         url: 'api/send_message.php',
         method: 'POST',
         data: sendData,
+        dataType: 'json',
         success: function(response) {
-            try {
-                let res = JSON.parse(response);
-                if (res.status === 'success') {
-                    messageInput.val('');
-                    clearReplyInterface(); // Clear reply interface after sending
+            if (response.status === 'success') {
+                messageInput.val('');
+                clearReplyInterface();
+                
+                // Handle AFK status clearing
+                if (response.afk_cleared) {
+                    debugLog('🔄 AFK status was cleared due to sending message');
+                    activityTracker.handleAFKStatusChange(false);
                     
-                    // Handle AFK status clearing
-                    if (res.afk_cleared) {
-                        debugLog('🔄 AFK status was cleared due to sending message');
-                        currentUserAFK = false;
-                        manualAFK = false;
-                        updateAFKButton();
-                        
-                        // Show a subtle notification
+                    // Show notification
+                    if (typeof showToast === 'function') {
                         showToast('You are no longer AFK', 'info');
-                        
-                        // Refresh user list to show updated status
-                        setTimeout(() => {
-                            loadUsers();
-                        }, 500);
                     }
                     
-                    loadMessages();
-                    
+                    // Refresh UI
                     setTimeout(() => {
-                        checkUserStatus();
-                    }, 200);
-                } else {
-                    alert('Error: ' + res.message);
+                        if (typeof loadUsers === 'function') loadUsers();
+                    }, 500);
                 }
-            } catch (e) {
-                console.error('JSON parse error:', e, response);
-                alert('Invalid response from server');
+                
+                if (typeof loadMessages === 'function') {
+                    loadMessages();
+                }
+                
+                // Quick status check
+                setTimeout(() => {
+                    if (typeof checkUserStatus === 'function') {
+                        checkUserStatus();
+                    }
+                }, 200);
+            } else {
+                alert('Error: ' + response.message);
             }
         },
         error: function(xhr, status, error) {
-            console.error('AJAX error in sendMessage:', status, error, xhr.responseText);
-            checkUserStatus();
+            console.error('AJAX error in sendMessage:', status, error);
             alert('AJAX error: ' + error);
         },
         complete: function() {
@@ -1257,59 +1614,7 @@ function stopYouTubePlayer() {
 
 // ===== KICK DETECTION FUNCTIONS =====
 function checkUserStatus() {
-    if (userKickedModalShown || !kickDetectionEnabled) {
-        return;
-    }
-    
-    const now = Date.now();
-    if (now - lastStatusCheck < 1000) {
-        return;
-    }
-    lastStatusCheck = now;
-    
-    debugLog('🔍 Checking user status...');
-    
-    $.ajax({
-        url: 'api/check_user_status.php',
-        method: 'GET',
-        dataType: 'json',
-        timeout: 5000,
-        success: function(response) {
-            debugLog('📡 Status check result:', response);
-            consecutiveErrors = 0;
-            
-            switch(response.status) {
-                case 'banned':
-                    handleUserBanned(response);
-                    break;
-                case 'removed':
-                    handleUserKicked(response);
-                    break;
-                case 'room_deleted':
-                    handleRoomDeleted(response);
-                    break;
-                case 'not_in_room':
-                    debugLog('👤 User not in room, redirecting to lounge');
-                    stopKickDetection();
-                    window.location.href = 'lounge.php';
-                    break;
-                case 'active':
-                    debugLog('✅ User status: Active in', response.room_name);
-                    break;
-                case 'error':
-                    console.error('❌ Server error:', response.message);
-                    handleStatusCheckError();
-                    break;
-                default:
-                    console.warn('⚠️ Unknown status:', response.status);
-                    break;
-            }
-        },
-        error: function(xhr, status, error) {
-            debugLog('🔌 Status check failed:', { status, error, responseText: xhr.responseText });
-            handleStatusCheckError();
-        }
-    });
+    activityTracker.checkUserStatus();
 }
 
 function handleUserBanned(response) {
@@ -1454,38 +1759,34 @@ function stopKickDetection() {
 
 // ===== ACTIVITY TRACKING FUNCTIONS =====
 function initializeActivityTracking() {
-    if (activityTrackingEnabled) {
-        debugLog('🔄 Activity tracking already initialized');
-        return;
+    debugLog('🚀 Initializing room activity tracking...');
+    
+    // Initialize the activity tracker
+    activityTracker.init();
+    
+    // Set up additional event handlers for activities that should be tracked
+    
+    // Track room joining (if this is a page load into a room)
+    if (roomId) {
+        activityTracker.recordActivity('room_join');
     }
     
-    debugLog('🔄 Initializing activity tracking system...');
-    activityTrackingEnabled = true;
+    // Track private message sending
+    $(document).on('submit', '.private-message-form', function() {
+        activityTracker.recordActivity('private_message');
+    });
     
-    if (activityInterval) {
-        clearInterval(activityInterval);
-    }
-    if (disconnectCheckInterval) {
-        clearInterval(disconnectCheckInterval);
-    }
+    // Track whisper sending  
+    $(document).on('submit', '.whisper-form', function() {
+        activityTracker.recordActivity('whisper');
+    });
     
-    activityInterval = setInterval(() => {
-        if (userIsActive && activityTrackingEnabled) {
-            updateUserActivity('heartbeat');
-            userIsActive = false;
-        }
-    }, 30 * 1000);
+    // Track AFK toggle
+    $(document).on('click', '.btn-toggle-afk', function() {
+        activityTracker.recordActivity('manual_activity');
+    });
     
-    disconnectCheckInterval = setInterval(() => {
-        if (activityTrackingEnabled) {
-            triggerDisconnectCheck();
-        }
-    }, 2 * 60 * 1000);
-    
-    setupActivityListeners();
-    updateUserActivity('system_start');
-    
-    debugLog('✅ Activity tracking system initialized successfully');
+    debugLog('✅ Activity tracking initialization complete');
 }
 
 function setupActivityListeners() {
@@ -1524,108 +1825,18 @@ function setupActivityListeners() {
 }
 
 function updateUserActivity(activityType = 'general') {
-    if (!activityTrackingEnabled) {
-        return;
-    }
-    
-    const now = Date.now();
-    const minInterval = activityType === 'heartbeat' ? 25000 : 3000;
-    
-    if (now - lastActivityUpdate < minInterval) {
-        return;
-    }
-    
-    lastActivityUpdate = now;
-    
-    debugLog(`📍 Updating activity: ${activityType}`);
-    
-    $.ajax({
-        url: 'api/update_activity.php',
-        method: 'POST',
-        data: { activity_type: activityType },
-        dataType: 'json',
-        timeout: 5000,
-        success: function(response) {
-            if (response.status === 'success') {
-                debugLog(`✅ Activity updated: ${activityType}`);
-                
-                // Handle AFK status changes
-                if (response.afk_status_changed) {
-                    debugLog('🔄 User returned from AFK automatically');
-                    currentUserAFK = false;
-                    manualAFK = false;
-                    updateAFKButton();
-                    
-                    // Refresh user list to show updated status
-                    setTimeout(() => {
-                        loadUsers();
-                        loadMessages();
-                    }, 500);
-                }
-            } else if (response.status === 'not_in_room') {
-                debugLog('❌ Not in room - stopping activity tracking');
-                stopActivityTracking();
-                
-                if (typeof forceStatusCheck === 'function') {
-                    forceStatusCheck();
-                }
-            }
-        },
-        error: function(xhr, status, error) {
-            debugLog(`⚠️ Activity update failed: ${status} - ${error}`);
-        }
-    });
+    // Updated function that uses the new system
+    activityTracker.recordActivity(activityType);
 }
 
 function triggerDisconnectCheck() {
-    if (!activityTrackingEnabled) {
-        return;
-    }
-    
-    debugLog('🔍 Triggering disconnect check...');
-    
-    $.ajax({
-        url: 'api/check_disconnects.php',
-        method: 'GET',
-        dataType: 'json',
-        timeout: 10000,
-        success: function(response) {
-            if (response.status === 'success') {
-                debugLog('📊 Disconnect check completed:', response.summary);
-                
-                const summary = response.summary;
-                if (summary.users_disconnected > 0 || summary.hosts_transferred > 0 || summary.rooms_deleted > 0) {
-                    debugLog(`👥 Changes detected, refreshing UI`);
-                    
-                    setTimeout(() => {
-                        loadUsers();
-                        loadMessages();
-                    }, 1000);
-                }
-            }
-        },
-        error: function(xhr, status, error) {
-            debugLog('⚠️ Disconnect check error:', error);
-        }
-    });
+    // Updated function that uses the new system
+    activityTracker.triggerDisconnectCheck();
 }
 
 function stopActivityTracking() {
     debugLog('🛑 Stopping activity tracking system');
-    activityTrackingEnabled = false;
-    
-    if (activityInterval) {
-        clearInterval(activityInterval);
-        activityInterval = null;
-    }
-    
-    if (disconnectCheckInterval) {
-        clearInterval(disconnectCheckInterval);
-        disconnectCheckInterval = null;
-    }
-    
-    $(document).off('mousemove.activity keypress.activity scroll.activity click.activity');
-    $(window).off('focus.activity');
+    activityTracker.cleanup();
 }
 
 // ===== ROOM MANAGEMENT FUNCTIONS =====
@@ -1821,12 +2032,12 @@ function displayRoomSettingsModal(settings) {
                             <div class="tab-pane fade" id="features" role="tabpanel">
                                 <div class="mt-3">
                                     <div class="row">
-                                        <div class="col-md-6">
+                                        <div class="col-md-12">
                                             <div class="mb-4">
                                                 <div class="form-check form-switch">
                                                     <input class="form-check-input" type="checkbox" id="settingsYouTubeEnabled"${settings.youtube_enabled ? ' checked' : ''}>
                                                     <label class="form-check-label" for="settingsYouTubeEnabled">
-                                                        <i class="fab fa-youtube text-danger"></i> <strong>Enable YouTube Player</strong> <span class="betatext" />
+                                                        <i class="fab fa-youtube text-danger"></i> <strong>Enable YouTube Player</strong> <span class="betatext" /> <span class="betatext2" />
                                                     </label>
                                                 </div>
                                                 <small class="form-text text-muted">Allow synchronized video playback for all users in the room</small>
@@ -4324,4 +4535,30 @@ function addAFKStyles() {
     `;
     
     $('head').append(css);
+}
+
+// ===== ACTIVITY STATUS DISPLAY FOR DEBUGGING =====
+function showActivityStatus() {
+    //if (!DEBUG_MODE) return;
+    
+    const statusHtml = `
+        <div class="activity-status-debug" style="position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-size: 12px; z-index: 9999;">
+            <div><strong>Activity Status</strong></div>
+            <div>Tracker Enabled: ${activityTracker.enabled}</div>
+            <div>AFK Timeout: ${ACTIVITY_CONFIG.AFK_TIMEOUT_MINUTES}min</div>
+            <div>Disconnect Timeout: ${ACTIVITY_CONFIG.DISCONNECT_TIMEOUT_MINUTES}min</div>
+            <div>Last Activity: ${new Date(activityTracker.lastActivityUpdate).toLocaleTimeString()}</div>
+            <div>Current AFK: ${currentUserAFK}</div>
+        </div>
+    `;
+    
+    $('.activity-status-debug').remove();
+    $('body').append(statusHtml);
+    
+    setTimeout(() => $('.activity-status-debug').remove(), 10000);
+}
+
+// For debugging - show activity status
+if (DEBUG_MODE) {
+    setInterval(showActivityStatus, 30000);
 }

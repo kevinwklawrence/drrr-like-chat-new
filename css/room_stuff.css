@@ -433,8 +433,9 @@ body {
 }
 
 .room-header-enhanced.access-denied {
-    opacity: 0.8;
-    border-left: 3px solid #dc3545;
+    background: linear-gradient(135deg, #c51a1a 0%, #4c0c0c 100%);
+    color: #ffffff;
+    border: none;
 }
 
 .room-header-enhanced.access-denied .room-title {

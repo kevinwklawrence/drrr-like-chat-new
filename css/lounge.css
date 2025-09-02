@@ -48,24 +48,15 @@
 }
 
 .room-header-enhanced.password-protected {
-    background: linear-gradient(135deg, #ffa726 0%, #fb5d00 100%);
-    color: #2e2e2e;
+    background: linear-gradient(135deg, #373737 0%, #191919 100%);
+    color: #ffffff;
 }
 
 .room-header-enhanced.knock-available {
-    background: linear-gradient(135deg, #66bb6a 0%, #4caf50 100%);
+    background: linear-gradient(135deg, #2f3a57 0%, #0b133c 100%);
     position: relative;
 }
 
-.room-header-enhanced.knock-available::after {
-    content: '◉';
-    position: absolute;
-    top: 15px;
-    right: 25px;
-    color: rgba(255,255,255,0.9);
-    font-size: 12px;
-    animation: pulse-dot 2s infinite;
-}
 
 .room-header-enhanced.has-access {
     background: linear-gradient(135deg, #26c6da 0%, #00acc1 100%);
@@ -115,6 +106,10 @@
 .action-buttons {
     z-index: 1;
     position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    flex-direction: row;
 }
 
 .action-buttons .btn {
@@ -124,6 +119,8 @@
     font-weight: 500;
     transition: all 0.2s ease;
     font-size: 0.9rem;
+    margin-top: 10px;
+    width: 100%;
 }
 
 .action-buttons .btn:hover {
@@ -504,7 +501,7 @@
     75% { transform: rotate(-8deg); }
 }
 
-/* Access Granted Badge */
+/* Access Granted Badge
 .badge.bg-success {
     background: linear-gradient(45deg, #4caf50, #8bc34a) !important;
     color: white;
@@ -513,7 +510,7 @@
     border-radius: 12px;
     box-shadow: 0 2px 6px rgba(76, 175, 80, 0.3);
     font-size: 0.75rem;
-}
+}*/
 
 .badge.bg-success .fa-key {
     margin-right: 4px;
@@ -858,19 +855,26 @@ body {
 
         /* 1. ADD to css/lounge.css - Permanent Room Styles */
 
+
+
+
+
+
+
+
+
 /* Permanent Room Indicators */
 .permanent-indicator {
     background: linear-gradient(135deg, #ffd700, #ffa500) !important;
     color: #000 !important;
     font-weight: bold !important;
     box-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
-    border: 1px solid #ffd700;
 }
 
 .permanent-star {
     color: #ffd700 !important;
     text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-    animation: permanentGlow 2s ease-in-out infinite alternate;
+    animation: permanentGlow 5s ease-in-out infinite alternate;
 }
 
 @keyframes permanentGlow {
@@ -993,4 +997,11 @@ body {
     .permanent-star {
         font-size: 0.9em;
     }
+}
+.permanent-room-card {
+box-shadow: 0px 0px 6px 2px #dbbb0fba !important;
+}
+
+.permanent-room-card:hover {
+box-shadow: 0px 0px 6px 4px #dbbb0fba !important;
 }
