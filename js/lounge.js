@@ -5,9 +5,9 @@ const DEBUG_MODE = false;
 function debugLog(message, data = null) {
     if (DEBUG_MODE) {
         if (data !== null) {
-            console.log('[LOUNGE]', message, data);
+            debugLog('[LOUNGE]', message, data);
         } else {
-            console.log('[LOUNGE]', message);
+            debugLog('[LOUNGE]', message);
         }
     }
 }
@@ -298,7 +298,7 @@ function displayRoomsWithUsers(rooms) {
                 const regularUsers = room.regularUsers || [];
                 const canAccessFriendsOnly = room.can_access_friends_only !== false;
 
-                console.log(`🔍 Room "${room.name}": permanent=${isPermanent}, rp=${isRP}, youtube=${youtubeEnabled}, friends=${friendsOnly}`);
+                debugLog(`🔍 Room "${room.name}": permanent=${isPermanent}, rp=${isRP}, youtube=${youtubeEnabled}, friends=${friendsOnly}`);
 
                 let headerClass = 'room-header-enhanced';
                 let actionButtons = '';
@@ -308,7 +308,7 @@ function displayRoomsWithUsers(rooms) {
                 if (isPermanent) {
                  //   headerClass += ' permanent-room';
                     cardClass += ' permanent-room-card';
-                   // console.log(`🌟 Applied permanent styling to room: ${room.name}`);
+                   // debugLog(`🌟 Applied permanent styling to room: ${room.name}`);
                 }
 
                 // Access checking logic
@@ -340,39 +340,39 @@ function displayRoomsWithUsers(rooms) {
                 // Permanent indicator comes first and is most prominent
                 if (isPermanent) {
                    // featureIndicators += '<span class="room-indicator permanent-indicator" title="Permanent Room - Never deleted automatically"><i class="fas fa-star"></i> PERMANENT</span>';
-                   // console.log(`✅ Added permanent indicator for: ${room.name}`);
+                   // debugLog(`✅ Added permanent indicator for: ${room.name}`);
                 }
                 
                 // Other feature indicators
                 if (isRP) {
                     featureIndicators += '<span class="room-indicator rp-indicator" style="background: #e91e63; color: white;" title="Roleplay Room"><i class="fas fa-theater-masks"></i> RP</span>';
-                    console.log(`✅ Added RP indicator for: ${room.name}`);
+                    debugLog(`✅ Added RP indicator for: ${room.name}`);
                 }
                 
                 if (youtubeEnabled) {
                     featureIndicators += '<span class="room-indicator youtube-indicator" style="background: #f44336; color: white;" title="YouTube Player Enabled"><i class="fab fa-youtube"></i> VIDEO</span>';
-                    console.log(`✅ Added YouTube indicator for: ${room.name}`);
+                    debugLog(`✅ Added YouTube indicator for: ${room.name}`);
                 }
                 
                 if (friendsOnly) {
                     featureIndicators += '<span class="room-indicator friends-indicator" style="background: #2196f3; color: white;" title="Friends Only"><i class="fas fa-user-friends"></i> FRIENDS</span>';
-                    console.log(`✅ Added Friends Only indicator for: ${room.name}`);
+                    debugLog(`✅ Added Friends Only indicator for: ${room.name}`);
                 }
                 
                 if (inviteOnly) {
                     featureIndicators += '<span class="room-indicator invite-indicator" style="background: #ff9800; color: white;" title="Invite Only"><i class="fas fa-link"></i> INVITE</span>';
-                    console.log(`✅ Added Invite Only indicator for: ${room.name}`);
+                    debugLog(`✅ Added Invite Only indicator for: ${room.name}`);
                 }
                 
                 if (membersOnly) {
                     featureIndicators += '<span class="room-indicator members-indicator" style="background: #4caf50; color: white;" title="Members Only"><i class="fas fa-user-check"></i> MEMBERS</span>';
-                    console.log(`✅ Added Members Only indicator for: ${room.name}`);
+                    debugLog(`✅ Added Members Only indicator for: ${room.name}`);
                 }
                 
                 if (disappearingMessages) {
                     const lifetime = room.message_lifetime_minutes || 30;
                     featureIndicators += `<span class="room-indicator disappearing-indicator" style="background: #9c27b0; color: white;" title="Disappearing Messages (${lifetime} minutes)"><i class="fas fa-clock"></i> TEMP</span>`;
-                    console.log(`✅ Added Disappearing Messages indicator for: ${room.name}`);
+                    debugLog(`✅ Added Disappearing Messages indicator for: ${room.name}`);
                 }
 
                 let themeClass = (room.theme && room.theme !== 'default') ? `theme-${room.theme}` : '';
@@ -688,7 +688,7 @@ function handleAvatarClick(event, userIdString, username) {
     event.preventDefault();
     event.stopPropagation();
     
-    console.log('Lounge avatar clicked - userIdString:', userIdString, 'username:', username);
+    debugLog('Lounge avatar clicked - userIdString:', userIdString, 'username:', username);
     
     if (username && username.trim() !== '') {
         // For lounge, we need to get the actual user ID from username
@@ -1081,12 +1081,12 @@ window.showCreateRoomModal = function() {
 };
 
 window.createRoom = function() {
-    console.log('Creating room with new features...');
+    debugLog('Creating room with new features...');
     
     // Prevent multiple submissions
     const createButton = $('#createRoomModal .btn-primary');
     if (createButton.prop('disabled')) {
-        console.log('Create button already disabled, preventing duplicate submission');
+        debugLog('Create button already disabled, preventing duplicate submission');
         return;
     }
     
@@ -1109,7 +1109,7 @@ window.createRoom = function() {
     };
     
     // Debug log the form data
-    console.log('Form data being sent:', formData);
+    debugLog('Form data being sent:', formData);
     
     if (!formData.name) {
         alert('Room name is required');
@@ -1136,7 +1136,7 @@ window.createRoom = function() {
         dataType: 'json',
         timeout: 15000, // 15 second timeout
         success: function(response) {
-            console.log('Create room response:', response);
+            debugLog('Create room response:', response);
             
             if (response.status === 'success') {
                 $('#createRoomModal').modal('hide');
@@ -1284,7 +1284,7 @@ function initializePrivateMessaging() {
 
 // Add this function to lounge.js if it doesn't exist
 function openPrivateMessage(userId, username) {
-    console.log('Opening private message for user:', userId, username);
+    debugLog('Opening private message for user:', userId, username);
     
     if (openPrivateChats && openPrivateChats.has(userId)) {
         $(`#pm-${userId}`).show();
@@ -1403,7 +1403,7 @@ function sendPrivateMessage(recipientId) {
 }
 
 function loadPrivateMessages(otherUserId) {
-    console.log('Loading private messages with user:', otherUserId);
+    debugLog('Loading private messages with user:', otherUserId);
     
     // Store other user's color for display
     if (!openPrivateChats.get(otherUserId).color) {
@@ -1431,7 +1431,7 @@ function loadPrivateMessages(otherUserId) {
         },
         dataType: 'json',
         success: function(response) {
-            console.log('Load messages response:', response);
+            debugLog('Load messages response:', response);
             if (response.status === 'success') {
                 displayPrivateMessages(otherUserId, response.messages);
             } else {
@@ -1520,8 +1520,8 @@ function checkForNewPrivateMessages() {
 $(document).ready(function() {
      setInterval(() => {
         $('.room-card-enhanced .fa-spinner').each(function() {
-            console.log('PERSISTENT SPINNER DETECTED:', this.closest('.room-card-enhanced'));
-            console.log('Parent button:', this.closest('button'));
+            debugLog('PERSISTENT SPINNER DETECTED:', this.closest('.room-card-enhanced'));
+            debugLog('Parent button:', this.closest('button'));
         });
     }, 1000);
     initializePrivateMessaging();
@@ -1538,7 +1538,7 @@ function closeFriendsPanel() {
 }
 
 function updateFriendsPanel() {
-    console.log('Updating friends panel with:', friends);
+    debugLog('Updating friends panel with:', friends);
     
     let html = `
         <div class="mb-3">
@@ -1681,14 +1681,14 @@ function displayConversations(conversations) {
     $('#conversationsList').html(html);
 }
 function loadFriends() {
-    console.log('Loading friends...');
+    debugLog('Loading friends...');
     $.ajax({
         url: 'api/friends.php',
         method: 'GET',
         data: { action: 'get' },
         dataType: 'json',
         success: function(response) {
-            console.log('Friends response:', response);
+            debugLog('Friends response:', response);
             if (response.status === 'success') {
                 friends = response.friends;
                 updateFriendsPanel();

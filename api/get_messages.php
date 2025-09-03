@@ -266,7 +266,6 @@ if (isset($_GET['room_id'])) {
                 DELETE FROM messages 
                 WHERE room_id = ? 
                 AND timestamp < DATE_SUB(NOW(), INTERVAL ? MINUTE)
-                AND type != 'system'
             ");
             
             if ($cleanup_stmt) {

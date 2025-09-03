@@ -251,7 +251,6 @@ if (!empty($user_id_string)) {
         'color' => $color,
         'ghost_mode' => $ghost_mode
     ])); ?>;
-    console.log('Current user:', currentUser);
     
     // Ghost Mode Toggle Function
     function toggleGhostMode() {

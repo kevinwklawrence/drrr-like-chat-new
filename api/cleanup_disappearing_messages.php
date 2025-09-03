@@ -31,7 +31,6 @@ try {
             DELETE FROM messages 
             WHERE room_id = ? 
             AND timestamp < DATE_SUB(NOW(), INTERVAL ? MINUTE)
-            AND type != 'system'
         ");
         
         if ($delete_stmt) {

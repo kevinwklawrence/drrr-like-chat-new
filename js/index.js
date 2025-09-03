@@ -24,7 +24,7 @@ $(document).ready(function() {
     // Monitor ALL possible submission triggers
     $(document).on('submit', '#guestLoginForm', function(e) {
         submitAttempts++;
-        console.log(`🚨 FORM SUBMIT EVENT #${submitAttempts} - BLOCKED`);
+        debugLog(`🚨 FORM SUBMIT EVENT #${submitAttempts} - BLOCKED`);
         e.preventDefault();
         e.stopImmediatePropagation();
         return false;
@@ -33,7 +33,7 @@ $(document).ready(function() {
     $(document).on('click', 'button[type="submit"]', function(e) {
         e.preventDefault();
         e.stopImmediatePropagation();
-        console.log('🚨 SUBMIT BUTTON CLICK - REDIRECTED TO CUSTOM HANDLER');
+        debugLog('🚨 SUBMIT BUTTON CLICK - REDIRECTED TO CUSTOM HANDLER');
         handleGuestLogin();
         return false;
     });
@@ -42,7 +42,7 @@ $(document).ready(function() {
     $(document).on('keypress', '#guestLoginForm input', function(e) {
         if (e.which === 13) { // Enter key
             e.preventDefault();
-            console.log('🚨 ENTER KEY PRESSED - REDIRECTED TO CUSTOM HANDLER');
+            debugLog('🚨 ENTER KEY PRESSED - REDIRECTED TO CUSTOM HANDLER');
             handleGuestLogin();
             return false;
         }
@@ -55,7 +55,7 @@ $(document).ready(function() {
     
     // Add real-time slider tracking
     $('#hueSlider, #saturationSlider').on('input change', function() {
-        console.log('Slider changed - hue:', $('#hueSlider').val(), 'sat:', $('#saturationSlider').val());
+        debugLog('Slider changed - hue:', $('#hueSlider').val(), 'sat:', $('#saturationSlider').val());
         updateAvatarFilter();
     });
     
@@ -139,10 +139,10 @@ function syncModalPreviews() {
 let guestLoginInProgress = false;
 
 function handleGuestLogin() {
-    console.log('=== CUSTOM GUEST LOGIN HANDLER ===');
+    debugLog('=== CUSTOM GUEST LOGIN HANDLER ===');
     
     if (guestLoginInProgress) {
-        console.log('🛑 Guest login already in progress - BLOCKED');
+        debugLog('🛑 Guest login already in progress - BLOCKED');
         return false;
     }
     
@@ -156,17 +156,17 @@ function handleGuestLogin() {
     const hueElement = document.getElementById('hueSlider');
     const satElement = document.getElementById('saturationSlider');
     
-    console.log('Hue element:', hueElement);
-    console.log('Sat element:', satElement);
-    console.log('Hue value:', hueElement ? hueElement.value : 'NULL');
-    console.log('Sat value:', satElement ? satElement.value : 'NULL');
+    debugLog('Hue element:', hueElement);
+    debugLog('Sat element:', satElement);
+    debugLog('Hue value:', hueElement ? hueElement.value : 'NULL');
+    debugLog('Sat value:', satElement ? satElement.value : 'NULL');
     
     const hueShift = hueElement ? parseInt(hueElement.value) || 0 : 0;
     const saturation = satElement ? parseInt(satElement.value) || 100 : 100;
     const bubbleHue = document.getElementById('bubbleHueSlider') ? parseInt(document.getElementById('bubbleHueSlider').value) || 0 : 0;
     const bubbleSaturation = document.getElementById('bubbleSaturationSlider') ? parseInt(document.getElementById('bubbleSaturationSlider').value) || 100 : 100;
 
-    console.log('Final values - hue:', hueShift, 'sat:', saturation);
+    debugLog('Final values - hue:', hueShift, 'sat:', saturation);
     
     if (!guestName) {
         guestLoginInProgress = false;
@@ -204,8 +204,8 @@ function handleGuestLogin() {
         submission_id: submissionId
     };
     
-    console.log('Sending data with submission ID:', submissionId);
-    console.log('Form data:', formData);
+    debugLog('Sending data with submission ID:', submissionId);
+    debugLog('Form data:', formData);
     
     $.ajax({
         url: 'api/join_lounge.php',
@@ -215,9 +215,9 @@ function handleGuestLogin() {
         timeout: 15000,
         cache: false,
         success: function(res) {
-            console.log('Response received:', res);
+            debugLog('Response received:', res);
             if (res.status === 'success') {
-                console.log('Success - redirecting...');
+                debugLog('Success - redirecting...');
                 setTimeout(function() {
                     window.location.href = 'lounge.php';
                 }, 100);

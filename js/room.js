@@ -5,9 +5,9 @@ const SHOW_SENSITIVE_DATA = false;
 function debugLog(message, data = null) {
     if (DEBUG_MODE) {
         if (data !== null) {
-            console.log('[ROOM]', message, data);
+            debugLog('[ROOM]', message, data);
         } else {
-            console.log('[ROOM]', message);
+            debugLog('[ROOM]', message);
         }
     }
 }
@@ -821,10 +821,10 @@ function loadUsers() {
             try {
                 let users = JSON.parse(response);
                 // In loadUsers function, after the JSON.parse, add:
-console.log('=== AVATAR DEBUG ===');
-console.log('Raw users data:', users);
+debugLog('=== AVATAR DEBUG ===');
+debugLog('Raw users data:', users);
 users.forEach((user, index) => {
-    console.log(`User ${index}:`, {
+    debugLog(`User ${index}:`, {
         name: user.display_name,
         avatar_hue: user.avatar_hue,
         avatar_saturation: user.avatar_saturation,
@@ -1868,7 +1868,7 @@ function showRoomSettings() {
 }
 
 function displayRoomSettingsModal(settings) {
-    console.log('Displaying room settings modal with:', settings); // Debug log
+    debugLog('Displaying room settings modal with:', settings); // Debug log
     
     const modalHtml = `
         <div class="modal fade" id="roomSettingsModal" tabindex="-1">
@@ -2298,7 +2298,7 @@ function saveRoomSettings() {
         permanent: $('#settingsPermanentRoom').is(':checked') ? 1 : 0  // NEW: Add permanent setting
     };
     
-    console.log('Saving room settings:', formData);
+    debugLog('Saving room settings:', formData);
     
     if (!formData.name) {
         alert('Room name is required');
@@ -2324,7 +2324,7 @@ function saveRoomSettings() {
         data: formData,
         dataType: 'json',
         success: function(response) {
-            console.log('Update room response:', response);
+            debugLog('Update room response:', response);
             if (response.status === 'success') {
                 let message = 'Room settings updated successfully!';
                 
@@ -2817,7 +2817,7 @@ function createSafeId(str) {
 }
 
 function openWhisper(userIdString, username) {
-    console.log('Opening whisper for user:', userIdString, username);
+    debugLog('Opening whisper for user:', userIdString, username);
     
     if (openWhispers.has(userIdString)) {
         showWhisperTab(userIdString);
@@ -2867,7 +2867,7 @@ function openWhisper(userIdString, username) {
 }
 
 function toggleWhisperTab(userIdString) {
-    console.log('Toggling whisper tab for:', userIdString);
+    debugLog('Toggling whisper tab for:', userIdString);
     const data = openWhispers.get(userIdString);
     if (!data) return;
     
@@ -2894,7 +2894,7 @@ function toggleWhisperTab(userIdString) {
 }
 
 function showWhisperTab(userIdString) {
-    console.log('Showing whisper tab for:', userIdString);
+    debugLog('Showing whisper tab for:', userIdString);
     const data = openWhispers.get(userIdString);
     if (!data) return;
     
@@ -2966,7 +2966,7 @@ function sendWhisper(recipientUserIdString) {
 }
 
 function loadWhisperMessages(otherUserIdString) {
-    console.log('Loading whisper messages for:', otherUserIdString);
+    debugLog('Loading whisper messages for:', otherUserIdString);
     
     $.ajax({
         url: 'api/room_whispers.php',
@@ -2977,7 +2977,7 @@ function loadWhisperMessages(otherUserIdString) {
         },
         dataType: 'json',
         success: function(response) {
-            console.log('Whisper messages response:', response);
+            debugLog('Whisper messages response:', response);
             if (response.status === 'success') {
                 displayWhisperMessages(otherUserIdString, response.messages);
             } else {
@@ -3379,21 +3379,21 @@ function closeFriendsPanel() {
 }
 
 function loadFriends() {
-    console.log('Loading friends...');
+    debugLog('Loading friends...');
     $.ajax({
         url: 'api/friends.php',
         method: 'GET',
         data: { action: 'get' },
         dataType: 'json',
         success: function(response) {
-            console.log('Friends response:', response);
+            debugLog('Friends response:', response);
             if (response.status === 'success') {
                 friends = response.friends;
                 
                 // DEBUG: Log each friend object to see the structure
-                console.log('Number of friends:', friends.length);
+                debugLog('Number of friends:', friends.length);
                 friends.forEach((friend, index) => {
-                    console.log(`Friend ${index}:`, {
+                    debugLog(`Friend ${index}:`, {
                         id: friend.id,
                         friend_user_id: friend.friend_user_id,
                         username: friend.username,
@@ -3415,7 +3415,7 @@ function loadFriends() {
 }
 
 function updateFriendsPanel() {
-    console.log('Updating friends panel with:', friends);
+    debugLog('Updating friends panel with:', friends);
     
     let html = `
         <div class="mb-3">
@@ -3520,14 +3520,14 @@ function acceptFriend(friendId) {
 }
 
 function loadConversations() {
-    console.log('Loading conversations...');
+    debugLog('Loading conversations...');
     $.ajax({
         url: 'api/private_messages.php',
         method: 'GET',
         data: { action: 'get_conversations' },
         dataType: 'json',
         success: function(response) {
-            console.log('Conversations response:', response);
+            debugLog('Conversations response:', response);
             if (response.status === 'success') {
                 displayConversations(response.conversations);
             } else {
@@ -3566,10 +3566,10 @@ function displayConversations(conversations) {
 }
 
 function openPrivateMessage(userId, username) {
-    console.log('=== DEBUG openPrivateMessage ===');
-    console.log('Received userId:', userId, 'Type:', typeof userId);
-    console.log('Received username:', username, 'Type:', typeof username);
-    console.log('Current user:', currentUser);
+    debugLog('=== DEBUG openPrivateMessage ===');
+    debugLog('Received userId:', userId, 'Type:', typeof userId);
+    debugLog('Received username:', username, 'Type:', typeof username);
+    debugLog('Current user:', currentUser);
     
     if (openPrivateChats.has(userId)) {
         $(`#pm-${userId}`).show();
@@ -3598,20 +3598,20 @@ function openPrivateMessage(userId, username) {
     openPrivateChats.set(userId, { username: username, color: 'blue' }); // Default until we fetch
     
     // Fetch user info including color
-    console.log('Fetching user info for userId:', userId);
+    debugLog('Fetching user info for userId:', userId);
     $.ajax({
         url: 'api/get_user_info.php',
         method: 'GET',
         data: { user_id: userId },
         dataType: 'json',
         success: function(response) {
-            console.log('User info response:', response);
+            debugLog('User info response:', response);
             if (response.status === 'success') {
                 const chatData = openPrivateChats.get(userId);
                 chatData.color = response.user.color || 'blue';
                 chatData.avatar = response.user.avatar || 'default_avatar.jpg';
                 openPrivateChats.set(userId, chatData);
-                console.log('Fetched user color:', response.user.color);
+                debugLog('Fetched user color:', response.user.color);
                 // Reload messages to apply correct colors
                 loadPrivateMessages(userId);
             }
@@ -3623,7 +3623,7 @@ function openPrivateMessage(userId, username) {
                 responseText: xhr.responseText,
                 userId: userId
             });
-            console.log('Failed to fetch user info, using default color');
+            debugLog('Failed to fetch user info, using default color');
             loadPrivateMessages(userId);
         }
     });
@@ -3635,13 +3635,13 @@ function closePrivateMessage(userId) {
 }
 
 function sendPrivateMessage(recipientId) {
-    console.log('=== DEBUG sendPrivateMessage ===');
-    console.log('Sending message to recipientId:', recipientId, 'Type:', typeof recipientId);
+    debugLog('=== DEBUG sendPrivateMessage ===');
+    debugLog('Sending message to recipientId:', recipientId, 'Type:', typeof recipientId);
     
     const input = $(`#pm-input-${recipientId}`);
     const message = input.val().trim();
     
-    console.log('Message content:', message);
+    debugLog('Message content:', message);
     
     if (!message) return false;
     
@@ -3651,7 +3651,7 @@ function sendPrivateMessage(recipientId) {
         message: message
     };
     
-    console.log('Request data being sent:', requestData);
+    debugLog('Request data being sent:', requestData);
     
     $.ajax({
         url: 'api/private_messages.php',
@@ -3659,7 +3659,7 @@ function sendPrivateMessage(recipientId) {
         data: requestData,
         dataType: 'json',
         success: function(response) {
-            console.log('Send message response:', response);
+            debugLog('Send message response:', response);
             if (response.status === 'success') {
                 input.val('');
                 loadPrivateMessages(recipientId);
@@ -3684,7 +3684,7 @@ function sendPrivateMessage(recipientId) {
 }
 
 function loadPrivateMessages(otherUserId) {
-    console.log('Loading private messages with user:', otherUserId);
+    debugLog('Loading private messages with user:', otherUserId);
     
     $.ajax({
         url: 'api/private_messages.php',
@@ -3695,7 +3695,7 @@ function loadPrivateMessages(otherUserId) {
         },
         dataType: 'json',
         success: function(response) {
-            console.log('Load messages response:', response);
+            debugLog('Load messages response:', response);
             if (response.status === 'success') {
                 displayPrivateMessages(otherUserId, response.messages);
             } else {
@@ -3735,7 +3735,7 @@ function displayPrivateMessages(otherUserId, messages) {
     const avatarHue = isOwn ? (currentUser.avatar_hue || 0) : (msg.sender_avatar_hue || 0);
     const avatarSat = isOwn ? (currentUser.avatar_saturation || 100) : (msg.sender_avatar_saturation || 100);
     
-    console.log('Avatar customization debug:', {
+    debugLog('Avatar customization debug:', {
         isOwn: isOwn,
         avatarHue: avatarHue,
         avatarSat: avatarSat,
@@ -3853,7 +3853,7 @@ function handleAvatarClick(event, userId, username) {
     event.preventDefault();
     event.stopPropagation();
     
-    console.log('Avatar clicked - userId:', userId, 'username:', username); // Debug log
+    debugLog('Avatar clicked - userId:', userId, 'username:', username); // Debug log
     
     // Allow anyone to view registered user profiles
     if (userId && userId !== 'null' && userId !== null && userId > 0) {

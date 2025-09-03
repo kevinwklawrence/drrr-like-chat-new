@@ -15,7 +15,7 @@ $(document).ready(function() {
     
     // Monitor ALL possible submission triggers
     $(document).on('submit', '#userLoginForm', function(e) {
-        console.log('🚨 LOGIN FORM SUBMIT EVENT - BLOCKED');
+        debugLog('🚨 LOGIN FORM SUBMIT EVENT - BLOCKED');
         e.preventDefault();
         e.stopImmediatePropagation();
         return false;
@@ -24,7 +24,7 @@ $(document).ready(function() {
     $(document).on('click', '#userLoginForm button[type="submit"]', function(e) {
         e.preventDefault();
         e.stopImmediatePropagation();
-        console.log('🚨 LOGIN SUBMIT BUTTON CLICK - REDIRECTED TO CUSTOM HANDLER');
+        debugLog('🚨 LOGIN SUBMIT BUTTON CLICK - REDIRECTED TO CUSTOM HANDLER');
         handleUserLogin();
         return false;
     });
@@ -32,7 +32,7 @@ $(document).ready(function() {
     $(document).on('keypress', '#userLoginForm input', function(e) {
         if (e.which === 13) { // Enter key
             e.preventDefault();
-            console.log('🚨 LOGIN ENTER KEY PRESSED - REDIRECTED TO CUSTOM HANDLER');
+            debugLog('🚨 LOGIN ENTER KEY PRESSED - REDIRECTED TO CUSTOM HANDLER');
             handleUserLogin();
             return false;
         }
@@ -49,14 +49,14 @@ $(document).ready(function() {
     // Track slider interactions for avatar customization
     $('#hueSlider, #saturationSlider').on('input change', function() {
         userHasInteractedWithSliders = true;
-        console.log('User interacted with avatar sliders');
+        debugLog('User interacted with avatar sliders');
         updateAvatarFilter();
     });
     
     // Track slider interactions for bubble customization
     $('#bubbleHueSlider, #bubbleSaturationSlider').on('input change', function() {
         userHasInteractedWithBubbleSliders = true;
-        console.log('User interacted with bubble sliders');
+        debugLog('User interacted with bubble sliders');
         updateBubbleFilter();
     });
     
@@ -139,7 +139,7 @@ $(document).ready(function() {
     }
 
     function showUserCustomizationPreview(customization) {
-        console.log('Loading user customization:', customization);
+        debugLog('Loading user customization:', customization);
         
         // Only show avatar preview if no avatar is manually selected
         if ($('#selectedAvatar').val() === '') {
@@ -223,7 +223,7 @@ let userLoginInProgress = false;
 
 function handleUserLogin() {
     if (userLoginInProgress) {
-        console.log('🛑 User login already in progress - BLOCKED');
+        debugLog('🛑 User login already in progress - BLOCKED');
         return false;
     }
 
@@ -269,21 +269,21 @@ function handleUserLogin() {
     if (userHasInteractedWithSliders) {
         formData.avatar_hue = $('#hueSlider').val() || 0;
         formData.avatar_saturation = $('#saturationSlider').val() || 100;
-        console.log('Including avatar customization - hue:', formData.avatar_hue, 'sat:', formData.avatar_saturation);
+        debugLog('Including avatar customization - hue:', formData.avatar_hue, 'sat:', formData.avatar_saturation);
     } else {
-        console.log('User did not interact with avatar sliders - preserving saved values');
+        debugLog('User did not interact with avatar sliders - preserving saved values');
     }
     
     // Only include bubble customization if user interacted with bubble sliders
     if (userHasInteractedWithBubbleSliders) {
         formData.bubble_hue = $('#bubbleHueSlider').val() || 0;
         formData.bubble_saturation = $('#bubbleSaturationSlider').val() || 100;
-        console.log('Including bubble customization - hue:', formData.bubble_hue, 'sat:', formData.bubble_saturation);
+        debugLog('Including bubble customization - hue:', formData.bubble_hue, 'sat:', formData.bubble_saturation);
     } else {
-        console.log('User did not interact with bubble sliders - preserving saved values');
+        debugLog('User did not interact with bubble sliders - preserving saved values');
     }
     
-    console.log('Sending login data:', formData);
+    debugLog('Sending login data:', formData);
     
     $.ajax({
         url: 'api/login.php',
@@ -754,7 +754,7 @@ class VirtualScrollAvatars {
     }
 
     selectAvatar(item) {
-        console.log('Selected avatar:', item);
+        debugLog('Selected avatar:', item);
         // Your avatar selection logic here
     }
 }
