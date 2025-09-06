@@ -114,8 +114,16 @@ if (!empty($user_id_string)) {
     <link href="css/private_bubble_colors.css" rel="stylesheet">
     <link href="css/room_stuff.css" rel="stylesheet">
     <link href="css/moderator.css" rel="stylesheet">
+<link href="css/loading.css" rel="stylesheet">
 </head>
 <body>
+    <div class="avatar-loader" id="avatarLoader">
+    <div class="loader-content">
+        <div>Loading avatars...</div>
+        <div class="loader-bar"><div class="loader-progress" id="progress"></div></div>
+        <div id="status">0 / 0</div>
+    </div>
+</div>
     <div class="container-fluid">
         <div class="lounge-container">
             <!-- Header -->
@@ -409,5 +417,6 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- Include the fixed lounge.js -->
     <script src="js/lounge.js"></script>
     <script src="js/profile_system.js"></script>
+    <script src="js/loading.js"></script>
 </body>
 </html>

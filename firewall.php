@@ -53,7 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin: 0;
             padding: 0;
             min-height: 100vh;
-            background: #000000;
+           /* background: url('images/bgo.png') center repeat; */
+           background: black;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -190,7 +191,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             .site-logo {
                 width: min(30vw, 150px);
-                height: min(30vw, 150px);
             }
             
             .ring-1 { width: 45vw; height: 45vw; }

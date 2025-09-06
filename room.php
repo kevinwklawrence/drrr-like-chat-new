@@ -210,8 +210,16 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
     <link href="css/themes/<?php echo htmlspecialchars($room_theme); ?>.css" rel="stylesheet">
 <?php endif; ?>
 
+<link href="css/loading.css" rel="stylesheet">
 </head>
 <body>
+    <div class="avatar-loader" id="avatarLoader">
+    <div class="loader-content">
+        <div>Loading avatars...</div>
+        <div class="loader-bar"><div class="loader-progress" id="progress"></div></div>
+        <div id="status">0 / 0</div>
+    </div> 
+</div>
     <div class="room-container">
         <!-- Room Header -->
         <div class="room-header">
@@ -819,5 +827,6 @@ $('<style>').text(`
 </script>
     <script src="js/room.js"></script>
     <script src="js/profile_system.js"></script>
+    <script src="js/loading.js"></script>
 </body>
 </html>

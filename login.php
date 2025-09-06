@@ -175,8 +175,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="css/color_previews.css" rel="stylesheet">
     <link href="css/private_bubble_colors.css" rel="stylesheet">
     <link href="css/cus_modal.css" rel="stylesheet">
+    <link href="css/loading.css" rel="stylesheet">
 </head>
 <body>
+    <div class="avatar-loader" id="avatarLoader">
+    <div class="loader-content">
+        <div>Loading avatars...</div>
+        <div class="loader-bar"><div class="loader-progress" id="progress"></div></div>
+        <div id="status">0 / 0</div>
+    </div>
+</div>
     <div class="container-fluid">
         <div class="login-container">
             <!-- Header -->
@@ -817,5 +825,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <?php include 'terms_privacy_modals.php'; ?>
 <?php include 'forgot_password.php'; ?>
+<script src="js/loading.js"></script>
 </body>
 </html>

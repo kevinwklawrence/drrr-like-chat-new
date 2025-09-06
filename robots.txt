@@ -1,0 +1,47 @@
+# Duranu Chat - Robots.txt
+# Control search engine crawling
+
+User-agent: *
+
+# Allow main pages
+Allow: /firewall.php
+Allow: /index.php
+
+
+
+
+# Block sensitive areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /chat_logs/
+Disallow: /config/
+Disallow: /cron/
+Disallow: /logs/
+Disallow: /migration/
+Disallow: /room.php
+Disallow: /lounge.php
+Disallow: /moderator.php
+Disallow: /logout.php
+Disallow: /reset_firewall.php
+Disallow: /test_perm.php
+Disallow: /web_cron.php
+Disallow: /images/
+Disallow: /css/
+Disallow: /js/
+Disallow: /login.php
+Disallow: /register.php
+
+# Block common sensitive files
+Disallow: /*.log
+Disallow: /*.sql
+Disallow: /*.env
+Disallow: /*.ini
+Disallow: /*.conf
+Disallow: *.php~
+Disallow: *.php.bak
+
+# Crawl delay (optional - adjust as needed)
+Crawl-delay: 1
+
+# Sitemap location (uncomment when you create sitemap.xml)
+# Sitemap: https://yourwebsite.com/sitemap.xml

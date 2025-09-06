@@ -93,9 +93,9 @@ if (!$is_authorized) {
 }
 
 // Only allow admins/moderators to change permanent setting
-if (isset($_POST['permanent']) && !($is_admin || $is_moderator)) {
-    error_log("Non-admin/moderator attempting to change permanent setting: user_id_string=$user_id_string");
-    echo json_encode(['status' => 'error', 'message' => 'Only administrators and moderators can change permanent room settings']);
+if (isset($_POST['permanent']) && (int)$_POST['permanent'] === 1 && !($is_admin || $is_moderator)) {
+    error_log("Non-admin/moderator attempting to make room permanent: user_id_string=$user_id_string");
+    echo json_encode(['status' => 'error', 'message' => 'Only administrators and moderators can make rooms permanent']);
     exit;
 }
 
