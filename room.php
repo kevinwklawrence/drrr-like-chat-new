@@ -183,7 +183,7 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatroom: <?php echo htmlspecialchars($room['name']); ?></title>
+    <title><?php echo htmlspecialchars($room['name']); ?> | Duranu</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap" rel="stylesheet">
@@ -205,6 +205,8 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
         <link href="css/mentions_replies.css" rel="stylesheet">
         <link href="css/afk.css" rel="stylesheet">
         <link href="css/ghost_mode.css" rel="stylesheet">
+        <link rel="stylesheet" href="css/notifications.css">
+
 
     <?php if ($room_theme !== 'default'): ?>
     <link href="css/themes/<?php echo htmlspecialchars($room_theme); ?>.css" rel="stylesheet">
@@ -215,7 +217,7 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
 <body>
     <div class="avatar-loader" id="avatarLoader">
     <div class="loader-content">
-        <div>Loading avatars...</div>
+        <div>Loading content...</div>
         <div class="loader-bar"><div class="loader-progress" id="progress"></div></div>
         <div id="status">0 / 0</div>
     </div> 
@@ -279,6 +281,10 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
             <i class="fas fa-user-friends"></i> Friends
         </button>
     <?php endif; ?>
+      <button id="notificationBell" class="chat-control-btn" title="Notifications">
+        <i class="fas fa-bell"></i>
+        <!-- Badge will be added dynamically by JavaScript -->
+    </button>
                     <?php if ($is_host): ?>
                         <button class="btn btn-room-settings" onclick="showRoomSettings()">
                             <i class="fas fa-cog"></i> Room Settings
@@ -828,5 +834,6 @@ $('<style>').text(`
     <script src="js/room.js"></script>
     <script src="js/profile_system.js"></script>
     <script src="js/loading.js"></script>
+    <script src="js/notifications.js"></script>
 </body>
 </html>

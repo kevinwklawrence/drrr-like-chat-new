@@ -484,7 +484,7 @@ function displayProfileEditor(user) {
                                                     <div class="spinner-border text-primary" role="status">
                                                         <span class="visually-hidden">Loading...</span>
                                                     </div>
-                                                    <p class="mt-2 mb-0 text-muted">Loading avatars...</p>
+                                                    <p class="mt-2 mb-0 text-muted">Loading content...</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -646,7 +646,7 @@ function loadAvatarsForEditor(isRegistered) {
             $('#avatarGridContainer').html(`
                 <div class="text-center py-4">
                     <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
-                    <p class="text-muted">Error loading avatars</p>
+                    <p class="text-muted">Error loading content</p>
                 </div>
             `);
         }
@@ -658,14 +658,14 @@ function displayAvatarsInEditor(avatarData, isRegistered) {
     let totalAvatars = 0;
     
     if (!isRegistered) {
-        ['time-limited', 'default', 'drrrjp', 'drrrx2'].forEach(folder => {
+        ['time-limited', 'community', 'default', 'mushoku', 'drrrjp', 'drrrx2'].forEach(folder => {
             if (avatarData[folder] && avatarData[folder].length > 0) {
                 html += createAvatarSection(folder, avatarData[folder]);
                 totalAvatars += avatarData[folder].length;
             }
         });
     } else {
-        ['time-limited', 'default', 'drrrjp', 'drrrx2'].forEach(folder => {
+        ['time-limited', 'community', 'default', 'mushoku', 'drrrjp', 'drrrx2'].forEach(folder => {
             if (avatarData[folder] && avatarData[folder].length > 0) {
                 html += createAvatarSection(folder, avatarData[folder], true);
                 totalAvatars += avatarData[folder].length;
@@ -673,7 +673,7 @@ function displayAvatarsInEditor(avatarData, isRegistered) {
         });
         
         Object.keys(avatarData).forEach(folder => {
-            if (!['time-limited', 'default', 'drrrjp', 'drrrx2'].includes(folder) && avatarData[folder].length > 0) {
+            if (!['time-limited', 'community', 'default', 'mushoku', 'drrrjp', 'drrrx2'].includes(folder) && avatarData[folder].length > 0) {
                 html += createAvatarSection(folder, avatarData[folder]);
                 totalAvatars += avatarData[folder].length;
             }

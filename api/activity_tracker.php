@@ -253,4 +253,14 @@ class ActivityTracker {
         return $tracker->updateActivity($activity_type);
     }
 }
+
+// Add to any API file (like activity_tracker.php)
+function simulateServerLoad($minMs = 100, $maxMs = 1000) {
+        $delay = rand($minMs, $maxMs) * 1000; // Convert to microseconds
+        usleep($delay);
+        logActivity("Simulated server load delay: " . ($delay / 1000) . "ms");
+}
+
+// Usage
+simulateServerLoad(200, 800); // 200-800ms delay
 ?>

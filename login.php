@@ -180,7 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <div class="avatar-loader" id="avatarLoader">
     <div class="loader-content">
-        <div>Loading avatars...</div>
+        <div>Loading content...</div>
         <div class="loader-bar"><div class="loader-progress" id="progress"></div></div>
         <div id="status">0 / 0</div>
     </div>
@@ -255,8 +255,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $web_base_dir = 'images/';
                                 $allowed_ext = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
                                 $excluded_folders = ['staff', 'bg', 'icon', 'covers'];
-                                $priority_folders = ['time-limited', 'community', 'recolored'];
-                                $nonpriority_folders = ['default', 'drrrjp', 'mushoku'];
+                                $priority_folders = ['time-limited', 'community'];
+                                $nonpriority_folders = ['recolored', 'default', 'drrrjp', 'mushoku'];
                                 $drrrx2 = ['drrrx2'];
                                 $total_avatars = 0;
 

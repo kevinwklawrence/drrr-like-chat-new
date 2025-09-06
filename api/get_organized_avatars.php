@@ -31,7 +31,7 @@ try {
         }
     } else {
         // Guest users can only access default and time-limited
-        $accessible_folders = ['time-limited', 'default', 'drrrjp', 'drrrx2'];
+        $accessible_folders = ['time-limited', 'community', 'default', 'mushoku', 'drrrjp', 'drrrx2'];
     }
     
     // Scan each accessible folder for avatars

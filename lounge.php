@@ -119,7 +119,7 @@ if (!empty($user_id_string)) {
 <body>
     <div class="avatar-loader" id="avatarLoader">
     <div class="loader-content">
-        <div>Loading avatars...</div>
+        <div>Loading content...</div>
         <div class="loader-bar"><div class="loader-progress" id="progress"></div></div>
         <div id="status">0 / 0</div>
     </div>

@@ -1,4 +1,7 @@
 /*body {  font-family: "Roboto Flex", sans-serif !important;}*/
+body * {
+    scrollbar-width:none;
+}
 body::-webkit-scrollbar {
     display:none;
 }
@@ -27,7 +30,7 @@ body {
     background-color: rgb(47 47 47);
      color:white;
      }
-.modal { color: black; }
+.modal {color: black;z-index: 99999;}
 .chat-message {min-height: 58px;}
 
 #m3 {background:hwb(30.3deg 46.67% 14.51%);}
@@ -420,6 +423,7 @@ body {
     filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
     transition: all 0.3s ease;
     display: block;
+    z-index: 9999;
 }
 
 .site-logo:hover {
@@ -672,4 +676,244 @@ body {
 .ghost-mode-status .fas {
     margin-right: 0.25rem;
     animation: ghostFloat 3s ease-in-out infinite;
+}
+
+/* Mobile Modal Height Fix - Add to css/cus_modal.css */
+
+/* Base modal improvements for all devices */
+.modal-dialog {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 20px);
+}
+
+.modal-content {
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+    overflow: hidden;
+}
+
+.modal-body {
+    flex: 1;
+    overflow-y: auto;
+    max-height: none;
+}
+
+/* Mobile specific modal fixes */
+@media (max-width: 768px) {
+    .modal-dialog {
+        margin: 10px;
+        max-height: calc(100vh - 20px);
+        height: inherit;
+        min-height: 0;
+    }
+    
+    .modal-lg, .modal-xl {
+        max-width: calc(100vw - 20px);
+        width: calc(100vw - 20px);
+    }
+    
+    .modal-content {
+        min-height: auto;
+        max-height: calc(100vh - 20px);
+        height: auto;
+        overflow: visible;
+        height: inherit;
+    }
+    
+    .modal-body {
+        max-height: calc(100vh - 140px); /* Account for header + footer */
+        overflow-y: auto;
+        padding: 15px;
+        flex-shrink: 0;
+        scrollbar-width: none;
+    }
+    
+    /* Profile editor modal specific */
+    .profile-editor-modal .modal-body {
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+    }
+    
+    .profile-editor-modal .tab-content {
+        max-height: none;
+        overflow: visible;
+    }
+    
+    /* Color grid adjustments */
+    .modal .color-grid {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    /* Make tabs scrollable if too many */
+    .nav-tabs {
+        /* overflow-x: auto; */
+        flex-wrap: wrap;
+    }
+    
+    .nav-tabs .nav-link {
+        flex-shrink: 0;
+    }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+    .modal-dialog {
+        margin: 5px;
+        max-height: calc(100vh - 10px);
+    }
+    
+    .modal-lg, .modal-xl {
+        max-width: calc(100vw - 10px);
+        width: calc(100vw - 10px);
+    }
+    
+    .modal-content {
+        max-height: calc(100vh - 10px);
+    }
+    
+    .modal-body {
+        max-height: calc(100vh - 100px);
+        padding: 10px;
+    }
+    
+    .modal-header {
+        padding: 10px 15px;
+    }
+    
+    .modal-footer {
+        padding: 10px 15px;
+    }
+    
+    .modal-title {
+        font-size: 1.1rem;
+    }
+    
+    /* Reduce spacing in modal content */
+    .modal-preview-section {
+        padding: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .settings-buttons-row {
+        gap: 8px;
+    }
+    
+    .settings-btn {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+}
+
+/* Room Modal Mobile Specific Fix - Add to css/cus_modal.css */
+
+/* Room creation and settings modal mobile improvements */
+@media (max-width: 768px) {
+    /* Room creation modal */
+    #createRoomModal .modal-body,
+    #roomSettingsModal .modal-body {
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+        padding: 15px;
+    }
+    
+    /* Form sections spacing */
+    #createRoomModal .mb-3,
+    #roomSettingsModal .mb-3 {
+        margin-bottom: 1rem;
+    }
+    
+    /* Form controls */
+    #createRoomModal .form-control,
+    #createRoomModal .form-select,
+    #roomSettingsModal .form-control,
+    #roomSettingsModal .form-select {
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: 10px 12px;
+    }
+    
+    /* Checkbox and radio groups */
+    #createRoomModal .form-check,
+    #roomSettingsModal .form-check {
+        margin-bottom: 0.75rem;
+    }
+    
+    /* Alert boxes in modals */
+    #createRoomModal .alert,
+    #roomSettingsModal .alert {
+        margin-bottom: 1rem;
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+    
+    /* Tab navigation for room settings */
+    #roomSettingsModal .nav-tabs {
+        /* overflow-x: auto; */
+        flex-wrap: wrap;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    #roomSettingsModal .nav-tabs .nav-link {
+        white-space: nowrap;
+        flex-shrink: 0;
+        font-size: 0.9rem;
+        padding: 8px 12px;
+    }
+    
+    /* Tab content */
+    #roomSettingsModal .tab-content {
+        margin-top: 15px;
+        overflow: visible;
+    }
+    
+    /* Banlist section */
+    #roomSettingsModal .banned-users-list {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    /* Collapse sections properly on mobile */
+    #createRoomModal .collapse,
+    #roomSettingsModal .collapse {
+        transition: height 0.35s ease;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Very small screens */
+    #createRoomModal .modal-body,
+    #roomSettingsModal .modal-body {
+        max-height: calc(100vh - 100px);
+        padding: 10px;
+    }
+    
+    /* Compact form layout */
+    #createRoomModal .form-label,
+    #roomSettingsModal .form-label {
+        font-size: 0.9rem;
+        margin-bottom: 0.3rem;
+    }
+    
+    /* Smaller text for descriptions */
+    #createRoomModal .text-muted,
+    #createRoomModal .small,
+    #roomSettingsModal .text-muted,
+    #roomSettingsModal .small {
+        font-size: 0.8rem;
+    }
+    
+    /* Stack buttons vertically when needed */
+    #createRoomModal .modal-footer,
+    #roomSettingsModal .modal-footer {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    #createRoomModal .modal-footer .btn,
+    #roomSettingsModal .modal-footer .btn {
+        width: 100%;
+        margin: 0;
+    }
 }
