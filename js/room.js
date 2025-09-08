@@ -32,6 +32,9 @@ function criticalError(message, error = null) {
 
 // ===== GLOBAL VARIABLES =====
 
+let lastSeenMessageId = null;
+let initializedMessages = false;
+
 // Cache for friendship status
 let friendshipCache = new Map();
 let friendshipCacheTimeout = new Map();
@@ -68,6 +71,12 @@ let activityTrackingEnabled = false;
 let lastScrollTop = 0;
 let lastMessageCount = 0;
 let userIsScrolling = false;
+let lastPlayedMessageCount = 0;
+
+function playMessageNotification() {
+    const audio = new Audio('/sounds/message_notification.mp3');
+    audio.play();
+}
 
 // YouTube Player System
 let youtubePlayer = null;
@@ -604,13 +613,15 @@ function loadMessages() {
                 const chatbox = $('#chatbox');
                 const isAtBottom = chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20;
                 const newMessageCount = messages.length;
-                
                 chatbox.html(html);
-                
                 if (isAtBottom || (newMessageCount > lastMessageCount && !userIsScrolling)) {
                     chatbox.scrollTop(chatbox[0].scrollHeight);
                 }
-                
+                // Play sound if new messages arrived
+                if (newMessageCount > lastPlayedMessageCount) {
+                    playMessageNotification();
+                    lastPlayedMessageCount = newMessageCount;
+                }
                 lastMessageCount = newMessageCount;
             } catch (e) {
                 console.error('JSON parse error:', e, response);
@@ -622,6 +633,8 @@ function loadMessages() {
             $('#chatbox').html('<div class="empty-chat"><i class="fas fa-wifi"></i><h5>Connection Error</h5><p>Failed to load messages. Check your connection.</p></div>');
         }
     });
+
+   
 
     // Apply avatar filters after loading messages
 /* Debounce filter application for messages
@@ -3289,7 +3302,7 @@ if (savedHidden === 'true') {
     loadMessages();
     loadUsers();
     
-    setInterval(loadMessages, 551000);
+    setInterval(loadMessages, 500);
     setInterval(loadUsers, 1000);
     
     $('#message').focus();

@@ -1,4 +1,6 @@
 // Working Notification System JavaScript (RESTORED)
+// Track played notification IDs to avoid duplicate sounds
+let playedNotificationIds = new Set();
 let currentNotifications = [];
 let notificationCheckInterval;
 
@@ -110,17 +112,27 @@ function updateNotificationsPanel() {
     }
     
     let html = "";
+    let shouldPlaySound = false;
     currentNotifications.forEach(notification => {
         html += createNotificationHTML(notification);
+            // Play sound only for new reply or mention notifications
+            if ((notification.type === "reply" || notification.type === "mention") && !playedNotificationIds.has(notification.id)) {
+                playReplyOrMentionSound();
+                playedNotificationIds.add(notification.id);
+        }
     });
     container.html(html);
-}
+
+    }
+
 
 function createNotificationHTML(notification) {
     const timeAgo = getTimeAgo(notification.timestamp);
     let iconClass = "fa-bell";
     if (notification.type === "mention") iconClass = "fa-at";
     else if (notification.type === "reply") iconClass = "fa-reply";
+
+    
     
     return `
         <div class="notification-item ${notification.type}" 
@@ -220,6 +232,12 @@ function getTimeAgo(timestamp) {
     return time.toLocaleDateString();
 }
 
+function playReplyOrMentionSound() {
+    const audio = new Audio('/sounds/reply_or_mention_notification.mp3');
+    audio.play();
+}
+
 $(document).ready(function() {
     initializeNotifications();
 });
+

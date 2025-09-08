@@ -66,7 +66,8 @@ function sanitizeMarkup($message) {
         '/\*(.*?)\*/' => '<em>$1</em>',              // *italic*
         '/__(.*?)__/' => '<u>$1</u>',                // __underline__
         '/~~(.*?)~~/' => '<del>$1</del>',            // ~~strikethrough~~
-        '/`(.*?)`/' => '<code style="background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 3px;">$1</code>'             // `code` (inline)
+        '/`(.*?)`/' => '<code style="background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 3px;">$1</code>'  // `code` (inline)
+        
     ];
     
     foreach ($patterns as $pattern => $replacement) {
@@ -82,11 +83,43 @@ function sanitizeMarkup($message) {
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 $user_id = $_SESSION['user']['id'];
 
+function createMessageNotification($conn, $recipient_id, $sender_id, $message_preview) {
+    // Check if notification already exists for this message in last 5 seconds (prevent duplicates)
+    $stmt = $conn->prepare("
+        SELECT id FROM friend_notifications 
+        WHERE user_id = ? AND sender_id = ? AND type = 'private_message' 
+        AND created_at > DATE_SUB(NOW(), INTERVAL 5 SECOND)
+    ");
+    $stmt->bind_param("ii", $recipient_id, $sender_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        // Create notification
+        $stmt = $conn->prepare("
+            INSERT INTO friend_notifications (user_id, sender_id, type, message) 
+            VALUES (?, ?, 'private_message', ?)
+        ");
+        
+        // Truncate message for notification
+        $preview = mb_substr($message_preview, 0, 50);
+        if (mb_strlen($message_preview) > 50) {
+            $preview .= '...';
+        }
+        
+        $notification_text = $_SESSION['user']['username'] . ': ' . $preview;
+        $stmt->bind_param("iis", $recipient_id, $sender_id, $notification_text);
+        $stmt->execute();
+        $stmt->close();
+    }
+}
+
 switch($action) {
     case 'send':
     $recipient_id = (int)$_POST['recipient_id'];
     $message = trim($_POST['message'] ?? '');
-    
+    $sender_id = $user_id; // For clarity in notification function
+
     error_log("Private message send attempt: recipient_id=$recipient_id, sender_id=$user_id, message_length=" . strlen($message));
     
     if (empty($message)) {
@@ -168,6 +201,7 @@ $bubble_saturation = (int)($_SESSION['user']['bubble_saturation'] ?? 100);
 $stmt->bind_param("iissiiii", $user_id, $recipient_id, $sanitized_message, $color, $avatar_hue, $avatar_saturation, $bubble_hue, $bubble_saturation);
     
     if ($stmt->execute()) {
+        createMessageNotification($conn, $recipient_id, $sender_id, $message);
         error_log("Private message sent successfully from $user_id to $recipient_id");
         echo json_encode(['status' => 'success', 'message' => 'Message sent']);
     } else {

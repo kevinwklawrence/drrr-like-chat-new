@@ -115,6 +115,8 @@ if (!empty($user_id_string)) {
     <link href="css/room_stuff.css" rel="stylesheet">
     <link href="css/moderator.css" rel="stylesheet">
 <link href="css/loading.css" rel="stylesheet">
+<link rel="stylesheet" href="css/friend_notifications.css">
+
 </head>
 <body>
     <div class="avatar-loader" id="avatarLoader">
@@ -177,9 +179,10 @@ if (!empty($user_id_string)) {
                             <i class="fas fa-user-edit"></i>
                         </button>-->
                         <?php if ($_SESSION['user']['type'] === 'user'): ?>
-                        <button class="btn btn-outline-primary w-100 mt-2" onclick="showFriendsPanel()">
-                            <i class="fas fa-user-friends"></i>
-                        </button>
+                        <button class="btn friends-btn" onclick="showFriendsPanel()">
+    <i class="fas fa-user-friends"></i>
+    <span class="notification-badge" style="display:none;">0</span>
+</button>
                         <?php endif; ?>
                         <div class="form-text text-muted mt-3">
                                 <i class="fas fa-info-circle"></i> <small>Change your appearance and profile by clicking your avatar above.</small>
@@ -423,5 +426,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <script src="js/lounge.js"></script>
     <script src="js/profile_system.js"></script>
     <script src="js/loading.js"></script>
+    <script src="js/friend_notifications.js"></script>
+
 </body>
 </html>

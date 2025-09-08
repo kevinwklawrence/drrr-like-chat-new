@@ -206,6 +206,8 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
         <link href="css/afk.css" rel="stylesheet">
         <link href="css/ghost_mode.css" rel="stylesheet">
         <link rel="stylesheet" href="css/notifications.css">
+        <link rel="stylesheet" href="css/friend_notifications.css">
+
 
 
     <?php if ($room_theme !== 'default'): ?>
@@ -282,9 +284,10 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
         <!-- Badge will be added dynamically by JavaScript -->
     </button>
                     <?php if ($_SESSION['user']['type'] === 'user'): ?>
-        <button class="btn btn-outline-primary" onclick="showFriendsPanel()">
-            <i class="fas fa-user-friends"></i>
-        </button>
+        <button class="btn friends-btn" onclick="showFriendsPanel()">
+    <i class="fas fa-user-friends"></i>
+    <span class="notification-badge" style="display:none;">0</span>
+</button>
     <?php endif; ?>
       
                     <?php if ($is_host): ?>
@@ -837,5 +840,7 @@ $('<style>').text(`
     <script src="js/profile_system.js"></script>
     <script src="js/loading.js"></script>
     <script src="js/notifications.js"></script>
+    <script src="js/friend_notifications.js"></script>
+
 </body>
 </html>

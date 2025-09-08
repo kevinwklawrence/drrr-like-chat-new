@@ -1,0 +1,179 @@
+/* css/friend_notifications.css - Friend notification styles */
+
+/* Notification badge on friends button */
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ff6b35;
+    color: white;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: bold;
+    min-width: 18px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.friends-btn {
+    background: linear-gradient(135deg, #355aff, #341ef7);
+    color:white;
+}
+
+/* Friends button with notifications */
+.friends-btn.has-notifications {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    animation: glow 2s ease-in-out infinite;
+}
+
+@keyframes glow {
+    0%, 100% { box-shadow: 0 0 5px rgba(255, 107, 53, 0.5); }
+    50% { box-shadow: 0 0 20px rgba(255, 107, 53, 0.8); }
+}
+
+/* Notification popup */
+.friend-notification-popup {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    border: 1px solid #ff6b35;
+    border-radius: 8px;
+    padding: 15px;
+    min-width: 300px;
+    max-width: 400px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 10000;
+    display: none;
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification-popup-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.notification-popup-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid #ff6b35;
+}
+
+.notification-popup-content {
+    flex: 1;
+}
+
+.notification-popup-title {
+    color: #ff6b35;
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.notification-popup-message {
+    color: #ecf0f1;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.notification-popup-close {
+    background: none;
+    border: none;
+    color: #95a5a6;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.notification-popup-close:hover {
+    color: #ecf0f1;
+}
+
+/* Notification list in friends panel */
+.notifications-section {
+    background: #2c3e50;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 15px;
+}
+
+.notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px;
+    margin-bottom: 8px;
+    background: #34495e;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.notification-item.unread {
+    background: #3d4f66;
+    border-left: 3px solid #ff6b35;
+}
+
+.notification-item:hover {
+    background: #41556b;
+}
+
+.notification-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-message {
+    color: #ecf0f1;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.notification-time {
+    color: #7f8c8d;
+    font-size: 11px;
+    margin-top: 2px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .friend-notification-popup {
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+        max-width: none;
+    }
+    
+    .notification-badge {
+        top: -3px;
+        right: -3px;
+        font-size: 10px;
+        padding: 1px 4px;
+    }
+}
