@@ -37,7 +37,8 @@ if (isset($_SESSION['user'])) {
 <body>
     <div class="avatar-loader" id="avatarLoader">
     <div class="loader-content">
-        <div>Loading content...</div>
+        <div>Loading content...<hr>
+        This may take a bit the first time. Subsequent loads will be much faster.</div>
         <div class="loader-bar"><div class="loader-progress" id="progress"></div></div>
         <div id="status">0 / 0</div>
     </div>
@@ -66,8 +67,8 @@ if (isset($_SESSION['user'])) {
                                 <?php
                                 $image_base_dir = __DIR__ . '/images';
                                 $web_base_dir = 'images/';
-                                $priority_folders = ['time-limited', 'community', 'default', 'mushoku', 'drrrjp'];
-                                $drrrx2 = ['drrrx2'];
+                                $priority_folders = ['time-limited', 'community', 'default', 'mushoku', 'secret', 'drrrjp', 'drrrkari', 'drrrx2'];
+                                $drrrcom = ['drrr.com'];
                                 $allowed_ext = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
 
                                 foreach ($priority_folders as $folder) {
@@ -87,7 +88,7 @@ if (isset($_SESSION['user'])) {
                                     }
                                 }
 
-                                foreach ($drrrx2 as $folder) {
+                                foreach ($drrrcom as $folder) {
                                     $folder_path = $image_base_dir . '/' . $folder;
                                     if (is_dir($folder_path)) {
                                         echo '<div class="avatar-section">';
@@ -254,7 +255,7 @@ if (isset($_SESSION['user'])) {
                                     <span class="slider-value" id="saturationValue">100%</span>
                                 </div>
                                 <input type="range" class="color-slider" id="saturationSlider" name="avatar_saturation" 
-                                       min="0" max="300" value="100">
+                                       min="1" max="300" value="100">
                             </div>
                             
                             <div class="form-text text-muted mt-3">
@@ -296,6 +297,11 @@ if (isset($_SESSION['user'])) {
 
                                 <div class="color-option color-cnegative" data-color="cnegative" onclick="selectColor('cnegative', this)">
                                     <div class="color-name">Color-Negative</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-caution" data-color="caution" onclick="selectColor('caution', this)">
+                                    <div class="color-name">Color-Caution</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
 

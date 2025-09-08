@@ -14,6 +14,8 @@ include '../db_connect.php';
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 $user_id = $_SESSION['user']['id'];
 
+
+
 try {
     switch($action) {
         case 'add':

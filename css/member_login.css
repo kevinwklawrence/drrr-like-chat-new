@@ -65,7 +65,7 @@ body {
         }
         
         .avatar-container {
-            max-height: 584px;
+            max-height: 642px;
             overflow-y: auto;
             border: 2px solid #404040;
             border-radius: 10px;
@@ -347,8 +347,8 @@ body {
         
         @media (max-width: 480px) {
             .avatar {
-                width: 42px;
-                height: 42px;
+                width: 58px;
+                height: auto;
                 margin: 2px;
             }
             

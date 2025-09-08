@@ -262,12 +262,21 @@
     --user-border-color: #000000; 
 }
 
+
 .user-color-cnegative { 
     --user-gradient:  linear-gradient(to bottom, rgba(255,255,255,1) 0%,rgba(246,246,246,1) 47%,rgba(237,237,237,1) 100%);
     --user-tail-color: #da0053; 
     --user-text-color: #000000; 
     --user-text-shadow-color: #ffffff;
     --user-border-color: #da0053; 
+}
+
+.user-color-caution { 
+    --user-gradient:  linear-gradient(to bottom, rgb(0 0 0) 0%,rgb(19 19 19) 47%,rgb(11 11 11) 100%);
+    --user-tail-color: #efec15; 
+    --user-text-color: #ffffff; 
+    --user-text-shadow-color: #000000;
+    --user-border-color: #efec15; 
 }
 
 .user-color-policeman2 { 

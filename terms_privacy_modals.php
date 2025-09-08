@@ -12,7 +12,7 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: invert(1);"></button>
             </div>
-            <div class="modal-body" style="max-height: 500px; overflow-y: auto;">
+            <div class="modal-body" style=" overflow-y: auto;">
                 <div class="terms-content">
                     <p class="lead"><strong>By using this chat service, you agree to the following terms:</strong></p>
                     
@@ -86,7 +86,7 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: invert(1);"></button>
             </div>
-            <div class="modal-body" style="max-height: 500px; overflow-y: auto;">
+            <div class="modal-body" style=" overflow-y: auto;">
                 <div class="privacy-content">
                     <p class="lead"><strong>Your privacy is important to us. This policy explains how we collect, use, and protect your information.</strong></p>
                     

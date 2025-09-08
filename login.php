@@ -180,7 +180,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <div class="avatar-loader" id="avatarLoader">
     <div class="loader-content">
-        <div>Loading content...</div>
+        <div>Loading content...<hr>
+        This may take a bit the first time. Subsequent loads will be much faster.</div>
         <div class="loader-bar"><div class="loader-progress" id="progress"></div></div>
         <div id="status">0 / 0</div>
     </div>
@@ -223,7 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <option value="all">All Colors</option>
                                             <?php
                                             $image_base_dir = __DIR__ . '/images';
-                                            $excluded_folders = ['staff', 'bg', 'icon', 'time-limited', 'default', 'drrrjp', 'drrrx2'];
+                                            $excluded_folders = ['staff', 'bg', 'icon', 'time-limited', 'default', 'drrrjp', 'drrr.com'];
                                             foreach (glob($image_base_dir . '/*', GLOB_ONLYDIR) as $color_dir) {
                                                 $color_name = basename($color_dir);
                                                 if (in_array(strtolower($color_name), $excluded_folders)) continue;
@@ -256,8 +257,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $allowed_ext = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
                                 $excluded_folders = ['staff', 'bg', 'icon', 'covers'];
                                 $priority_folders = ['time-limited', 'community'];
-                                $nonpriority_folders = ['recolored', 'default', 'drrrjp', 'mushoku'];
-                                $drrrx2 = ['drrrx2'];
+                                $nonpriority_folders = ['recolored', 'default', 'mushoku', 'secret', 'drrrjp', 'drrrkari', 'drrrx2'];
+                                $drrrcom = ['drrr.com'];
                                 $total_avatars = 0;
 
                                 // Show priority folders first if they exist
@@ -291,7 +292,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     if (in_array(strtolower($color_name), $excluded_folders)) continue;
                                     if (in_array(strtolower($color_name), $priority_folders)) continue;
                                     if (in_array(strtolower($color_name), $nonpriority_folders)) continue;
-                                    if (in_array(strtolower($color_name), $drrrx2)) continue;
+                                    if (in_array(strtolower($color_name), $drrrcom)) continue;
 
                                     $folder_avatars = glob($color_dir . '/*.{png,jpg,jpeg,gif,webp}', GLOB_BRACE);
                                     $folder_count = count($folder_avatars);
@@ -335,7 +336,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 }
 
                                 // Show priority folders first if they exist
-                                foreach ($drrrx2 as $folder) {
+                                foreach ($drrrcom as $folder) {
                                     $color_dir = $image_base_dir . '/' . $folder;
                                     if (is_dir($color_dir)) {
                                         $folder_avatars = glob($color_dir . '/*.{png,jpg,jpeg,gif,webp}', GLOB_BRACE);
@@ -527,7 +528,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <span class="slider-value" id="saturationValue">100%</span>
                                 </div>
                                 <input type="range" class="color-slider" id="saturationSlider" name="avatar_saturation" 
-                                       min="0" max="300" value="100">
+                                       min="1" max="300" value="100">
                             </div>
                             
                             <div class="form-text text-muted mt-3">
@@ -569,6 +570,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                                 <div class="color-option color-cnegative" data-color="cnegative" onclick="selectColor('cnegative', this)">
                                     <div class="color-name">Color-Negative</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
+                                <div class="color-option color-caution" data-color="caution" onclick="selectColor('caution', this)">
+                                    <div class="color-name">Color-Caution</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
 

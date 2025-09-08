@@ -83,7 +83,7 @@ function displayProfilePopup(user, avatarElement) {
             default: // 'none'
                 actionsHtml += `
                     <button class="btn btn-sm btn-primary profile-action-btn" onclick="addFriendFromProfile('${user.username}'); event.stopPropagation();">
-                        <i class="fas fa-user-plus"></i> Add Friend
+                        <i class="fas fa-user-plus"></i>
                     </button>
                 `;
                 break;
@@ -658,14 +658,14 @@ function displayAvatarsInEditor(avatarData, isRegistered) {
     let totalAvatars = 0;
     
     if (!isRegistered) {
-        ['time-limited', 'community', 'default', 'mushoku', 'drrrjp', 'drrrx2'].forEach(folder => {
+        ['time-limited', 'community', 'default', 'mushoku', 'secret', 'drrrjp', 'drrrkari', 'drrrx2', 'drrrcom'].forEach(folder => {
             if (avatarData[folder] && avatarData[folder].length > 0) {
                 html += createAvatarSection(folder, avatarData[folder]);
                 totalAvatars += avatarData[folder].length;
             }
         });
     } else {
-        ['time-limited', 'community', 'default', 'mushoku', 'drrrjp', 'drrrx2'].forEach(folder => {
+        ['time-limited', 'community', 'default', 'mushoku', 'secret', 'drrrjp', 'drrrkari', 'drrrx2',  'drrrcom'].forEach(folder => {
             if (avatarData[folder] && avatarData[folder].length > 0) {
                 html += createAvatarSection(folder, avatarData[folder], true);
                 totalAvatars += avatarData[folder].length;
@@ -673,7 +673,7 @@ function displayAvatarsInEditor(avatarData, isRegistered) {
         });
         
         Object.keys(avatarData).forEach(folder => {
-            if (!['time-limited', 'community', 'default', 'mushoku', 'drrrjp', 'drrrx2'].includes(folder) && avatarData[folder].length > 0) {
+            if (!['time-limited', 'community', 'default', 'mushoku', 'secret', 'drrrjp', 'drrrkari', 'drrrx2',  'drrrcom'].includes(folder) && avatarData[folder].length > 0) {
                 html += createAvatarSection(folder, avatarData[folder]);
                 totalAvatars += avatarData[folder].length;
             }
@@ -732,6 +732,7 @@ function loadColorsForEditor() {
         { name: 'policeman2', displayName: 'Black?' },
         { name: 'negative', displayName: 'Negative' },
         { name: 'cnegative', displayName: 'Color-Negative' },
+        { name: 'caution', displayName: 'Caution' },
         { name: 'gray', displayName: 'Gray' },
         { name: 'tan', displayName: 'Tan' },
         { name: 'blue', displayName: 'Blue' },

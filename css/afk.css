@@ -52,12 +52,13 @@
 .btn-toggle-afk {
     position: relative;
     transition: all 0.3s ease;
-    border-width: 2px;
-    border-radius: 8px 16px;
+    /* border-width: 2px; */
+    /* border-radius: 8px 16px; */
+    /* border: none; */
 }
 
 .btn-toggle-afk:not(.btn-warning) {
-    border-color: #ffc107;
+    /* border-color: #ffc107; */
     color: #ffc107;
 }
 
@@ -70,6 +71,9 @@
 .btn-toggle-afk.btn-warning {
     background: linear-gradient(135deg, #ffc107, #e0a800);
     border-color: #d39e00;
+    background: none;
+    border: none;
+    color: #d39e00;
 }
 
 @keyframes afkActiveGlow {

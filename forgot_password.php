@@ -7,7 +7,7 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: invert(1);"></button>
             </div>
-            <div class="modal-body" style="max-height: 500px; overflow-y: auto;">
+            <div class="modal-body" style=" overflow-y: auto;">
                 <div class="terms-content">
                     <p>If you've forgotten your password, don't worry! You can reset it by following these steps:</p>
                     

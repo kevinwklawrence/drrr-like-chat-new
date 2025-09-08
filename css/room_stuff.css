@@ -231,6 +231,11 @@ body {
         }
         
         @media (max-width: 768px) {
+
+            .rooms-section-header {
+            margin-top:20px;
+        }
+            
             .container-fluid {
                 padding: 10px;
             }

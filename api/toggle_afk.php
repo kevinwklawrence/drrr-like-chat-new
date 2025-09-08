@@ -94,14 +94,14 @@ try {
     }
     
     // Add system message if status actually changed
-    if ($current_afk !== $new_afk_state) {
+    /*if ($current_afk !== $new_afk_state) {
         $msg_stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, '', ?, 1, NOW(), ?, 'system')");
         if ($msg_stmt) {
             $msg_stmt->bind_param("iss", $room_id, $system_message, $avatar);
             $msg_stmt->execute();
             $msg_stmt->close();
         }
-    }
+    }*/
     
     echo json_encode([
         'status' => 'success',

@@ -933,7 +933,7 @@ function renderUser(user) {
         
         // Whisper button for all users (but show if they're AFK)
         const displayName = user.display_name || user.username || user.guest_name || 'Unknown';
-        const whisperText = user.is_afk ? 'Whisper (AFK)' : 'Whisper';
+        const whisperText = user.is_afk ? '' : '';
         actions += `
             <button class="btn whisper-btn ${user.is_afk ? 'afk-user' : ''}" onclick="openWhisper('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
                 <i class="fas fa-comment"></i> ${whisperText}
@@ -954,7 +954,7 @@ function renderUser(user) {
                 } else {
                     actions += `
                         <button class="btn friend-btn" onclick="sendFriendRequest(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
-                            <i class="fas fa-user-plus"></i> Add Friend
+                            <i class="fas fa-user-plus"></i>
                         </button>
                     `;
                 }
@@ -979,7 +979,7 @@ function renderUser(user) {
                             } else {
                                 container.html(`
                                     <button class="btn friend-btn" onclick="sendFriendRequest(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
-                                        <i class="fas fa-user-plus"></i> Add Friend
+                                        <i class="fas fa-user-plus"></i>
                                     </button>
                                 `);
                             }
@@ -3289,7 +3289,7 @@ if (savedHidden === 'true') {
     loadMessages();
     loadUsers();
     
-    setInterval(loadMessages, 1000);
+    setInterval(loadMessages, 551000);
     setInterval(loadUsers, 1000);
     
     $('#message').focus();
@@ -4433,7 +4433,7 @@ function addMentionHighlightCSS() {
 function toggleAFK() {
     const button = $('.btn-toggle-afk');
     const originalText = button.html();
-    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
     
     $.ajax({
         url: 'api/toggle_afk.php',
@@ -4473,13 +4473,13 @@ function updateAFKButton() {
     const button = $('.btn-toggle-afk');
     
     if (currentUserAFK) {
-        button.removeClass('btn-outline-warning')
-              .addClass('btn-warning')
-              .html('<i class="fas fa-eye"></i> Back from AFK');
+       // button.removeClass('btn-outline-warning')
+             // button.addClass('btn-warning')
+              button.html('<i class="fas fa-plane-arrival"></i>');
     } else {
-        button.removeClass('btn-warning')
-              .addClass('btn-outline-warning')
-              .html('<i class="fas fa-bed"></i> Go AFK');
+      //  button.removeClass('btn-warning')
+             // button.addClass('btn-outline-warning')
+              button.html('<i class="fas fa-plane-departure"></i>');
     }
 }
 

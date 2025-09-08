@@ -28,7 +28,6 @@
             font-weight: 600;
             margin: 0;
             display: flex;
-            align-items: center;
             gap: 12px;
         }
         
@@ -628,18 +627,22 @@
     .room-header {
         padding: 10px 15px;
     }
-    
+
+
+            
     .room-title {
         font-size: 1.1rem;
         flex-direction: column;
         align-items: flex-start;
         gap: 6px;
+        margin-bottom: 16px;
     }
     
     .room-actions {
         width: 100%;
         justify-content: stretch;
         gap: 8px;
+        max-width: 100%;
     }
     
     .room-actions .btn {
@@ -1094,4 +1097,17 @@
 
 .messagelink {
     background:#534dffb3; color: var(--user-text-color); padding:2px;
+}
+
+.header-display {
+    display: flex !important;
+}
+
+@media (max-width: 768px) {
+.header-display {
+    display:block !important;
+}
+}
+
+.room-actions button {
 }

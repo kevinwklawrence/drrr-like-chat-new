@@ -8,7 +8,11 @@ body::-webkit-scrollbar {
 .modal::-webkit-scrollbar {
     display:none;
 }
-
+@media (max-width: 768px) {
+.d-flex {
+    flex-wrap: wrap;
+} 
+}
 .avatar { width: 58px; height: 58px; cursor: pointer; margin: 3px; }
 .chatroom { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
 #chatbox { height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
@@ -30,7 +34,7 @@ body {
     background-color: rgb(47 47 47);
      color:white;
      }
-.modal {color: black;z-index: 99999;}
+.modal {color: black;z-index: 99999;padding-bottom: 20px;}
 .chat-message {min-height: 58px;}
 
 #m3 {background:hwb(30.3deg 46.67% 14.51%);}

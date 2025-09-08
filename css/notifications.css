@@ -3,10 +3,10 @@
 /* ===== NOTIFICATION BELL ===== */
 #notificationBell {
     position: relative;
-    padding: 8px;
+    padding: 8px 12px 8px 12px;
     border-radius: 6px;
     background: transparent;
-    border: none;
+    border: 2px solid #b9bbbe;
     color: #b9bbbe;
     cursor: pointer;
     transition: all 0.2s ease;

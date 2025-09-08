@@ -119,7 +119,8 @@ if (!empty($user_id_string)) {
 <body>
     <div class="avatar-loader" id="avatarLoader">
     <div class="loader-content">
-        <div>Loading content...</div>
+        <div>Loading content...<hr>
+        This may take a bit the first time. Subsequent loads will be much faster.</div>
         <div class="loader-bar"><div class="loader-progress" id="progress"></div></div>
         <div id="status">0 / 0</div>
     </div>
@@ -140,7 +141,7 @@ if (!empty($user_id_string)) {
                 <!-- User Profile Sidebar -->
                 <div class="col-lg-3">
                     <div class="user-profile-card">
-                        <div class="text-center mb-3">
+                        <div class="text-center">
                             <img src="images/<?php echo htmlspecialchars($avatar); ?>" 
      class="avatar-selector" 
      id="currentAvatar" 
@@ -171,15 +172,19 @@ if (!empty($user_id_string)) {
                             <?php echo $ghost_mode ? 'Disable Ghost Mode' : 'Enable Ghost Mode'; ?>
                         </button>
                         <?php endif; ?>
-                        
-                        <button class="btn change-avatar-btn w-100" onclick="showAvatarSelector()">
-                            <i class="fas fa-user-edit"></i> Edit Profile
-                        </button>
+                        <div class="profile-action-buttons">
+                        <!--<button class="btn change-avatar-btn w-100" onclick="showAvatarSelector()">
+                            <i class="fas fa-user-edit"></i>
+                        </button>-->
                         <?php if ($_SESSION['user']['type'] === 'user'): ?>
                         <button class="btn btn-outline-primary w-100 mt-2" onclick="showFriendsPanel()">
-                            <i class="fas fa-user-friends"></i> Friends
+                            <i class="fas fa-user-friends"></i>
                         </button>
                         <?php endif; ?>
+                        <div class="form-text text-muted mt-3">
+                                <i class="fas fa-info-circle"></i> <small>Change your appearance and profile by clicking your avatar above.</small>
+                            </div>
+                        </div>
                     </div>
                     
                     <!-- Online Users -->
@@ -203,9 +208,9 @@ if (!empty($user_id_string)) {
                             <div>
                             <h3 class="rooms-section-title">
                                 <i class="fas fa-door-open"></i> Rooms
-                                <button class="btn btn-outline-secondary refresh-btn" onclick="loadRoomsWithUsers()">
+                                <!--<button class="btn btn-outline-secondary refresh-btn" onclick="loadRoomsWithUsers()">
                                 <i class="fas fa-sync-alt"></i>
-                            </button>
+                            </button>-->
                             </h3>
                             
                             </div>
@@ -219,10 +224,10 @@ if (!empty($user_id_string)) {
             </a>
         <?php endif; ?>
         <button class="btn create-room-btn me-2" onclick="showCreateRoomModal()">
-            <i class="fas fa-plus"></i> Create
+            <i class="fas fa-plus"></i>
         </button>
         <a href="logout.php" class="btn logout-btn">
-            <i class="fas fa-sign-out-alt"></i> Logout
+            <i class="fas fa-sign-out-alt"></i>
         </a>
                             
                             </div>
@@ -269,7 +274,7 @@ if (!empty($user_id_string)) {
         
         const button = $('button[onclick="toggleGhostMode()"]');
         const originalText = button.html();
-        button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+        button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
         
         $.ajax({
             url: 'api/toggle_ghost_mode.php',

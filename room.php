@@ -217,7 +217,8 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
 <body>
     <div class="avatar-loader" id="avatarLoader">
     <div class="loader-content">
-        <div>Loading content...</div>
+        <div>Loading content...<hr>
+        This may take a bit the first time. Subsequent loads will be much faster.</div>
         <div class="loader-bar"><div class="loader-progress" id="progress"></div></div>
         <div id="status">0 / 0</div>
     </div> 
@@ -225,9 +226,8 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
     <div class="room-container">
         <!-- Room Header -->
         <div class="room-header">
-            <div class="d-flex justify-content-between align-items-start">
+            <div class="header-display justify-content-between align-items-start">
                 <div class="room-title">
-                    <i class="fas fa-comments"></i>
                     <?php echo htmlspecialchars($room['name']); ?>
                     <?php if ($is_host): ?>
                         <span class="host-badge">
@@ -256,8 +256,8 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
                     <?php endif; ?>
                 </div>
                 <div class="room-actions">
-                    <button class="btn btn-outline-warning btn-toggle-afk" onclick="toggleAFK()" title="Toggle AFK Status">
-                        <i class="fas fa-bed"></i> Go AFK
+                    <button class="btn btn-toggle-afk btn-outline-warning" onclick="toggleAFK()" title="Toggle AFK Status">
+                        <i class="fas fa-plane-departure"></i>
                     </button>
                     
                     <!-- Ghost Mode Toggle for Staff -->
@@ -275,24 +275,26 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
                         <a href="moderator.php" class="btn btn-info me-2" target="_blank">
                             <i class="fas fa-shield-alt"></i> Mod Panel
                         </a>
+                        
                     <?php endif; ?>
-                    <?php if ($_SESSION['user']['type'] === 'user'): ?>
-        <button class="btn btn-outline-primary" onclick="showFriendsPanel()">
-            <i class="fas fa-user-friends"></i> Friends
-        </button>
-    <?php endif; ?>
-      <button id="notificationBell" class="chat-control-btn" title="Notifications">
+                    <button id="notificationBell" class="btn chat-control-btn" title="Notifications">
         <i class="fas fa-bell"></i>
         <!-- Badge will be added dynamically by JavaScript -->
     </button>
+                    <?php if ($_SESSION['user']['type'] === 'user'): ?>
+        <button class="btn btn-outline-primary" onclick="showFriendsPanel()">
+            <i class="fas fa-user-friends"></i>
+        </button>
+    <?php endif; ?>
+      
                     <?php if ($is_host): ?>
                         <button class="btn btn-room-settings" onclick="showRoomSettings()">
-                            <i class="fas fa-cog"></i> Room Settings
+                            <i class="fas fa-cog"></i>
                         </button>
                     <?php endif; ?>
                     
                     <button class="btn btn-leave-room" onclick="leaveRoom()">
-                        <i class="fas fa-sign-out-alt"></i> Leave Room
+                        <i class="fas fa-sign-out-alt"></i>
                     </button>
                 </div>
             </div>
@@ -524,7 +526,7 @@ if (roomTheme !== 'default') {
         
         const button = $('.ghost-mode-toggle');
         const originalText = button.html();
-        button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+        button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
         
         $.ajax({
             url: 'api/toggle_ghost_mode.php',
