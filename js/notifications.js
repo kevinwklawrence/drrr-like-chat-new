@@ -5,7 +5,7 @@ let currentNotifications = [];
 let notificationCheckInterval;
 
 function initializeNotifications() {
-    notificationCheckInterval = setInterval(checkForNotifications, 1000);
+    notificationCheckInterval = setInterval(checkForNotifications, 5000);
     checkForNotifications();
     $(document).on("click", "#notificationBell", toggleNotificationsPanel);
     $(document).on("click", ".notification-panel-close", closeNotificationsPanel);

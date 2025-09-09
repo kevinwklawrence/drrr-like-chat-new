@@ -20,7 +20,6 @@ checkSiteBan($conn);
 $room_id = (int)$_SESSION['room_id'];
 error_log("room_id in room.php: $room_id"); // Debug
 
-
 // Handle invite-only room access
 if (isset($_GET['invite']) && !empty($_GET['invite'])) {
     $invite_code = trim($_GET['invite']);
@@ -424,8 +423,6 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
                     <div class="loading-messages">
                         <div class="loading-spinner"></div>
                         <span>Loading messages...</span>
-                        <div id="typing-indicators" style="min-height: 20px; padding: 5px; font-style: italic; color: #888;"></div>
-
                     </div>
                 </div>
                 
@@ -445,9 +442,6 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
             </div>
             
             <!-- Sidebar -->
-             <div id="socket-status" class="socket-status disconnected" style="display: none;">
-    Socket: Disconnected
-</div>
 
 <!-- AFTER -->
 <div class="chat-sidebar">
@@ -655,8 +649,6 @@ if (roomTheme !== 'default') {
         });
     }
 </script>
-
-
     <script>
 // Declare mentionAutocomplete in global scope
 let mentionAutocomplete = null;
@@ -844,129 +836,11 @@ $('<style>').text(`
     }
 `).appendTo('head');
 </script>
-
-
-
-
-<script>
-// Socket status indicator
-function updateSocketStatus(status, message) {
-    const statusEl = document.getElementById('socket-status');
-    if (!statusEl) return;
-    
-    statusEl.className = `socket-status ${status}`;
-    statusEl.textContent = message;
-    statusEl.style.display = 'block';
-    
-    // Auto-hide after 3 seconds if connected
-    if (status === 'connected') {
-        setTimeout(() => {
-            statusEl.style.display = 'none';
-        }, 3000);
-    }
-}
-
-// Update socket status when client state changes
-if (typeof window.socketStatusUpdater === 'undefined') {
-    window.socketStatusUpdater = setInterval(() => {
-        if (socketClient) {
-            if (socketClient.isConnected()) {
-                updateSocketStatus('connected', 'Socket: Connected');
-            } else if (!socketClient.useSocketsEnabled) {
-                updateSocketStatus('fallback', 'Mode: Polling');
-            } else {
-                updateSocketStatus('disconnected', 'Socket: Disconnected');
-            }
-        }
-    }, 2000);
-}
-
-// Manual authentication function for testing
-window.testSocketAuth = function() {
-    if (socketClient && window.socketAuthData) {
-        console.log('🧪 Testing manual socket authentication...');
-        socketClient.authenticate(window.socketAuthData);
-    } else {
-        console.log('❌ No socket client or auth data available');
-    }
-};
-
-// Clean up on page unload
-window.addEventListener('beforeunload', () => {
-    if (window.socketStatusUpdater) {
-        clearInterval(window.socketStatusUpdater);
-    }
-});
-</script>
-
-
-
-
- <script>
-// Set global variables for socket authentication
-window.roomId = <?php echo isset($room_id) ? $room_id : 'null'; ?>;
-
-// User authentication data for socket connection
-window.socketAuthData = {
-    user_id_string: <?php echo json_encode($_SESSION['user']['user_id'] ?? $_SESSION['user']['user_id_string'] ?? ''); ?>,
-    room_id: <?php echo isset($room_id) ? $room_id : 'null'; ?>,
-    username: <?php echo json_encode($_SESSION['user']['username'] ?? ''); ?>,
-    guest_name: <?php echo json_encode($_SESSION['user']['name'] ?? $_SESSION['user']['guest_name'] ?? ''); ?>,
-    avatar: <?php echo json_encode($_SESSION['user']['avatar'] ?? ''); ?>,
-    color: <?php echo json_encode($_SESSION['user']['color'] ?? ''); ?>
-    
-};
-
-// Debug info
-console.log('🔐 Socket auth data prepared:', window.socketAuthData);
-
-$(document).ready(function() {
-    // Wait for all scripts to load
-    setTimeout(() => {
-        // Check if socket-client.js loaded properly
-        if (typeof initializeSocketIntegration === 'undefined') {
-            console.error('Socket client script not loaded. Make sure js/socket-client.js exists.');
-            return;
-        }
-        
-        // Check for required data
-        if (!window.roomId || !window.socketAuthData) {
-            console.warn('Missing socket authentication data');
-            return;
-        }
-        
-        // Initialize socket connection
-        try {
-            console.log('🚀 Initializing socket connection...');
-            const success = initializeSocketIntegration(window.roomId, window.socketAuthData);
-            
-            if (success) {
-                console.log('✅ Socket integration initialized');
-                
-                // Check status after a moment
-                setTimeout(() => {
-                    if (window.socketClient) {
-                        const status = socketClient.getStatus();
-                        console.log('Socket status:', status);
-                    }
-                }, 2000);
-            } else {
-                console.log('⚠️ Socket initialization returned false');
-            }
-        } catch (error) {
-            console.error('Socket initialization error:', error);
-        }
-    }, 1500); // Give time for all scripts to load
-});
-</script>
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
- <script src="js/socket-client.js"></script>
     <script src="js/room.js"></script>
     <script src="js/profile_system.js"></script>
     <script src="js/loading.js"></script>
     <script src="js/notifications.js"></script>
     <script src="js/friend_notifications.js"></script>
-   
-    
+
 </body>
 </html>
