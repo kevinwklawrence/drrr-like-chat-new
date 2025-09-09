@@ -3192,11 +3192,21 @@ function sendFriendRequest(userId, username) {
 // ===== INITIALIZATION =====
 $(document).ready(function() {
     debugLog('🏠 Room loaded, roomId:', roomId);
+
+    
     
     if (!roomId) {
         console.error('❌ Invalid room ID, redirecting to lounge');
         window.location.href = 'lounge.php';
         return;
+    }
+
+    // Initialize socket integration AFTER room is loaded
+    if (typeof roomId !== 'undefined' && roomId) {
+        // Add small delay to ensure all existing code is loaded
+        setTimeout(() => {
+            initializeSocketIntegration(roomId);
+        }, 1000);
     }
 
     // Set up event handlers
@@ -3302,7 +3312,7 @@ if (savedHidden === 'true') {
     loadMessages();
     loadUsers();
     
-    setInterval(loadMessages, 500);
+    setInterval(loadMessages, 1000);
     setInterval(loadUsers, 1000);
     
     $('#message').focus();
