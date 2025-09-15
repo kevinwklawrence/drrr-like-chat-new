@@ -252,3 +252,7 @@
     background:linear-gradient(to bottom, rgba(164,138,96,1) 0%,rgba(102,91,72,1) 50%,rgba(89,79,63,1) 51%,rgba(150,129,94,1) 100%);
 
 }
+
+.color-darkgray {
+    background: linear-gradient(to bottom, rgba(92,96,102,1) 0%,rgba(92,96,102,1) 24%,rgba(89,96,102,1) 36%,rgba(40,52,59,1) 100%);
+}

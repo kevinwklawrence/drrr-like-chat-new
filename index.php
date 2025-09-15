@@ -310,6 +310,11 @@ if (isset($_SESSION['user'])) {
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
 
+                                <div class="color-option color-darkgray" data-color="darkgray" onclick="selectColor('darkgray', this)">
+                                    <div class="color-name">Dark Gray</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
+
                                 <div class="color-option color-tan" data-color="tan" onclick="selectColor('tan', this)">
                                     <div class="color-name">Tan</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
