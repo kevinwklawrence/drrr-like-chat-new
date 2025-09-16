@@ -1,5 +1,4 @@
 <?php
-// check_site_ban.php - Include this at the top of main pages
 function checkSiteBan($conn, $return_json = false) {
     $ip_address = $_SERVER['REMOTE_ADDR'];
     $user_id = null;
@@ -10,7 +9,6 @@ function checkSiteBan($conn, $return_json = false) {
         $user_id_string = $_SESSION['user']['user_id'] ?? '';
     }
     
-    // Check for site ban
     $ban_conditions = ['sb.ip_address = ?'];
     $ban_params = [$ip_address];
     $param_types = 's';

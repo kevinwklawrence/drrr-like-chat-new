@@ -162,7 +162,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Member Login</title>
+    <title>Member Login | Duranu</title>
+    <?php include 'fav.php'; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap" rel="stylesheet">
@@ -224,7 +225,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <option value="all">All Colors</option>
                                             <?php
                                             $image_base_dir = __DIR__ . '/images';
-                                            $excluded_folders = ['staff', 'bg', 'icon', 'time-limited', 'default', 'drrrjp', 'drrr.com'];
+                                            $excluded_folders = ['staff', 'bg', 'icon', 'covers'];
                                             foreach (glob($image_base_dir . '/*', GLOB_ONLYDIR) as $color_dir) {
                                                 $color_name = basename($color_dir);
                                                 if (in_array(strtolower($color_name), $excluded_folders)) continue;
@@ -772,7 +773,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <span class="slider-value" id="bubbleSaturationValue">100%</span>
                                 </div>
                                 <input type="range" class="color-slider" id="bubbleSaturationSlider" name="bubble_saturation" 
-                                       min="0" max="300" value="100">
+                                       min="1" max="300" value="100">
                             </div>
                             
                             <div class="form-text text-muted mt-3">

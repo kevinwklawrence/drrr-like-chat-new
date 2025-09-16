@@ -14,9 +14,9 @@ $(document).ready(function() {
                     return;
                 }
                 
-                if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+                if (username.length > 20) {
                     field.removeClass('is-valid').addClass('is-invalid');
-                    field.siblings('.invalid-feedback').text('Username can only contain letters, numbers, and underscores (3-20 characters)');
+                    field.siblings('.invalid-feedback').text('Username must be 3-20 characters.');
                     return;
                 }
                 

@@ -196,7 +196,7 @@ function findUserIdColumn($conn) {
 }
 
 function triggerRoomCleanup() {
-    $url = 'http://localhost/api/cleanup_rooms.php';
+    $url = 'http://duranu.net/api/cleanup_rooms.php';
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);

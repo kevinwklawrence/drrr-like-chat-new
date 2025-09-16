@@ -75,7 +75,7 @@ let lastPlayedMessageCount = 0;
 
 function playMessageNotification() {
     const audio = new Audio('/sounds/message_notification.mp3');
-    audio.play();
+   // audio.play();
 }
 
 // YouTube Player System

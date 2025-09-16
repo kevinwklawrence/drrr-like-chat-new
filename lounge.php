@@ -96,7 +96,8 @@ if (!empty($user_id_string)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Lounge</title>
+    <title>Lounge | Duranu</title>
+    <?php include 'fav.php'; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap" rel="stylesheet">
@@ -179,7 +180,7 @@ if (!empty($user_id_string)) {
                             <i class="fas fa-user-edit"></i>
                         </button>-->
                         <?php if ($_SESSION['user']['type'] === 'user'): ?>
-                        <button class="btn friends-btn" onclick="showFriendsPanel()">
+                        <button class="btn friends-btn w-100" onclick="showFriendsPanel()">
     <i class="fas fa-user-friends"></i>
     <span class="notification-badge" style="display:none;">0</span>
 </button>

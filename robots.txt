@@ -4,7 +4,6 @@
 User-agent: *
 
 # Allow main pages
-Allow: /firewall.php
 Allow: /index.php
 
 
@@ -44,4 +43,4 @@ Disallow: *.php.bak
 Crawl-delay: 1
 
 # Sitemap location (uncomment when you create sitemap.xml)
-# Sitemap: https://yourwebsite.com/sitemap.xml
+ Sitemap: https://duranu.net/sitemap.xml
