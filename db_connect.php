@@ -1,8 +1,8 @@
 <?php
 $host = 'localhost';
-$user = 'root';
-$password = '';
-$database = 'drrr_clone';
+$user = 'duranune_lennzuki';
+$password = 'Hazingmars69*';
+$database = 'duranune_drrr_clone';
 $conn = new mysqli($host, $user, $password, $database);
 if ($conn->connect_error) {
     error_log("Connection failed: " . $conn->connect_error);

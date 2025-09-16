@@ -20,7 +20,9 @@ if (isset($_SESSION['user'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guest Login</title>
+    <title>Guest Login | Duranu</title>
+    <meta name="keywords" content="drrr-like-chat, duranu, drrrchat, drrr, darasu, dorasu, mushoku, drrrkari, durarara, durarara!!">
+    <meta name="description" content="A free, anonymous chat service inspired by Durarara!!'s online chat. Join as a guest or register for an account to chat with others.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap" rel="stylesheet">
@@ -33,6 +35,7 @@ if (isset($_SESSION['user'])) {
     <link href="css/private_bubble_colors.css" rel="stylesheet">
     <link href="css/cus_modal.css" rel="stylesheet">
     <link href="css/loading.css" rel="stylesheet">
+    <?php include 'fav.php'; ?>
 </head>
 <body>
     <div class="avatar-loader" id="avatarLoader">
@@ -494,7 +497,7 @@ if (isset($_SESSION['user'])) {
                                     <span class="slider-value" id="bubbleSaturationValue">100%</span>
                                 </div>
                                 <input type="range" class="color-slider" id="bubbleSaturationSlider" name="bubble_saturation" 
-                                       min="0" max="300" value="100">
+                                       min="1" max="300" value="100">
                             </div>
                             
                             <div class="form-text text-muted mt-3">

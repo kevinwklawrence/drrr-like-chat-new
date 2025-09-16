@@ -13,11 +13,16 @@ include 'check_site_ban.php';
 // Handle password submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
-    $site_password = 'baccano'; // Site password
+    $site_passwords = [
+        'A7d9K2pL', 'Q4w8Z1xC', 'M3n6V5bT', 'J2k8H7sD', 'P9l3R6qW',
+        'S5f2G8mN', 'B1v7C4zX', 'T6y3U9jK', 'E8r2W5tY', 'L4p9O7aS',
+        'F3g6D1hJ', 'N2m8K5lQ', 'V7b4X1cZ', 'H6s3J9kL', 'R8q2P5wE',
+        'G5m2N8fS', 'C1z7X4vB', 'U6j3K9yT', 'W8t2Y5rE', 'O4a9S7lP', 'D4r45U', 'F4C3B00K', 'V1R3W00D'
+    ]; // Array of site passwords
     
     header('Content-Type: application/json');
     
-    if ($password === $site_password) {
+    if (in_array($password, $site_passwords, true)) {
         // Check for site ban before allowing entry
         try {
             checkSiteBan($conn, true); // Return JSON format
@@ -42,7 +47,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Duranu - Access Control</title>
+    <title>Enter | Duranu</title>
+    <meta name="keywords" content="drrr-like-chat, duranu, drrrchat, drrr, darasu, dorasu, mushoku, drrrkari, durarara, durarara!!">
+    <meta name="description" content="A free, anonymous chat service inspired by Durarara!!'s online chat. Join as a guest or register for an account to chat with others.">
+    <?php include 'fav.php'; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap" rel="stylesheet">

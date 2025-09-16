@@ -10,7 +10,7 @@ if (!defined('DURANU_SECURITY_LOADED')) {
 }
 
 // Production Security Settings
-if ($_SERVER['SERVER_NAME'] !== 'localhost' && !in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1'])) {
+if ($_SERVER['SERVER_NAME'] !== 'duranu.net' && !in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1'])) {
     
     // Disable error reporting in production
     error_reporting(0);

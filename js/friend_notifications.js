@@ -104,7 +104,7 @@ function showNotificationPopup(notification) {
 // Play sound for friend notification
 function playFriendNotificationSound() {
     const audio = new Audio('/sounds/private_message_notification.mp3');
-    audio.play();
+   // audio.play();
 }
 
 // Get notification title based on type
