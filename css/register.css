@@ -184,24 +184,79 @@ body {
         
         /* Mobile optimizations */
         @media (max-width: 768px) {
+            .row {
+            --bs-gutter-x: 0 !important;!i;!;
+            }
+            .links-section {
+                border:0;
+                border-radius:0;
+            }
+
+            .links-section .mb-3 {
+                display:none;
+            }
+
+            .text-muted small {
+                font-size: 10px;
+            }
+
+            #registerForm .mb-4 {
+                margin:8px !important;
+            }
+
+            .register-header {
+                border:0;
+                border-radius:0;
+                margin: 0;
+            }
             .container-fluid {
-                padding: 10px;
+                padding: 0;
+                border: none;
+                border-radius: 0;
+                background-color: #2a2a2a;
+                
+            }
+
+            .links-section a {
+                border:0;
+                font-size: 12px;
+                border-radius: 0;
+                padding: 12px;
             }
             
             .register-container {
-                padding: 30px 20px;
-                margin: 10px;
-                border-radius: 10px;
+                padding: 0;
+                margin: 0;
+                border-radius: 0;
+                border: 0;
+                box-shadow: none;
             }
             
             .register-section {
-                padding: 20px;
+                border:0;
+                border-radius:0;
+                padding: 10px;
+                margin: 0;
+            }
+
+            .register-section h5 {
+                display:none;
+            }
+
+            .btn-primary.btn-lg {
+                margin-top: 20px;
+            }
+            
+            .text-center.text-muted.mt-4 {
+                padding:0;
+                margin:0 !important;
+                background: #2a2a2a;
             }
         }
         
         @media (max-width: 480px) {
             .register-container {
-                padding: 20px 15px;
+                padding: 0;
             }
         }
         

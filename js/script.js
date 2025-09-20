@@ -1,9 +1,6 @@
-// ===== DEBUG CONFIGURATION =====
-// Set to false for production, true for debugging
 const DEBUG_MODE = false;
 const SHOW_SENSITIVE_DATA = false;
 
-// Debug logging functions
 function debugLog(message, data = null) {
     if (DEBUG_MODE) {
         if (data !== null) {
@@ -44,7 +41,6 @@ function debugLog(message, data = null) {
     }
 }
 
-// Critical errors always show (for production debugging)
 function criticalError(message, error = null) {
     if (error !== null) {
         console.error('[CRITICAL]', message, error);
@@ -56,7 +52,6 @@ function criticalError(message, error = null) {
 $(document).ready(function() {
     debugLog('script.js loaded');
 
-    // Guest login
     $('.avatar').click(function() {
         $('.avatar').removeClass('selected');
         $(this).addClass('selected');
@@ -91,15 +86,10 @@ $(document).ready(function() {
         });
     });
 
-    // Replace the member login section in js/script.js with this updated version
-
-// Member login
 $('#userLoginForm').submit(function(e) {
     e.preventDefault();
     debugLog('User login form submitted');
     
-    // UPDATED: Remove the forced default avatar assignment
-    // Allow empty avatar selection - server will handle fallback logic
     
     $.ajax({
         url: 'api/login.php',
@@ -126,7 +116,6 @@ $('#userLoginForm').submit(function(e) {
     });
 });
 
-    // Lounge functions
     function loadChatrooms() {
         debugLog('Loading chatrooms');
         $.ajax({

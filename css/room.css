@@ -183,6 +183,7 @@
             border-color: #ffffff00 var(--user-tail-color) transparent transparent;
            /* border-color: transparent var(--user-tail-color) transparent transparent;*/
             filter: drop-shadow(-1px 0 1px rgba(0,0,0,0.1));
+            overflow: visible !important;
         }
         
         /* FIXED: Avatar positioning and border-radius */
@@ -210,7 +211,9 @@
             flex-wrap: wrap;
             gap: 8px;
         }
+
         
+
         .message-header-left {
             display: flex;
             align-items: center;
@@ -597,6 +600,14 @@
         overflow-x: auto;
     }
 
+            .chat-message {
+            margin-bottom: 0;
+            position: relative;
+            
+                /* FIXED: Added position relative for avatar positioning */
+            /*animation: messageSlideIn 0.3s ease-out;*/
+        }
+
     .system-message {
             text-align: center;
             margin: 16px 0;
@@ -618,10 +629,12 @@
         }
     
     .room-container {
-        margin: 5px;
-        border-radius: 8px;
+        margin: 0;
+        border-radius: 0;
         max-width: 100%;
         overflow: visible;
+        border: 0;
+        box-shadow: none;
     }
     
     .room-header {
@@ -632,7 +645,7 @@
             
     .room-title {
         font-size: 1.1rem;
-        flex-direction: column;
+        flex-direction: row;
         align-items: flex-start;
         gap: 6px;
         margin-bottom: 16px;
@@ -656,6 +669,17 @@
         height: auto;
         min-height: calc(100vh - 140px);
     }
+
+            .chat-container:not(:has(.youtube-player-container)) {
+    height: calc(100vh - 200px);
+}
+
+.room-container:not(:has(.youtube-player-container)) .chat-container {
+    height: calc(100vh - 200px);
+}
+
+/* ADD THIS */
+.chat-container.no-youtube {}
     
     /* YouTube Player Mobile */
     .youtube-player-container {
@@ -697,7 +721,7 @@
     /* Chat Main Mobile */
     .chat-main {
         flex: 1;
-        max-height: 800px;
+        max-height: 70vh;
         display: flex;
         flex-direction: column;
     }
@@ -837,6 +861,7 @@
     .sidebar-content.mobile-collapsible.expanded {
         min-height: fit-content;
         padding: 10px 15px;
+        background: inherit;
     }
     
     .mobile-users-toggle {
@@ -906,14 +931,20 @@
 /* Mobile Body Fix */
 @media (max-width: 768px) {
     body {
-        max-height: none !important;
+        max-height: 100vh !important;
         overflow-x: hidden;
         overflow-y: auto;
     }
     
     .room-container {
-        height: auto;
-        min-height: 100vh;
+        height: 0;
+    }
+
+    .message-bubble {
+    padding: 5px 10px 5px 10px !important;
+}
+    .alert-success {
+        display: none !important;
     }
 }
 
@@ -1089,6 +1120,9 @@
     .message-content-wrapper .message-content {
         font-size: 0.9rem;
     }
+    .messageimg {
+    margin-top: 0px !important; margin-bottom: 0px !important; max-width: 50vw !important; max-height: 30vh !important; border: 2px solid white; border-radius: 4px; height: auto !important; width: auto !important;
+}
 }
 
 .messageimg {
@@ -1109,5 +1143,482 @@
 }
 }
 
-.room-actions button {
+
+/* Loading state */
+.messageimg:not([src]) {
+    background: linear-gradient(90deg, #444 25%, #555 50%, #444 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Error state */
+.messageimg[src=""]:after {
+    content: "Image failed to load";
+    display: block;
+    padding: 20px;
+    background: #f44336;
+    color: white;
+    text-align: center;
+    border-radius: 8px;
+}
+
+/* Fix for message bubble tails being clipped */
+
+/* Apply these changes to css/room.css */
+.message-bubble {
+    background: var(--user-gradient);
+    border-radius: 18px;
+    margin-left: 70px;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    border: 4px solid var(--user-border-color);
+    width: fit-content;
+    max-width: calc(100% - 60px);
+    box-sizing: border-box;
+    max-height: 600px;
+    overflow: visible; /* FIXED: Changed from auto/hidden to visible */
+}
+
+.message-bubble::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 12px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 8px 8px 8px 0;
+    border-color: transparent var(--user-tail-color) transparent transparent;
+    z-index: 10; /* FIXED: Added z-index */
+}
+
+/* Apply these changes to css/private.css */
+.private-message-bubble {
+    max-width: 70%;
+    border-radius: 18px;
+    padding: 8px 12px 8px 12px;
+    position: relative;
+    word-wrap: break-word;
+    box-shadow: 0px 0px 4px rgb(0 0 0 / 50%);
+    background: var(--user-gradient);
+    border: 4px solid var(--user-border-color);
+    width: fit-content;
+    box-sizing: border-box;
+    overflow: visible; /* FIXED: Changed to visible */
+}
+
+.private-message-bubble.received::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 12px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 8px 8px 8px 0;
+    border-color: transparent var(--user-tail-color) transparent transparent;
+    z-index: 10; /* FIXED: Added z-index */
+}
+
+.private-message-bubble.sent::before {
+    content: '';
+    position: absolute;
+    right: -12px;
+    top: 12px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 8px 0 8px 8px;
+    border-color: transparent transparent transparent var(--user-tail-color);
+    z-index: 10; /* FIXED: Added z-index */
+}
+
+/* Apply these changes to css/whisper.css */
+.whisper-body.private-message-bubble {
+    max-width: 70%;
+    border-radius: 18px;
+    padding: 8px 12px 8px 12px;
+    position: relative;
+    word-wrap: break-word;
+    box-shadow: 0px 0px 4px rgb(0 0 0 / 50%);
+    background: var(--user-gradient);
+    border: 4px solid var(--user-border-color);
+    width: fit-content;
+    box-sizing: border-box;
+    overflow: visible; /* FIXED: Changed to visible */
+}
+
+.whisper-body.private-message-bubble.received::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 12px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 8px 8px 8px 0;
+    border-color: transparent var(--user-tail-color) transparent transparent;
+    z-index: 10; /* FIXED: Added z-index */
+}
+
+.whisper-body.private-message-bubble.sent::before {
+    content: '';
+    position: absolute;
+    right: -12px;
+    top: 12px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 8px 0 8px 8px;
+    border-color: transparent transparent transparent var(--user-tail-color);
+    z-index: 10; /* FIXED: Added z-index */
+}
+
+/* Private message bubble fixes */
+.private-message-bubble {
+    max-width: 70%;
+    border-radius: 18px;
+    padding: 8px 12px 8px 12px;
+    position: relative;
+    word-wrap: break-word;
+    box-shadow: 0px 0px 4px rgb(0 0 0 / 50%);
+    background: var(--user-gradient);
+    border: 4px solid var(--user-border-color);
+    width: fit-content;
+    box-sizing: border-box;
+    overflow: visible; /* FIXED: Changed to visible */
+}
+
+/* Whisper bubble fixes */
+.whisper-body.private-message-bubble {
+    max-width: 70%;
+    border-radius: 18px;
+    padding: 8px 12px 8px 12px;
+    position: relative;
+    word-wrap: break-word;
+    box-shadow: 0px 0px 4px rgb(0 0 0 / 50%);
+    background: var(--user-gradient);
+    border: 4px solid var(--user-border-color);
+    width: fit-content;
+    box-sizing: border-box;
+    overflow: visible; /* FIXED: Changed to visible */
+}
+
+/* Ensure bubble tails have proper z-index and positioning */
+.message-bubble::before,
+.private-message-bubble.received::before,
+.whisper-body.private-message-bubble.received::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 12px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 8px 8px 8px 0;
+    border-color: transparent var(--user-tail-color) transparent transparent;
+    z-index: 10; /* FIXED: Added z-index */
+}
+
+.private-message-bubble.sent::before,
+.whisper-body.private-message-bubble.sent::before {
+    content: '';
+    position: absolute;
+    right: -12px;
+    top: 12px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 8px 0 8px 8px;
+    border-color: transparent transparent transparent var(--user-tail-color);
+    z-index: 10; /* FIXED: Added z-index */
+}
+
+/* Handle content overflow within bubbles using inner wrapper */
+.message-content-wrapper {
+    position: relative;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    max-height: 580px; /* Prevent extremely tall messages */
+    overflow-y: auto; /* Only the content scrolls, not the bubble */
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .message-bubble {
+        margin-left: 70px;
+        max-width: calc(100% - 45px);
+        padding: 6px 10px 10px 10px;
+        overflow: visible; /* Maintain visibility on mobile */
+    }
+    
+    .private-message-bubble {
+        overflow: visible; /* Maintain visibility on mobile */
+    }
+}
+
+
+
+
+
+/* Message Pagination Styles */
+
+.load-more-messages {
+    background: linear-gradient(135deg, #4a5d7a 0%, #3a4d6a 100%);
+    border: 1px solid #5a6d8a;
+    color: #e0e0e0;
+    padding: 12px 20px;
+    margin: 10px 15px;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    user-select: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.load-more-messages:hover {
+    background: linear-gradient(135deg, #5a6d8a 0%, #4a5d7a 100%);
+    border-color: #6a7d9a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.load-more-messages:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.load-more-messages i {
+    margin-right: 8px;
+    font-size: 12px;
+}
+
+/* Loading state */
+.load-more-messages.loading {
+    background: linear-gradient(135deg, #666 0%, #555 100%);
+    cursor: not-allowed;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.load-more-messages:has(i.fa-spin) {
+    background: linear-gradient(135deg, #666 0%, #555 100%);
+    cursor: not-allowed;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Pagination info (optional - for debugging or admin view) */
+.pagination-info {
+    background: rgba(0, 0, 0, 0.3);
+    color: #999;
+    padding: 5px 10px;
+    margin: 5px 15px;
+    border-radius: 4px;
+    font-size: 11px;
+    text-align: center;
+    display: none; /* Hidden by default */
+}
+
+.pagination-info.show {
+    display: block;
+}
+
+/* Smooth transitions for message loading 
+.chat-message {
+    opacity: 0;
+    animation: fadeInMessage 0.3s ease-out forwards;
+}
+
+@keyframes fadeInMessage {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}*/
+
+/* Lazy loading placeholder */
+.message-loading-placeholder {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    margin: 8px 15px;
+    padding: 20px;
+    text-align: center;
+    color: #888;
+    font-size: 14px;
+}
+
+.message-loading-placeholder .loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #333;
+    border-top: 2px solid #666;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 10px;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+    .load-more-messages {
+        margin: 8px 10px;
+        padding: 14px 16px;
+        font-size: 15px;
+        min-height: 44px; /* Touch-friendly minimum height */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+        border-radius: 12px;
+    }
+    
+    .load-more-messages i {
+        font-size: 14px;
+        margin-right: 6px;
+    }
+    
+    /* Ensure smooth scrolling on mobile */
+    #chatbox {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+    
+    /* Reduce animation complexity on mobile for better performance */
+    .chat-message {
+        animation-duration: 0.2s;
+    }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+    .load-more-messages {
+        margin: 6px 8px;
+        padding: 12px 14px;
+        font-size: 14px;
+        border-radius: 10px;
+    }
+    
+    .pagination-info {
+        margin: 3px 8px;
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .load-more-messages {
+        border: 2px solid #fff;
+        background: #000;
+        color: #fff;
+    }
+    
+    .load-more-messages:hover {
+        background: #333;
+        border-color: #fff;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .load-more-messages {
+        transition: none;
+    }
+    
+    .chat-message {
+        animation: none;
+        opacity: 1;
+    }
+    
+    .load-more-messages.loading i {
+        animation: none;
+    }
+}
+
+/* Dark theme optimization */
+@media (prefers-color-scheme: dark) {
+    .load-more-messages {
+        background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+        border-color: #444;
+        color: #e0e0e0;
+    }
+    
+    .load-more-messages:hover {
+        background: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%);
+        border-color: #555;
+    }
+}
+
+/* Performance optimization: GPU acceleration */
+.load-more-messages,
+.chat-message {
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+/* Ensure load more button stays visible during scroll */
+.load-more-messages {
+    position: relative;
+    z-index: 10;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+/* Accessibility improvements */
+.load-more-messages:focus {
+    outline: 2px solid #4a90e2;
+    outline-offset: 2px;
+}
+
+/* Loading state visual feedback */
+.load-more-messages.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Sticky load more button when at top */
+.load-more-messages.sticky {
+    position: sticky;
+    top: 10px;
+    z-index: 100;
+}
+
+/* RTL support */
+[dir="rtl"] .load-more-messages i {
+    margin-right: 0;
+    margin-left: 8px;
+}
+
+.room-actions .btn {
+    padding: 8px 16px !important;
 }

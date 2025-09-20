@@ -1,0 +1,196 @@
+* {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto Flex', sans-serif;
+            /* height: max(100vh, 100%); */
+            overflow: hidden;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 25%, #2d2d2d 75%, #0c0c0c 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .error-container {
+            text-align: center;
+            position: relative;
+            z-index: 100;
+            color: #ffffff;
+        }
+        
+        .logo-container {
+            position: relative;
+            width: min(80vw, 80vh);
+            height: 100vh;
+            margin: 0 auto 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .site-logo {
+            /* width: min(25vw, 25vh, 200px); */
+            /* height: min(25vw, 25vh, 200px); */
+            width: max(15vh,20vw);
+            /* border-radius: 50%; */
+            /* box-shadow: 0 0 50px rgba(255, 255, 255, 0.3); */
+            position: relative;
+            z-index: 150;
+            opacity: 0.8;
+        }
+        
+        .ring {
+            position: absolute;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .ring-1 {
+            width: min(50vw, 50vh);
+            height: min(50vw, 50vh);
+            border: 4px solid rgba(255, 99, 99, 0.8);
+            border-top: 4px solid rgba(255, 99, 99, 0.3);
+            animation: rotate-cw 8s linear infinite;
+        }
+        
+        .ring-2 {
+            width: min(60vw, 60vh);
+            height: min(60vw, 60vh);
+            border-left: 3px solid rgba(255, 99, 99, 0.6);
+            border-bottom: 3px solid rgba(255, 99, 99, 0.2);
+            animation: rotate-ccw 12s linear infinite;
+        }
+        
+        .ring-3 {
+            width: min(70vw, 70vh);
+            height: min(70vw, 70vh);
+            border-top: 2px solid rgba(255, 99, 99, 0.4);
+            border-right: 2px solid rgba(255, 99, 99, 0.1);
+            animation: rotate-cw 16s linear infinite;
+        }
+        
+        @keyframes rotate-cw {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        
+        @keyframes rotate-ccw {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(-360deg); }
+        }
+        
+        .error-content {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 400px;
+            margin: 0 auto;
+            position: absolute;
+            z-index: 200;
+            bottom: min(10px,20px);
+        }
+        
+        .error-code {
+            font-size: clamp(3rem, 8vw, 5rem);
+            font-weight: 900;
+            color: #ff6363;
+            margin-bottom: 1rem;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+        
+        .error-title {
+            font-size: clamp(1.2rem, 4vw, 1.5rem);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .error-message {
+            font-size: clamp(0.9rem, 3vw, 1rem);
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 2rem;
+            line-height: 1.5;
+        }
+        
+        .btn-back {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #ffffff;
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            font-size: clamp(0.9rem, 3vw, 1rem);
+        }
+        
+        .btn-back:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.2));
+            border-color: rgba(255, 255, 255, 0.5);
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+        }
+        
+        .particle {
+            position: absolute;
+            width: clamp(1px, 0.3vw, 3px);
+            height: clamp(1px, 0.3vw, 3px);
+            background: rgba(255, 99, 99, 0.6);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+            z-index: 1;
+        }
+        
+        @keyframes float {
+            0%, 100% { 
+                transform: translateY(0px) rotate(0deg); 
+                opacity: 0; 
+            }
+            50% { 
+                transform: translateY(min(-3vh, -20px)) rotate(180deg); 
+                opacity: 1; 
+            }
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .logo-container {
+                width: 90vw;
+                height: 100vh;
+                margin-bottom: 1rem;
+                top: -10vh;
+            }
+            
+            .error-content {
+                margin: 0 1rem;
+                padding: 1.5rem;
+            }
+            
+            .ring-1 { width: 45vw; height: 45vw; }
+            .ring-2 { width: 55vw; height: 55vw; }
+            .ring-3 { width: 65vw; height: 65vw; }
+        }
+        
+        /* Landscape mobile */
+        @media (orientation: landscape) and (max-height: 600px) {
+            .logo-container {
+                width: 60vh;
+                height: 60vh;
+            }
+            
+            .error-content {
+                padding: 1rem;
+            }
+        }

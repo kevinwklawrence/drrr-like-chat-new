@@ -1,25 +1,18 @@
-// js/friend_notifications.js - Friend notification system
 
 let notificationCount = 0;
 let lastNotificationCheck = Date.now();
 
-// Initialize notification system
 function initFriendNotifications() {
     if (typeof currentUser === 'undefined' || currentUser.type !== 'user') return;
     
-    // Check for notifications immediately
     checkFriendNotifications();
     
-    // Check for new notifications every 5 seconds
     setInterval(checkFriendNotifications, 5000);
     
-    // Add notification badge to friends button
     addNotificationBadge();
 }
 
-// Add notification badge to friends button
 function addNotificationBadge() {
-    // Add badge container to friends button if not exists
     $('.friends-btn').each(function() {
         if (!$(this).find('.notification-badge').length) {
             $(this).css('position', 'relative');
@@ -28,7 +21,6 @@ function addNotificationBadge() {
     });
 }
 
-// Check for new friend notifications
 function checkFriendNotifications() {
     $.ajax({
         url: 'api/friends.php',
@@ -39,7 +31,6 @@ function checkFriendNotifications() {
             if (response.status === 'success') {
                 const newCount = response.count;
                 
-                // If there are new notifications, show them
                 if (newCount > notificationCount && notificationCount > 0) {
                     showNotificationPopup(response.notifications[0]);
                 }
@@ -47,7 +38,6 @@ function checkFriendNotifications() {
                 notificationCount = newCount;
                 updateNotificationBadge(newCount);
                 
-                // Update notification list if panel is open
                 if ($('#friendsPanel').is(':visible')) {
                     updateNotificationList(response.notifications);
                 }
@@ -59,7 +49,6 @@ function checkFriendNotifications() {
     });
 }
 
-// Update notification badge
 function updateNotificationBadge(count) {
     $('.notification-badge').each(function() {
         if (count > 0) {
@@ -72,7 +61,6 @@ function updateNotificationBadge(count) {
     });
 }
 
-// Show popup notification
 function showNotificationPopup(notification) {
     const popup = $(`
         <div class="friend-notification-popup">
@@ -90,24 +78,20 @@ function showNotificationPopup(notification) {
     $('body').append(popup);
     popup.fadeIn();
     
-    // Auto-hide after 5 seconds
     setTimeout(() => {
         popup.fadeOut(function() {
             $(this).remove();
         });
     }, 5000);
     
-    // Play notification sound for friend notifications
     playFriendNotificationSound();
 }
 
-// Play sound for friend notification
 function playFriendNotificationSound() {
     const audio = new Audio('/sounds/private_message_notification.mp3');
    // audio.play();
 }
 
-// Get notification title based on type
 function getNotificationTitle(type) {
     switch(type) {
         case 'friend_request':
@@ -121,7 +105,6 @@ function getNotificationTitle(type) {
     }
 }
 
-// Update notification list in friends panel
 function updateNotificationList(notifications) {
     let html = '<div class="notifications-section mb-3">';
     html += '<h6 style="color: #e0e0e0;"><i class="fas fa-bell"></i> Notifications</h6>';
@@ -149,7 +132,6 @@ function updateNotificationList(notifications) {
     
     html += '</div>';
     
-    // Prepend to friends panel content
     if ($('#friendsList .notifications-section').length) {
         $('#friendsList .notifications-section').replaceWith(html);
     } else {
@@ -157,7 +139,6 @@ function updateNotificationList(notifications) {
     }
 }
 
-// Mark all notifications as read
 function markAllNotificationsRead() {
     $.ajax({
         url: 'api/friends.php',
@@ -174,7 +155,6 @@ function markAllNotificationsRead() {
     });
 }
 
-// Helper function to get time ago string
 function getTimeAgo(date) {
     const seconds = Math.floor((new Date() - date) / 1000);
     
@@ -184,9 +164,7 @@ function getTimeAgo(date) {
     return Math.floor(seconds / 86400) + ' days ago';
 }
 
-// Play notification sound
 function playNotificationSound() {
-    // Create audio element if it doesn't exist
     if (!$('#notificationSound').length) {
         $('body').append('<audio id="notificationSound" src="sounds/notification.mp3" preload="auto"></audio>');
     }
@@ -198,17 +176,14 @@ function playNotificationSound() {
     }
 }
 
-// Override the existing showFriendsPanel to mark notifications as read
 const originalShowFriendsPanel = window.showFriendsPanel;
 window.showFriendsPanel = function() {
     if (typeof originalShowFriendsPanel === 'function') {
         originalShowFriendsPanel();
     }
     
-    // Check for new notifications when panel opens
     checkFriendNotifications();
     
-    // Mark as read after a short delay
     setTimeout(() => {
         if (notificationCount > 0) {
             markAllNotificationsRead();
@@ -216,8 +191,6 @@ window.showFriendsPanel = function() {
     }, 1000);
 };
 
-// Initialize when document is ready
 $(document).ready(function() {
-    // Initialize notifications after a short delay to ensure everything is loaded
     setTimeout(initFriendNotifications, 500);
 });

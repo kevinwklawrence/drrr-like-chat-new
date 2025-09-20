@@ -45,7 +45,6 @@
         }
     }
     
-    // Start caching
     avatars.forEach(cacheImage);
     updateProgress();
 })();

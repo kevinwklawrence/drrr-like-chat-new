@@ -1,5 +1,8 @@
 <?php
 session_start();
+
+require_once 'security_config.php';
+
 include 'db_connect.php';
 
 include 'check_site_ban.php';
@@ -91,6 +94,8 @@ if (!empty($user_id_string)) {
     }
 }
 ?>
+<?php $versions = include 'config/version.php'; ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -103,20 +108,20 @@ if (!empty($user_id_string)) {
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
-    <link href="css/lounge.css" rel="stylesheet">
-    <link href="css/room.css" rel="stylesheet">
-    <link href="css/profile_editor.css" rel="stylesheet">
-     <link href="css/profile_editor_colors.css" rel="stylesheet">
-     <link href="css/private.css" rel="stylesheet">
-     <link href="css/profile_system.css" rel="stylesheet">
-     <link href="css/bubble_colors.css" rel="stylesheet">
-    <link href="css/color_previews.css" rel="stylesheet">
-    <link href="css/private_bubble_colors.css" rel="stylesheet">
-    <link href="css/room_stuff.css" rel="stylesheet">
-    <link href="css/moderator.css" rel="stylesheet">
-<link href="css/loading.css" rel="stylesheet">
-<link rel="stylesheet" href="css/friend_notifications.css">
+    <link href="css/style.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/lounge.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/room.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/profile_editor.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+     <link href="css/profile_editor_colors.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+     <link href="css/private.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+     <link href="css/profile_system.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+     <link href="css/bubble_colors.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/color_previews.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/private_bubble_colors.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/room_stuff.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/moderator.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+<link href="css/loading.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+<link rel="stylesheet" href="css/friend_notifications.css?v=<?php echo $versions['version']; ?>">
 
 </head>
 <body>
@@ -154,27 +159,23 @@ if (!empty($user_id_string)) {
                             <div class="mt-3">
                                 <h5 class="mb-1"><?php echo htmlspecialchars($guest_name ?? $username ?? 'User'); ?></h5>
                                 <small class="text-muted">
+                                    
                                     <?php echo $_SESSION['user']['type'] === 'guest' ? 'Guest User' : 'Registered User'; ?>
+                                    <br>
                                     <?php if ($is_admin): ?>
-                                        <br><span class="badge bg-danger">Admin</span>
+                                        <span class="badge bg-danger">Admin</span>
                                     <?php endif; ?>
                                     <?php if ($is_moderator && !$is_admin): ?>
-                                        <br><span class="badge bg-warning">Moderator</span>
+                                        <span class="badge bg-warning">Moderator</span>
                                     <?php endif; ?>
                                     <?php if ($ghost_mode): ?>
-                                        <br><span class="badge bg-secondary"><i class="fas fa-ghost"></i> Ghost Mode</span>
+                                        <span class="badge bg-secondary"><i class="fas fa-ghost"></i> Ghost Mode</span>
                                     <?php endif; ?>
+                                    <br>
                                 </small>
                             </div>
                         </div>
-                        
-                        <!-- Ghost Mode Toggle for Staff -->
-                        <?php if ($is_admin || $is_moderator): ?>
-                        <button class="btn <?php echo $ghost_mode ? 'btn-warning' : 'btn-outline-secondary'; ?> w-100 mb-2" onclick="toggleGhostMode()">
-                            <i class="fas fa-ghost"></i> 
-                            <?php echo $ghost_mode ? 'Disable Ghost Mode' : 'Enable Ghost Mode'; ?>
-                        </button>
-                        <?php endif; ?>
+                                            
                         <div class="profile-action-buttons">
                         <!--<button class="btn change-avatar-btn w-100" onclick="showAvatarSelector()">
                             <i class="fas fa-user-edit"></i>
@@ -209,7 +210,7 @@ if (!empty($user_id_string)) {
                 <div class="col-lg-9">
                     <div class="rooms-section-header">
                         <div class="d-flex justify-content-between align-items-center">
-                            <div>
+                            <div class="rooms-section-title-container">
                             <h3 class="rooms-section-title">
                                 <i class="fas fa-door-open"></i> Rooms
                                 <!--<button class="btn btn-outline-secondary refresh-btn" onclick="loadRoomsWithUsers()">
@@ -220,13 +221,22 @@ if (!empty($user_id_string)) {
                             </div>
                             <div>
                                 <?php if ($is_admin || $is_moderator): ?>
+                        <button class="btn <?php echo $ghost_mode ? 'btn-secondary' : 'btn-outline-secondary'; ?> me-2" onclick="toggleGhostMode()">
+                            <i class="fas fa-ghost"></i> 
+                            <?php echo $ghost_mode ? '' : ''; ?>
+                        </button>
+                        <?php endif; ?>
+                                <?php if ($is_admin || $is_moderator): ?>
             <button class="btn btn-warning me-2" onclick="showAnnouncementModal()">
-                <i class="fas fa-bullhorn"></i> Announce
+                <i class="fas fa-bullhorn"></i>
             </button>
-            <a href="moderator.php" class="btn btn-info me-2">
-                <i class="fas fa-shield-alt"></i> Dashboard
+            <button class="btn btn-info me-2">
+            <a href="moderator.php" class="text-dark">
+                <i class="fas fa-shield-alt"></i>
             </a>
+            </button>
         <?php endif; ?>
+
         <button class="btn create-room-btn me-2" onclick="showCreateRoomModal()">
             <i class="fas fa-plus"></i>
         </button>
@@ -290,16 +300,16 @@ if (!empty($user_id_string)) {
                     const isGhost = response.ghost_mode;
                     
                     if (isGhost) {
-                        button.removeClass('btn-outline-secondary').addClass('btn-warning');
-                        button.html('<i class="fas fa-ghost"></i> Disable Ghost Mode');
+                        button.removeClass('btn-outline-secondary').addClass('btn-secondary');
+                        button.html('<i class="fas fa-ghost"></i>');
                         
                         // Add ghost mode badge if it doesn't exist
                         if ($('.badge:contains("Ghost Mode")').length === 0) {
-                            $('.text-muted').append('<br><span class="badge bg-secondary"><i class="fas fa-ghost"></i> Ghost Mode</span>');
+                            $('.text-muted').append('<span class="badge bg-secondary"><i class="fas fa-ghost"></i> Ghost Mode</span>');
                         }
                     } else {
-                        button.removeClass('btn-warning').addClass('btn-outline-secondary');
-                        button.html('<i class="fas fa-ghost"></i> Enable Ghost Mode');
+                        button.removeClass('btn-secondary').addClass('btn-outline-secondary');
+                        button.html('<i class="fas fa-ghost"></i>');
                         
                         // Remove ghost mode badge
                         $('.badge:contains("Ghost Mode")').remove();
@@ -424,10 +434,10 @@ document.addEventListener('DOMContentLoaded', function() {
 <?php endif; ?>
 </script>
     <!-- Include the fixed lounge.js -->
-    <script src="js/lounge.js"></script>
-    <script src="js/profile_system.js"></script>
-    <script src="js/loading.js"></script>
-    <script src="js/friend_notifications.js"></script>
+    <script src="js/lounge.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/profile_system.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/loading.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/friend_notifications.js?v=<?php echo $versions['version']; ?>"></script>
 
 </body>
 </html>

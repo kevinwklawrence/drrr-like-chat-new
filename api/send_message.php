@@ -37,14 +37,17 @@ if ($check_mentions_col->num_rows === 0) {
 function sanitizeMarkup($message) {
     // Convert markdown-style formatting to HTML safely
     $message = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
+
+    
     
     // Helper function to validate URLs
     $validateUrl = function($url) {
-        // Remove any potential XSS attempts
         $url = trim($url);
-        // Only allow http, https, and data URLs (for images)
-        if (preg_match('/^(https?:\/\/|data:image\/)/i', $url)) {
-            return filter_var($url, FILTER_VALIDATE_URL) !== false;
+        if (preg_match('/^https?:\/\//', $url)) {
+            // Allow query parameters after image extensions
+            if (preg_match('/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i', $url)) {
+                return filter_var($url, FILTER_VALIDATE_URL) !== false;
+            }
         }
         return false;
     };
@@ -54,14 +57,26 @@ function sanitizeMarkup($message) {
     // 1. Code blocks (triple backticks) - must come before single backticks
     $message = preg_replace('/```([^`]*?)```/s', '<pre><code>$1</code></pre>', $message);
     
-    // 2. Images: ![alt text](url)
+    // Images with proxy for external URLs
     $message = preg_replace_callback('/!\[([^\]]*)\]\(([^)]+)\)/', function($matches) use ($validateUrl) {
         $alt = htmlspecialchars($matches[1], ENT_QUOTES, 'UTF-8');
         $url = trim($matches[2]);
+        
         if ($validateUrl($url)) {
-            return '<br><img src="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" alt="' . $alt . '" class="messageimg" loading="lazy"><br>';
+            // Check if it's an external image
+            $current_domain = $_SERVER['HTTP_HOST'];
+            $url_host = parse_url($url, PHP_URL_HOST);
+            
+            if ($url_host && $url_host !== $current_domain) {
+                // Use proxy for external images
+                $proxy_url = 'api/image_proxy.php?url=' . urlencode($url);
+                return '<br><img src="' . htmlspecialchars($proxy_url, ENT_QUOTES, 'UTF-8') . '" alt="' . $alt . '" class="messageimg" loading="lazy" data-original="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '"><br>';
+            } else {
+                // Local images - use directly
+                return '<br><img src="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" alt="' . $alt . '" class="messageimg" loading="lazy"><br>';
+            }
         }
-        return $matches[0]; // Return original if URL is invalid
+        return $matches[0];
     }, $message);
     
     // 3. Links: [link text](url)

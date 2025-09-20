@@ -1,9 +1,6 @@
-// Avatar to Color Mapping Configuration
 const AVATAR_COLOR_MAPPING = {
-    // Time-limited avatars
     'time-limited/': 'spooky',
     
-    // Default avatars by specific file
     'default/_plain.png': 'blue',
     'default/furufu.png': 'lavender2',
     'default/_u0.png': 'black',
@@ -228,7 +225,6 @@ const AVATAR_COLOR_MAPPING = {
     'drrr.com/urufu2.png': 'lavender2',
 
 
-    // Recolored avatars
     'recolored/a5.png': 'purple',
     'recolored/a13.png': 'cobalt',
     'recolored/a20.png': 'cobalt',
@@ -309,7 +305,6 @@ const AVATAR_COLOR_MAPPING = {
     
     
     
-    // Color folder mappings (folder name determines default color)
     'blue/': 'blue',
     'red/': 'red',
     'green/': 'green',
@@ -323,25 +318,21 @@ const AVATAR_COLOR_MAPPING = {
     'indigo/': 'indigo'
 };
 
-// Global fallback color when no mapping is found
 const DEFAULT_FALLBACK_COLOR = 'black';
 
 function getAvatarDefaultColor(avatarPath) {
     if (!avatarPath) return DEFAULT_FALLBACK_COLOR;
     
-    // Check for exact file matches first
     if (AVATAR_COLOR_MAPPING[avatarPath]) {
         return AVATAR_COLOR_MAPPING[avatarPath];
     }
     
-    // Check for folder-based matches
     for (const [pattern, color] of Object.entries(AVATAR_COLOR_MAPPING)) {
         if (pattern.endsWith('/') && avatarPath.startsWith(pattern)) {
             return color;
         }
     }
     
-    // Extract folder from path and check if it matches a color name
     const folder = avatarPath.split('/')[0];
     const validColors = ['blue', 'purple', 'pink', 'cyan', 'mint', 'orange', 'green', 'yellow', 'red', 'teal', 'indigo','spooky'];
     

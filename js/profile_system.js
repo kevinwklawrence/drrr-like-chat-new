@@ -1,7 +1,5 @@
-// Global Profile System - Updated with Bubble Customization
 let activeProfilePopup = null;
 
-// Profile editor variables
 let selectedAvatar = null;
 let selectedColor = null;
 
@@ -11,7 +9,6 @@ function showUserProfile(userId, avatarElement) {
         return;
     }
     
-    // Close existing popup
     closeProfilePopup();
     
     $.ajax({
@@ -36,7 +33,6 @@ function displayProfilePopup(user, avatarElement) {
     const rect = avatarElement.getBoundingClientRect();
     const links = user.hyperlinks || [];
     
-    // Detect if we're in a room or lounge
     const isInRoom = typeof roomId !== 'undefined' && roomId;
     
     let linksHtml = '';
@@ -52,12 +48,10 @@ function displayProfilePopup(user, avatarElement) {
         `<div class="profile-cover" style="background-image: url('images/covers/${user.cover_photo}')"></div>` : 
         '<div class="profile-cover profile-cover-default"></div>';
     
-    // Different actions based on context and friendship status
     let actionsHtml = '';
     if (currentUser.type === 'user') {
         actionsHtml = '<div class="profile-popup-actions">';
         
-        // Friend button based on status
         switch(user.friendship_status) {
             case 'friends':
                 actionsHtml += `
@@ -89,7 +83,6 @@ function displayProfilePopup(user, avatarElement) {
                 break;
         }
         
-        // Message/PM button
         if (isInRoom) {
             actionsHtml += `
                 <button class="btn btn-sm btn-secondary profile-action-btn" onclick="openWhisper('user_${user.id}', '${user.username}'); event.stopPropagation();">
@@ -138,12 +131,10 @@ function displayProfilePopup(user, avatarElement) {
     
     activeProfilePopup = popup;
     
-    // Prevent event bubbling on profile action buttons
     $('.profile-action-btn').on('click', function(e) {
         e.stopPropagation();
     });
     
-    // Close on outside click
     setTimeout(() => {
         $(document).on('click.profilePopup', function(e) {
             if (!$(e.target).closest('.profile-popup, .user-avatar, .message-avatar').length) {
@@ -618,11 +609,9 @@ function displayProfileEditor(user) {
     const modal = new bootstrap.Modal(document.getElementById('profileEditorModal'));
     modal.show();
     
-    // Load initial data
     loadAvatarsForEditor(isRegistered);
     loadColorsForEditor();
     
-    // Set up event handlers
     if (isRegistered) {
         $('#coverPhotoInput').on('change', function() {
             const file = this.files[0];
@@ -734,6 +723,7 @@ function loadColorsForEditor() {
         { name: 'cnegative', displayName: 'Color-Negative' },
         { name: 'caution', displayName: 'Caution' },
         { name: 'gray', displayName: 'Gray' },
+        { name: 'darkgray', displayName: 'Dark Gray' },
         { name: 'tan', displayName: 'Tan' },
         { name: 'blue', displayName: 'Blue' },
         { name: 'cobalt', displayName: 'Cobalt' },
@@ -804,7 +794,6 @@ function selectAvatarInEditor(avatarPath) {
     $('#selectedAvatarPreview').attr('src', 'images/' + avatarPath);
     selectedAvatar = avatarPath;
     
-    // Apply current customization to the new avatar
     updateAvatarPreview();
 }
 
@@ -829,7 +818,6 @@ function updateColorPreview() {
     $('#colorPreviewCircle').removeClass().addClass(`color-${color}`);
     $('#colorPreviewName').text(color.charAt(0).toUpperCase() + color.slice(1));
     
-    // Update message bubble preview with current bubble customization
     const bubbleHue = selectedBubbleHue !== null ? selectedBubbleHue : (currentUser.bubble_hue || 0);
     const bubbleSat = selectedBubbleSaturation !== null ? selectedBubbleSaturation : (currentUser.bubble_saturation || 100);
     
@@ -869,19 +857,16 @@ function saveProfileChanges() {
     const changes = {};
     let hasChanges = false;
     
-    // Check for avatar changes
     if (selectedAvatar && selectedAvatar !== currentUser.avatar) {
         changes.avatar = selectedAvatar;
         hasChanges = true;
     }
     
-    // Check for color changes
     if (selectedColor && selectedColor !== currentUser.color) {
         changes.color = selectedColor;
         hasChanges = true;
     }
     
-    // Check for avatar customization changes
     if (selectedAvatarHue !== null && selectedAvatarHue !== (currentUser.avatar_hue || 0)) {
         changes.avatar_hue = selectedAvatarHue;
         hasChanges = true;
@@ -892,7 +877,6 @@ function saveProfileChanges() {
         hasChanges = true;
     }
     
-    // Check for bubble customization changes
     if (selectedBubbleHue !== null && selectedBubbleHue !== (currentUser.bubble_hue || 0)) {
         changes.bubble_hue = selectedBubbleHue;
         hasChanges = true;
@@ -903,7 +887,6 @@ function saveProfileChanges() {
         hasChanges = true;
     }
     
-    // Check for profile info changes (registered users only)
     if (isRegistered) {
         const bio = $('#profileBio').val();
         const status = $('#profileStatus').val();
@@ -956,13 +939,11 @@ function saveProfileChanges() {
         );
     }
     
-    // Handle all customization changes in a single API call
     if (changes.avatar_hue !== undefined || changes.avatar_saturation !== undefined || 
         changes.bubble_hue !== undefined || changes.bubble_saturation !== undefined) {
         
         const customizationData = {};
         
-        // Include avatar customization
         if (changes.avatar_hue !== undefined) {
             customizationData.avatar_hue = changes.avatar_hue;
         }
@@ -970,7 +951,6 @@ function saveProfileChanges() {
             customizationData.avatar_saturation = changes.avatar_saturation;
         }
         
-        // Include bubble customization
         if (changes.bubble_hue !== undefined) {
             customizationData.bubble_hue = changes.bubble_hue;
         }
@@ -1151,7 +1131,6 @@ function uploadCoverPhoto(file) {
     });
 }
 
-// Avatar and bubble customization variables
 let selectedAvatarHue = null;
 let selectedAvatarSaturation = null;
 let selectedBubbleHue = null;
@@ -1188,7 +1167,6 @@ function updateAvatarPreview() {
     const filterValue = `hue-rotate(${hue}deg) saturate(${saturation}%)`;
     $('#selectedAvatarPreview').css('filter', filterValue);
     
-    // Also update any selected avatar in the grid
     $('.editor-avatar.selected').css('filter', filterValue);
 }
 

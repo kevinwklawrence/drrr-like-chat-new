@@ -93,8 +93,8 @@ body {
         }
         
         .avatar {
-            width: 58px;
-            height: auto;
+            width: 60px;
+            height: 60px;
             cursor: pointer;
             margin: 2px;
             border: 1px solid #555;
@@ -285,10 +285,10 @@ body {
         }
 
         .preview-circle {
-    width: 100%;
-    height: 100%;
+    width: 200px;
+    height: 80px;
     border-radius: 12px;
-    margin: 0 0 0 0px;
+    margin: 0 0 0 10px;
     border: 3px solid rgb(255 255 255);
     background-size: 100% 100%;
 }
@@ -311,14 +311,13 @@ body {
         /* Mobile optimizations */
         @media (max-width: 768px) {
 
-            
-
-            .container-fluid {
-                background-color: #2a2a2a !important;
+            .col-lg-4 {
+                position:fixed;
+                bottom:0;
             }
 
-            .login-title {
-                display:none;
+            .site-logo {
+                margin:0;
             }
 
             .text-center.text-muted.mt-4 {
@@ -345,14 +344,11 @@ body {
 
             .avatar-selection-card .mb-4 {
                 margin:4px !important;
-                padding: 0;
+                padding:0;
             }
 
             .selected-preview-row {
-                opacity:0;
-                max-height:0px;
-                max-width:0px;
-                gap:0 !important;
+                display:none !important;
             }
 
             .form-control {
@@ -361,7 +357,7 @@ body {
 
             .row {
             max-width: inherit;
-            --bs-gutter-x: 0 !important;
+            --bs-gutter-x: 0 !important;!i;!;
             }
 
             .col-lg-8 {
@@ -379,6 +375,10 @@ body {
                 border:none;
                 border-radius:0;
                 margin:0;
+                top: 0;
+                position: absolute;
+                width: 100%;
+                padding: 10px;
             }
 
             .header-logo-section .text-muted {
@@ -413,17 +413,17 @@ body {
                 margin: 0;
                 border-radius: 0;
                 border: 0;
-                box-shadow: none;
             }
             
             .avatar-container {
-                max-height: 50vh;
                 padding: 0;
+                height: calc(100vh - 300px);
             }
             
             .avatar {
-                width: 58px;
-                height: auto;
+                width: 50px;
+                height: 50px;
+                margin: 3px;
             }
 
             .color-grid {
@@ -445,7 +445,7 @@ body {
             .avatar {
                 width: 58px;
                 height: auto;
-                
+                margin: 6px;
             }
             
             .login-container {
@@ -469,12 +469,6 @@ body {
             border-radius: 8px;
             padding: 20px;
             text-align: center;
-        }
-        .links-section .btn{
-        font-size:12px;
-        padding: 12px;
-        border:0;
-        border-radius: 0;
         }
         
         .links-section a {

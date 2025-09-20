@@ -46,6 +46,61 @@ if (empty($user_id_string)) {
     exit;
 }
 
+// Function to check and delete empty non-permanent rooms
+function checkAndDeleteEmptyRoom($conn, $room_id) {
+    // Check if room is permanent
+    $permanent_check = $conn->prepare("SELECT permanent FROM chatrooms WHERE id = ?");
+    $permanent_check->bind_param("i", $room_id);
+    $permanent_check->execute();
+    $permanent_result = $permanent_check->get_result();
+    
+    if ($permanent_result->num_rows === 0) {
+        $permanent_check->close();
+        return false; // Room doesn't exist
+    }
+    
+    $room_data = $permanent_result->fetch_assoc();
+    $permanent_check->close();
+    
+    if ($room_data['permanent']) {
+        return false; // Don't delete permanent rooms
+    }
+    
+    // Check if room is now empty
+    $user_count_check = $conn->prepare("SELECT COUNT(*) as user_count FROM chatroom_users WHERE room_id = ?");
+    $user_count_check->bind_param("i", $room_id);
+    $user_count_check->execute();
+    $count_result = $user_count_check->get_result();
+    $count_data = $count_result->fetch_assoc();
+    $user_count_check->close();
+    
+    if ($count_data['user_count'] == 0) {
+        // Room is empty and not permanent, delete it
+        error_log("Room $room_id is now empty, deleting...");
+        
+        // Delete messages
+        $delete_messages = $conn->prepare("DELETE FROM messages WHERE room_id = ?");
+        if ($delete_messages) {
+            $delete_messages->bind_param("i", $room_id);
+            $delete_messages->execute();
+            $delete_messages->close();
+        }
+        
+        // Delete room
+        $delete_room = $conn->prepare("DELETE FROM chatrooms WHERE id = ?");
+        if ($delete_room) {
+            $delete_room->bind_param("i", $room_id);
+            $delete_room->execute();
+            $delete_room->close();
+        }
+        
+        error_log("Empty room $room_id deleted successfully");
+        return true;
+    }
+    
+    return false;
+}
+
 try {
     $conn->begin_transaction();
     
@@ -80,7 +135,7 @@ try {
     $is_host = $user_data['is_host'];
     $check_stmt->close();
     
-    // Get other users in the room - FIXED: specify table aliases
+    // Get other users in the room
     $other_users_stmt = $conn->prepare("SELECT cu.user_id_string, u.username, cu.guest_name, cu.user_id FROM chatroom_users cu LEFT JOIN users u ON cu.user_id = u.id WHERE cu.room_id = ? AND cu.user_id_string != ?");
     $other_users_stmt->bind_param("is", $room_id, $user_id_string);
     $other_users_stmt->execute();
@@ -131,6 +186,9 @@ try {
                     $system_stmt->close();
                 }
             }
+            
+            // NEW: Check if room is now empty and delete if non-permanent
+            checkAndDeleteEmptyRoom($conn, $room_id);
             
             $conn->commit();
             echo json_encode(['status' => 'success']);
@@ -217,7 +275,7 @@ try {
         $set_new_host_stmt->execute();
         $set_new_host_stmt->close();
         
-        // Add system message about host transfer - FIXED: specify table alias
+        // Add system message about host transfer
         $get_new_host_name_stmt = $conn->prepare("
             SELECT COALESCE(u.username, cu.guest_name) as display_name 
             FROM chatroom_users cu 
@@ -291,6 +349,9 @@ try {
             $system_stmt->close();
         }
     }
+    
+    // NEW: Check if room is now empty and delete if non-permanent
+    checkAndDeleteEmptyRoom($conn, $room_id);
     
     $conn->commit();
     echo json_encode(['status' => 'success']);

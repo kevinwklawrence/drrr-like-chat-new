@@ -1,5 +1,3 @@
-// ===== IMPROVED LOUNGE.JS - BETTER REFRESH RATES & CLEANUP =====
-// ===== DEBUG CONFIGURATION =====
 const DEBUG_MODE = false;
 
 function debugLog(message, data = null) {
@@ -15,15 +13,12 @@ function debugLog(message, data = null) {
 $(document).ready(function() {
     debugLog('Lounge loaded');
     
-    // Store user's room keys globally
     let userRoomKeys = [];
     
-    // Load initial data
     loadUserRoomKeys();
     loadRoomsWithUsers();
     loadOnlineUsers();
     
-    // Main update loop - handles most updates
     setInterval(() => {
         loadOnlineUsers();
         loadRoomsWithUsers();
@@ -31,17 +26,13 @@ $(document).ready(function() {
         sendHeartbeat();
     }, 5000); // Every 5 seconds
     
-    // Fast knock checking for hosts
     setInterval(checkForKnocks, 3000); // Every 3 seconds
     
-    // Cleanup interval
     setInterval(cleanupInactiveUsers, 60000); // Every minute
     
-    // Initialize private messaging after a delay
     setTimeout(initializePrivateMessaging, 1000);
 });
 
-// NEW: Send heartbeat to keep user marked as active
 function sendHeartbeat() {
     debugLog('Sending heartbeat...');
     $.ajax({
@@ -58,7 +49,6 @@ function sendHeartbeat() {
     });
 }
 
-// NEW: Clean up inactive users from the interface
 function cleanupInactiveUsers() {
     debugLog('Requesting cleanup of inactive users...');
     $.ajax({
@@ -80,7 +70,6 @@ function cleanupInactiveUsers() {
     });
 }
 
-// Function to load user's room keys
 function loadUserRoomKeys() {
     debugLog('Loading user room keys...');
     $.ajax({
@@ -98,16 +87,13 @@ function loadUserRoomKeys() {
     });
 }
 
-// Function to check if user has a room key
 function hasRoomKey(roomId) {
     return userRoomKeys.includes(parseInt(roomId));
 }
 
-// IMPROVED: Main function to load rooms with their users - with better error handling
 function loadRoomsWithUsers() {
     debugLog('Loading rooms with users...');
     
-    // Add subtle loading indicator only if rooms exist
     if ($('#roomsList .room-card-enhanced').length > 0) {
         $('#roomsList').addClass('updating');
     }
@@ -125,7 +111,6 @@ function loadRoomsWithUsers() {
                 return;
             }
             
-            // Load users for each room
             let completedRooms = 0;
             let roomsWithUsers = [];
             
@@ -137,12 +122,10 @@ function loadRoomsWithUsers() {
                     debugLog(`Room ${room.id} users loaded:`, roomWithUsers);
                     
                     if (completedRooms === rooms.length) {
-                        // Filter out undefined entries and display
                         const validRooms = roomsWithUsers.filter(r => r !== undefined);
                         debugLog('All rooms processed, displaying:', validRooms);
                         displayRoomsWithUsers(validRooms);
                         
-                        // Remove loading indicator
                         setTimeout(() => {
                             $('#roomsList').removeClass('updating');
                         }, 300);
@@ -155,7 +138,6 @@ function loadRoomsWithUsers() {
             console.error('Error loading rooms:', error);
             $('#roomsList').removeClass('updating');
             
-            // Show error only if it's not a timeout during background refresh
             if (status !== 'timeout' || $('#roomsList .room-card-enhanced').length === 0) {
                 $('#roomsList').html(`
                     <div class="alert alert-danger" style="background: #2a2a2a; border: 1px solid #d32f2f; color: #f44336;">
@@ -171,7 +153,6 @@ function loadRoomsWithUsers() {
     });
 }
 
-// Function to load users for a specific room
 function loadUsersForRoom(room, callback) {
     debugLog(`Loading users for room ${room.id}...`);
     
@@ -185,18 +166,15 @@ function loadUsersForRoom(room, callback) {
             debugLog(`Raw users data for room ${room.id}:`, users);
             
             try {
-                // Parse users if it's a string
                 let parsedUsers = users;
                 if (typeof users === 'string') {
                     parsedUsers = JSON.parse(users);
                 }
                 
-                // Ensure we have an array
                 if (!Array.isArray(parsedUsers)) {
                     parsedUsers = [];
                 }
                 
-                // Separate host and regular users
                 const host = parsedUsers.find(user => parseInt(user.is_host) === 1) || null;
                 const regularUsers = parsedUsers.filter(user => parseInt(user.is_host) !== 1);
                 
@@ -206,7 +184,6 @@ function loadUsersForRoom(room, callback) {
                     regularUsers: regularUsers.length
                 });
                 
-                // Add user data to room object
                 const roomWithUsers = {
                     ...room,
                     users: parsedUsers,
@@ -241,12 +218,7 @@ function loadUsersForRoom(room, callback) {
     });
 }
 
-// Replace the displayRoomsWithUsers function in lounge.js with this safer version
 
-// FIXED: Replace the displayRoomsWithUsers function in lounge.js with this version
-
-// FIXED: Replace the displayRoomsWithUsers function with this corrected version
-// The issue was parseInt(true) returns NaN, not 1
 
 function displayRoomsWithUsers(rooms) {
     debugLog('displayRoomsWithUsers called with:', rooms);
@@ -261,16 +233,13 @@ function displayRoomsWithUsers(rooms) {
             </div>
         `;
     } else {
-        // FIXED: Sort rooms with Boolean logic for permanent check
         rooms.sort((a, b) => {
             const aIsPermanent = Boolean(a.permanent);  // FIXED: Use Boolean() instead of parseInt()
             const bIsPermanent = Boolean(b.permanent);  // FIXED: Use Boolean() instead of parseInt()
             
-            // Permanent rooms always come first
             if (aIsPermanent && !bIsPermanent) return -1;
             if (!aIsPermanent && bIsPermanent) return 1;
             
-            // Within same category, sort by user count
             const aUserCount = a.user_count || 0;
             const bUserCount = b.user_count || 0;
             return bUserCount - aUserCount;
@@ -280,7 +249,6 @@ function displayRoomsWithUsers(rooms) {
         
         rooms.forEach((room, index) => {
             try {
-                // FIXED: Use Boolean() for ALL boolean checks instead of parseInt()
                 const isPermanent = Boolean(room.permanent);
                 const isPasswordProtected = Boolean(room.has_password);
                 const allowsKnocking = Boolean(room.allow_knocking);
@@ -304,11 +272,9 @@ function displayRoomsWithUsers(rooms) {
                 let actionButtons = '';
                 let cardClass = 'room-card-enhanced';
 
-                // Add permanent room styling
                 if (isPermanent) {
                  //   headerClass += ' permanent-room';
                     cardClass += ' permanent-room-card';
-                   // debugLog(`🌟 Applied permanent styling to room: ${room.name}`);
                 }
 
                 // Access checking logic
@@ -334,16 +300,13 @@ function displayRoomsWithUsers(rooms) {
                     actionButtons = `<button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})"><i class="fas fa-sign-in-alt"></i> Enter Room</button>`;
                 }
 
-                // FIXED: Build ALL feature indicators with proper boolean logic
                 let featureIndicators = '';
                 
-                // Permanent indicator comes first and is most prominent
                 if (isPermanent) {
                    // featureIndicators += '<span class="room-indicator permanent-indicator" title="Permanent Room - Never deleted automatically"><i class="fas fa-star"></i> PERMANENT</span>';
                    // debugLog(`✅ Added permanent indicator for: ${room.name}`);
                 }
                 
-                // Other feature indicators
                 if (isRP) {
                     featureIndicators += '<span class="room-indicator rp-indicator" style="background: #e91e63; color: white;" title="Roleplay Room"><i class="fas fa-theater-masks"></i> RP</span>';
                     debugLog(`✅ Added RP indicator for: ${room.name}`);
@@ -402,7 +365,6 @@ function displayRoomsWithUsers(rooms) {
                         </div>
                     `;
                 } else if (isPermanent) {
-                    // Show offline host indicator for permanent rooms
                     hostHtml = `
                         <div class="room-host">
                             <h6><i class="fas fa-crown"></i> Host</h6>
@@ -452,7 +414,6 @@ function displayRoomsWithUsers(rooms) {
                     usersHtml = `<div class="room-users"><h6><i class="fas fa-users"></i> Users (0)</h6><div class="text-muted small">No other users in room</div></div>`;
                 }
 
-                // Build the room card HTML
                 html += `
                     <div class="col-lg-6 col-12 room-card-wrapper">
                         <div class="${cardClass} ${themeClass}">
@@ -490,7 +451,6 @@ function displayRoomsWithUsers(rooms) {
                 
             } catch (error) {
                 console.error('Error rendering room:', room, error);
-                // Fallback room card
                 html += `
                     <div class="col-lg-6 col-12 room-card-wrapper">
                         <div class="room-card-enhanced">
@@ -529,7 +489,6 @@ function displayRoomsWithUsers(rooms) {
         $roomsList.html(html);
     }
     
-    // Debug: Log permanent rooms processed with FIXED counting
     const permanentCount = rooms.filter(r => Boolean(r.permanent)).length;
     const rpCount = rooms.filter(r => Boolean(r.is_rp)).length;
     const youtubeCount = rooms.filter(r => Boolean(r.youtube_enabled)).length;
@@ -538,14 +497,12 @@ function displayRoomsWithUsers(rooms) {
 }
 
 
-// Enhanced joinRoom function
 window.joinRoom = function(roomId) {
     debugLog('joinRoom: Attempting to join room', roomId);
     
     const button = $(`button[onclick="joinRoom(${roomId})"]`);
     const originalText = button.html();
     
-    // Show loading state
     button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Joining...');
     
     $.ajax({
@@ -561,7 +518,6 @@ window.joinRoom = function(roomId) {
                 }
                 window.location.href = 'room.php';
             } else {
-                // Handle different error types
                 if (response.message && response.message.toLowerCase().includes('password')) {
                     showPasswordModal(roomId, 'Room ' + roomId);
                 } else if (response.message && (
@@ -569,20 +525,17 @@ window.joinRoom = function(roomId) {
                     response.message.includes('members only') || 
                     response.message.includes('invite')
                 )) {
-                    // Show restriction message
                     alert('Access Denied: ' + response.message);
                 } else {
                     alert('Error: ' + response.message);
                 }
                 
-                // Reset button
                 button.prop('disabled', false).html(originalText);
             }
         },
         error: function(xhr, status, error) {
             console.error('joinRoom error:', error);
             
-            // Reset button
             button.prop('disabled', false).html(originalText);
             
             if (status === 'timeout') {
@@ -594,7 +547,6 @@ window.joinRoom = function(roomId) {
     });
 };
 
-// IMPROVED: Function to load online users with better filtering
 function loadOnlineUsers() {
     $.ajax({
         url: 'api/get_online_users.php',
@@ -607,7 +559,6 @@ function loadOnlineUsers() {
         },
         error: function(xhr, status, error) {
             console.error('Error loading online users:', error);
-            // Don't show error in UI for background refreshes, just log it
             if (status !== 'timeout') {
                 debugLog('Failed to load online users, keeping current list');
             }
@@ -641,16 +592,16 @@ function displayOnlineUsers(users) {
             let activityIndicator = '';
             if (lastActivity) {
                 const now = new Date();
-                const lastActiveTime = new Date(lastActivity);
+                const lastActiveTime = new Date(lastActivity.replace(' ', 'T'));
                 const diffMinutes = Math.floor((now - lastActiveTime) / (1000 * 60));
                 
-                if (diffMinutes < 1) {
+                /*if (diffMinutes < 15) {
                     activityIndicator = '<span class="badge bg-success badge-sm">Online</span>';
-                } else if (diffMinutes < 5) {
+                } else if (diffMinutes < 30) {
                     activityIndicator = `<span class="badge bg-warning badge-sm">${diffMinutes}m ago</span>`;
                 } else {
                     activityIndicator = '<span class="badge bg-secondary badge-sm">Away</span>';
-                }
+                }*/
             }
 
             let badges = '';
@@ -691,14 +642,11 @@ function handleAvatarClick(event, userIdString, username) {
     debugLog('Lounge avatar clicked - userIdString:', userIdString, 'username:', username);
     
     if (username && username.trim() !== '') {
-        // For lounge, we need to get the actual user ID from username
         getUserIdFromUsername(username, function(userId) {
             if (userId) {
                 if (userId == currentUser.id) {
-                    // Allow both registered users and guests to edit their own profile
                     showUserProfile(userId, event.target);
                 } else {
-                    // Anyone can view other registered users' profiles
                     showUserProfile(userId, event.target);
                 }
             }
@@ -706,7 +654,6 @@ function handleAvatarClick(event, userIdString, username) {
     }
 }
 
-// Add this helper function to get user ID from username
 function getUserIdFromUsername(username, callback) {
     $.ajax({
         url: 'api/get_user_id_from_username.php',
@@ -726,7 +673,6 @@ function getUserIdFromUsername(username, callback) {
     });
 }
 
-// Password modal function
 window.showPasswordModal = function(roomId, roomName) {
     const modalHtml = `
         <div class="modal fade" id="passwordModal" tabindex="-1">
@@ -773,7 +719,6 @@ window.showPasswordModal = function(roomId, roomName) {
     });
 };
 
-// Function to join room with password
 window.joinRoomWithPassword = function(roomId) {
     const password = $('#roomPasswordInput').val();
     
@@ -805,10 +750,6 @@ window.joinRoomWithPassword = function(roomId) {
         }
     });
 };
-
-// Replace the showCreateRoomModal function in lounge.js
-
-// Replace these functions in your lounge.js file
 
 window.showCreateRoomModal = function() {
     $('#createRoomModal').remove();
@@ -1048,7 +989,6 @@ window.showCreateRoomModal = function() {
     $('#createRoomModal').remove();
     $('body').append(modalHtml);
     
-    // Set up event handlers AFTER modal is added to DOM
     $('#hasPassword').on('change', function() {
         if (this.checked) {
             $('#passwordField').show();
@@ -1069,7 +1009,6 @@ window.showCreateRoomModal = function() {
         }
     });
     
-    // Prevent form submission on Enter key (which could cause double submission)
     $('#createRoomModal input').on('keypress', function(e) {
         if (e.which === 13) {
             e.preventDefault();
@@ -1083,7 +1022,6 @@ window.showCreateRoomModal = function() {
 window.createRoom = function() {
     debugLog('Creating room with new features...');
     
-    // Prevent multiple submissions
     const createButton = $('#createRoomModal .btn-primary');
     if (createButton.prop('disabled')) {
         debugLog('Create button already disabled, preventing duplicate submission');
@@ -1108,7 +1046,6 @@ window.createRoom = function() {
         permanent: $('#permanentRoom').is(':checked') ? 1 : 0  // NEW: Add permanent setting
     };
     
-    // Debug log the form data
     debugLog('Form data being sent:', formData);
     
     if (!formData.name) {
@@ -1121,11 +1058,9 @@ window.createRoom = function() {
         return;
     }
     
-    // Disable button immediately to prevent double-clicks
     const originalText = createButton.html();
     createButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating...');
     
-    // Also disable the cancel button to prevent form closure during creation
     const cancelButton = $('#createRoomModal .btn-secondary');
     cancelButton.prop('disabled', true);
     
@@ -1149,7 +1084,6 @@ window.createRoom = function() {
                     const inviteLink = window.location.origin + '/' + response.invite_link;
                     message += '\\n\\nInvite link: ' + inviteLink;
                     
-                    // Try to copy to clipboard
                     if (navigator.clipboard) {
                         navigator.clipboard.writeText(inviteLink).then(() => {
                             message += '\\n\\n(Invite link copied to clipboard!)';
@@ -1164,13 +1098,11 @@ window.createRoom = function() {
                     alert(message);
                 }
                 
-                // Add a small delay before redirect to ensure modal closes
                 setTimeout(() => {
                     window.location.href = 'room.php';
                 }, 0);
             } else {
                 alert('Error: ' + response.message);
-                // Re-enable buttons on error
                 createButton.prop('disabled', false).html(originalText);
                 cancelButton.prop('disabled', false);
             }
@@ -1180,14 +1112,12 @@ window.createRoom = function() {
             console.error('Response text:', xhr.responseText);
             alert('Error creating room: ' + error);
             
-            // Re-enable buttons on error
             createButton.prop('disabled', false).html(originalText);
             cancelButton.prop('disabled', false);
         }
     });
 };
 
-// Knock system (simplified)
 window.knockOnRoom = function(roomId, roomName) {
     if (!confirm(`Send a knock request to "${roomName}"?`)) {
         return;
@@ -1212,7 +1142,6 @@ window.knockOnRoom = function(roomId, roomName) {
     });
 };
 
-// Knock checking (simplified)
 function checkForKnocks() {
     $.ajax({
         url: 'api/check_knocks.php',
@@ -1220,7 +1149,6 @@ function checkForKnocks() {
         dataType: 'json',
         success: function(knocks) {
             if (Array.isArray(knocks) && knocks.length > 0) {
-                // Simple knock notifications - could be enhanced
                 knocks.forEach(knock => {
                     if ($(`#knock-${knock.id}`).length === 0) {
                         showKnockNotification(knock);
@@ -1235,7 +1163,6 @@ function checkForKnocks() {
 }
 
 function showKnockNotification(knock) {
-    // Simple knock notification - you can enhance this
     const userName = knock.username || knock.guest_name || 'Unknown User';
     const roomName = knock.room_name || 'Unknown Room';
     
@@ -1270,7 +1197,6 @@ window.respondToKnock = function(knockId, response) {
 };
 
 
-// Private Message System
 let openPrivateChats = new Map();
 let friends = [];
 
@@ -1282,7 +1208,6 @@ function initializePrivateMessaging() {
     setInterval(checkForNewPrivateMessages, 500);
 }
 
-// Add this function to lounge.js if it doesn't exist
 function openPrivateMessage(userId, username) {
     debugLog('Opening private message for user:', userId, username);
     
@@ -1291,7 +1216,6 @@ function openPrivateMessage(userId, username) {
         return;
     }
     
-    // Create the private message window (similar to room.js)
     const windowHtml = `
         <div class="private-message-window" id="pm-${userId}">
             <div class="private-message-header">
@@ -1312,12 +1236,10 @@ function openPrivateMessage(userId, username) {
     
     $('body').append(windowHtml);
     
-    // Initialize the private chat if the system exists
     if (typeof openPrivateChats !== 'undefined') {
         openPrivateChats.set(userId, { username: username, color: 'blue' });
     }
     
-    // Load messages if the function exists
     if (typeof loadPrivateMessages === 'function') {
         loadPrivateMessages(userId);
     } else {
@@ -1334,7 +1256,6 @@ function closePrivateMessage(userId) {
 
 function sendPrivateMessage(recipientId) {
     if (typeof loadPrivateMessages === 'function') {
-        // Use existing PM system
         const input = $(`#pm-input-${recipientId}`);
         const message = input.val().trim();
         
@@ -1405,7 +1326,6 @@ function sendPrivateMessage(recipientId) {
 function loadPrivateMessages(otherUserId) {
     debugLog('Loading private messages with user:', otherUserId);
     
-    // Store other user's color for display
     if (!openPrivateChats.get(otherUserId).color) {
         $.ajax({
             url: 'api/get_user_info.php',
@@ -1448,7 +1368,6 @@ function loadPrivateMessages(otherUserId) {
 function displayPrivateMessages(otherUserId, messages) {
     const container = $(`#pm-body-${otherUserId}`);
     
-    // Check if user was at bottom before update
     const wasAtBottom = container[0] ? 
         (container.scrollTop() + container.innerHeight() >= container[0].scrollHeight - 20) : true;
     
@@ -1461,7 +1380,6 @@ function displayPrivateMessages(otherUserId, messages) {
             const isOwn = msg.sender_id == currentUser.id;
             const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             
-            // Get user info and color from message data
             const author = isOwn ? (currentUser.username || currentUser.name) : msg.sender_username;
             const avatar = isOwn ? (currentUser.avatar || 'default_avatar.jpg') : (msg.sender_avatar || 'default_avatar.jpg');
             const userColor = isOwn ? (currentUser.color || 'blue') : (msg.sender_color || 'blue');
@@ -1491,7 +1409,6 @@ const bubbleSat = isOwn ? (currentUser.bubble_saturation || 100) : (msg.bubble_s
     
     container.html(html);
     
-    // Only scroll to bottom if user was already at bottom or it's the first load
     if (wasAtBottom) {
         container.scrollTop(container[0].scrollHeight);
     }
@@ -1500,7 +1417,6 @@ const bubbleSat = isOwn ? (currentUser.bubble_saturation || 100) : (msg.bubble_s
 function checkForNewPrivateMessages() {
     if (currentUser.type !== 'user') return;
     
-    // Update open chat windows (but don't reload if user is typing)
     openPrivateChats.forEach((data, userId) => {
         const input = $(`#pm-input-${userId}`);
         const isTyping = input.is(':focus') && input.val().length > 0;
@@ -1510,13 +1426,11 @@ function checkForNewPrivateMessages() {
         }
     });
     
-    // Update conversations list if friends panel is open
     if ($('#friendsPanel').is(':visible')) {
         loadConversations();
     }
 }
 
-// Initialize when page loads
 $(document).ready(function() {
      setInterval(() => {
         $('.room-card-enhanced .fa-spinner').each(function() {
@@ -1594,7 +1508,6 @@ function updateFriendsPanel() {
     html += '</div></div>';
     $('#friendsList').html(html);
     
-    // Load conversations after friends are loaded
     loadConversations();
 }
 
@@ -1710,7 +1623,6 @@ function applyAvatarFilter(imgElement, hue, saturation) {
         const filterValue = `hue-rotate(${hueValue}deg) saturate(${satValue}%)`;
         const filterKey = `${hueValue}-${satValue}`;
         
-        // Only apply if different from current
         if (imgElement.data('filter-applied') !== filterKey) {
             imgElement.css('filter', filterValue);
             imgElement.data('filter-applied', filterKey);
@@ -1725,13 +1637,11 @@ function applyAllAvatarFilters() {
         const hue = $img.data('hue');
         const sat = $img.data('saturation');
         
-        // Skip if no filter data or already processed
         if (hue === undefined || sat === undefined) return;
         
         const filterKey = `${hue}-${sat}`;
         const appliedKey = $img.data('filter-applied');
         
-        // Only apply if not already applied with same values
         if (appliedKey !== filterKey) {
             const filterValue = `hue-rotate(${hue}deg) saturate(${sat}%)`;
             $img.css('filter', filterValue);
@@ -1742,7 +1652,6 @@ function applyAllAvatarFilters() {
 
 
 $(window).on('beforeunload', function() {
-    // Clear any remaining intervals
     if (typeof cleanupInactiveUsers !== 'undefined') {
         clearInterval(cleanupInactiveUsers);
     }
@@ -1807,7 +1716,6 @@ function sendAnnouncement() {
             if (response.status === 'success') {
                 alert('Announcement sent successfully to all rooms!');
                 $('#announcementModal').modal('hide');
-                // Refresh messages if in a room
                 if (typeof loadMessages === 'function') {
                     setTimeout(loadMessages, 1000);
                 }

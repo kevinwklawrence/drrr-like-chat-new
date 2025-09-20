@@ -196,16 +196,6 @@ function findUserIdColumn($conn) {
 }
 
 function triggerRoomCleanup() {
-    $url = 'http://duranu.net/api/cleanup_rooms.php';
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-    $response = curl_exec($ch);
-    curl_close($ch);
-    
-    if ($response === false) {
-        error_log('Failed to call cleanup_rooms.api');
-    }
+    include_once __DIR__ . '/cleanup_rooms.php';
 }
 ?>

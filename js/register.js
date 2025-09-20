@@ -2,7 +2,6 @@ $(document).ready(function() {
             let usernameCheckTimeout;
             let emailCheckTimeout;
             
-            // Real-time username validation
             $('#username').on('input', function() {
                 const username = $(this).val();
                 const field = $(this);
@@ -20,13 +19,11 @@ $(document).ready(function() {
                     return;
                 }
                 
-                // Check availability after delay
                 usernameCheckTimeout = setTimeout(() => {
                     checkUsernameAvailability(username, field);
                 }, 500);
             });
             
-            // Real-time email validation
             $('#email').on('input', function() {
                 const email = $(this).val();
                 const field = $(this);
@@ -44,13 +41,11 @@ $(document).ready(function() {
                     return;
                 }
                 
-                // Check availability after delay
                 emailCheckTimeout = setTimeout(() => {
                     checkEmailAvailability(email, field);
                 }, 500);
             });
             
-            // Password strength checker
             $('#password').on('input', function() {
                 const password = $(this).val();
                 const field = $(this);
@@ -79,20 +74,16 @@ $(document).ready(function() {
                     field.siblings('.invalid-feedback').text('Password could be stronger');
                 }
                 
-                // Check confirm password if it has value
                 if ($('#confirm_password').val()) {
                     checkPasswordMatch();
                 }
             });
             
-            // Confirm password validation
             $('#confirm_password').on('input', checkPasswordMatch);
             
-            // Form submission
             $('#registerForm').on('submit', function(e) {
                 e.preventDefault();
                 
-                // Final validation
                 if (!validateForm()) {
                     return;
                 }
@@ -104,7 +95,6 @@ $(document).ready(function() {
                     confirm_password: $('#confirm_password').val()
                 };
                 
-                // Show loading state
                 const submitBtn = $('button[type="submit"]');
                 const originalText = submitBtn.html();
                 submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating Account...');
@@ -133,14 +123,10 @@ $(document).ready(function() {
         });
         
         function checkUsernameAvailability(username, field) {
-            // In a real implementation, you'd make an AJAX call to check availability
-            // For now, we'll just validate format
             field.removeClass('is-invalid').addClass('is-valid');
         }
         
         function checkEmailAvailability(email, field) {
-            // In a real implementation, you'd make an AJAX call to check availability
-            // For now, we'll just validate format
             field.removeClass('is-invalid').addClass('is-valid');
         }
         
@@ -148,11 +134,9 @@ $(document).ready(function() {
             let score = 0;
             let level = 'weak';
             
-            // Length
             if (password.length >= 8) score++;
             if (password.length >= 12) score++;
             
-            // Character types
             if (/[a-z]/.test(password)) score++;
             if (/[A-Z]/.test(password)) score++;
             if (/[0-9]/.test(password)) score++;
@@ -187,7 +171,6 @@ $(document).ready(function() {
         function validateForm() {
             let isValid = true;
             
-            // Check all required fields have valid class
             $('.form-control[required]').each(function() {
                 if (!$(this).hasClass('is-valid') || $(this).val().trim() === '') {
                     isValid = false;

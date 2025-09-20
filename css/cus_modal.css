@@ -641,7 +641,7 @@
     }
     
     .modal-preview-row {
-        flex-direction: column;
+        flex-direction: row;
         gap: 20px;
     }
     
@@ -668,7 +668,7 @@
     }
     
     .tab-content {
-        padding: 15px;
+        padding: 0;
     }
 }
 
@@ -689,7 +689,7 @@
     }
     
     .modal-preview-section {
-        padding: 15px;
+        padding: 15px !important;
     }
     
     .modal-avatar-display,
@@ -710,7 +710,8 @@
     }
     
     .nav-tabs {
-        flex-direction: column;
+        flex-direction: row;
+        column-gap: 4px;
     }
     
     .nav-tabs .nav-link {

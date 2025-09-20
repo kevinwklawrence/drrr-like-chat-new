@@ -87,7 +87,7 @@ try {
         // Calculate activity status
         $seconds_since = (int)$row['seconds_since_activity'];
         $activity_status = 'online';
-        if ($seconds_since > 60) {
+        if ($seconds_since > 900) {
             $activity_status = 'away';
         }
         

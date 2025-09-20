@@ -33,6 +33,7 @@ body::-webkit-scrollbar {
 body {
     background-color: rgb(47 47 47);
      color:white;
+     padding-right: 0px !important;
      }
 .modal {color: black;z-index: 99999;padding-bottom: 20px;}
 .chat-message {min-height: 58px;}
@@ -191,7 +192,7 @@ body {
 /* Responsive adjustments */
 @media (max-width: 768px) {
     #chatbox img {height: 58px;width: 58px;top: 70px;}
-    #chatbox { padding: 10px; }
+    #chatbox {padding: 10px;}
     .knock-notification {
         position: fixed;
         top: 10px;
@@ -724,6 +725,8 @@ body {
         height: auto;
         overflow: visible;
         height: inherit;
+        margin: 0 !important;
+        padding: 0 !important;
     }
     
     .modal-body {
@@ -754,6 +757,8 @@ body {
     /* Make tabs scrollable if too many */
     .nav-tabs {
         /* overflow-x: auto; */
+        display: flex;
+        align-content: center;
         flex-wrap: wrap;
     }
     

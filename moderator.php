@@ -2,6 +2,9 @@
 // moderator.php - Main moderator dashboard
 session_start();
 
+require_once 'security_config.php';
+
+
 if (!isset($_SESSION['user']) || $_SESSION['user']['type'] !== 'user') {
     header("Location: index.php");
     exit;

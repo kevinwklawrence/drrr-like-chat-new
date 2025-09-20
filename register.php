@@ -1,5 +1,8 @@
 <?php
 session_start();
+
+require_once 'security_config.php';
+
 // Add to index.php - right after session_start()
 
 if (!isset($_SESSION['firewall_passed'])) {
@@ -169,6 +172,7 @@ error_log("User registered with avatar and avatar_memory set to: $default_avatar
     exit;
 }
 ?>
+<?php $versions = include 'config/version.php'; ?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -182,8 +186,8 @@ error_log("User registered with avatar and avatar_memory set to: $default_avatar
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
-    <link href="css/register.css" rel="stylesheet">
+    <link href="css/style.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/register.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
 </head>
 <body>
     <div class="container-fluid">
@@ -218,8 +222,7 @@ error_log("User registered with avatar and avatar_memory set to: $default_avatar
                                                name="username" 
                                                placeholder="Choose a unique username"
                                                required 
-                                               maxlength="20"
-                                               pattern="^[a-zA-Z0-9_]{3,20}$">
+                                               maxlength="20">
                                         <div class="form-text">3-20 characters, letters, numbers, and underscores only</div>
                                         <div class="invalid-feedback"></div>
                                         <div class="valid-feedback">Username is available!</div>
@@ -312,7 +315,7 @@ error_log("User registered with avatar and avatar_memory set to: $default_avatar
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/register.js"></script>
+    <script src="js/register.js?v=<?php echo $versions['version']; ?>"></script>
 
     <?php include 'terms_privacy_modals.php'; ?>
 </body>

@@ -378,6 +378,10 @@
 }
 
 @media (max-width: 768px) {
+
+    .row {
+        --bs-gutter-x: 0 !important;
+    }
     .room-header-enhanced {
         padding: 12px 15px;
     }
@@ -1004,4 +1008,10 @@ box-shadow: 0px 0px 6px 2px #dbbb0fba !important;
 
 .permanent-room-card:hover {
 box-shadow: 0px 0px 6px 4px #dbbb0fba !important;
+}
+.profile-action-buttons {
+    margin-top: 20px;
+}
+.rooms-section-header .btn {
+    padding: 8px 16px !important;
 }

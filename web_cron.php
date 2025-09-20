@@ -22,9 +22,9 @@ if ($secret !== $expectedSecret && !empty($allowedIPs) && !in_array($clientIP, $
     exit;
 }
 
-// Include and run the disconnect checker
+// FIXED: Use the proper cron wrapper script
 ob_start();
-include __DIR__ . '/api/check_disconnects.php';
+include dirname(__DIR__) . '/api/disconnect_cron.php';
 $output = ob_get_clean();
 
 // Try to parse JSON response

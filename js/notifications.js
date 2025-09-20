@@ -1,5 +1,3 @@
-// Working Notification System JavaScript (RESTORED)
-// Track played notification IDs to avoid duplicate sounds
 let playedNotificationIds = new Set();
 let currentNotifications = [];
 let notificationCheckInterval;
@@ -115,7 +113,6 @@ function updateNotificationsPanel() {
     let shouldPlaySound = false;
     currentNotifications.forEach(notification => {
         html += createNotificationHTML(notification);
-            // Play sound only for new reply or mention notifications
             if ((notification.type === "reply" || notification.type === "mention") && !playedNotificationIds.has(notification.id)) {
                 playReplyOrMentionSound();
                 playedNotificationIds.add(notification.id);

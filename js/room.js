@@ -1,4 +1,3 @@
-// ===== DEBUG CONFIGURATION =====
 const DEBUG_MODE = false;
 const SHOW_SENSITIVE_DATA = false;
 
@@ -30,23 +29,26 @@ function criticalError(message, error = null) {
     }
 }
 
-// ===== GLOBAL VARIABLES =====
+
+let messageOffset = 0;
+let messageLimit = 50;
+let totalMessageCount = 0;
+let isLoadingMessages = false;
+let hasMoreOlderMessages = false;
+let isInitialLoad = true;
 
 let lastSeenMessageId = null;
 let initializedMessages = false;
 
-// Cache for friendship status
 let friendshipCache = new Map();
 let friendshipCacheTimeout = new Map();
 
-// Kick Detection System
 let kickDetectionInterval;
 let userKickedModalShown = false;
 let kickDetectionEnabled = true;
 let lastStatusCheck = 0;
 let consecutiveErrors = 0;
 
-// ===== ACTIVITY CONFIGURATION =====
 const ACTIVITY_CONFIG = {
     HEARTBEAT_INTERVAL: 30000,        // 30 seconds
     ACTIVITY_UPDATE_INTERVAL: 5000,   // 5 seconds for interaction tracking
@@ -54,20 +56,17 @@ const ACTIVITY_CONFIG = {
     STATUS_CHECK_INTERVAL: 5000,      // 5 seconds
     MIN_ACTIVITY_INTERVAL: 3000,      // Minimum 3 seconds between activity updates
     
-    // These match the PHP constants
     AFK_TIMEOUT_MINUTES: 20,          // 20 minutes to AFK
     DISCONNECT_TIMEOUT_MINUTES: 80,   // 80 minutes total to disconnect
     SESSION_TIMEOUT_MINUTES: 60       // 60 minutes for session timeout
 };
 
-// Activity Tracking System (keep existing variables for compatibility)
 let activityInterval = null;
 let disconnectCheckInterval = null;
 let lastActivityUpdate = 0;
 let userIsActive = true;
 let activityTrackingEnabled = false;
 
-// Message System
 let lastScrollTop = 0;
 let lastMessageCount = 0;
 let userIsScrolling = false;
@@ -78,7 +77,6 @@ function playMessageNotification() {
    // audio.play();
 }
 
-// YouTube Player System
 let youtubePlayer = null;
 let youtubePlayerReady = false;
 let youtubeEnabled = false;
@@ -103,7 +101,6 @@ let manualAFK = false;
 
 
 
-// ===== ACTIVITY TRACKING SYSTEM =====
 let activityTracker = {
     enabled: false,
     intervals: {
@@ -117,7 +114,6 @@ let activityTracker = {
     userIsActive: false,
     activityQueue: [],
     
-    // Initialize the activity tracking system
     init() {
         if (this.enabled) {
             debugLog('🔄 Activity tracking already initialized');
@@ -127,39 +123,31 @@ let activityTracker = {
         debugLog('🔄 Initializing activity tracking system...');
         this.enabled = true;
         
-        // Clear any existing intervals
         this.cleanup();
         
-        // Start heartbeat - keeps session alive
         this.intervals.heartbeat = setInterval(() => {
             this.sendHeartbeat();
         }, ACTIVITY_CONFIG.HEARTBEAT_INTERVAL);
         
-        // Start activity monitoring - tracks user interactions
         this.intervals.activityUpdate = setInterval(() => {
             this.processActivityQueue();
         }, ACTIVITY_CONFIG.ACTIVITY_UPDATE_INTERVAL);
         
-        // Start disconnect checking - triggers server-side cleanup
         this.intervals.disconnectCheck = setInterval(() => {
             this.triggerDisconnectCheck();
         }, ACTIVITY_CONFIG.DISCONNECT_CHECK_INTERVAL);
         
-        // Start status checking - monitors user's room status
         this.intervals.statusCheck = setInterval(() => {
             this.checkUserStatus();
         }, ACTIVITY_CONFIG.STATUS_CHECK_INTERVAL);
         
-        // Set up activity listeners
         this.setupActivityListeners();
         
-        // Send initial activity update
         this.recordActivity('system_start');
         
         debugLog('✅ Activity tracking system initialized');
     },
     
-    // Clean up intervals
     cleanup() {
         debugLog('🛑 Cleaning up activity tracking intervals');
         Object.keys(this.intervals).forEach(key => {
@@ -171,11 +159,9 @@ let activityTracker = {
         this.enabled = false;
     },
     
-    // Set up event listeners for user interactions
     setupActivityListeners() {
         debugLog('🎯 Setting up activity listeners...');
         
-        // Remove existing listeners
         $(document).off('mousemove.activity keypress.activity scroll.activity click.activity');
         $(window).off('focus.activity blur.activity');
         
@@ -183,28 +169,23 @@ let activityTracker = {
         const markUserActive = () => {
             const now = Date.now();
             
-            // Throttle activity recording to prevent spam
             if (now - this.lastInteraction < 1000) return;
             
             this.lastInteraction = now;
             this.userIsActive = true;
             
-            // Debounce activity updates
             clearTimeout(activityTimeout);
             activityTimeout = setTimeout(() => {
                 this.recordActivity('interaction');
             }, 2000);
         };
         
-        // Mouse and keyboard activity
         $(document).on('mousemove.activity keypress.activity scroll.activity click.activity', markUserActive);
         
-        // Page focus/blur
         $(window).on('focus.activity', () => {
             this.recordActivity('window_focus');
         });
         
-        // Visibility change
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
                 this.recordActivity('page_focus');
@@ -214,13 +195,11 @@ let activityTracker = {
         debugLog('✅ Activity listeners set up');
     },
     
-    // Record an activity in the queue
     recordActivity(activityType) {
         if (!this.enabled) return;
         
         const now = Date.now();
         
-        // Add to activity queue if not too recent
         if (now - this.lastActivityUpdate >= ACTIVITY_CONFIG.MIN_ACTIVITY_INTERVAL) {
             this.activityQueue.push({
                 type: activityType,
@@ -231,24 +210,20 @@ let activityTracker = {
         }
     },
     
-    // Process queued activities
     processActivityQueue() {
         if (!this.enabled || this.activityQueue.length === 0) return;
         
-        // Get the most recent activity type
         const latestActivity = this.activityQueue[this.activityQueue.length - 1];
         this.activityQueue = []; // Clear queue
         
         const now = Date.now();
         
-        // Only send if enough time has passed
         if (now - this.lastActivityUpdate >= ACTIVITY_CONFIG.MIN_ACTIVITY_INTERVAL) {
             this.sendActivityUpdate(latestActivity.type);
             this.lastActivityUpdate = now;
         }
     },
     
-    // Send activity update to server
     sendActivityUpdate(activityType) {
         if (!this.enabled) return;
         
@@ -264,17 +239,14 @@ let activityTracker = {
                 if (response.status === 'success') {
                     debugLog(`✅ Activity updated: ${activityType}`);
                     
-                    // Handle AFK status changes
                     if (response.afk_status_changed && response.returned_from_afk) {
                         debugLog('🔄 User returned from AFK automatically');
                         this.handleAFKStatusChange(false);
                         
-                        // Show notification
                         if (typeof showToast === 'function') {
                             showToast('You are no longer AFK', 'info');
                         }
                         
-                        // Refresh UI
                         setTimeout(() => {
                             if (typeof loadUsers === 'function') loadUsers();
                             if (typeof loadMessages === 'function') loadMessages();
@@ -284,7 +256,6 @@ let activityTracker = {
                     debugLog('❌ Not in room - stopping activity tracking');
                     this.cleanup();
                     
-                    // Trigger status check
                     if (typeof checkUserStatus === 'function') {
                         checkUserStatus();
                     }
@@ -293,7 +264,6 @@ let activityTracker = {
             error: (xhr, status, error) => {
                 debugError(`⚠️ Activity update failed: ${status} - ${error}`);
                 
-                // If we get a 403 or session error, user might be logged out
                 if (xhr.status === 403 || xhr.status === 401) {
                     this.cleanup();
                 }
@@ -301,7 +271,6 @@ let activityTracker = {
         });
     },
     
-    // Send heartbeat to maintain session
     sendHeartbeat() {
         if (!this.enabled) return;
         
@@ -322,7 +291,6 @@ let activityTracker = {
             error: (xhr, status, error) => {
                 debugError(`💔 Heartbeat error: ${status} - ${error}`);
                 
-                // If heartbeat fails repeatedly, user might be disconnected
                 if (xhr.status === 403 || xhr.status === 401) {
                     debugError('💔 Session appears to be invalid');
                     this.cleanup();
@@ -331,7 +299,6 @@ let activityTracker = {
         });
     },
     
-    // Trigger server-side disconnect checking
     triggerDisconnectCheck() {
         if (!this.enabled) return;
         
@@ -347,7 +314,6 @@ let activityTracker = {
                     const summary = response.summary;
                     debugLog('📊 Disconnect check completed:', summary);
                     
-                    // If there were changes, refresh UI
                     const totalChanges = summary.users_marked_afk + summary.users_disconnected + 
                                        summary.hosts_transferred + summary.rooms_deleted;
                     
@@ -369,7 +335,6 @@ let activityTracker = {
         });
     },
     
-    // Check user's current status
     checkUserStatus() {
         if (!kickDetectionEnabled) return;
         
@@ -432,7 +397,6 @@ let activityTracker = {
         });
     },
     
-    // Handle AFK status changes
     handleAFKStatusChange(isAFK) {
         currentUserAFK = isAFK;
         
@@ -442,6 +406,12 @@ let activityTracker = {
     }
 };
 
+if (typeof debugLog === 'undefined') {
+    window.debugLog = function(...args) {
+        console.log('[DEBUG]', ...args);
+    };
+}
+
 
 
 function checkIfFriend(userId, callback) {
@@ -450,7 +420,6 @@ function checkIfFriend(userId, callback) {
         return;
     }
     
-    // Check cache first
     if (friendshipCache.has(userId)) {
         callback(friendshipCache.get(userId));
         return;
@@ -467,10 +436,8 @@ function checkIfFriend(userId, callback) {
                     friend.friend_user_id == userId && friend.status === 'accepted'
                 );
                 
-                // Cache the result for 30 seconds
                 friendshipCache.set(userId, isFriend);
                 
-                // Clear cache after 30 seconds
                 if (friendshipCacheTimeout.has(userId)) {
                     clearTimeout(friendshipCacheTimeout.get(userId));
                 }
@@ -504,7 +471,6 @@ function clearFriendshipCache(userId = null) {
     }
 }
 
-// ===== MESSAGE FUNCTIONS =====
 function sendMessage() {
     const messageInput = $('#message');
     const message = messageInput.val().trim();
@@ -514,23 +480,132 @@ function sendMessage() {
         return false;
     }
     
-    debugLog('💬 Sending message:', message);
+    debugLog('💬 Preparing to send message:', message);
     
+    validateImagesInMessage(message).then(validation => {
+        if (!validation.valid) {
+            alert(`Cannot send message: ${validation.error}`);
+            messageInput.focus();
+            return;
+        }
+        
+        sendValidatedMessage(message);
+    }).catch(error => {
+        console.error('Image validation error:', error);
+        alert('Cannot send message: Failed to validate images');
+        messageInput.focus();
+    });
+    
+    return false;
+}
+
+async function validateImagesInMessage(message) {
+    const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+    const images = [];
+    let match;
+    
+    while ((match = imageRegex.exec(message)) !== null) {
+        images.push({
+            alt: match[1],
+            url: match[2].trim()
+        });
+    }
+    
+    if (images.length === 0) {
+        return { valid: true };
+    }
+    
+    console.log('Found images to validate:', images);
+    
+    for (let i = 0; i < images.length; i++) {
+        const image = images[i];
+        
+        if (!isValidImageUrl(image.url)) {
+            return {
+                valid: false,
+                error: `Invalid image URL: ${image.url}`
+            };
+        }
+        
+        const isAccessible = await testImageAccessibility(image.url);
+        if (!isAccessible) {
+            return {
+                valid: false,
+                error: `Image not accessible: ${image.url}`
+            };
+        }
+    }
+    
+    return { valid: true };
+}
+
+function isValidImageUrl(url) {
+    try {
+        const urlObj = new URL(url);
+        
+        if (!['http:', 'https:'].includes(urlObj.protocol)) {
+            return false;
+        }
+        
+        const pathname = urlObj.pathname.toLowerCase();
+        const hasValidExtension = /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url);
+        
+        return hasValidExtension;
+    } catch (e) {
+        return false;
+    }
+}
+
+function testImageAccessibility(url) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const timeout = setTimeout(() => {
+            img.onload = img.onerror = null;
+            resolve(false);
+        }, 5000); // 5 second timeout
+        
+        img.onload = () => {
+            clearTimeout(timeout);
+            resolve(true);
+        };
+        
+        img.onerror = () => {
+            clearTimeout(timeout);
+            resolve(false);
+        };
+        
+        const currentDomain = window.location.hostname;
+        let imageUrl = url;
+        
+        try {
+            const urlHost = new URL(url).hostname;
+            if (urlHost !== currentDomain) {
+                imageUrl = `api/image_proxy.php?url=${encodeURIComponent(url)}`;
+            }
+        } catch (e) {
+        }
+        
+        img.src = imageUrl;
+    });
+}
+
+function sendValidatedMessage(message) {
+    const messageInput = $('#message');
     const sendBtn = $('.btn-send-message');
     const originalText = sendBtn.html();
+    
     sendBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
     
-    // Record message sending activity
-    activityTracker.recordActivity('message_send');
+    if (typeof activityTracker !== 'undefined') {
+        activityTracker.recordActivity('message_send');
+    }
     
-    // Prepare data for sending
     const sendData = {
         room_id: roomId,
         message: message
     };
     
-    // Add reply information if replying
-    if (currentReplyTo) {
+    if (typeof currentReplyTo !== 'undefined' && currentReplyTo) {
         sendData.reply_to = currentReplyTo;
     }
     
@@ -542,19 +617,20 @@ function sendMessage() {
         success: function(response) {
             if (response.status === 'success') {
                 messageInput.val('');
-                clearReplyInterface();
+                if (typeof clearReplyInterface === 'function') {
+                    clearReplyInterface();
+                }
                 
-                // Handle AFK status clearing
                 if (response.afk_cleared) {
                     debugLog('🔄 AFK status was cleared due to sending message');
-                    activityTracker.handleAFKStatusChange(false);
+                    if (typeof activityTracker !== 'undefined') {
+                        activityTracker.handleAFKStatusChange(false);
+                    }
                     
-                    // Show notification
                     if (typeof showToast === 'function') {
                         showToast('You are no longer AFK', 'info');
                     }
                     
-                    // Refresh UI
                     setTimeout(() => {
                         if (typeof loadUsers === 'function') loadUsers();
                     }, 500);
@@ -564,7 +640,6 @@ function sendMessage() {
                     loadMessages();
                 }
                 
-                // Quick status check
                 setTimeout(() => {
                     if (typeof checkUserStatus === 'function') {
                         checkUserStatus();
@@ -583,26 +658,51 @@ function sendMessage() {
             messageInput.focus();
         }
     });
-    
-    return false;
 }
 
-function loadMessages() {
-    debugLog('Loading messages for roomId:', roomId);
+function loadMessages(loadOlder = false) {
+    if (isLoadingMessages) return;
+    
+    debugLog('Loading messages for roomId:', roomId, 'loadOlder:', loadOlder, 'offset:', messageOffset);
+    
+    isLoadingMessages = true;
+    
+    if (loadOlder) {
+        $('.load-more-messages').html('<i class="fas fa-spinner fa-spin"></i> Loading...').prop('onclick', null);
+    }
+    
     $.ajax({
         url: 'api/get_messages.php',
         method: 'GET',
-        data: { room_id: roomId },
+        data: { 
+            room_id: roomId,
+            limit: messageLimit,
+            offset: loadOlder ? messageOffset : 0,
+            load_older: loadOlder
+        },
         success: function(response) {
             debugLog('Response from api/get_messages.php:', response);
             try {
-                let messages = JSON.parse(response);
+                let data = JSON.parse(response);
+                
+                if (data.status === 'error') {
+                    throw new Error(data.message);
+                }
+                
+                let messages = data.messages || [];
+                let pagination = data.pagination || {};
+                
+                totalMessageCount = pagination.total_count || 0;
+                hasMoreOlderMessages = pagination.has_more_older || false;
+                
+                debugLog('Pagination info - Total:', totalMessageCount, 'Has more older:', hasMoreOlderMessages, 'Current offset:', messageOffset);
+                
                 let html = '';
                 
                 if (!Array.isArray(messages)) {
                     console.error('Expected array from get_messages, got:', messages);
                     html = '<div class="empty-chat"><i class="fas fa-exclamation-triangle"></i><h5>Error loading messages</h5><p>Please try refreshing the page</p></div>';
-                } else if (messages.length === 0) {
+                } else if (messages.length === 0 && !loadOlder) {
                     html = '<div class="empty-chat"><i class="fas fa-comments"></i><h5>No messages yet</h5><p>Start the conversation!</p></div>';
                 } else {
                     messages.forEach(msg => {
@@ -611,18 +711,67 @@ function loadMessages() {
                 }
                 
                 const chatbox = $('#chatbox');
-                const isAtBottom = chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20;
-                const newMessageCount = messages.length;
-                chatbox.html(html);
-                if (isAtBottom || (newMessageCount > lastMessageCount && !userIsScrolling)) {
-                    chatbox.scrollTop(chatbox[0].scrollHeight);
+                
+                if (loadOlder && messages.length > 0) {
+                    const currentScrollTop = chatbox.scrollTop();
+                    const currentScrollHeight = chatbox[0].scrollHeight;
+                    
+                    $('.load-more-messages').after(html);
+                    
+                    requestAnimationFrame(() => {
+                        const newScrollHeight = chatbox[0].scrollHeight;
+                        const heightDiff = newScrollHeight - currentScrollHeight;
+                        chatbox.scrollTop(currentScrollTop + heightDiff);
+                    });
+                    
+                    messageOffset += messages.length;
+                    
+                    /* Update or hide load more button
+                    if (hasMoreOlderMessages) {
+                        $('.load-more-messages').html('<i class="fas fa-chevron-up"></i> Load More Messages').attr('onclick', 'loadOlderMessages()');
+                    } else {
+                        $('.load-more-messages').remove();
+                    }*/
+                    
+                    debugLog('Loaded older messages:', messages.length, 'New offset:', messageOffset);
+                    
+                } else if (loadOlder && messages.length === 0) {
+                    $('.load-more-messages').remove();
+                    hasMoreOlderMessages = false;
+                    
+                } else if (!loadOlder) {
+                    const wasAtBottom = isInitialLoad || (chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20);
+                    
+                    /* Add load more button if there are older messages
+                    if (hasMoreOlderMessages && messages.length > 0) {
+                        html = '<div class="load-more-messages" onclick="loadOlderMessages()"><i class="fas fa-chevron-up"></i> Load More Messages</div>' + html;
+                    }*/
+                    
+                    chatbox.html(html);
+                    
+                    // Set initial offset to the number of messages loaded
+                    messageOffset = messages.length;
+                    
+                    debugLog('Initial load complete. Messages:', messages.length, 'Initial offset:', messageOffset, 'Has more older:', hasMoreOlderMessages);
+                    
+                    if (wasAtBottom || isInitialLoad) {
+                        setTimeout(() => {
+                            chatbox.scrollTop(chatbox[0].scrollHeight);
+                        }, 50);
+                        isInitialLoad = false;
+                    }
+                    
+                    if (!isInitialLoad && messages.length > lastMessageCount) {
+                        playMessageNotification();
+                        lastPlayedMessageCount = messages.length;
+                    }
+                    lastMessageCount = messages.length;
                 }
-                // Play sound if new messages arrived
-                if (newMessageCount > lastPlayedMessageCount) {
-                    playMessageNotification();
-                    lastPlayedMessageCount = newMessageCount;
+                
+                if (typeof applyAllAvatarFilters === 'function') {
+                    setTimeout(applyAllAvatarFilters, 100);
                 }
-                lastMessageCount = newMessageCount;
+                
             } catch (e) {
                 console.error('JSON parse error:', e, response);
                 $('#chatbox').html('<div class="empty-chat"><i class="fas fa-exclamation-triangle"></i><h5>Error loading messages</h5><p>Failed to parse server response</p></div>');
@@ -630,16 +779,91 @@ function loadMessages() {
         },
         error: function(xhr, status, error) {
             console.error('AJAX error in loadMessages:', status, error, xhr.responseText);
-            $('#chatbox').html('<div class="empty-chat"><i class="fas fa-wifi"></i><h5>Connection Error</h5><p>Failed to load messages. Check your connection.</p></div>');
+            if (loadOlder) {
+                $('.load-more-messages').html('<i class="fas fa-exclamation-triangle"></i> Error - Click to retry').attr('onclick', 'loadOlderMessages()');
+            } else {
+                $('#chatbox').html('<div class="empty-chat"><i class="fas fa-wifi"></i><h5>Connection Error</h5><p>Failed to load messages. Check your connection.</p></div>');
+            }
+        },
+        complete: function() {
+            isLoadingMessages = false;
         }
     });
+}
 
-   
+function loadOlderMessages() {
+    debugLog('loadOlderMessages called. hasMoreOlderMessages:', hasMoreOlderMessages, 'isLoadingMessages:', isLoadingMessages);
+    
+    if (!isLoadingMessages && hasMoreOlderMessages) {
+        loadMessages(true);
+    } else if (isLoadingMessages) {
+        debugLog('Already loading messages, skipping...');
+    } else if (!hasMoreOlderMessages) {
+        debugLog('No more older messages available');
+    }
+}
 
-    // Apply avatar filters after loading messages
-/* Debounce filter application for messages
-clearTimeout(window.messageAvatarFilterTimeout);
-window.messageAvatarFilterTimeout = setTimeout(applyAllAvatarFilters, 300);*/
+$(document).on('click', '.load-more-messages', function(e) {
+    e.preventDefault();
+    debugLog('Load more button clicked via event handler');
+    loadOlderMessages();
+});
+
+function resetMessagePagination() {
+    messageOffset = 0;
+    totalMessageCount = 0;
+    isLoadingMessages = false;
+    hasMoreOlderMessages = false;
+    isInitialLoad = true;
+    $('.load-more-messages').remove();
+}
+
+function pollForNewMessages() {
+    if (isLoadingMessages) return;
+    
+    const chatbox = $('#chatbox');
+    const isAtBottom = chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 100;
+    
+    if (isAtBottom) {
+        $.ajax({
+            url: 'api/get_messages.php',
+            method: 'GET',
+            data: { 
+                room_id: roomId,
+                limit: 5, // Just check last 5 messages
+                offset: 0
+            },
+            success: function(response) {
+                try {
+                    let data = JSON.parse(response);
+                    if (data.status === 'success' && data.messages && data.messages.length > 0) {
+                        const latestMessage = data.messages[data.messages.length - 1];
+                        const currentLatest = $('.chat-message').last().data('message-id');
+                        
+                        if (latestMessage.id != currentLatest) {
+                            const wasAtBottom = chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 50;
+                            if (wasAtBottom) {
+                                loadMessages(); // This will maintain bottom position
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.debug('Poll error:', e);
+                }
+            },
+            error: function() {
+                console.debug('Poll request failed');
+            }
+        });
+    }
+}
+
+function optimizeForMobile() {
+    const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+        messageLimit = 20; // Smaller batches for mobile
+    }
 }
 
 function getUserColor(msg) {
@@ -663,7 +887,6 @@ function renderMessage(msg) {
     const bubbleHue = msg.bubble_hue || 0;
     const bubbleSat = msg.bubble_saturation || 100;
     
-    // Handle announcement messages
     if (msg.type === 'announcement') {
         return `
             <div class="system-message announcement-message">
@@ -727,7 +950,6 @@ function renderMessage(msg) {
     let adminInfo = '';
     let moderatorActions = '';
     
-    // Add moderator actions for moderators/admins
     if ((isAdmin || isModerator) && msg.user_id_string !== currentUserIdString) {
         moderatorActions = `
             <div class="moderator-actions">
@@ -739,7 +961,6 @@ function renderMessage(msg) {
         `;
     }
     
-    // Build reply content if this is a reply
     let replyContent = '';
     if (msg.reply_data) {
         const replyData = msg.reply_data;
@@ -760,7 +981,6 @@ function renderMessage(msg) {
         `;
     }
     
-    // Message actions
     let messageActions = '';
     if (!msg.is_system && msg.type !== 'system' && msg.type !== 'announcement') {
         messageActions = `
@@ -772,7 +992,6 @@ function renderMessage(msg) {
         `;
     }
     
-    // Process mentions in message content
     let processedMessage = processMentionsInContent(msg.message, msg.user_id_string);
     
     return `
@@ -811,7 +1030,6 @@ function renderMessage(msg) {
 }
 
 function processMentionsInContent(content, senderUserId) {
-    // Highlight mentions of current user
     if (content.includes(`data-user="${currentUserIdString}"`)) {
         content = content.replace(
             new RegExp(`<span class="mention" data-user="${currentUserIdString}"`, 'g'),
@@ -822,7 +1040,6 @@ function processMentionsInContent(content, senderUserId) {
     return content;
 }
 
-// ===== USER MANAGEMENT FUNCTIONS =====
 function loadUsers() {
     debugLog('Loading users for roomId:', roomId);
     $.ajax({
@@ -833,7 +1050,6 @@ function loadUsers() {
             debugLog('Response from api/get_room_users.php:', response);
             try {
                 let users = JSON.parse(response);
-                // In loadUsers function, after the JSON.parse, add:
 debugLog('=== AVATAR DEBUG ===');
 debugLog('Raw users data:', users);
 users.forEach((user, index) => {
@@ -903,37 +1119,30 @@ function renderUser(user) {
     
     let badges = '';
 
-    // "You" indicator first
     if (isCurrentUser) {
         badges += '<span class="user-badge badge-you"><i class="fas fa-user-circle"></i> You</span>';
-        // Update current user AFK status
         currentUserAFK = user.is_afk;
         manualAFK = user.manual_afk;
     }
 
-    // AFK Badge (high priority, shows before other badges)
     if (user.is_afk) {
         const afkType = user.manual_afk ? 'Manual' : 'Auto';
         const afkDuration = user.afk_duration_minutes > 0 ? ` (${formatAFKDuration(user.afk_duration_minutes)})` : '';
         badges += `<span class="user-badge badge-afk" title="${afkType} AFK${afkDuration}"><i class="fas fa-bed"></i> AFK</span>`;
     }
 
-    // Admin badge (highest priority)
     if (user.is_admin) {
         badges += '<span class="user-badge badge-admin"><i class="fas fa-shield-alt"></i> Admin</span>';
     }
 
-    // Moderator badge
     if (user.is_moderator && !user.is_admin) {
         badges += '<span class="user-badge badge-moderator"><i class="fas fa-gavel"></i> Moderator</span>';
     }
 
-    // Host badge
     if (user.is_host) {
         badges += '<span class="user-badge badge-host"><i class="fas fa-crown"></i> Host</span>';
     }
 
-    // User type badge
     if (isRegisteredUser && !user.is_admin && !user.is_moderator) {
         badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle"></i> Verified</span>';
     } else if (!isRegisteredUser) {
@@ -944,7 +1153,6 @@ function renderUser(user) {
     if (user.user_id_string !== currentUserIdString) {
         actions = `<div class="user-actions">`;
         
-        // Whisper button for all users (but show if they're AFK)
         const displayName = user.display_name || user.username || user.guest_name || 'Unknown';
         const whisperText = user.is_afk ? '' : '';
         actions += `
@@ -953,7 +1161,6 @@ function renderUser(user) {
             </button>
         `;
         
-        // Friend/PM button for registered users
         if (user.user_id && currentUser.type === 'user') {
             if (friendshipCache.has(user.user_id)) {
                 const isFriend = friendshipCache.get(user.user_id);
@@ -1002,7 +1209,6 @@ function renderUser(user) {
             }
         }
         
-        // Ban button for hosts/admins/moderators (but not on other staff)
         if ((isHost || isAdmin || isModerator) && !user.is_host && !user.is_admin && !user.is_moderator) {
             actions += `
                 <button class="btn btn-ban-user" onclick="showBanModal('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
@@ -1011,7 +1217,6 @@ function renderUser(user) {
             `;
         }
 
-        // Site ban button for moderators/admins
         if ((isAdmin || isModerator) && !user.is_admin && !(user.is_moderator && !isAdmin)) {
             actions += `
                 <button class="btn btn-site-ban-user" onclick="showQuickBanModal('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}', '')">
@@ -1032,7 +1237,6 @@ function renderUser(user) {
         `;*/
     }
     
-    // Apply dimmed styling for AFK users
     const userItemClass = user.is_afk ? 'user-item afk-user' : 'user-item';
     
     return `
@@ -1625,7 +1829,6 @@ function stopYouTubePlayer() {
     youtubePlayerReady = false;
 }
 
-// ===== KICK DETECTION FUNCTIONS =====
 function checkUserStatus() {
     activityTracker.checkUserStatus();
 }
@@ -1770,31 +1973,24 @@ function stopKickDetection() {
     }
 }
 
-// ===== ACTIVITY TRACKING FUNCTIONS =====
 function initializeActivityTracking() {
     debugLog('🚀 Initializing room activity tracking...');
     
-    // Initialize the activity tracker
     activityTracker.init();
     
-    // Set up additional event handlers for activities that should be tracked
     
-    // Track room joining (if this is a page load into a room)
     if (roomId) {
         activityTracker.recordActivity('room_join');
     }
     
-    // Track private message sending
     $(document).on('submit', '.private-message-form', function() {
         activityTracker.recordActivity('private_message');
     });
     
-    // Track whisper sending  
     $(document).on('submit', '.whisper-form', function() {
         activityTracker.recordActivity('whisper');
     });
     
-    // Track AFK toggle
     $(document).on('click', '.btn-toggle-afk', function() {
         activityTracker.recordActivity('manual_activity');
     });
@@ -1838,12 +2034,10 @@ function setupActivityListeners() {
 }
 
 function updateUserActivity(activityType = 'general') {
-    // Updated function that uses the new system
     activityTracker.recordActivity(activityType);
 }
 
 function triggerDisconnectCheck() {
-    // Updated function that uses the new system
     activityTracker.triggerDisconnectCheck();
 }
 
@@ -1852,7 +2046,6 @@ function stopActivityTracking() {
     activityTracker.cleanup();
 }
 
-// ===== ROOM MANAGEMENT FUNCTIONS =====
 function showRoomSettings() {
     debugLog('Loading room settings for roomId:', roomId);
     
@@ -2159,19 +2352,15 @@ function displayRoomSettingsModal(settings) {
         </div>
     `;
     
-    // Remove any existing modal
     $('#roomSettingsModal').remove();
     $('body').append(modalHtml);
     
-    // Set up event handlers
     setupRoomSettingsHandlers();
     
-    // Set up banlist tab click handler
     $('#banlist-tab').on('click', function() {
         loadBannedUsers();
     });
     
-    // Show the modal
     $('#roomSettingsModal').modal('show');
 }
 
@@ -2308,7 +2497,7 @@ function saveRoomSettings() {
         members_only: $('#settingsMembersOnly').is(':checked') ? 1 : 0,
         disappearing_messages: $('#settingsDisappearingMessages').is(':checked') ? 1 : 0,
         message_lifetime_minutes: $('#settingsDisappearingMessages').is(':checked') ? $('#settingsMessageLifetime').val() : 0,
-        permanent: $('#settingsPermanentRoom').is(':checked') ? 1 : 0  // NEW: Add permanent setting
+        permanent: $('#settingsPermanentRoom').is(':checked') ? 1 : 0  
     };
     
     debugLog('Saving room settings:', formData);
@@ -2320,7 +2509,6 @@ function saveRoomSettings() {
     }
     
     if (formData.has_password && !formData.password) {
-        // Only require password if it's a new password protection (not just keeping existing)
         if (!confirm('Password protection is enabled but no password was entered. Do you want to keep the existing password?')) {
             $('#settingsPassword').focus();
             return;
@@ -2345,12 +2533,10 @@ function saveRoomSettings() {
                     message += ' This room is now permanent.';
                 }
                 
-                // Show invite link if generated
                 if (response.invite_code) {
                     const inviteLink = window.location.origin + '/' + response.invite_link;
                     message += '\\n\\nInvite link: ' + inviteLink;
                     
-                    // Try to copy to clipboard
                     if (navigator.clipboard) {
                         navigator.clipboard.writeText(inviteLink).then(() => {
                             message += '\\n\\n(Invite link copied to clipboard!)';
@@ -2367,7 +2553,6 @@ function saveRoomSettings() {
                 
                 $('#roomSettingsModal').modal('hide');
                 
-                // Check if major changes require reload
                 const needsReload = 
                     formData.youtube_enabled !== youtubeEnabled ||
                     formData.theme !== (roomTheme || 'default') ||
@@ -2412,7 +2597,6 @@ function leaveRoom() {
                 let res = JSON.parse(response);
                 
                 if (res.status === 'permanent_room_leave') {
-                    // Handle permanent room leave
                     if (confirm(res.message + ' Are you sure you want to leave?')) {
                         $.ajax({
                             url: 'api/leave_room.php',
@@ -2592,7 +2776,6 @@ function transferHost() {
     }
 }
 
-// ===== BAN SYSTEM FUNCTIONS =====
 function showBanModal(userIdString, userName) {
     const modalHtml = `
         <div class="modal fade" id="banUserModal" tabindex="-1">
@@ -2685,7 +2868,6 @@ function confirmBanUser(userIdString, userName) {
     });
 }
 
-// ===== KNOCK SYSTEM FUNCTIONS =====
 function checkForKnocks() {
     if (!isHost) {
         return;
@@ -2787,7 +2969,6 @@ function dismissKnock(knockId) {
     });
 }
 
-// ===== UTILITY FUNCTIONS =====
 function createTestUser() {
     $.ajax({
         url: 'api/create_test_user.php',
@@ -2815,16 +2996,13 @@ function createTestUser() {
 
 
 
-// Whisper System
 let openWhispers = new Map();
 let whisperTabs = [];
 
-// Helper function to escape special characters for CSS selectors
 function escapeSelector(str) {
     return str.replace(/([ #;&,.+*~':"!^$[\]()=>|\/])/g, '\\$1');
 }
 
-// Helper function to create safe IDs
 function createSafeId(str) {
     return str.replace(/[^a-zA-Z0-9_-]/g, '_');
 }
@@ -2841,7 +3019,6 @@ function openWhisper(userIdString, username) {
     const tabId = `whisper-tab-${safeId}`;
     const windowId = `whisper-${safeId}`;
     
-    // Create tab
     const tabHtml = `
         <div class="whisper-tab" id="${tabId}" onclick="toggleWhisperTab('${userIdString.replace(/'/g, "\\'")}')">
             <span class="whisper-tab-title">💬 ${username}</span>
@@ -2850,7 +3027,6 @@ function openWhisper(userIdString, username) {
         </div>
     `;
     
-    // Create window
     const windowHtml = `
         <div class="whisper-window" id="${windowId}">
             <div class="whisper-body" id="whisper-body-${safeId}">
@@ -2865,7 +3041,6 @@ function openWhisper(userIdString, username) {
         </div>
     `;
     
-    // Add to page
     if ($('#whisper-tabs').length === 0) {
         $('body').append('<div id="whisper-tabs"></div>');
     }
@@ -2889,7 +3064,6 @@ function toggleWhisperTab(userIdString) {
     const tab = $(`#whisper-tab-${safeId}`);
     const isCollapsed = window.hasClass('collapsed');
     
-    // Collapse all other whisper windows
     $('.whisper-window').addClass('collapsed');
     $('.whisper-tab').removeClass('active');
     
@@ -3053,7 +3227,6 @@ function displayWhisperMessages(otherUserIdString, messages) {
         (currentUser.color || 'blue') : 
         (msg.sender_color || 'blue');
     
-    // Fix: Get correct avatar customization for each user  
     const avatarHue = isOwn ? (currentUser.avatar_hue || 0) : (msg.sender_avatar_hue || 0);
     const avatarSat = isOwn ? (currentUser.avatar_saturation || 100) : (msg.sender_avatar_saturation || 100);
     const bubbleHue = isOwn ? (currentUser.bubble_hue || 0) : (msg.bubble_hue || 0);
@@ -3095,7 +3268,6 @@ function markWhisperAsRead(userIdString) {
 }
 
 function checkForNewWhispers() {
-    // Check for new conversations first
     $.ajax({
         url: 'api/room_whispers.php',
         method: 'GET',
@@ -3106,13 +3278,11 @@ function checkForNewWhispers() {
                 response.conversations.forEach(conv => {
                     const userIdString = conv.other_user_id_string;
                     
-                    // If user has unread messages and no open whisper tab, open one
                     if (conv.unread_count > 0 && !openWhispers.has(userIdString)) {
                         const displayName = conv.username || conv.guest_name || 'Unknown';
                         openWhisper(userIdString, displayName);
                     }
                     
-                    // Update unread count for existing tabs
                     if (openWhispers.has(userIdString)) {
                         const data = openWhispers.get(userIdString);
                         data.unreadCount = conv.unread_count;
@@ -3133,7 +3303,6 @@ function checkForNewWhispers() {
         }
     });
     
-    // Also check existing open whisper conversations for new messages
     openWhispers.forEach((data, userIdString) => {
         const safeId = data.safeId;
         const input = $(`#whisper-input-${safeId}`);
@@ -3186,12 +3355,26 @@ function sendFriendRequest(userId, username) {
 
 
 
+window.debugPagination = function() {
+    console.log('=== PAGINATION DEBUG ===');
+    console.log('messageOffset:', messageOffset);
+    console.log('messageLimit:', messageLimit);
+    console.log('hasMoreOlderMessages:', hasMoreOlderMessages);
+    console.log('isLoadingMessages:', isLoadingMessages);
+    console.log('totalMessageCount:', totalMessageCount);
+    console.log('Load more button exists:', $('.load-more-messages').length > 0);
+    console.log('Current messages in DOM:', $('.chat-message').length);
+};
 
 
-
-// ===== INITIALIZATION =====
 $(document).ready(function() {
     debugLog('🏠 Room loaded, roomId:', roomId);
+
+    if (typeof roomId !== 'undefined' && roomId) {
+        optimizeForMobile();
+        
+        setInterval(pollForNewMessages, 5000);
+    }
     
     if (!roomId) {
         console.error('❌ Invalid room ID, redirecting to lounge');
@@ -3199,7 +3382,6 @@ $(document).ready(function() {
         return;
     }
 
-    // Set up event handlers
     $(document).on('submit', '#messageForm', function(e) {
         e.preventDefault();
         sendMessage();
@@ -3228,10 +3410,8 @@ $(document).ready(function() {
         }
     });
 
-    // Add AFK CSS styles
     addAFKStyles();
     
-    // Initialize AFK button state
     setTimeout(updateAFKButton, 1000);
 
     $(document).on('scroll', '#chatbox', function() {
@@ -3241,7 +3421,6 @@ $(document).ready(function() {
         }, 1000);
     });
 
-    // Page visibility and focus tracking
     document.addEventListener('visibilitychange', function() {
         if (!document.hidden) {
             updateUserActivity('page_focus');
@@ -3253,7 +3432,6 @@ $(document).ready(function() {
         setTimeout(checkUserStatus, 100);
     });
 
-    // Initialize YouTube player if enabled
     if (typeof youtubeEnabledGlobal !== 'undefined' && youtubeEnabledGlobal) {
         debugLog('🎬 YouTube enabled for this room');
         youtubeEnabled = true;
@@ -3266,7 +3444,6 @@ if (savedHidden === 'true') {
     playerHidden = true;
 }
         
-        // Set up YouTube API ready callback
         window.onYouTubeIframeAPIReady = function() {
             youtubeAPIReady = true;
             initializeYouTubePlayer();
@@ -3280,14 +3457,12 @@ if (savedHidden === 'true') {
         youtubeEnabled = false;
     }
 
-    // Initialize other systems
     setTimeout(checkUserStatus, 1000);
     kickDetectionInterval = setInterval(checkUserStatus, 5000);
     kickDetectionEnabled = true;
 
     initializeActivityTracking();
 
-    // Start knock checking if user is host
     if (isHost) {
         debugLog('🚪 User is host, starting knock checking...');
         setInterval(checkForKnocks, 1000);
@@ -3302,16 +3477,14 @@ if (savedHidden === 'true') {
     loadMessages();
     loadUsers();
     
-    setInterval(loadMessages, 500);
+    setInterval(loadMessages, 1000);
     setInterval(loadUsers, 1000);
     
     $('#message').focus();
     
     debugLog('✅ Room initialization complete');
 
-    // Add this line at the end of the existing $(document).ready function:
 setTimeout(initializePrivateMessaging, 1000);
-// Start whisper checking
 setInterval(checkForNewWhispers, 1000);
 
 });
@@ -3326,7 +3499,6 @@ $(window).on('beforeunload', function() {
     stopKickDetection();
 });
 
-// ADD THESE FUNCTIONS
 function toggleMobileUsers() {
     const userList = $('#userList');
     const toggleBtn = $('.mobile-users-toggle');
@@ -3345,7 +3517,6 @@ function toggleMobileQueue(section) {
     const queueBtn = $('.mobile-queue-btn').eq(0);
     const suggestionsBtn = $('.mobile-queue-btn').eq(1);
     
-    // Update active button
     $('.mobile-queue-btn').removeClass('active expanded');
     
     if (section === 'queue') {
@@ -3356,7 +3527,6 @@ function toggleMobileQueue(section) {
         $('#suggestions-tab').tab('show');
     }
     
-    // Toggle content visibility
     if (tabContent.hasClass('expanded')) {
         tabContent.removeClass('expanded');
     } else {
@@ -3369,7 +3539,6 @@ function toggleMobileQueue(section) {
     }
 }
 
-// Private Message System
 let openPrivateChats = new Map();
 let friends = [];
 
@@ -3403,7 +3572,6 @@ function loadFriends() {
             if (response.status === 'success') {
                 friends = response.friends;
                 
-                // DEBUG: Log each friend object to see the structure
                 debugLog('Number of friends:', friends.length);
                 friends.forEach((friend, index) => {
                     debugLog(`Friend ${index}:`, {
@@ -3484,7 +3652,6 @@ function updateFriendsPanel() {
     html += '</div></div>';
     $('#friendsList').html(html);
     
-    // Load conversations after friends are loaded
     loadConversations();
 }
 
@@ -3610,7 +3777,6 @@ function openPrivateMessage(userId, username) {
     $('body').append(windowHtml);
     openPrivateChats.set(userId, { username: username, color: 'blue' }); // Default until we fetch
     
-    // Fetch user info including color
     debugLog('Fetching user info for userId:', userId);
     $.ajax({
         url: 'api/get_user_info.php',
@@ -3625,7 +3791,6 @@ function openPrivateMessage(userId, username) {
                 chatData.avatar = response.user.avatar || 'default_avatar.jpg';
                 openPrivateChats.set(userId, chatData);
                 debugLog('Fetched user color:', response.user.color);
-                // Reload messages to apply correct colors
                 loadPrivateMessages(userId);
             }
         },
@@ -3726,7 +3891,6 @@ function displayPrivateMessages(otherUserId, messages) {
     const container = $(`#pm-body-${otherUserId}`);
     
     
-    // Check if user was at bottom before update
     const wasAtBottom = container[0] ? 
         (container.scrollTop() + container.innerHeight() >= container[0].scrollHeight - 20) : true;
     
@@ -3739,12 +3903,10 @@ function displayPrivateMessages(otherUserId, messages) {
     const isOwn = msg.sender_id == currentUser.id;
     const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     
-    // Get user info and color from message data
     const author = isOwn ? (currentUser.username || currentUser.name) : msg.sender_username;
     const avatar = isOwn ? (currentUser.avatar || 'default_avatar.jpg') : (msg.sender_avatar || 'default_avatar.jpg');
     const userColor = isOwn ? (currentUser.color || 'blue') : (msg.sender_color || 'blue');
     
-    // Fix: Use the correct property names from the API response
     const avatarHue = isOwn ? (currentUser.avatar_hue || 0) : (msg.sender_avatar_hue || 0);
     const avatarSat = isOwn ? (currentUser.avatar_saturation || 100) : (msg.sender_avatar_saturation || 100);
     
@@ -3776,7 +3938,6 @@ function displayPrivateMessages(otherUserId, messages) {
     
     container.html(html);
     
-    // Only scroll to bottom if user was already at bottom or it's the first load
     if (wasAtBottom) {
         container.scrollTop(container[0].scrollHeight);
     }
@@ -3785,7 +3946,6 @@ function displayPrivateMessages(otherUserId, messages) {
 function checkForNewPrivateMessages() {
     if (currentUser.type !== 'user') return;
     
-    // Update open chat windows (but don't reload if user is typing)
     openPrivateChats.forEach((data, userId) => {
         const input = $(`#pm-input-${userId}`);
         const isTyping = input.is(':focus') && input.val().length > 0;
@@ -3795,13 +3955,11 @@ function checkForNewPrivateMessages() {
         }
     });
     
-    // Update conversations list if friends panel is open
     if ($('#friendsPanel').is(':visible')) {
         loadConversations();
     }
 }
 
-// Replace the existing syncAvatarCustomization function with this:
 function syncAvatarCustomization() {
     $.ajax({
         url: 'api/update_room_avatar_customization.php',
@@ -3810,7 +3968,6 @@ function syncAvatarCustomization() {
         success: function(response) {
             if (response.status === 'success') {
                 debugLog('Avatar customization synced:', response);
-                // Reload users and messages to show updated avatars
                 setTimeout(() => {
                     loadUsers();
                     loadMessages();
@@ -3832,7 +3989,6 @@ function applyAvatarFilter(imgElement, hue, saturation) {
         const filterValue = `hue-rotate(${hueValue}deg) saturate(${satValue}%)`;
         const filterKey = `${hueValue}-${satValue}`;
         
-        // Only apply if different from current
         if (imgElement.data('filter-applied') !== filterKey) {
             imgElement.css('filter', filterValue);
             imgElement.data('filter-applied', filterKey);
@@ -3847,13 +4003,11 @@ function applyAllAvatarFilters() {
         const hue = $img.data('hue');
         const sat = $img.data('saturation');
         
-        // Skip if no filter data or already processed
         if (hue === undefined || sat === undefined) return;
         
         const filterKey = `${hue}-${sat}`;
         const appliedKey = $img.data('filter-applied');
         
-        // Only apply if not already applied with same values
         if (appliedKey !== filterKey) {
             const filterValue = `hue-rotate(${hue}deg) saturate(${sat}%)`;
             $img.css('filter', filterValue);
@@ -3868,33 +4022,27 @@ function handleAvatarClick(event, userId, username) {
     
     debugLog('Avatar clicked - userId:', userId, 'username:', username); // Debug log
     
-    // Allow anyone to view registered user profiles
     if (userId && userId !== 'null' && userId !== null && userId > 0) {
         if (userId == currentUser.id) {
-            // Allow both registered users and guests to edit their own profile
             showUserProfile(userId, event.target);
         } else {
-            // Anyone can view other registered users' profiles
             showUserProfile(userId, event.target);
         }
     }
 }
 
 if (typeof disappearingMessages !== 'undefined' && disappearingMessages && messageLifetimeMinutes > 0) {
-    // Add disappearing messages indicator to room header
     $('.room-title').append(`
         <span class="badge bg-warning ms-2" title="Messages disappear after ${messageLifetimeMinutes} minutes">
             <i class="fas fa-clock"></i> ${messageLifetimeMinutes}min
         </span>
     `);
     
-    // Show warning about disappearing messages
     setTimeout(() => {
         showToast(`This room has disappearing messages enabled. Messages will be deleted after ${messageLifetimeMinutes} minutes.`, 'warning');
     }, 2000);
 }
 
-// Helper function to copy invite link
 function copyInviteLink(inviteCode) {
     const inviteLink = `${window.location.origin}/lounge.php?invite=${inviteCode}`;
     
@@ -3902,11 +4050,9 @@ function copyInviteLink(inviteCode) {
         navigator.clipboard.writeText(inviteLink).then(() => {
             showToast('Invite link copied to clipboard!', 'success');
         }).catch(() => {
-            // Fallback for older browsers
             fallbackCopyTextToClipboard(inviteLink);
         });
     } else {
-        // Fallback for older browsers
         fallbackCopyTextToClipboard(inviteLink);
     }
 }
@@ -3988,7 +4134,6 @@ function sendAnnouncement() {
             if (response.status === 'success') {
                 alert('Announcement sent successfully to all rooms!');
                 $('#announcementModal').modal('hide');
-                // Refresh messages if in a room
                 if (typeof loadMessages === 'function') {
                     setTimeout(loadMessages, 1000);
                 }
@@ -4083,7 +4228,6 @@ function executeQuickBan(userIdString, username, ipAddress) {
                 alert(response.message);
                 $('#quickBanModal').modal('hide');
                 
-                // Refresh room data
                 setTimeout(() => {
                     loadUsers();
                     loadMessages();
@@ -4102,28 +4246,23 @@ function executeQuickBan(userIdString, username, ipAddress) {
 }
 
 
-// Initialize mentions and replies system
 function initializeMentionsAndReplies() {
     debugLog('🏷️ Initializing mentions and replies system...');
     
-    // Start checking for mentions
     mentionCheckInterval = setInterval(checkForMentions, 1000);
     
-    // Set up event handlers
     setupMentionsEventHandlers();
     
     debugLog('✅ Mentions and replies system initialized');
 }
 
 function setupMentionsEventHandlers() {
-    // Close mention panel when clicking outside
     $(document).on('click', function(e) {
         if (!$(e.target).closest('.mentions-panel, .mentions-counter').length) {
             closeMentionsPanel();
         }
     });
     
-    // Handle ESC key to close reply interface
     $(document).on('keydown', function(e) {
         if (e.key === 'Escape') {
             clearReplyInterface();
@@ -4131,7 +4270,6 @@ function setupMentionsEventHandlers() {
     });
 }
 
-// ===== MENTION FUNCTIONS =====
 
 function checkForMentions() {
     if (!mentionCheckInterval) return;
@@ -4146,7 +4284,6 @@ function checkForMentions() {
                 mentionNotifications = response.mentions;
                 updateMentionCounter(response.unread_count);
                 
-                // Show new mentions notification
                 if (response.unread_count > 0 && !mentionPanelOpen) {
                     showNewMentionNotification(response.unread_count);
                 }
@@ -4181,7 +4318,6 @@ function updateMentionCounter(count) {
 }
 
 function showNewMentionNotification(count) {
-    // Show a brief notification about new mentions
     const notification = $(`
         <div class="mention-notification-toast" style="
             position: fixed;
@@ -4300,18 +4436,14 @@ function displayMentions() {
 }
 
 function jumpToMessage(messageId, mentionId) {
-    // Mark mention as read
     markMentionAsRead(mentionId);
     
-    // Find and highlight the message
     const messageElement = $(`.chat-message[data-message-id="${messageId}"]`);
     if (messageElement.length > 0) {
-        // Scroll to message
         const chatbox = $('#chatbox');
         const messageTop = messageElement.position().top + chatbox.scrollTop();
         chatbox.animate({ scrollTop: messageTop - 100 }, 300);
         
-        // Highlight the message
         messageElement.addClass('mentioned-highlight');
         setTimeout(() => {
             messageElement.removeClass('mentioned-highlight');
@@ -4329,7 +4461,6 @@ function markMentionAsRead(mentionId) {
         dataType: 'json',
         success: function(response) {
             if (response.status === 'success') {
-                // Remove the mention from local array
                 mentionNotifications = mentionNotifications.filter(m => m.id !== mentionId);
                 updateMentionCounter(mentionNotifications.length);
             }
@@ -4353,10 +4484,8 @@ function markAllMentionsAsRead() {
     });
 }
 
-// ===== REPLY FUNCTIONS =====
 
 function showReplyInterface(messageId, author, content) {
-    // Clear any existing reply interface
     clearReplyInterface();
     
     const replyHtml = `
@@ -4380,7 +4509,6 @@ function showReplyInterface(messageId, author, content) {
     $('.chat-input-container').before(replyHtml);
     currentReplyTo = messageId;
     
-    // Focus on message input
     $('#message').focus();
 }
 
@@ -4401,7 +4529,6 @@ function getTimeAgo(date) {
     return date.toLocaleDateString();
 }
 
-// Add CSS for mention highlights
 function addMentionHighlightCSS() {
     if ($('#mentionHighlightCSS').length > 0) return;
     
@@ -4442,8 +4569,7 @@ function addMentionHighlightCSS() {
     $('head').append(css);
 }
 
-// ===== AFK FUNCTIONS =====
-function toggleAFK() {
+    function toggleAFK() {
     const button = $('.btn-toggle-afk');
     const originalText = button.html();
     button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
@@ -4460,7 +4586,6 @@ function toggleAFK() {
                 
                 updateAFKButton();
                 
-                // Refresh user list and messages after a short delay
                 setTimeout(() => {
                     loadUsers();
                     loadMessages();
@@ -4550,7 +4675,6 @@ function addAFKStyles() {
     $('head').append(css);
 }
 
-// ===== ACTIVITY STATUS DISPLAY FOR DEBUGGING =====
 function showActivityStatus() {
     //if (!DEBUG_MODE) return;
     
@@ -4571,7 +4695,6 @@ function showActivityStatus() {
     setTimeout(() => $('.activity-status-debug').remove(), 10000);
 }
 
-// For debugging - show activity status
 if (DEBUG_MODE) {
     setInterval(showActivityStatus, 30000);
 }

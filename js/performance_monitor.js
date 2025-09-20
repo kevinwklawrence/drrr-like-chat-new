@@ -1,6 +1,3 @@
-
-// Add performance optimization classes (keeping the existing code)
-// ... (keep all the existing performance optimization classes from the original login.js)
 class LazyAvatarLoader {
     constructor() {
         this.observer = null;
@@ -9,7 +6,6 @@ class LazyAvatarLoader {
     }
 
     initializeLazyLoading() {
-        // Check if Intersection Observer is supported
         if ('IntersectionObserver' in window) {
             this.observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
@@ -33,7 +29,6 @@ class LazyAvatarLoader {
             img.classList.remove('lazy');
             this.loadedImages.add(img);
             
-            // Add fade-in effect
             img.style.opacity = '0';
             img.onload = () => {
                 img.style.transition = 'opacity 0.3s ease';
@@ -46,37 +41,27 @@ class LazyAvatarLoader {
         if (this.observer) {
             this.observer.observe(img);
         } else {
-            // Fallback for browsers without Intersection Observer
             this.loadImage(img);
         }
     }
 }
 
-// Initialize the lazy loader
 const lazyLoader = new LazyAvatarLoader();
 
-// Modified avatar rendering function
 function renderAvatarsWithLazyLoading() {
-    // Replace your existing PHP image rendering with this approach
     const avatarContainer = document.getElementById('avatarContainer');
     
-    // Example of how to modify your existing avatar generation
-    // You'll need to modify your PHP to output data-src instead of src
     const avatars = avatarContainer.querySelectorAll('img.avatar[data-src]');
     
     avatars.forEach(img => {
-        // Add lazy class for styling
         img.classList.add('lazy');
         
-        // Add placeholder while loading
         img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTgiIGhlaWdodD0iNTgiIHZpZXdCb3g9IjAgMCA1OCA1OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjU4IiBoZWlnaHQ9IjU4IiBmaWxsPSIjZjhmOWZhIi8+CjxjaXJjbGUgY3g9IjI5IiBjeT0iMjkiIHI9IjgiIGZpbGw9IiNkZGUiLz4KPC9zdmc+';
         
-        // Observe for lazy loading
         lazyLoader.observeImage(img);
     });
 }
 
-// Add CSS for lazy loading
 const lazyLoadingCSS = `
 <style>
 .avatar.lazy {
@@ -96,13 +81,9 @@ const lazyLoadingCSS = `
 </style>
 `;
 
-// Add the CSS to your page
 document.head.insertAdjacentHTML('beforeend', lazyLoadingCSS);
 
 
-// ====================
-// 1. IMAGE PRELOADING STRATEGY
-// ====================
 
 class ImagePreloader {
     constructor() {
@@ -141,9 +122,7 @@ class ImagePreloader {
     }
 }
 
-// ====================
-// 2. VIRTUAL SCROLLING FOR LARGE LISTS
-// ====================
+
 
 class VirtualScrollAvatars {
     constructor(container, itemHeight = 70, itemsPerRow = 8) {
@@ -231,9 +210,7 @@ class VirtualScrollAvatars {
     }
 }
 
-// ====================
-// 3. PERFORMANCE MONITORING
-// ====================
+
 
 class PerformanceMonitor {
     constructor() {
@@ -289,9 +266,7 @@ class PerformanceMonitor {
     
 }
 
-// ====================
-// 4. INTELLIGENT CACHING
-// ====================
+
 
 class ImageCache {
     constructor(maxSize = 50) {
@@ -328,24 +303,18 @@ class ImageCache {
     }
 }
 
-// ====================
-// 5. USAGE EXAMPLE
-// ====================
 
-// Initialize all optimization systems
 document.addEventListener('DOMContentLoaded', function() {
     const imageCache = new ImageCache(100);
     const preloader = new ImagePreloader();
     const perfMonitor = new PerformanceMonitor();
     
-    // Enhanced lazy loading with performance monitoring
     class EnhancedLazyLoader extends LazyAvatarLoader {
         loadImage(img) {
             const startTime = performance.now();
             const dataSrc = img.getAttribute('data-src');
             
             if (dataSrc && !this.loadedImages.has(img)) {
-                // Check cache first
                 const cached = imageCache.get(dataSrc);
                 if (cached) {
                     img.src = dataSrc;
@@ -376,16 +345,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Use enhanced loader
     const enhancedLoader = new EnhancedLazyLoader();
     
-    // Monitor memory usage periodically
     setInterval(() => {
         perfMonitor.updateMemoryUsage();
         perfMonitor.updateDisplay();
     }, 5000);
     
-    // Add performance stats display to your page
     const statsDiv = document.createElement('div');
     statsDiv.id = 'performance-stats';
     statsDiv.style.cssText = 'position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-size: 12px; z-index: 1000;';

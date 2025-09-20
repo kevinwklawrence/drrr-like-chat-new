@@ -1,6 +1,18 @@
 <?php
+
 session_start();
-// Add to index.php - right after session_start()
+require_once 'security_config.php';
+
+
+require_once 'config/maintenance.php';
+
+// Check if site is in maintenance mode
+if (shouldShowMaintenance()) {
+    header("Location: maintenance.php");
+    exit;
+}
+
+// Existing firewall check
 if (!isset($_SESSION['firewall_passed'])) {
     header("Location: firewall.php");
     exit;
@@ -14,7 +26,11 @@ if (isset($_SESSION['user'])) {
     }
     exit;
 }
+
+include 'db_connect.php';
+
 ?>
+<?php $versions = include 'config/version.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,13 +44,13 @@ if (isset($_SESSION['user'])) {
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
-    <link href="css/guest_login.css" rel="stylesheet">
-    <link href="css/bubble_colors.css" rel="stylesheet">
-    <link href="css/color_previews.css" rel="stylesheet">
-    <link href="css/private_bubble_colors.css" rel="stylesheet">
-    <link href="css/cus_modal.css" rel="stylesheet">
-    <link href="css/loading.css" rel="stylesheet">
+    <link href="css/style.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/guest_login.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/bubble_colors.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/color_previews.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/private_bubble_colors.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/cus_modal.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/loading.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
     <?php include 'fav.php'; ?>
 </head>
 <body>
@@ -557,10 +573,10 @@ if (isset($_SESSION['user'])) {
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/index.js"></script>
-    <script src="js/script.js"></script>
-    <script src="js/avatar-color-mapping.js"></script>
+    <script src="js/index.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/script.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/avatar-color-mapping.js?v=<?php echo $versions['version']; ?>"></script>
 <?php include 'terms_privacy_modals.php'; ?>
-<script src="js/loading.js"></script>
+<script src="js/loading.js?v=<?php echo $versions['version']; ?>"></script>
 </body>
 </html>

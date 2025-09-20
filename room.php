@@ -1,6 +1,9 @@
 <?php
 session_start();
 
+require_once 'security_config.php';
+
+
 // Debug session data
 error_log("Session data in room.php: " . print_r($_SESSION, true));
 
@@ -178,6 +181,8 @@ if (!empty($user_id_string)) {
 // Get YouTube enabled status
 $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enabled'] : false;
 ?>
+<?php $versions = include 'config/version.php'; ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -190,24 +195,24 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
-    <link href="css/room.css" rel="stylesheet">
-    <link href="css/iframe_styler.css" rel="stylesheet">
-    <link href="css/room.css" rel="stylesheet">
-    <link href="css/whisper.css" rel="stylesheet">
-    <link href="css/profile_editor.css" rel="stylesheet">
-     <link href="css/profile_editor_colors.css" rel="stylesheet">
-     <link href="css/private.css" rel="stylesheet">
-     <link href="css/profile_system.css" rel="stylesheet">
-     <link href="css/bubble_colors.css" rel="stylesheet">
-    <link href="css/color_previews.css" rel="stylesheet">
-    <link href="css/private_bubble_colors.css" rel="stylesheet">
-    <link href="css/moderator.css" rel="stylesheet">
-        <link href="css/mentions_replies.css" rel="stylesheet">
-        <link href="css/afk.css" rel="stylesheet">
-        <link href="css/ghost_mode.css" rel="stylesheet">
-        <link rel="stylesheet" href="css/notifications.css">
-        <link rel="stylesheet" href="css/friend_notifications.css">
+    <link href="css/style.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/room.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/iframe_styler.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/room.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/whisper.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/profile_editor.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+     <link href="css/profile_editor_colors.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+     <link href="css/private.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+     <link href="css/profile_system.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+     <link href="css/bubble_colors.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/color_previews.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/private_bubble_colors.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/moderator.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+        <link href="css/mentions_replies.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+        <link href="css/afk.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+        <link href="css/ghost_mode.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+        <link rel="stylesheet" href="css/notifications.css?v=<?php echo $versions['version']; ?>">
+        <link rel="stylesheet" href="css/friend_notifications.css?v=<?php echo $versions['version']; ?>">
 
 
 
@@ -267,18 +272,19 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
                     <?php if ($is_admin || $is_moderator): ?>
                     <button class="btn <?php echo $ghost_mode ? 'btn-secondary' : 'btn-outline-secondary'; ?> ghost-mode-toggle" onclick="toggleGhostMode()" title="Toggle Ghost Mode - Become invisible to other users">
                         <i class="fas fa-ghost"></i> 
-                        <?php echo $ghost_mode ? 'Visible' : 'Ghost'; ?>
+                        <?php echo $ghost_mode ? '' : ''; ?>
                     </button>
                     <?php endif; ?>
                     
                     <?php if ($is_admin || $is_moderator): ?>
-                        <button class="btn btn-warning me-2" onclick="showAnnouncementModal()">
-                            <i class="fas fa-bullhorn"></i> Announcement
+                        <button class="btn btn-warning" onclick="showAnnouncementModal()">
+                            <i class="fas fa-bullhorn"></i>
                         </button>
-                        <a href="moderator.php" class="btn btn-info me-2" target="_blank">
-                            <i class="fas fa-shield-alt"></i> Mod Panel
+                         <button class="btn btn-info">
+                        <a href="moderator.php" class="text-dark" target="_blank">
+                            <i class="fas fa-shield-alt"></i>
                         </a>
-                        
+                        </button>
                     <?php endif; ?>
                     <button id="notificationBell" class="btn chat-control-btn" title="Notifications">
         <i class="fas fa-bell"></i>
@@ -547,11 +553,11 @@ if (roomTheme !== 'default') {
                         
                         // Add or update ghost mode badge in room header
                         if ($('.badge:contains("Ghost Mode")').length === 0) {
-                            $('.room-title').append('<span class="badge bg-secondary ms-2" title="You are invisible to other users"><i class="fas fa-ghost"></i> Ghost Mode</span>');
+                            $('.room-title').append('<span class="badge bg-secondary ms-2" title="You are invisible to other users"><i class="fas fa-ghost"></i></span>');
                         }
                     } else {
                         button.removeClass('btn-secondary').addClass('btn-outline-secondary');
-                        button.html('<i class="fas fa-ghost"></i> Ghost');
+                        button.html('<i class="fas fa-ghost"></i>');
                         
                         // Remove ghost mode badge
                         $('.badge:contains("Ghost Mode")').remove();
@@ -837,11 +843,11 @@ $('<style>').text(`
     }
 `).appendTo('head');
 </script>
-    <script src="js/room.js"></script>
-    <script src="js/profile_system.js"></script>
-    <script src="js/loading.js"></script>
-    <script src="js/notifications.js"></script>
-    <script src="js/friend_notifications.js"></script>
+    <script src="js/room.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/profile_system.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/loading.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/notifications.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/friend_notifications.js?v=<?php echo $versions['version']; ?>"></script>
 
 </body>
 </html>
