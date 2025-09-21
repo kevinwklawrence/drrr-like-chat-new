@@ -30,6 +30,9 @@ function criticalError(message, error = null) {
 }
 
 
+let youtubeUpdateInterval = null;
+let isYoutubeUpdating = false;
+
 let messageOffset = 0;
 let messageLimit = 50;
 let totalMessageCount = 0;
@@ -413,6 +416,405 @@ if (typeof debugLog === 'undefined') {
 }
 
 
+// Add this to the top of room.js, after the global variables
+
+// Request Management System
+class RequestManager {
+    constructor() {
+        this.activeRequests = 0;
+        this.maxConcurrentRequests = 2;
+        this.requestQueue = [];
+        this.isProcessingQueue = false;
+        this.requestStats = new Map();
+    }
+    
+    async makeRequest(options) {
+        return new Promise((resolve, reject) => {
+            this.requestQueue.push({ options, resolve, reject });
+            this.processQueue();
+        });
+    }
+    
+    async processQueue() {
+        if (this.isProcessingQueue || this.requestQueue.length === 0) {
+            return;
+        }
+        
+        this.isProcessingQueue = true;
+        
+        while (this.requestQueue.length > 0 && this.activeRequests < this.maxConcurrentRequests) {
+            const { options, resolve, reject } = this.requestQueue.shift();
+            this.executeRequest(options, resolve, reject);
+        }
+        
+        this.isProcessingQueue = false;
+        
+        // Continue processing if queue still has items
+        if (this.requestQueue.length > 0) {
+            setTimeout(() => this.processQueue(), 100);
+        }
+    }
+    
+    executeRequest(options, resolve, reject) {
+        this.activeRequests++;
+        const startTime = Date.now();
+        const url = options.url;
+        
+        // Track request stats
+        if (!this.requestStats.has(url)) {
+            this.requestStats.set(url, { count: 0, totalTime: 0, avgTime: 0 });
+        }
+        
+        const originalSuccess = options.success || (() => {});
+        const originalError = options.error || (() => {});
+        
+        options.success = (data) => {
+            this.activeRequests--;
+            const duration = Date.now() - startTime;
+            
+            // Update stats
+            const stats = this.requestStats.get(url);
+            stats.count++;
+            stats.totalTime += duration;
+            stats.avgTime = stats.totalTime / stats.count;
+            
+            if (DEBUG_MODE) {
+                console.log(`✅ ${url}: ${duration}ms (avg: ${Math.round(stats.avgTime)}ms)`);
+            }
+            
+            originalSuccess(data);
+            resolve(data);
+            this.processQueue();
+        };
+        
+        options.error = (xhr, status, error) => {
+            this.activeRequests--;
+            if (DEBUG_MODE) {
+                console.error(`❌ ${url}: ${error}`);
+            }
+            originalError(xhr, status, error);
+            reject(error);
+            this.processQueue();
+        };
+        
+        $.ajax(options);
+    }
+    
+    getStats() {
+        const stats = {};
+        this.requestStats.forEach((value, key) => {
+            stats[key] = {
+                count: value.count,
+                avgTime: Math.round(value.avgTime)
+            };
+        });
+        return stats;
+    }
+}
+
+// Initialize request manager
+const requestManager = new RequestManager();
+
+// Wrapper function for managed requests
+function managedAjax(options) {
+    return requestManager.makeRequest(options);
+}
+
+// Add missing loadYouTubeAPI function
+function loadYouTubeAPI() {
+    if (window.YT && window.YT.Player) {
+        youtubeAPIReady = true;
+        initializeYouTubePlayer();
+        return;
+    }
+    
+    if (document.querySelector('script[src*="youtube"]')) {
+        // Already loading
+        return;
+    }
+    
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    
+    debugLog('🎬 Loading YouTube API...');
+}
+
+// Combined data fetcher for all room data
+function fetchAllRoomData() {
+    const promises = [];
+    
+    // 1. Messages
+    promises.push(
+        managedAjax({
+            url: 'api/get_messages.php',
+            method: 'GET',
+            data: { 
+                room_id: roomId,
+                limit: messageLimit,
+                offset: 0
+            },
+            dataType: 'json'
+        }).then(response => {
+            handleMessagesResponse(response);
+        }).catch(error => {
+            console.error('Messages error:', error);
+        })
+    );
+    
+    // 2. Users
+    promises.push(
+        managedAjax({
+            url: 'api/get_room_users.php',
+            method: 'GET',
+            data: { room_id: roomId },
+            dataType: 'json'
+        }).then(response => {
+            handleUsersResponse(response);
+        }).catch(error => {
+            console.error('Users error:', error);
+        })
+    );
+    
+    // 3. Mentions
+    promises.push(
+        managedAjax({
+            url: 'api/get_mentions.php',
+            method: 'GET',
+            dataType: 'json'
+        }).then(response => {
+            handleMentionsResponse(response);
+        }).catch(error => {
+            console.error('Mentions error:', error);
+        })
+    );
+    
+    // 4. Whispers
+    promises.push(
+        managedAjax({
+            url: 'api/room_whispers.php',
+            method: 'GET',
+            data: { action: 'get_conversations' },
+            dataType: 'json'
+        }).then(response => {
+            handleWhispersResponse(response);
+        }).catch(error => {
+            console.error('Whispers error:', error);
+        })
+    );
+    
+    // 5. YouTube data (if enabled)
+    if (youtubeEnabled) {
+        promises.push(
+            managedAjax({
+                url: 'api/youtube_combined.php',
+                method: 'GET',
+                dataType: 'json'
+            }).then(response => {
+                handleYouTubeResponse(response);
+            }).catch(error => {
+                console.error('YouTube error:', error);
+            })
+        );
+    }
+    
+    return Promise.allSettled(promises);
+}
+
+// Response handlers
+function handleMessagesResponse(data) {
+    if (data.status === 'success') {
+        const messages = data.messages || [];
+        let html = '';
+        
+        if (messages.length === 0) {
+            html = '<div class="empty-chat"><i class="fas fa-comments"></i><h5>No messages yet</h5><p>Start the conversation!</p></div>';
+        } else {
+            messages.forEach(msg => {
+                html += renderMessage(msg);
+            });
+        }
+        
+        const chatbox = $('#chatbox');
+        const wasAtBottom = isInitialLoad || (chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20);
+        
+        chatbox.html(html);
+        
+        if (wasAtBottom || isInitialLoad) {
+            setTimeout(() => {
+                chatbox.scrollTop(chatbox[0].scrollHeight);
+            }, 50);
+            isInitialLoad = false;
+        }
+        
+        if (typeof applyAllAvatarFilters === 'function') {
+            setTimeout(applyAllAvatarFilters, 100);
+        }
+    }
+}
+
+function handleUsersResponse(users) {
+    if (Array.isArray(users)) {
+        let html = '';
+        
+        if (users.length === 0) {
+            html = '<div class="empty-users"><i class="fas fa-users"></i><p>No users in room</p></div>';
+        } else {
+            users.sort((a, b) => {
+                if (a.is_host && !b.is_host) return -1;
+                if (!a.is_host && b.is_host) return 1;
+                const nameA = a.display_name || a.username || a.guest_name || 'Unknown';
+                const nameB = b.display_name || b.username || b.guest_name || 'Unknown';
+                return nameA.localeCompare(nameB);
+            });
+            
+            users.forEach(user => {
+                html += renderUser(user);
+            });
+        }
+        
+        $('#userList').html(html);
+    }
+}
+
+function handleMentionsResponse(response) {
+    if (response.status === 'success') {
+        mentionNotifications = response.mentions;
+        updateMentionCounter(response.unread_count);
+        
+        if (response.unread_count > 0 && !mentionPanelOpen) {
+            showNewMentionNotification(response.unread_count);
+        }
+    }
+}
+
+function handleWhispersResponse(response) {
+    if (response.status === 'success') {
+        response.conversations.forEach(conv => {
+            const userIdString = conv.other_user_id_string;
+            
+            if (conv.unread_count > 0 && !openWhispers.has(userIdString)) {
+                const displayName = conv.username || conv.guest_name || 'Unknown';
+                openWhisper(userIdString, displayName);
+            }
+            
+            if (openWhispers.has(userIdString)) {
+                const data = openWhispers.get(userIdString);
+                data.unreadCount = conv.unread_count;
+                openWhispers.set(userIdString, data);
+                
+                const unreadElement = $(`#whisper-unread-${data.safeId}`);
+                if (conv.unread_count > 0) {
+                    unreadElement.text(conv.unread_count).show();
+                } else {
+                    unreadElement.hide();
+                }
+            }
+        });
+    }
+}
+
+function handleYouTubeResponse(response) {
+    if (response.status === 'success') {
+        // Update sync data
+        const sync = response.sync_data;
+        if (sync.enabled && sync.sync_token !== lastSyncToken) {
+            debugLog('🔄 Syncing player state:', sync);
+            lastSyncToken = sync.sync_token;
+            applySyncState(sync);
+        }
+        
+        // Update queue data  
+        const queueData = response.queue_data;
+        playerQueue = queueData.queue || [];
+        playerSuggestions = queueData.suggestions || [];
+        currentVideoData = queueData.current_playing;
+        
+        renderQueue();
+        renderSuggestions();
+        updateVideoInfo();
+    }
+}
+
+function applySyncState(sync) {
+    if (!youtubePlayerReady) return;
+    
+    if (sync.video_id) {
+        const currentVideoId = getCurrentVideoId();
+        
+        if (currentVideoId !== sync.video_id) {
+            youtubePlayer.loadVideoById({
+                videoId: sync.video_id,
+                startSeconds: sync.current_time
+            });
+        } else {
+            const currentTime = youtubePlayer.getCurrentTime();
+            const timeDiff = Math.abs(currentTime - sync.current_time);
+            
+            if (timeDiff > 3) {
+                youtubePlayer.seekTo(sync.current_time, true);
+            }
+        }
+        
+        if (sync.is_playing && youtubePlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
+            youtubePlayer.playVideo();
+        } else if (!sync.is_playing && youtubePlayer.getPlayerState() === YT.PlayerState.PLAYING) {
+            youtubePlayer.pauseVideo();
+        }
+    } else {
+        if (youtubePlayer.getPlayerState() !== YT.PlayerState.CUED) {
+            youtubePlayer.stopVideo();
+        }
+    }
+}
+
+// Replace all the individual intervals with one managed update cycle
+let roomUpdateInterval = null;
+let isUpdatingRoom = false;
+
+function startRoomUpdates() {
+    if (roomUpdateInterval) {
+        clearInterval(roomUpdateInterval);
+    }
+    
+    // Single update cycle every 3 seconds instead of multiple 1-second intervals
+    roomUpdateInterval = setInterval(updateAllRoomData, 3000);
+    updateAllRoomData(); // Initial load
+    
+    debugLog('🔄 Started managed room updates (every 3s)');
+}
+
+function updateAllRoomData() {
+    if (isUpdatingRoom) {
+        debugLog('⏸️ Skipping update - already in progress');
+        return;
+    }
+    
+    isUpdatingRoom = true;
+    
+    fetchAllRoomData().finally(() => {
+        isUpdatingRoom = false;
+    });
+}
+
+function stopRoomUpdates() {
+    if (roomUpdateInterval) {
+        clearInterval(roomUpdateInterval);
+        roomUpdateInterval = null;
+    }
+    isUpdatingRoom = false;
+    debugLog('🛑 Stopped room updates');
+}
+
+// Debug function to show request stats
+window.showRequestStats = function() {
+    console.table(requestManager.getStats());
+    console.log('Active requests:', requestManager.activeRequests);
+    console.log('Queued requests:', requestManager.requestQueue.length);
+};
+
+
 
 function checkIfFriend(userId, callback) {
     if (!userId || currentUser.type !== 'user') {
@@ -671,7 +1073,7 @@ function loadMessages(loadOlder = false) {
         $('.load-more-messages').html('<i class="fas fa-spinner fa-spin"></i> Loading...').prop('onclick', null);
     }
     
-    $.ajax({
+    managedAjax({
         url: 'api/get_messages.php',
         method: 'GET',
         data: { 
@@ -680,114 +1082,91 @@ function loadMessages(loadOlder = false) {
             offset: loadOlder ? messageOffset : 0,
             load_older: loadOlder
         },
-        success: function(response) {
-            debugLog('Response from api/get_messages.php:', response);
-            try {
-                let data = JSON.parse(response);
-                
-                if (data.status === 'error') {
-                    throw new Error(data.message);
-                }
-                
-                let messages = data.messages || [];
-                let pagination = data.pagination || {};
-                
-                totalMessageCount = pagination.total_count || 0;
-                hasMoreOlderMessages = pagination.has_more_older || false;
-                
-                debugLog('Pagination info - Total:', totalMessageCount, 'Has more older:', hasMoreOlderMessages, 'Current offset:', messageOffset);
-                
-                let html = '';
-                
-                if (!Array.isArray(messages)) {
-                    console.error('Expected array from get_messages, got:', messages);
-                    html = '<div class="empty-chat"><i class="fas fa-exclamation-triangle"></i><h5>Error loading messages</h5><p>Please try refreshing the page</p></div>';
-                } else if (messages.length === 0 && !loadOlder) {
-                    html = '<div class="empty-chat"><i class="fas fa-comments"></i><h5>No messages yet</h5><p>Start the conversation!</p></div>';
-                } else {
-                    messages.forEach(msg => {
-                        html += renderMessage(msg);
-                    });
-                }
-                
-                const chatbox = $('#chatbox');
-                
-                if (loadOlder && messages.length > 0) {
-                    const currentScrollTop = chatbox.scrollTop();
-                    const currentScrollHeight = chatbox[0].scrollHeight;
-                    
-                    $('.load-more-messages').after(html);
-                    
-                    requestAnimationFrame(() => {
-                        const newScrollHeight = chatbox[0].scrollHeight;
-                        const heightDiff = newScrollHeight - currentScrollHeight;
-                        chatbox.scrollTop(currentScrollTop + heightDiff);
-                    });
-                    
-                    messageOffset += messages.length;
-                    
-                    /* Update or hide load more button
-                    if (hasMoreOlderMessages) {
-                        $('.load-more-messages').html('<i class="fas fa-chevron-up"></i> Load More Messages').attr('onclick', 'loadOlderMessages()');
-                    } else {
-                        $('.load-more-messages').remove();
-                    }*/
-                    
-                    debugLog('Loaded older messages:', messages.length, 'New offset:', messageOffset);
-                    
-                } else if (loadOlder && messages.length === 0) {
-                    $('.load-more-messages').remove();
-                    hasMoreOlderMessages = false;
-                    
-                } else if (!loadOlder) {
-                    const wasAtBottom = isInitialLoad || (chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20);
-                    
-                    /* Add load more button if there are older messages
-                    if (hasMoreOlderMessages && messages.length > 0) {
-                        html = '<div class="load-more-messages" onclick="loadOlderMessages()"><i class="fas fa-chevron-up"></i> Load More Messages</div>' + html;
-                    }*/
-                    
-                    chatbox.html(html);
-                    
-                    // Set initial offset to the number of messages loaded
-                    messageOffset = messages.length;
-                    
-                    debugLog('Initial load complete. Messages:', messages.length, 'Initial offset:', messageOffset, 'Has more older:', hasMoreOlderMessages);
-                    
-                    if (wasAtBottom || isInitialLoad) {
-                        setTimeout(() => {
-                            chatbox.scrollTop(chatbox[0].scrollHeight);
-                        }, 50);
-                        isInitialLoad = false;
-                    }
-                    
-                    if (!isInitialLoad && messages.length > lastMessageCount) {
-                        playMessageNotification();
-                        lastPlayedMessageCount = messages.length;
-                    }
-                    lastMessageCount = messages.length;
-                }
-                
-                if (typeof applyAllAvatarFilters === 'function') {
-                    setTimeout(applyAllAvatarFilters, 100);
-                }
-                
-            } catch (e) {
-                console.error('JSON parse error:', e, response);
-                $('#chatbox').html('<div class="empty-chat"><i class="fas fa-exclamation-triangle"></i><h5>Error loading messages</h5><p>Failed to parse server response</p></div>');
+        dataType: 'json'
+    }).then(response => {
+        try {
+            let data = typeof response === 'string' ? JSON.parse(response) : response;
+            
+            if (data.status === 'error') {
+                throw new Error(data.message);
             }
-        },
-        error: function(xhr, status, error) {
-            console.error('AJAX error in loadMessages:', status, error, xhr.responseText);
-            if (loadOlder) {
-                $('.load-more-messages').html('<i class="fas fa-exclamation-triangle"></i> Error - Click to retry').attr('onclick', 'loadOlderMessages()');
+            
+            let messages = data.messages || [];
+            let pagination = data.pagination || {};
+            
+            totalMessageCount = pagination.total_count || 0;
+            hasMoreOlderMessages = pagination.has_more_older || false;
+            
+            let html = '';
+            
+            if (!Array.isArray(messages)) {
+                console.error('Expected array from get_messages, got:', messages);
+                html = '<div class="empty-chat"><i class="fas fa-exclamation-triangle"></i><h5>Error loading messages</h5><p>Please try refreshing the page</p></div>';
+            } else if (messages.length === 0 && !loadOlder) {
+                html = '<div class="empty-chat"><i class="fas fa-comments"></i><h5>No messages yet</h5><p>Start the conversation!</p></div>';
             } else {
-                $('#chatbox').html('<div class="empty-chat"><i class="fas fa-wifi"></i><h5>Connection Error</h5><p>Failed to load messages. Check your connection.</p></div>');
+                messages.forEach(msg => {
+                    html += renderMessage(msg);
+                });
             }
-        },
-        complete: function() {
-            isLoadingMessages = false;
+            
+            const chatbox = $('#chatbox');
+            
+            if (loadOlder && messages.length > 0) {
+                const currentScrollTop = chatbox.scrollTop();
+                const currentScrollHeight = chatbox[0].scrollHeight;
+                
+                $('.load-more-messages').after(html);
+                
+                requestAnimationFrame(() => {
+                    const newScrollHeight = chatbox[0].scrollHeight;
+                    const heightDiff = newScrollHeight - currentScrollHeight;
+                    chatbox.scrollTop(currentScrollTop + heightDiff);
+                });
+                
+                messageOffset += messages.length;
+                
+            } else if (loadOlder && messages.length === 0) {
+                $('.load-more-messages').remove();
+                hasMoreOlderMessages = false;
+                
+            } else if (!loadOlder) {
+                const wasAtBottom = isInitialLoad || (chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20);
+                
+                chatbox.html(html);
+                messageOffset = messages.length;
+                
+                if (wasAtBottom || isInitialLoad) {
+                    setTimeout(() => {
+                        chatbox.scrollTop(chatbox[0].scrollHeight);
+                    }, 50);
+                    isInitialLoad = false;
+                }
+                
+                if (!isInitialLoad && messages.length > lastMessageCount) {
+                    playMessageNotification();
+                    lastPlayedMessageCount = messages.length;
+                }
+                lastMessageCount = messages.length;
+            }
+            
+            if (typeof applyAllAvatarFilters === 'function') {
+                setTimeout(applyAllAvatarFilters, 100);
+            }
+            
+        } catch (e) {
+            console.error('JSON parse error:', e, response);
+            $('#chatbox').html('<div class="empty-chat"><i class="fas fa-exclamation-triangle"></i><h5>Error loading messages</h5><p>Failed to parse server response</p></div>');
         }
+    }).catch(error => {
+        console.error('AJAX error in loadMessages:', error);
+        if (loadOlder) {
+            $('.load-more-messages').html('<i class="fas fa-exclamation-triangle"></i> Error - Click to retry').attr('onclick', 'loadOlderMessages()');
+        } else {
+            $('#chatbox').html('<div class="empty-chat"><i class="fas fa-wifi"></i><h5>Connection Error</h5><p>Failed to load messages. Check your connection.</p></div>');
+        }
+    }).finally(() => {
+        isLoadingMessages = false;
     });
 }
 
@@ -1042,62 +1421,31 @@ function processMentionsInContent(content, senderUserId) {
 
 function loadUsers() {
     debugLog('Loading users for roomId:', roomId);
-    $.ajax({
+    
+    managedAjax({
         url: 'api/get_room_users.php',
         method: 'GET',
         data: { room_id: roomId },
-        success: function(response) {
-            debugLog('Response from api/get_room_users.php:', response);
-            try {
-                let users = JSON.parse(response);
-debugLog('=== AVATAR DEBUG ===');
-debugLog('Raw users data:', users);
-users.forEach((user, index) => {
-    debugLog(`User ${index}:`, {
-        name: user.display_name,
-        avatar_hue: user.avatar_hue,
-        avatar_saturation: user.avatar_saturation,
-        user_avatar_hue: user.user_avatar_hue,
-        user_avatar_saturation: user.user_avatar_saturation
-    });
-});
-                let html = '';
-                
-                if (!Array.isArray(users)) {
-                    console.error('Expected array from get_room_users, got:', users);
-                    html = '<div class="empty-users"><i class="fas fa-exclamation-triangle"></i><p>Error loading users</p></div>';
-                } else if (users.length === 0) {
-                    html = '<div class="empty-users"><i class="fas fa-users"></i><p>No users in room</p></div>';
-                } else {
-                    users.sort((a, b) => {
-                        if (a.is_host && !b.is_host) return -1;
-                        if (!a.is_host && b.is_host) return 1;
-                        const nameA = a.display_name || a.username || a.guest_name || 'Unknown';
-                        const nameB = b.display_name || b.username || b.guest_name || 'Unknown';
-                        return nameA.localeCompare(nameB);
-                    });
-                    
-                    users.forEach(user => {
-                        html += renderUser(user);
-                    });
-                }
-                
-                $('#userList').html(html);
-            } catch (e) {
-                console.error('JSON parse error:', e, response);
-                $('#userList').html('<div class="empty-users"><i class="fas fa-exclamation-triangle"></i><p>Error loading users</p></div>');
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('AJAX error in loadUsers:', status, error, xhr.responseText);
-            $('#userList').html('<div class="empty-users"><i class="fas fa-wifi"></i><p>Connection error</p></div>');
+        dataType: 'json'
+    }).then(response => {
+        try {
+            let users = typeof response === 'string' ? JSON.parse(response) : response;
+            handleUsersResponse(users);
+        } catch (e) {
+            console.error('JSON parse error:', e, response);
+            $('#userList').html('<div class="empty-users"><i class="fas fa-exclamation-triangle"></i><p>Error loading users</p></div>');
         }
+    }).catch(error => {
+        console.error('AJAX error in loadUsers:', error);
+        $('#userList').html('<div class="empty-users"><i class="fas fa-wifi"></i><p>Connection error</p></div>');
     });
+}
 
-    // Apply avatar filters after loading users
-/* Debounce filter application for users
-clearTimeout(window.userAvatarFilterTimeout);
-window.userAvatarFilterTimeout = setTimeout(applyAllAvatarFilters, 300);*/
+if (DEBUG_MODE) {
+    setInterval(() => {
+        console.log('📊 Request Stats:');
+        window.showRequestStats();
+    }, 30000);
 }
 
 function renderUser(user) {
@@ -1289,9 +1637,10 @@ function onYouTubePlayerReady(event) {
     debugLog('🎬 YouTube player ready');
     youtubePlayerReady = true;
     
-    startPlayerSync();
-    startQueueUpdates();
+    //startPlayerSync();
+    //startQueueUpdates();
     syncPlayerState();
+    startYouTubeUpdates();
 }
 
 function onYouTubePlayerStateChange(event) {
@@ -1330,8 +1679,8 @@ function syncPlayerState() {
     if (!youtubeEnabled || !youtubePlayerReady) {
         return;
     }
-    
-    $.ajax({
+    updateYouTubeData();
+   /* $.ajax({
         url: 'api/youtube_sync.php',
         method: 'GET',
         data: { action: 'get_sync' },
@@ -1382,7 +1731,7 @@ function syncPlayerState() {
         error: function(xhr, status, error) {
             debugLog('⚠️ Sync error:', error);
         }
-    });
+    });*/
 }
 
 function updatePlayerSync(videoId, currentTime, isPlaying) {
@@ -1807,14 +2156,9 @@ function showToast(message, type = 'info') {
 function stopYouTubePlayer() {
     debugLog('🛑 Stopping YouTube player system');
     
-    if (playerSyncInterval) {
-        clearInterval(playerSyncInterval);
-        playerSyncInterval = null;
-    }
-    
-    if (queueUpdateInterval) {
-        clearInterval(queueUpdateInterval);
-        queueUpdateInterval = null;
+    if (youtubeUpdateInterval) {
+        clearInterval(youtubeUpdateInterval);
+        youtubeUpdateInterval = null;
     }
     
     if (youtubePlayer && youtubePlayerReady) {
@@ -1827,6 +2171,7 @@ function stopYouTubePlayer() {
     
     youtubeEnabled = false;
     youtubePlayerReady = false;
+    isYoutubeUpdating = false;
 }
 
 function checkUserStatus() {
@@ -3155,37 +3500,30 @@ function sendWhisper(recipientUserIdString) {
 function loadWhisperMessages(otherUserIdString) {
     debugLog('Loading whisper messages for:', otherUserIdString);
     
-    $.ajax({
+    managedAjax({
         url: 'api/room_whispers.php',
         method: 'GET',
         data: {
             action: 'get',
             other_user_id_string: otherUserIdString
         },
-        dataType: 'json',
-        success: function(response) {
-            debugLog('Whisper messages response:', response);
-            if (response.status === 'success') {
-                displayWhisperMessages(otherUserIdString, response.messages);
-            } else {
-                console.error('API error:', response.message);
-                const data = openWhispers.get(otherUserIdString);
-                if (data) {
-                    $(`#whisper-body-${data.safeId}`).html('<div style="color: #f44336; padding: 10px;">Error: ' + response.message + '</div>');
-                }
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('AJAX error details:', {
-                status: status,
-                error: error,
-                responseText: xhr.responseText,
-                statusCode: xhr.status
-            });
+        dataType: 'json'
+    }).then(response => {
+        debugLog('Whisper messages response:', response);
+        if (response.status === 'success') {
+            displayWhisperMessages(otherUserIdString, response.messages);
+        } else {
+            console.error('API error:', response.message);
             const data = openWhispers.get(otherUserIdString);
             if (data) {
-                $(`#whisper-body-${data.safeId}`).html('<div style="color: #f44336; padding: 10px;">Failed to load messages. Check console for details.</div>');
+                $(`#whisper-body-${data.safeId}`).html('<div style="color: #f44336; padding: 10px;">Error: ' + response.message + '</div>');
             }
+        }
+    }).catch(error => {
+        console.error('AJAX error details:', error);
+        const data = openWhispers.get(otherUserIdString);
+        if (data) {
+            $(`#whisper-body-${data.safeId}`).html('<div style="color: #f44336; padding: 10px;">Failed to load messages. Check console for details.</div>');
         }
     });
 }
@@ -3304,14 +3642,17 @@ function checkForNewWhispers() {
     });
     
     openWhispers.forEach((data, userIdString) => {
-        const safeId = data.safeId;
-        const input = $(`#whisper-input-${safeId}`);
-        const isTyping = input.is(':focus') && input.val().length > 0;
-        
-        if (!isTyping) {
-            loadWhisperMessages(userIdString);
-        }
-    });
+    const safeId = data.safeId;
+    const input = $(`#whisper-input-${safeId}`);
+    
+    // Only update if user is not actively typing in this specific whisper
+    if (!input.is(':focus') || input.val().length === 0) {
+        // This will be handled by fetchAllRoomData, no need for individual calls
+    }
+});
+if ($('#friendsPanel').is(':visible')) {
+    // This will be handled by fetchAllRoomData
+}
 }
 
 
@@ -3370,18 +3711,13 @@ window.debugPagination = function() {
 $(document).ready(function() {
     debugLog('🏠 Room loaded, roomId:', roomId);
 
-    if (typeof roomId !== 'undefined' && roomId) {
-        optimizeForMobile();
-        
-        setInterval(pollForNewMessages, 5000);
-    }
-    
     if (!roomId) {
         console.error('❌ Invalid room ID, redirecting to lounge');
         window.location.href = 'lounge.php';
         return;
     }
 
+    // Form handlers
     $(document).on('submit', '#messageForm', function(e) {
         e.preventDefault();
         sendMessage();
@@ -3410,10 +3746,11 @@ $(document).ready(function() {
         }
     });
 
+    // Initialize features
     addAFKStyles();
-    
     setTimeout(updateAFKButton, 1000);
 
+    // Scroll handler
     $(document).on('scroll', '#chatbox', function() {
         userIsScrolling = true;
         setTimeout(function() {
@@ -3421,6 +3758,7 @@ $(document).ready(function() {
         }, 1000);
     });
 
+    // Visibility handlers
     document.addEventListener('visibilitychange', function() {
         if (!document.hidden) {
             updateUserActivity('page_focus');
@@ -3432,18 +3770,21 @@ $(document).ready(function() {
         setTimeout(checkUserStatus, 100);
     });
 
+    // YouTube setup
     if (typeof youtubeEnabledGlobal !== 'undefined' && youtubeEnabledGlobal) {
         debugLog('🎬 YouTube enabled for this room');
         youtubeEnabled = true;
         isYoutubeHost = isHost;
         
+        // Restore hidden state
         const savedHidden = localStorage.getItem(`youtube_hidden_${roomId}`);
-if (savedHidden === 'true') {
-    $('.youtube-player-container').addClass('user-hidden').hide();
-    $('.youtube-player-toggle').addClass('hidden-player').html('<i class="fas fa-video"></i>').attr('title', 'Show Player');
-    playerHidden = true;
-}
+        if (savedHidden === 'true') {
+            $('.youtube-player-container').addClass('user-hidden').hide();
+            $('.youtube-player-toggle').addClass('hidden-player').html('<i class="fas fa-video"></i>').attr('title', 'Show Player');
+            playerHidden = true;
+        }
         
+        // YouTube API callback
         window.onYouTubeIframeAPIReady = function() {
             youtubeAPIReady = true;
             initializeYouTubePlayer();
@@ -3457,43 +3798,56 @@ if (savedHidden === 'true') {
         youtubeEnabled = false;
     }
 
-    setTimeout(checkUserStatus, 1000);
-    kickDetectionInterval = setInterval(checkUserStatus, 5000);
-    kickDetectionEnabled = true;
-
+    // Initialize activity tracking
     initializeActivityTracking();
 
+    // Host-specific features
     if (isHost) {
         debugLog('🚪 User is host, starting knock checking...');
-        setInterval(checkForKnocks, 1000);
+        setInterval(checkForKnocks, 5000); // Reduced frequency
         setTimeout(checkForKnocks, 1000);
     }
 
-     setTimeout(() => {
+    // Initialize mentions and replies
+    setTimeout(() => {
         initializeMentionsAndReplies();
         addMentionHighlightCSS();
     }, 1000);
 
-    loadMessages();
-    loadUsers();
+    // Initialize private messaging for registered users
+    if (currentUser.type === 'user') {
+        setTimeout(initializePrivateMessaging, 1000);
+    }
+
+    // CRITICAL: Replace all the individual intervals with managed updates
     
-    setInterval(loadMessages, 1000);
-    setInterval(loadUsers, 1000);
+    // Remove these old intervals - they're causing the request storm:
+    // setInterval(loadMessages, 1000);
+    // setInterval(loadUsers, 1000);
+    // setInterval(checkForNewWhispers, 1000);
+    // setInterval(checkForMentions, 1000);
     
+    // Use the new managed update system instead:
+    startRoomUpdates();
+
+    // Keep only essential intervals at lower frequencies
+    setTimeout(checkUserStatus, 1000);
+    kickDetectionInterval = setInterval(checkUserStatus, 10000); // Reduced from 5s to 10s
+    
+    // Focus message input
     $('#message').focus();
     
-    debugLog('✅ Room initialization complete');
-
-setTimeout(initializePrivateMessaging, 1000);
-setInterval(checkForNewWhispers, 1000);
-
+    debugLog('✅ Room initialization complete with managed updates');
 });
 
 $(window).on('beforeunload', function() {
-     if (mentionCheckInterval) {
+    stopRoomUpdates(); // Stop managed updates
+    
+    if (mentionCheckInterval) {
         clearInterval(mentionCheckInterval);
         mentionCheckInterval = null;
     }
+    
     stopYouTubePlayer();
     stopActivityTracking();
     stopKickDetection();
@@ -3545,9 +3899,13 @@ let friends = [];
 function initializePrivateMessaging() {
     if (currentUser.type !== 'user') return;
     
+    debugLog('💬 Initializing private messaging...');
     loadFriends();
-    checkForNewPrivateMessages();
-    setInterval(checkForNewPrivateMessages, 3000);
+    
+    // Remove the old interval - whispers are now handled by fetchAllRoomData
+    // setInterval(checkForNewPrivateMessages, 3000);
+    
+    debugLog('✅ Private messaging initialized (using managed updates)');
 }
 
 function showFriendsPanel() {
@@ -3562,36 +3920,22 @@ function closeFriendsPanel() {
 
 function loadFriends() {
     debugLog('Loading friends...');
-    $.ajax({
+    managedAjax({
         url: 'api/friends.php',
         method: 'GET',
         data: { action: 'get' },
-        dataType: 'json',
-        success: function(response) {
-            debugLog('Friends response:', response);
-            if (response.status === 'success') {
-                friends = response.friends;
-                
-                debugLog('Number of friends:', friends.length);
-                friends.forEach((friend, index) => {
-                    debugLog(`Friend ${index}:`, {
-                        id: friend.id,
-                        friend_user_id: friend.friend_user_id,
-                        username: friend.username,
-                        status: friend.status,
-                        request_type: friend.request_type
-                    });
-                });
-                
-                updateFriendsPanel();
-            } else {
-                $('#friendsList').html('<p class="text-danger">Error: ' + response.message + '</p>');
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Friends API error:', error, xhr.responseText);
-            $('#friendsList').html('<p class="text-danger">Failed to load friends. Check console for details.</p>');
+        dataType: 'json'
+    }).then(response => {
+        debugLog('Friends response:', response);
+        if (response.status === 'success') {
+            friends = response.friends;
+            updateFriendsPanel();
+        } else {
+            $('#friendsList').html('<p class="text-danger">Error: ' + response.message + '</p>');
         }
+    }).catch(error => {
+        console.error('Friends API error:', error);
+        $('#friendsList').html('<p class="text-danger">Failed to load friends. Check console for details.</p>');
     });
 }
 
@@ -3701,23 +4045,21 @@ function acceptFriend(friendId) {
 
 function loadConversations() {
     debugLog('Loading conversations...');
-    $.ajax({
+    managedAjax({
         url: 'api/private_messages.php',
         method: 'GET',
         data: { action: 'get_conversations' },
-        dataType: 'json',
-        success: function(response) {
-            debugLog('Conversations response:', response);
-            if (response.status === 'success') {
-                displayConversations(response.conversations);
-            } else {
-                $('#conversationsList').html('<p class="text-danger small">Error loading conversations</p>');
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Conversations API error:', error, xhr.responseText);
-            $('#conversationsList').html('<p class="text-danger small">Failed to load conversations</p>');
+        dataType: 'json'
+    }).then(response => {
+        debugLog('Conversations response:', response);
+        if (response.status === 'success') {
+            displayConversations(response.conversations);
+        } else {
+            $('#conversationsList').html('<p class="text-danger small">Error loading conversations</p>');
         }
+    }).catch(error => {
+        console.error('Conversations API error:', error);
+        $('#conversationsList').html('<p class="text-danger small">Failed to load conversations</p>');
     });
 }
 
@@ -3864,26 +4206,24 @@ function sendPrivateMessage(recipientId) {
 function loadPrivateMessages(otherUserId) {
     debugLog('Loading private messages with user:', otherUserId);
     
-    $.ajax({
+    managedAjax({
         url: 'api/private_messages.php',
         method: 'GET',
         data: {
             action: 'get',
             other_user_id: otherUserId
         },
-        dataType: 'json',
-        success: function(response) {
-            debugLog('Load messages response:', response);
-            if (response.status === 'success') {
-                displayPrivateMessages(otherUserId, response.messages);
-            } else {
-                $(`#pm-body-${otherUserId}`).html('<div style="color: #f44336; padding: 10px;">Error: ' + response.message + '</div>');
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Load messages error:', error, xhr.responseText);
-            $(`#pm-body-${otherUserId}`).html('<div style="color: #f44336; padding: 10px;">Failed to load messages</div>');
+        dataType: 'json'
+    }).then(response => {
+        debugLog('Load messages response:', response);
+        if (response.status === 'success') {
+            displayPrivateMessages(otherUserId, response.messages);
+        } else {
+            $(`#pm-body-${otherUserId}`).html('<div style="color: #f44336; padding: 10px;">Error: ' + response.message + '</div>');
         }
+    }).catch(error => {
+        console.error('Load messages error:', error);
+        $(`#pm-body-${otherUserId}`).html('<div style="color: #f44336; padding: 10px;">Failed to load messages</div>');
     });
 }
 
@@ -3943,7 +4283,7 @@ function displayPrivateMessages(otherUserId, messages) {
     }
 }
 
-function checkForNewPrivateMessages() {
+/*function checkForNewPrivateMessages() {
     if (currentUser.type !== 'user') return;
     
     openPrivateChats.forEach((data, userId) => {
@@ -3958,7 +4298,7 @@ function checkForNewPrivateMessages() {
     if ($('#friendsPanel').is(':visible')) {
         loadConversations();
     }
-}
+}*/
 
 function syncAvatarCustomization() {
     $.ajax({
@@ -4249,12 +4589,14 @@ function executeQuickBan(userIdString, username, ipAddress) {
 function initializeMentionsAndReplies() {
     debugLog('🏷️ Initializing mentions and replies system...');
     
-    mentionCheckInterval = setInterval(checkForMentions, 1000);
+    // Remove the old interval - mentions are now handled by fetchAllRoomData
+    // mentionCheckInterval = setInterval(checkForMentions, 1000);
     
     setupMentionsEventHandlers();
     
-    debugLog('✅ Mentions and replies system initialized');
+    debugLog('✅ Mentions and replies system initialized (using managed updates)');
 }
+
 
 function setupMentionsEventHandlers() {
     $(document).on('click', function(e) {
@@ -4697,4 +5039,89 @@ function showActivityStatus() {
 
 if (DEBUG_MODE) {
     setInterval(showActivityStatus, 30000);
+}
+
+function startYouTubeUpdates() {
+    if (youtubeUpdateInterval) {
+        clearInterval(youtubeUpdateInterval);
+    }
+    
+    // Reduced frequency: every 5 seconds instead of 2-3 seconds
+    youtubeUpdateInterval = setInterval(updateYouTubeData, 5000);
+    updateYouTubeData(); // Initial load
+    debugLog('🔄 Started combined YouTube updates (every 5s)');
+}
+
+function updateYouTubeData() {
+    if (!youtubeEnabled || isYoutubeUpdating) {
+        return;
+    }
+    
+    isYoutubeUpdating = true;
+    
+    $.ajax({
+        url: 'api/youtube_combined.php',
+        method: 'GET',
+        dataType: 'json',
+        timeout: 8000,
+        success: function(response) {
+            if (response.status === 'success') {
+                // Update sync data
+                const sync = response.sync_data;
+                if (sync.enabled && sync.sync_token !== lastSyncToken) {
+                    debugLog('🔄 Syncing player state:', sync);
+                    lastSyncToken = sync.sync_token;
+                    applySyncState(sync);
+                }
+                
+                // Update queue data  
+                const queueData = response.queue_data;
+                playerQueue = queueData.queue || [];
+                playerSuggestions = queueData.suggestions || [];
+                currentVideoData = queueData.current_playing;
+                
+                renderQueue();
+                renderSuggestions();
+                updateVideoInfo();
+            }
+        },
+        error: function(xhr, status, error) {
+            debugLog('⚠️ YouTube update error:', error);
+        },
+        complete: function() {
+            isYoutubeUpdating = false;
+        }
+    });
+}
+
+function applySyncState(sync) {
+    if (!youtubePlayerReady) return;
+    
+    if (sync.video_id) {
+        const currentVideoId = getCurrentVideoId();
+        
+        if (currentVideoId !== sync.video_id) {
+            youtubePlayer.loadVideoById({
+                videoId: sync.video_id,
+                startSeconds: sync.current_time
+            });
+        } else {
+            const currentTime = youtubePlayer.getCurrentTime();
+            const timeDiff = Math.abs(currentTime - sync.current_time);
+            
+            if (timeDiff > 3) {
+                youtubePlayer.seekTo(sync.current_time, true);
+            }
+        }
+        
+        if (sync.is_playing && youtubePlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
+            youtubePlayer.playVideo();
+        } else if (!sync.is_playing && youtubePlayer.getPlayerState() === YT.PlayerState.PLAYING) {
+            youtubePlayer.pauseVideo();
+        }
+    } else {
+        if (youtubePlayer.getPlayerState() !== YT.PlayerState.CUED) {
+            youtubePlayer.stopVideo();
+        }
+    }
 }
