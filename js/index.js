@@ -231,7 +231,7 @@ function handleGuestLogin() {
             if (res.status === 'success') {
                 debugLog('Success - redirecting...');
                 setTimeout(function() {
-                    window.location.href = 'lounge.php';
+                    window.location.href = '/lounge';
                 }, 100);
             } else {
                 resetGuestForm(submitBtn, originalText);

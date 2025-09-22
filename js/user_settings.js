@@ -141,6 +141,15 @@ class UserSettings {
                             </div>-->
                         </div>
 
+                        <div class="theatre-toggle" onclick="togglePlayerVisibility()">
+                                <label for="excludeYouTube">
+                                    <i class="fab fa-youtube"></i>
+                                    YouTube Player Visibility
+                                </label>
+                                <div class="theatre-switch" id="youtubeExclusionSwitch"></div>
+                            </div>
+                        
+
                         <div class="settings-footer">
                             <button class="reset-btn" onclick="userSettingsManager.resetUserSettings()">
                                 <i class="fas fa-undo"></i> Reset to Defaults

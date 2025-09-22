@@ -269,7 +269,7 @@ function handleUserLogin() {
         success: function(res) {
             if (res.status === 'success') {
                 setTimeout(function() {
-                    window.location.href = 'lounge.php';
+                    window.location.href = '/lounge';
                 }, 100);
             } else {
                 resetLoginForm(submitBtn, originalText);

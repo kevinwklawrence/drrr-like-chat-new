@@ -145,58 +145,71 @@ function displayProfilePopup(user, avatarElement) {
 }
 
 function acceptFriendFromProfile(userId) {
-    if (confirm('Accept this friend request?')) {
-        $.ajax({
-            url: 'api/friends.php',
-            method: 'GET',
-            data: { action: 'get' },
-            dataType: 'json',
-            success: function(response) {
-                if (response.status === 'success') {
-                    const pendingRequest = response.friends.find(friend => 
-                        friend.friend_user_id == userId && 
-                        friend.status === 'pending' && 
-                        friend.request_type === 'received'
-                    );
-                    
-                    if (pendingRequest) {
-                        $.ajax({
-                            url: 'api/friends.php',
-                            method: 'POST',
-                            data: {
-                                action: 'accept',
-                                friend_id: pendingRequest.id
-                            },
-                            dataType: 'json',
-                            success: function(acceptResponse) {
-                                if (acceptResponse.status === 'success') {
-                                    alert('Friend request accepted!');
-                                    closeProfilePopup();
-                                    
-                                    if (typeof clearFriendshipCache === 'function') {
-                                        clearFriendshipCache();
-                                    }
-                                    if (typeof loadUsers === 'function') {
-                                        loadUsers();
-                                    }
-                                    if (typeof loadOnlineUsers === 'function') {
-                                        loadOnlineUsers();
-                                    }
-                                } else {
-                                    alert('Error: ' + acceptResponse.message);
+    if (!confirm('Accept this friend request?')) return;
+    
+    // Show loading state
+    showNotification('Processing friend request...', 'info');
+    
+    $.ajax({
+        url: 'api/friends.php',
+        method: 'GET', 
+        data: { action: 'get' },
+        dataType: 'json',
+        timeout: 10000,
+        success: function(response) {
+            if (response.status === 'success') {
+                const pendingRequest = response.friends.find(friend => 
+                    friend.friend_user_id == userId && 
+                    friend.status === 'pending' && 
+                    friend.request_type === 'received'
+                );
+                
+                if (pendingRequest) {
+                    $.ajax({
+                        url: 'api/friends.php',
+                        method: 'POST',
+                        data: {
+                            action: 'accept',
+                            friend_id: pendingRequest.id
+                        },
+                        dataType: 'json',
+                        timeout: 10000,
+                        success: function(acceptResponse) {
+                            if (acceptResponse.status === 'success') {
+                                showNotification('Friend request accepted!', 'success');
+                                closeProfilePopup();
+                                
+                                // Update UI
+                                if (typeof clearFriendshipCache === 'function') {
+                                    clearFriendshipCache();
                                 }
+                                if (typeof loadUsers === 'function') {
+                                    loadUsers();
+                                }
+                                if (typeof loadOnlineUsers === 'function') {
+                                    loadOnlineUsers();
+                                }
+                            } else {
+                                showNotification('Error: ' + (acceptResponse.message || 'Unknown error'), 'error');
                             }
-                        });
-                    } else {
-                        alert('Friend request not found');
-                    }
+                        },
+                        error: function(xhr, status, error) {
+                            showNotification('Error accepting friend request', 'error');
+                        }
+                    });
                 } else {
-                    alert('Error loading friend requests');
+                    showNotification('Friend request not found', 'error');
                 }
+            } else {
+                showNotification('Error loading friend requests', 'error');
             }
-        });
-    }
+        },
+        error: function(xhr, status, error) {
+            showNotification('Error loading friend data', 'error');
+        }
+    });
 }
+
 
 function addFriendFromProfile(username) {
     if (!username) {
@@ -380,6 +393,19 @@ function displayProfileEditor(user) {
                  alt="Selected avatar">
         </div>
         <p class="small text-muted mb-3">Current Selection</p>
+
+        <div class="mb-3" style="background: #444; border-radius: 8px; padding: 15px;">
+    <h6 style="color: #e0e0e0; margin-bottom: 10px;">
+        <i class="fas fa-signature"></i> ${isRegistered ? 'Username' : 'Guest Name'}
+    </h6>
+    <input type="text" 
+           class="form-control" 
+           id="profileNameInput"
+           value="${isRegistered ? (user.username || '') : (user.name || '')}"
+           placeholder="${isRegistered ? 'Enter username' : 'Enter guest name'}"
+           style="background: #333; border: 1px solid #555; color: #fff;">
+    <small class="text-muted mt-1 d-block">No restrictions on name</small>
+</div>
 
         <!-- Avatar Customization Sliders -->
         <div class="avatar-customization mb-4" style="background: #444; border-radius: 8px; padding: 15px;">
@@ -857,6 +883,17 @@ function saveProfileChanges() {
     const changes = {};
     let hasChanges = false;
     
+    // Check for name change
+    const newName = $('#profileNameInput').val().trim();
+    const currentName = isRegistered ? currentUser.username : currentUser.name;
+    
+    if (newName && newName !== currentName) {
+        changes.name = newName;
+        hasChanges = true;
+    }
+    
+    // ... rest of existing code for avatar, color, etc.
+    
     if (selectedAvatar && selectedAvatar !== currentUser.avatar) {
         changes.avatar = selectedAvatar;
         hasChanges = true;
@@ -917,6 +954,18 @@ function saveProfileChanges() {
     
     const savePromises = [];
     
+    // Add name update promise
+    if (changes.name) {
+        savePromises.push(
+            $.ajax({
+                url: 'api/update_name.php',
+                method: 'POST',
+                data: { name: changes.name },
+                dataType: 'json'
+            })
+        );
+    }
+    
     if (changes.avatar) {
         savePromises.push(
             $.ajax({
@@ -939,36 +988,27 @@ function saveProfileChanges() {
         );
     }
     
+    // ... rest of existing save code for avatar customization, profile info, etc.
+    
     if (changes.avatar_hue !== undefined || changes.avatar_saturation !== undefined || 
         changes.bubble_hue !== undefined || changes.bubble_saturation !== undefined) {
-        
-        const customizationData = {};
-        
-        if (changes.avatar_hue !== undefined) {
-            customizationData.avatar_hue = changes.avatar_hue;
-        }
-        if (changes.avatar_saturation !== undefined) {
-            customizationData.avatar_saturation = changes.avatar_saturation;
-        }
-        
-        if (changes.bubble_hue !== undefined) {
-            customizationData.bubble_hue = changes.bubble_hue;
-        }
-        if (changes.bubble_saturation !== undefined) {
-            customizationData.bubble_saturation = changes.bubble_saturation;
-        }
+        const customData = {};
+        if (changes.avatar_hue !== undefined) customData.avatar_hue = changes.avatar_hue;
+        if (changes.avatar_saturation !== undefined) customData.avatar_saturation = changes.avatar_saturation;
+        if (changes.bubble_hue !== undefined) customData.bubble_hue = changes.bubble_hue;
+        if (changes.bubble_saturation !== undefined) customData.bubble_saturation = changes.bubble_saturation;
         
         savePromises.push(
             $.ajax({
                 url: 'api/update_avatar_customization.php',
                 method: 'POST',
-                data: customizationData,
+                data: customData,
                 dataType: 'json'
             })
         );
     }
     
-    if (isRegistered) {
+    if (isRegistered && (changes.bio || changes.status || changes.hyperlinks)) {
         savePromises.push(
             $.ajax({
                 url: 'api/update_user_profile.php',
@@ -985,9 +1025,17 @@ function saveProfileChanges() {
     
     Promise.all(savePromises)
         .then(responses => {
-            const allSuccessful = responses.every(response => response.status === 'success');
+            const allSuccess = responses.every(r => r.status === 'success');
             
-            if (allSuccessful) {
+            if (allSuccess) {
+                // Update local currentUser object
+                if (changes.name) {
+                    if (isRegistered) {
+                        currentUser.username = changes.name;
+                    } else {
+                        currentUser.name = changes.name;
+                    }
+                }
                 if (changes.avatar) {
                     currentUser.avatar = changes.avatar;
                     $('#currentAvatar').attr('src', 'images/' + changes.avatar);
@@ -1041,6 +1089,7 @@ function showProfileSuccessMessage(changes) {
     let message = 'Profile updated successfully!';
     
     const changedItems = [];
+    if (changes.name) changedItems.push('name');
     if (changes.avatar) changedItems.push('avatar');
     if (changes.color) changedItems.push('chat color');
     if (changes.avatar_hue !== undefined || changes.avatar_saturation !== undefined) changedItems.push('avatar colors');

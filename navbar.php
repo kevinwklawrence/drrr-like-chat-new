@@ -16,9 +16,9 @@ $nav_items = [];
 if (!$is_logged_in) {
     // Login pages navigation
     $nav_items = [
-        ['href' => 'index.php', 'icon' => 'fas fa-user-ninja', 'text' => 'Guest Login', 'active' => $current_page === 'index'],
-        ['href' => 'login.php', 'icon' => 'fas fa-sign-in-alt', 'text' => 'Member Login', 'active' => $current_page === 'login'],
-        ['href' => 'register.php', 'icon' => 'fas fa-user-plus', 'text' => 'Create Account', 'active' => $current_page === 'register'],
+        ['href' => '/guest', 'icon' => 'fas fa-user-ninja', 'text' => 'Guest Login', 'active' => $current_page === 'guest'],
+        ['href' => '/member', 'icon' => 'fas fa-sign-in-alt', 'text' => 'Member Login', 'active' => $current_page === 'member'],
+        ['href' => 'register', 'icon' => 'fas fa-user-plus', 'text' => 'Create Account', 'active' => $current_page === 'register'],
         ['href' => 'terms.php', 'icon' => 'fas fa-file-contract', 'text' => 'Terms'],
         ['href' => 'privacy.php', 'icon' => 'fas fa-shield-alt', 'text' => 'Privacy']
     ];
@@ -47,6 +47,7 @@ if (!$is_logged_in) {
     // Room navigation
     $nav_items = [
         ['href' => '#', 'icon' => 'fas fa-plane-departure', 'text' => 'AFK', 'onclick' => 'toggleAFK()', 'class' => 'btn-warning'],
+        ['href' => '#', 'icon' => 'fas fa-user', 'text' => 'Users', 'onclick' => 'toggleMobileUsers()'],
       //  ['id' => 'notificationBell', 'href' => '#', 'icon' => 'fas fa-bell', 'text' => 'Notifications', 'onclick' => 'markAllNotificationsRead()'],
         ['href' => '#', 'icon' => 'fas fa-cog', 'text' => 'Settings', 'onclick' => 'openUserSettings()'],
         ['href' => '#', 'icon' => 'fas fa-door-open', 'text' => 'Leave Room', 'onclick' => 'leaveRoom()', 'class' => 'btn-info']

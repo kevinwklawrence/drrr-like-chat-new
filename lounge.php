@@ -9,7 +9,7 @@ include 'check_site_ban.php';
 checkSiteBan($conn);
 
 if (!isset($_SESSION['user'])) {
-    header("Location: index.php");
+    header("Location: /guest");
     exit;
 }
 
@@ -61,7 +61,7 @@ if (isset($_GET['invite']) && !empty($_GET['invite'])) {
             ];
         } else {
             error_log("INVITE_LINK: Invalid invite code: $invite_code");
-            header("Location: lounge.php?error=invalid_invite");
+            header("Location: /lounge?error=invalid_invite");
             exit;
         }
         $invite_stmt->close();
@@ -405,7 +405,7 @@ function joinInviteRoom(roomId, inviteCode) {
         dataType: 'json',
         success: function(response) {
             if (response.status === 'success') {
-                window.location.href = 'room.php';
+                window.location.href = '/room';
             } else {
                 alert('Error: ' + response.message);
                 button.prop('disabled', false).html(originalText);

@@ -66,7 +66,8 @@ if (isset($_POST['permanent']) && (int)$_POST['permanent'] === 1) {
 }
 
 $user_id_string = $_SESSION['user']['user_id'] ?? '';
-$host_user_id = $_SESSION['user']['type'] === 'registered' ? $_SESSION['user']['user_id'] : null;
+$host_user_id = $_SESSION['user']['type'] === 'user' && isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
+
 
 // Debug log
 error_log("CREATE_ROOM_DEBUG: Received data:");

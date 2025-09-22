@@ -356,7 +356,7 @@ function displayRoomsWithUsers(rooms) {
                                 <div>
                                     <div class="fw-bold">${hostName}</div>
                                     <div class="user-badges">
-                                        ${parseInt(host.is_admin) === 1 ? '<span class="badge bg-danger badge-sm">Admin</span>' : ''}
+                                        ${parseInt(host.is_admin) === 1 ? '<span class="user-badge badge-admin"><i class="fas fa-shield-alt" title="Admin"></i></span>' : ''}
                                         ${host.user_type === 'registered' || host.user_id ? '<span class="badge bg-success badge-sm">Verified</span>' : '<span class="badge bg-secondary badge-sm">Guest</span>'}
                                         ${isPermanent ? '<span class="badge bg-warning badge-sm">Offline Host</span>' : ''}
                                     </div>
@@ -516,7 +516,7 @@ window.joinRoom = function(roomId) {
                 if (response.used_room_key) {
                     loadUserRoomKeys();
                 }
-                window.location.href = 'room.php';
+                window.location.href = '/room';
             } else {
                 if (response.message && response.message.toLowerCase().includes('password')) {
                     showPasswordModal(roomId, 'Room ' + roomId);
@@ -570,7 +570,7 @@ function loadOnlineUsers() {
                 }
                 
                 // Redirect immediately
-                window.location.href = 'index.php';
+                window.location.href = '/guest';
                 return;
             }
             
@@ -584,7 +584,7 @@ function loadOnlineUsers() {
             // Check if it's an authentication error
             if (xhr.status === 401 || xhr.status === 403) {
                 console.log('Authentication error - redirecting to index page');
-                window.location.href = 'index.php';
+                window.location.href = '/guest';
                 return;
             }
             
@@ -635,10 +635,10 @@ function displayOnlineUsers(users) {
 
             let badges = '';
             if (user.is_admin) {
-                badges += '<span class="badge bg-danger badge-sm">Admin</span> ';
+                badges += '<span class="user-badge badge-admin me-2"><i class="fas fa-shield-alt" title="Admin"></i>Admin</span>';
             }
             if (user.is_moderator) {
-                badges += '<span class="badge bg-warning badge-sm">Mod</span> ';
+                badges += '<span class="user-badge badge-mod me-2"><i class="fas fa-shield-alt" title="Moderator"></i>Moderator</span>';
             }
             
             html += `
@@ -767,7 +767,7 @@ window.joinRoomWithPassword = function(roomId) {
         dataType: 'json',
         success: function(response) {
             if (response.status === 'success') {
-                window.location.href = 'room.php';
+                window.location.href = '/room';
             } else {
                 alert('Error: ' + response.message);
                 $('#roomPasswordInput').val('').focus();
@@ -1128,7 +1128,7 @@ window.createRoom = function() {
                 }
                 
                 setTimeout(() => {
-                    window.location.href = 'room.php';
+                    window.location.href = '/room';
                 }, 0);
             } else {
                 alert('Error: ' + response.message);
@@ -1566,6 +1566,11 @@ function addFriend() {
 }
 
 function acceptFriend(friendId) {
+    // Disable button to prevent double-clicks
+    const acceptBtn = $(`button[onclick="acceptFriend(${friendId})"]`);
+    const originalHtml = acceptBtn.html();
+    acceptBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+    
     $.ajax({
         url: 'api/friends.php',
         method: 'POST',
@@ -1574,13 +1579,39 @@ function acceptFriend(friendId) {
             friend_id: friendId
         },
         dataType: 'json',
+        timeout: 10000, // 10 second timeout
         success: function(response) {
             if (response.status === 'success') {
-                alert('Friend request accepted!');
+                // Success - show brief feedback then reload
+                showNotification('Friend request accepted!', 'success');
                 loadFriends();
+                
+                // Update other UI elements if they exist
+                if (typeof clearFriendshipCache === 'function') {
+                    clearFriendshipCache();
+                }
+                if (typeof loadUsers === 'function') {
+                    loadUsers();
+                }
             } else {
-                alert('Error: ' + response.message);
+                showNotification('Error: ' + (response.message || 'Unknown error'), 'error');
             }
+        },
+        error: function(xhr, status, error) {
+            console.error('Accept friend error:', {xhr, status, error});
+            let errorMsg = 'Network error occurred';
+            
+            if (status === 'timeout') {
+                errorMsg = 'Request timed out. Please try again.';
+            } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            }
+            
+            showNotification('Error accepting friend request: ' + errorMsg, 'error');
+        },
+        complete: function() {
+            // Re-enable button
+            acceptBtn.prop('disabled', false).html(originalHtml);
         }
     });
 }

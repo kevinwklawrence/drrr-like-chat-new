@@ -74,7 +74,8 @@ $(document).ready(function() {
             success: function(res) {
                 debugLog('Response from api/join_lounge.php:', res);
                 if (res.status === 'success') {
-                    window.location.href = 'lounge.php';
+                    window.location.href = '/lounge';
+
                 } else {
                     alert('Error: ' + (res.message || 'Unknown error'));
                 }
@@ -104,7 +105,8 @@ $('#userLoginForm').submit(function(e) {
         success: function(res) {
             debugLog('Response from api/login.php:', res);
             if (res.status === 'success') {
-                window.location.href = 'lounge.php';
+                window.location.href = '/lounge';
+
             } else {
                 alert('Error: ' + (res.message || 'Unknown error'));
             }
@@ -165,7 +167,7 @@ $('#userLoginForm').submit(function(e) {
                 success: function(res) {
                     debugLog('Response from api/join_room.php:', res);
                     if (res.status === 'success') {
-                        window.location.href = `room.php?room_id=${roomId}`;
+                        window.location.href = `/room?room_id=${roomId}`;
                     } else {
                         alert('Error: ' + (res.message || 'Unknown error'));
                     }
@@ -184,7 +186,7 @@ $('#userLoginForm').submit(function(e) {
                 success: function(res) {
                     debugLog('Response from api/join_room.php:', res);
                     if (res.status === 'success') {
-                        window.location.href = `room.php?room_id=${roomId}`;
+                        window.location.href = `/room?room_id=${roomId}`;
                     } else {
                         alert('Error: ' + (res.message || 'Unknown error'));
                     }
@@ -224,7 +226,7 @@ $('#userLoginForm').submit(function(e) {
                 if (res.status === 'success') {
                     $('#createRoomModal').modal('hide');
                     $('#createRoomForm')[0].reset();
-                    window.location.href = `room.php?room_id=${res.room_id}`;
+                    window.location.href = `/room?room_id=${res.room_id}`;
                 } else {
                     alert('Error: ' + (res.message || 'Unknown error'));
                 }
@@ -245,7 +247,7 @@ $('#userLoginForm').submit(function(e) {
             success: function(res) {
                 debugLog('Response from api/logout.php:', res);
                 if (res.status === 'success') {
-                    window.location.href = 'index.php';
+                    window.location.href = '/guest';
                 } else {
                     alert('Error: ' + (res.message || 'Unknown error'));
                 }
@@ -261,3 +263,78 @@ $('#userLoginForm').submit(function(e) {
         loadChatrooms();
     }
 });
+
+function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    $('.notification-toast').remove();
+    
+    const typeColors = {
+        success: '#28a745',
+        error: '#dc3545', 
+        warning: '#ffc107',
+        info: '#17a2b8'
+    };
+    
+    const toast = $(`
+        <div class="notification-toast" style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${typeColors[type] || typeColors.info};
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            max-width: 300px;
+            font-size: 14px;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        ">
+            ${message}
+        </div>
+    `);
+    
+    $('body').append(toast);
+    
+    // Animate in
+    setTimeout(() => {
+        toast.css({
+            opacity: 1,
+            transform: 'translateX(0)'
+        });
+    }, 10);
+    
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+        toast.css({
+            opacity: 0,
+            transform: 'translateX(100%)'
+        });
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+// Mobile-optimized profile popup positioning
+function adjustProfilePopupForMobile() {
+    const popup = $('.profile-popup');
+    if (!popup.length) return;
+    
+    const isMobile = window.innerWidth <= 768;
+    
+    if (isMobile) {
+        popup.css({
+            position: 'fixed',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            maxWidth: '90vw',
+            maxHeight: '80vh',
+            overflow: 'auto'
+        });
+    }
+}
+
+// Call on window resize
+$(window).on('resize', adjustProfilePopupForMobile);

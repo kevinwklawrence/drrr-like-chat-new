@@ -229,7 +229,7 @@ function leaveRoom() {
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                window.location.href = 'lounge.php';
+                window.location.href = '/lounge';
             } else {
                 showToast('Failed to leave room: ' + (data.message || 'Unknown error'), 'error');
             }

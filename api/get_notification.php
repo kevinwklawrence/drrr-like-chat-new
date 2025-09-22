@@ -286,47 +286,77 @@ try {
             break;
             
         case 'accept_friend':
-            $friend_request_id = str_replace('friend_', '', $notification_id);
-            
-            // Get the friend request details
-            $stmt = $conn->prepare("SELECT user_id FROM friends WHERE id = ? AND friend_id = ? AND status = 'pending'");
-            $stmt->bind_param("ii", $friend_request_id, $user_id);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            if ($result->num_rows === 0) {
-                echo json_encode(['status' => 'error', 'message' => 'Friend request not found']);
-                exit;
-            }
-            
-            $request_data = $result->fetch_assoc();
-            $sender_id = $request_data['user_id'];
-            $stmt->close();
-            
-            // Update the original request
-            $stmt = $conn->prepare("UPDATE friends SET status = 'accepted' WHERE id = ?");
-            $stmt->bind_param("i", $friend_request_id);
-            $stmt->execute();
-            $stmt->close();
-            
-            // Add reverse friendship
-            $stmt = $conn->prepare("INSERT INTO friends (user_id, friend_id, status) VALUES (?, ?, 'accepted') ON DUPLICATE KEY UPDATE status = 'accepted'");
-            $stmt->bind_param("ii", $user_id, $sender_id);
-            $stmt->execute();
-            $stmt->close();
-            
-            echo json_encode(['status' => 'success', 'message' => 'Friend request accepted']);
-            break;
-            
-        case 'reject_friend':
-            $friend_request_id = str_replace('friend_', '', $notification_id);
-            $stmt = $conn->prepare("DELETE FROM friends WHERE id = ? AND friend_id = ? AND status = 'pending'");
-            $stmt->bind_param("ii", $friend_request_id, $user_id);
-            $stmt->execute();
-            $stmt->close();
-            
-            echo json_encode(['status' => 'success', 'message' => 'Friend request rejected']);
-            break;
+    $friend_request_id = str_replace('friend_', '', $notification_id);
+    
+    // FIXED: Remove the incorrect friend_id filter
+    $stmt = $conn->prepare("SELECT user_id, friend_id FROM friends WHERE id = ? AND status = 'pending'");
+    $stmt->bind_param("i", $friend_request_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        echo json_encode(['status' => 'error', 'message' => 'Friend request not found']);
+        exit;
+    }
+    
+    $request_data = $result->fetch_assoc();
+    $sender_id = $request_data['user_id'];
+    $receiver_id = $request_data['friend_id'];
+    $stmt->close();
+    
+    // FIXED: Verify the current user is the intended recipient
+    if ($receiver_id != $user_id) {
+        echo json_encode(['status' => 'error', 'message' => 'Not authorized to accept this request']);
+        exit;
+    }
+    
+    // Update the original request
+    $stmt = $conn->prepare("UPDATE friends SET status = 'accepted' WHERE id = ?");
+    $stmt->bind_param("i", $friend_request_id);
+    $stmt->execute();
+    $stmt->close();
+    
+    // Add reverse friendship
+    $stmt = $conn->prepare("INSERT INTO friends (user_id, friend_id, status) VALUES (?, ?, 'accepted') ON DUPLICATE KEY UPDATE status = 'accepted'");
+    $stmt->bind_param("ii", $user_id, $sender_id);
+    $stmt->execute();
+    $stmt->close();
+    
+    echo json_encode(['status' => 'success', 'message' => 'Friend request accepted']);
+    break;
+
+case 'reject_friend':
+    $friend_request_id = str_replace('friend_', '', $notification_id);
+    
+    // FIXED: First verify the request exists and user is authorized
+    $stmt = $conn->prepare("SELECT user_id, friend_id FROM friends WHERE id = ? AND status = 'pending'");
+    $stmt->bind_param("i", $friend_request_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        echo json_encode(['status' => 'error', 'message' => 'Friend request not found']);
+        exit;
+    }
+    
+    $request_data = $result->fetch_assoc();
+    $receiver_id = $request_data['friend_id'];
+    $stmt->close();
+    
+    // FIXED: Verify the current user is the intended recipient
+    if ($receiver_id != $user_id) {
+        echo json_encode(['status' => 'error', 'message' => 'Not authorized to reject this request']);
+        exit;
+    }
+    
+    // Delete the request
+    $stmt = $conn->prepare("DELETE FROM friends WHERE id = ?");
+    $stmt->bind_param("i", $friend_request_id);
+    $stmt->execute();
+    $stmt->close();
+    
+    echo json_encode(['status' => 'success', 'message' => 'Friend request rejected']);
+    break;
             
         case 'mark_all_read':
             // Mark all mentions as read

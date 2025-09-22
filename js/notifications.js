@@ -231,7 +231,7 @@ function getTimeAgo(timestamp) {
 
 function playReplyOrMentionSound() {
     const audio = new Audio('/sounds/reply_or_mention_notification.mp3');
-   // audio.play();
+    audio.play();
 }
 
 $(document).ready(function() {

@@ -11,13 +11,15 @@ if (!isset($_SESSION['user'])) {
 include '../db_connect.php';
 
 try {
-    // Active threshold in minutes (2 minutes)
+    // Active threshold in minutes (30 minutes)
     $active_threshold = 30;
     
-    // First, identify and logout users who exceed the threshold
-    $inactive_users_sql = "SELECT user_id_string, username, guest_name 
-                          FROM global_users 
-                          WHERE last_activity < DATE_SUB(NOW(), INTERVAL ? MINUTE)";
+    // First, identify and logout users who exceed the threshold (exclude ghost mode users from auto-logout)
+    $inactive_users_sql = "SELECT gu.user_id_string, gu.username, gu.guest_name 
+                          FROM global_users gu
+                          LEFT JOIN users u ON gu.username = u.username
+                          WHERE gu.last_activity < DATE_SUB(NOW(), INTERVAL ? MINUTE)
+                          AND COALESCE(u.ghost_mode, 0) = 0";
     
     $inactive_stmt = $conn->prepare($inactive_users_sql);
     $inactive_stmt->bind_param("i", $active_threshold);
@@ -105,7 +107,7 @@ try {
         error_log("Auto-logged out " . count($logged_out_users) . " inactive users: " . implode(', ', $logged_out_users));
     }
     
-    // Now get the remaining active users
+    // Now get the remaining active users (exclude ghost mode users from display)
     $columns_check = $conn->query("SHOW COLUMNS FROM global_users");
     $available_columns = [];
     while ($row = $columns_check->fetch_assoc()) {
@@ -114,34 +116,43 @@ try {
     
     // Build the select fields
     $select_fields = [
-        'user_id_string',
-        'username', 
-        'guest_name', 
-        'avatar', 
-        'guest_avatar',
-        'is_admin',
-        'color',
-        'last_activity',
-        'TIMESTAMPDIFF(SECOND, last_activity, NOW()) as seconds_since_activity'
+        'gu.user_id_string',
+        'gu.username', 
+        'gu.guest_name', 
+        'gu.avatar', 
+        'gu.guest_avatar',
+        'gu.is_admin',
+        'gu.color',
+        'gu.last_activity',
+        'TIMESTAMPDIFF(SECOND, gu.last_activity, NOW()) as seconds_since_activity'
     ];
+    
+    // Add is_moderator if it exists
+    if (in_array('is_moderator', $available_columns)) {
+        $select_fields[] = 'gu.is_moderator';
+    } else {
+        $select_fields[] = '0 as is_moderator';
+    }
     
     // Add avatar customization fields if they exist
     if (in_array('avatar_hue', $available_columns)) {
-        $select_fields[] = 'avatar_hue';
+        $select_fields[] = 'gu.avatar_hue';
     } else {
         $select_fields[] = '0 as avatar_hue';
     }
     
     if (in_array('avatar_saturation', $available_columns)) {
-        $select_fields[] = 'avatar_saturation';
+        $select_fields[] = 'gu.avatar_saturation';
     } else {
         $select_fields[] = '100 as avatar_saturation';
     }
     
     $sql = "SELECT " . implode(', ', $select_fields) . "
-            FROM global_users 
-            WHERE last_activity >= DATE_SUB(NOW(), INTERVAL ? MINUTE)
-            ORDER BY last_activity DESC
+            FROM global_users gu
+            LEFT JOIN users u ON gu.username = u.username
+            WHERE gu.last_activity >= DATE_SUB(NOW(), INTERVAL ? MINUTE)
+            AND COALESCE(u.ghost_mode, 0) = 0
+            ORDER BY gu.last_activity DESC
             LIMIT 50";
     
     $stmt = $conn->prepare($sql);
@@ -189,6 +200,7 @@ try {
             'avatar' => $avatar,
             'guest_avatar' => $row['guest_avatar'],
             'is_admin' => (int)$row['is_admin'],
+            'is_moderator' => (int)($row['is_moderator'] ?? 0),
             'color' => $row['color'] ?? 'black',
             'last_activity' => $row['last_activity'],
             'seconds_since_activity' => $seconds_since,
@@ -201,7 +213,7 @@ try {
     $stmt->close();
     
     // Log the count for debugging
-    $log_message = "Online users query returned " . count($users) . " active users (threshold: {$active_threshold} minutes)";
+    $log_message = "Online users query returned " . count($users) . " active users (threshold: {$active_threshold} minutes, ghost mode excluded)";
     if (!empty($logged_out_users)) {
         $log_message .= ". Auto-logged out: " . count($logged_out_users) . " users";
     }

@@ -299,26 +299,6 @@
             white-space: nowrap;
         }
         
-        .badge-admin {
-            background: linear-gradient(45deg, #dc3545, #c82333);
-            color: white;
-        }
-        
-        .badge-host {
-            background: linear-gradient(45deg, #ffc107, #ff9800);
-            color: #000;
-        }
-        
-        .badge-verified {
-            background: linear-gradient(45deg, #28a745, #20c997);
-            color: white;
-        }
-        
-        .badge-guest {
-            background: linear-gradient(45deg, #6c757d, #5a6268);
-            color: white;
-        }
-        
         /* System Messages */
         .system-message {
             text-align: center;
@@ -465,7 +445,7 @@
         .sidebar-content {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
+            /* padding: 20px; */
         }
         
         .sidebar-content::-webkit-scrollbar {
@@ -485,10 +465,22 @@
         .user-item {
             background: #333;
             border: 1px solid #404040;
-            border-radius: 12px;
+            border-radius: 0;
             padding: 12px;
-            margin-bottom: 12px;
+            margin-bottom: 0;
             transition: all 0.2s ease;
+        }
+
+        .you-identifier {
+            border-color: #53537ad4;
+            background-color: #3c3c73d4;
+            box-shadow: 0px 0px 5px #3c3c73d4;
+        }
+
+        .you-identifier:hover {
+            border-color: #53537a !important;
+            background-color: #3c3c73 !important;
+            box-shadow: 0px 0px 5px #3c3c73 !important;
         }
         
         .user-item:hover {
@@ -635,8 +627,11 @@
     }
 
             .chat-message {
-            margin-bottom: 0;
+            margin-bottom: 8px;
+            padding:8px;
             position: relative;
+            border:1px solid #ffffff12;
+                border-radius: 4px;
             
                 /* FIXED: Added position relative for avatar positioning */
             /*animation: messageSlideIn 0.3s ease-out;*/
@@ -682,7 +677,6 @@
         flex-direction: row;
         align-items: flex-start;
         gap: 6px;
-        margin-bottom: 16px;
     }
     
     .room-actions {
@@ -718,11 +712,10 @@
     /* YouTube Player Mobile */
     .youtube-player-container {
         width: 100% !important;
-        order: -1;
         border-right: none;
         border-bottom: 1px solid #333;
-        max-height: 330px;
-        overflow-y: auto;
+        bottom: 0;
+        order: 2;
     }
     
     .youtube-player-container.user-hidden {
@@ -777,6 +770,7 @@
     
     .sidebar-header {
         padding: 10px 15px;
+        display: none;
     }
     
     .sidebar-content {
@@ -811,6 +805,8 @@
     
     /* Messages Mobile */
     .message-bubble {
+        position:relative;
+        bottom:8px;
         max-width: calc(100% - 45px);
         margin-left: 50px;
         padding: 4px 10px;
@@ -866,6 +862,7 @@
         width: 45px;
         height: 45px;
         font-size: 1rem;
+        display: none !important;
     }
     
     /* Remove compact styles on mobile */
@@ -1133,7 +1130,10 @@
 /* Mobile responsive adjustments */
 @media (max-width: 768px) {
     .message-header-external {
-        margin-left: 70px;
+        position: relative;
+        top:-8px;
+        margin-left: 0px;
+        padding:0;
         max-width: calc(100% - 45px);
         font-size: 0.85rem;
     }
@@ -1175,6 +1175,9 @@
 @media (max-width: 768px) {
 .header-display {
     display:block !important;
+}
+.fa-reply {
+    color:#ffffffa8 !important;
 }
 }
 
@@ -1386,9 +1389,10 @@
 /* Mobile optimizations */
 @media (max-width: 768px) {
     .message-bubble {
-        margin-left: 70px;
+        margin-top: 10px;
+        margin-left: 60px;
         max-width: calc(100% - 45px);
-        padding: 6px 10px 10px 10px;
+        padding: 0px 5px 2px 5px !important;
         overflow: visible; /* Maintain visibility on mobile */
     }
     
@@ -1679,3 +1683,108 @@
         font-size: 0.6rem;
     }
 }
+
+/* Add these styles to css/room.css */
+
+/* Pass Host Button */
+.btn-pass-host {
+    background: linear-gradient(45deg, #ffc107 0%, #ff9800 100%);
+    color: #333;
+    border: none;
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    margin: 0.1rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.btn-pass-host:hover {
+    background: linear-gradient(45deg, #ff9800 0%, #ffc107 100%);
+    color: #000;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+}
+
+.btn-pass-host i {
+    margin-right: 4px;
+}
+
+/* Mobile responsive - ensure buttons wrap properly */
+@media (max-width: 768px) {
+    .btn-pass-host {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.4rem;
+        width: auto;
+        min-width: fit-content;
+    }
+    
+    .user-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        justify-content: flex-start;
+    }
+    
+    .user-actions .btn {
+        flex: 0 1 auto;
+    }
+}
+
+/* Mobile User List Modal */
+.mobile-users-toggle {
+    background: transparent;
+    border: 1px solid #555;
+    color: #e0e0e0;
+    padding: 6px 12px;
+    margin-left: 8px;
+    cursor: pointer;
+}
+
+.mobile-users-toggle:hover {
+    background: #333;
+    border-color: #677eea;
+}
+
+#mobileUsersModal .modal-content {
+    background: #2a2a2a;
+    color: #e0e0e0;
+}
+
+#mobileUsersModal .modal-header {
+    background: #333;
+    border-bottom: 1px solid #404040;
+}
+
+#mobileUsersModal .btn-close {
+    filter: invert(1);
+}
+
+#mobileUsersModal .modal-body {
+    padding: 0;
+}
+
+#mobileUsersModal .user-item {
+    border-radius:0;
+    border-left:none;
+    border-right:none;
+    margin:0;
+    padding: 10px 15px;
+}
+
+/* Hide desktop user list on mobile */
+@media (max-width: 768px) {
+    .sidebar-content:not(#mobileUserListContent) {
+        display: none !important;
+    }
+}
+
+.user-actions .btn {
+        width:30px;
+        height:30px;
+        margin:0;
+        padding:0;
+    }
+.btn-pass-host i {
+        padding-left:3px;
+    }

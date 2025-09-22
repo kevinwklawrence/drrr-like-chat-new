@@ -107,7 +107,7 @@ $(document).ready(function() {
                     success: function(response) {
                         if (response.status === 'success') {
                             alert('Registration successful! Redirecting to lounge...');
-                            window.location.href = 'lounge.php';
+                            window.location.href = '/lounge';
                         } else {
                             alert('Error: ' + response.message);
                             submitBtn.prop('disabled', false).html(originalText);

@@ -21,7 +21,7 @@ try {
     
     // ===== PHASE 1: IDENTIFY INACTIVE USERS =====
     // Get users who haven't been active in rooms for the disconnect timeout
-    $inactive_users_sql = "
+     $inactive_users_sql = "
         SELECT 
             cu.user_id_string,
             cu.room_id,
@@ -32,10 +32,13 @@ try {
             cu.guest_name,
             c.name as room_name,
             c.permanent as room_permanent,
+            COALESCE(u.ghost_mode, 0) as ghost_mode,
             TIMESTAMPDIFF(SECOND, cu.last_activity, NOW()) as seconds_inactive
         FROM chatroom_users cu
         JOIN chatrooms c ON cu.room_id = c.id
+        LEFT JOIN users u ON cu.user_id = u.id
         WHERE cu.last_activity < DATE_SUB(NOW(), INTERVAL ? SECOND)
+        AND COALESCE(u.ghost_mode, 0) = 0
         ORDER BY cu.last_activity ASC
     ";
     
@@ -273,17 +276,19 @@ try {
     // ===== PHASE 3: CLEAN UP ORPHANED CHATROOM USERS =====
     // REMOVED: Session cleanup from global_users - users now stay until logout
     // Only clean up orphaned chatroom_users where the user is no longer in global_users
-    $orphan_cleanup = $conn->query("
-        DELETE cu FROM chatroom_users cu 
-        LEFT JOIN global_users gu ON cu.user_id_string = gu.user_id_string 
-        WHERE gu.user_id_string IS NULL
-    ");
-    $orphan_cleanups = $conn->affected_rows;
-    
-    if ($orphan_cleanups > 0) {
-        logActivity("Cleaned up $orphan_cleanups orphaned records from chatroom_users");
-    }
-    
+    $grace_period = 60; // seconds
+
+$orphan_cleanup = $conn->query("
+    DELETE cu FROM chatroom_users cu 
+    LEFT JOIN global_users gu ON cu.user_id_string = gu.user_id_string 
+    WHERE gu.user_id_string IS NULL
+    AND cu.last_activity < DATE_SUB(NOW(), INTERVAL $grace_period SECOND)
+");
+$orphan_cleanups = $conn->affected_rows;
+
+if ($orphan_cleanups > 0) {
+    logActivity("Cleaned up $orphan_cleanups orphaned records from chatroom_users (with $grace_period second grace period)");
+}
     $conn->commit();
     
     // Return comprehensive results

@@ -6,17 +6,21 @@
 // All times are in seconds for consistency
 
 // AFK Configuration
-define('AFK_TIMEOUT', 20 * 60);        // 20 minutes = AFK
-define('DISCONNECT_TIMEOUT', 80 * 60);  // 80 minutes total = disconnect from room (20 min + 60 min AFK)
-define('SESSION_TIMEOUT', 60 * 60);     // 60 minutes = disconnect from site (lounge users)
+define('HEARTBEAT_INTERVAL', 15000);           // 15 seconds (reduced from 30s)
+define('ACTIVITY_UPDATE_INTERVAL', 120000);    // 2 minutes
+define('DISCONNECT_CHECK_INTERVAL', 150000);   // 2.5 minutes
+define('STATUS_CHECK_INTERVAL', 20000);        // 20 seconds
+define('MIN_ACTIVITY_INTERVAL', 30000);        // 30 seconds minimum between updates
 
-// Activity Check Intervals
-define('ACTIVITY_CHECK_INTERVAL', 30);   // 30 seconds between activity updates
-define('DISCONNECT_CHECK_INTERVAL', 60); // 60 seconds between disconnect checks
-define('HEARTBEAT_INTERVAL', 30);        // 30 seconds between heartbeats
+// Server-side timeouts (in seconds)
+define('AFK_TIMEOUT', 1200);         // 20 minutes
+define('DISCONNECT_TIMEOUT', 4800);  // 80 minutes
+define('SESSION_TIMEOUT', 3600);     // 60 minutes
+define('ACTIVITY_CHECK_INTERVAL', 120); // 2 minutes (cron job frequency)
 
-// Grace periods (to prevent race conditions)
-define('GRACE_PERIOD', 30);              // 30 seconds grace period for timing checks
+// Grace periods to prevent race conditions
+define('ORPHAN_CLEANUP_GRACE_PERIOD', 60);  // 60 seconds before orphan cleanup
+define('GLOBAL_USERS_GRACE_PERIOD', 120);   // 2 minutes grace for global_users
 
 // Debug mode
 define('ACTIVITY_DEBUG_MODE', false);    // Set to true for detailed logging

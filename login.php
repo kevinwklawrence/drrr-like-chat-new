@@ -5,15 +5,15 @@ require_once 'security_config.php';
 // Add to index.php - right after session_start()
 
 if (!isset($_SESSION['firewall_passed'])) {
-    header("Location: firewall.php");
+    header("Location: /firewall");
     exit;
 }
 
 if (isset($_SESSION['user'])) {
     if (isset($_SESSION['room_id'])) {
-        header("Location: room.php");
+        header("Location: /room");
     } else {
-        header("Location: lounge.php");
+        header("Location: /lounge");
     }
     exit;
 }
@@ -816,10 +816,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="links-section">
                 <p class="mb-3">Already have an account?</p>
                 <div class="d-flex justify-content-center gap-3 flex-wrap">
-                    <a href="index.php" class="btn btn-outline-light">
+                    <a href="/guest" class="btn btn-outline-light">
                         <i class="fas fa-user"></i> Guest login
                     </a>
-                    <a href="register.php" class="btn btn-outline-light">
+                    <a href="/register" class="btn btn-outline-light">
                         <i class="fas fa-user-plus"></i> Create Account
                     </a>
                     <a href="forgot.php" class="btn btn-outline-light text-danger">

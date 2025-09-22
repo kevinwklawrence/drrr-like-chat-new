@@ -8,21 +8,21 @@ require_once 'config/maintenance.php';
 
 // Check if site is in maintenance mode
 if (shouldShowMaintenance()) {
-    header("Location: maintenance.php");
+    header("Location: /maintenance");
     exit;
 }
 
 // Existing firewall check
 if (!isset($_SESSION['firewall_passed'])) {
-    header("Location: firewall.php");
+    header("Location: /firewall");
     exit;
 }
 
 if (isset($_SESSION['user'])) {
     if (isset($_SESSION['room_id'])) {
-        header("Location: room.php");
+        header("Location: /room");
     } else {
-        header("Location: lounge.php");
+        header("Location: /lounge");
     }
     exit;
 }
@@ -596,10 +596,10 @@ include 'db_connect.php';
             <div class="links-section">
                 <p class="mb-3">Already have an account?</p>
                 <div class="d-flex justify-content-center gap-3 flex-wrap">
-                    <a href="login.php" class="btn btn-outline-light">
+                    <a href="/member" class="btn btn-outline-light">
                         <i class="fas fa-user"></i> Member Login
                     </a>
-                    <a href="register.php" class="btn btn-outline-light">
+                    <a href="/register" class="btn btn-outline-light">
                         <i class="fas fa-user-plus"></i> Create Account
                     </a>
                 </div>

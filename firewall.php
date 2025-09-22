@@ -3,7 +3,7 @@ session_start();
 
 // If user already passed firewall, redirect to index
 if (isset($_SESSION['firewall_passed'])) {
-    header("Location: index.php");
+    header("Location: /guest");
     exit;
 }
 
@@ -529,7 +529,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         loadTermsAndPrivacy();
                     } else if (response.status === 'banned') {
                         // This shouldn't happen due to checkSiteBan exit, but kept for safety
-                        window.location.href = 'firewall.php';
+                        window.location.href = '/firewall';
                     } else {
                         showError(response.message || 'Authentication failed');
                     }
@@ -699,7 +699,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $('#continueBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Loading...');
             
             setTimeout(() => {
-                window.location.href = 'index.php';
+                window.location.href = '/guest';
             }, 1000);
         }
         

@@ -3,10 +3,11 @@
 
 # Enable rewrite engine
 RewriteEngine On
+RewriteBase /
 
 # Force HTTPS (uncomment when you have SSL certificate)
- RewriteCond %{HTTPS} on
- RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # Deny access to sensitive files and directories
 <Files ".htaccess">
@@ -37,13 +38,11 @@ RedirectMatch 403 ^/migration/.*$
 RedirectMatch 403 ^/chat_logs/.*$
 RedirectMatch 403 ^/admin/.*$
 RedirectMatch 403 ^/cron/.*$
-RedirectMatch 403 ^/error/.*$
-
 
 # Custom error pages (optional)
- ErrorDocument 403 /error/403.html
- ErrorDocument 404 /error/404.html
- ErrorDocument 500 /error/500.html
+ErrorDocument 403 /error/403.html
+ErrorDocument 404 /error/404.html
+ErrorDocument 500 /error/500.html
 
 <IfModule mod_headers.c>
     # Existing headers...
@@ -114,11 +113,17 @@ RedirectMatch 403 ^/error/.*$
 # Redirect root to firewall for access control
 DirectoryIndex firewall.php
 
+# Clean URLs
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^guest/?$ index.php [L,QSA]
+RewriteRule ^member/?$ login.php [L,QSA]
+RewriteRule ^register/?$ register.php [L,QSA]
+RewriteRule ^room/?$ room.php [L,QSA]
+RewriteRule ^lounge/?$ lounge.php [L,QSA]
+RewriteRule ^firewall/?$ firewall.php [L,QSA]
+RewriteRule ^maintenance/?$ maintenance.php [L,QSA]
 
-# Optional: Clean URLs (uncomment if you want cleaner URLs)
- RewriteRule ^login/?$ login.php [L]
- RewriteRule ^register/?$ register.php [L]
- RewriteRule ^room/?$ room.php [L]
- RewriteRule ^lounge/?$ lounge.php [L]
- RewriteRule ^firewall/?$ firewall.php [L]
-RewriteRule ^maintenance/?$ maintenance.php [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([^/]+)/?$ $1.php [L,QSA]

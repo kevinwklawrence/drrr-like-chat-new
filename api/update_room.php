@@ -339,6 +339,29 @@ try {
     }
     
     $conn->commit();
+
+    $update_flag_stmt = $conn->prepare("UPDATE chatrooms SET updated_at = NOW() WHERE id = ?");
+if ($update_flag_stmt) {
+    $update_flag_stmt->bind_param("i", $room_id);
+    $update_flag_stmt->execute();
+    $update_flag_stmt->close();
+}
+
+// Store settings change for SSE detection
+$settings_event_stmt = $conn->prepare("INSERT INTO room_events (room_id, event_type, event_data, created_at) VALUES (?, 'settings_update', ?, NOW())");
+if ($settings_event_stmt) {
+    $event_data = json_encode([
+        'theme' => $theme,
+        'youtube_enabled' => $youtube_enabled,
+        'has_password' => $has_password,
+        'is_rp' => $is_rp,
+        'friends_only' => $friends_only,
+        'invite_only' => $invite_only
+    ]);
+    $settings_event_stmt->bind_param("is", $room_id, $event_data);
+    $settings_event_stmt->execute();
+    $settings_event_stmt->close();
+}
     
     $response = [
         'status' => 'success',
@@ -353,6 +376,8 @@ try {
     
     error_log("Room settings updated: room_id=$room_id, name=$name, theme=$theme, permanent=$permanent, host=$host_name");
     echo json_encode($response);
+
+    
     
 } catch (Exception $e) {
     $conn->rollback();

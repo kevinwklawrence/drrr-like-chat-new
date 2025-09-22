@@ -6,7 +6,7 @@ require_once 'security_config.php';
 
 
 if (!isset($_SESSION['user']) || $_SESSION['user']['type'] !== 'user') {
-    header("Location: index.php");
+    header("Location: /guest");
     exit;
 }
 
@@ -37,7 +37,7 @@ if ($stmt) {
 }
 
 if (!$is_moderator && !$is_admin) {
-    header("Location: lounge.php");
+    header("Location: /lounge");
     exit;
 }
 
@@ -132,7 +132,7 @@ cleanupExpiredSiteBans($conn);
         <small class="text-muted">Welcome back, <?php echo htmlspecialchars($username); ?></small>
     </div>
     <div class="text-center">
-        <a href="lounge.php" class="btn logout-btn">
+        <a href="/lounge" class="btn logout-btn">
             <i class="fas fa-arrow-left"></i> Back to Lounge
         </a>
     </div>

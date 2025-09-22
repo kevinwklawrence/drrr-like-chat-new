@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Check if admin has bypassed maintenance or maintenance is disabled
 if (isset($_SESSION['admin_bypass']) || !isMaintenanceMode()) {
-    header("Location: index.php");
+    header("Location: /guest");
     exit;
 }
 ?>
@@ -481,7 +481,7 @@ if (isset($_SESSION['admin_bypass']) || !isMaintenanceMode()) {
                     if (response.status === 'success') {
                         button.text('Access Granted!');
                         setTimeout(() => {
-                            window.location.href = 'index.php';
+                            window.location.href = '/guest';
                         }, 1000);
                     } else {
                         errorDiv.text(response.message || 'Login failed').show();

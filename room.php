@@ -9,7 +9,7 @@ error_log("Session data in room.php: " . print_r($_SESSION, true));
 
 if (!isset($_SESSION['user']) || !isset($_SESSION['room_id'])) {
     error_log("Missing user or room_id in session, redirecting to index.php");
-    header("Location: index.php");
+    header("Location: /guest");
     exit;
 }
 
@@ -89,7 +89,7 @@ if (isset($_GET['invite']) && !empty($_GET['invite'])) {
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === "success") {
-                        window.location.href = "room.php";
+                        window.location.href = "/room";
                     } else {
                         alert("Error: " + data.message);
                     }
@@ -109,14 +109,14 @@ if (isset($_GET['invite']) && !empty($_GET['invite'])) {
     }
     
     // Invalid invite code
-    header("Location: lounge.php?error=invalid_invite");
+    header("Location: /lounge?error=invalid_invite");
     exit;
 }
 
 $stmt = $conn->prepare("SELECT name, background, youtube_enabled, theme, disappearing_messages, message_lifetime_minutes FROM chatrooms WHERE id = ?");
 if (!$stmt) {
     error_log("Prepare failed in room.php: " . $conn->error);
-    header("Location: lounge.php");
+    header("Location: /lounge");
     exit;
 }
 $stmt->bind_param("i", $room_id);
@@ -124,7 +124,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 if ($result->num_rows === 0) {
     error_log("No room found for room_id: $room_id");
-    header("Location: lounge.php");
+    header("Location: /lounge");
     exit;
 }
 $room = $result->fetch_assoc();
@@ -521,7 +521,7 @@ if (roomTheme !== 'default') {
     
     if (!roomId) {
         console.error('roomId is invalid, redirecting to lounge');
-        window.location.href = 'lounge.php';
+        window.location.href = '/lounge';
     }
     
     // YouTube API callback

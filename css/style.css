@@ -202,7 +202,7 @@ body {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-    #chatbox img {height: 58px;width: 58px;top: 70px;}
+    #chatbox img {height: 48px;width: 48px;top: 48px; border-radius:2px; left:8px;}
     #chatbox {padding: 10px;}
     .knock-notification {
         position: fixed;
@@ -937,3 +937,28 @@ body {
         margin: 0;
     }
 }
+
+.badge-admin {
+            background: linear-gradient(45deg, #dc3545, #c82333) !important;
+            color: white !important;
+        }
+
+        .badge-mod {
+            background: linear-gradient(45deg, #3546dc, #2351c8) !important;
+            color: white !important;
+        }
+        
+        .badge-host {
+            background: linear-gradient(45deg, #ffc107, #ff9800) !important;
+            color: #000 !important;
+        }
+        
+        .badge-verified {
+            background: linear-gradient(45deg, #28a745, #20c997) !important;
+            color: white !important;
+        }
+        
+        .badge-guest {
+            background: linear-gradient(45deg, #6c757d, #5a6268) !important;
+            color: white !important;
+        }

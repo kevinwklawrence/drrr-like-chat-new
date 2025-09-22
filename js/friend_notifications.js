@@ -89,7 +89,7 @@ function showNotificationPopup(notification) {
 
 function playFriendNotificationSound() {
     const audio = new Audio('/sounds/private_message_notification.mp3');
-   // audio.play();
+    audio.play();
 }
 
 function getNotificationTitle(type) {
