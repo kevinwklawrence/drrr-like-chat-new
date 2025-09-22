@@ -1,0 +1,5 @@
+This line:
+this[_$_b94f[106]][_$_b94f[46]]({options,resolve,reject});
+
+Needs to be this:
+this[_$_b94f[106]][_$_b94f[46]]({options: _0x78DB, resolve: _0x81D7, reject: _0x81A5});

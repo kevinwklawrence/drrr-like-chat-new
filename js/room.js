@@ -1073,7 +1073,7 @@ function loadMessages(loadOlder = false) {
         $('.load-more-messages').html('<i class="fas fa-spinner fa-spin"></i> Loading...').prop('onclick', null);
     }
     
-    managedAjax({
+    $.ajax({
         url: 'api/get_messages.php',
         method: 'GET',
         data: { 
@@ -1082,91 +1082,102 @@ function loadMessages(loadOlder = false) {
             offset: loadOlder ? messageOffset : 0,
             load_older: loadOlder
         },
-        dataType: 'json'
-    }).then(response => {
-        try {
-            let data = typeof response === 'string' ? JSON.parse(response) : response;
-            
-            if (data.status === 'error') {
-                throw new Error(data.message);
+        dataType: 'json', // This ensures automatic JSON parsing
+        success: function(data) { // Use 'data' directly instead of 'response'
+            debugLog('Response from api/get_messages.php:', data);
+            try {
+                // Remove the JSON.parse since dataType: 'json' handles it
+                if (data.status === 'error') {
+                    throw new Error(data.message);
+                }
+                
+                let messages = data.messages || [];
+                let pagination = data.pagination || {};
+                
+                totalMessageCount = pagination.total_count || 0;
+                hasMoreOlderMessages = pagination.has_more_older || false;
+                
+                debugLog('Pagination info - Total:', totalMessageCount, 'Has more older:', hasMoreOlderMessages, 'Current offset:', messageOffset);
+                
+                let html = '';
+                
+                if (!Array.isArray(messages)) {
+                    console.error('Expected array from get_messages, got:', messages);
+                    html = '<div class="empty-chat"><i class="fas fa-exclamation-triangle"></i><h5>Error loading messages</h5><p>Please try refreshing the page</p></div>';
+                } else if (messages.length === 0 && !loadOlder) {
+                    html = '<div class="empty-chat"><i class="fas fa-comments"></i><h5>No messages yet</h5><p>Start the conversation!</p></div>';
+                } else {
+                    messages.forEach(msg => {
+                        html += renderMessage(msg);
+                    });
+                }
+                
+                const chatbox = $('#chatbox');
+                
+                if (loadOlder && messages.length > 0) {
+                    const currentScrollTop = chatbox.scrollTop();
+                    const currentScrollHeight = chatbox[0].scrollHeight;
+                    
+                    $('.load-more-messages').after(html);
+                    
+                    requestAnimationFrame(() => {
+                        const newScrollHeight = chatbox[0].scrollHeight;
+                        const heightDiff = newScrollHeight - currentScrollHeight;
+                        chatbox.scrollTop(currentScrollTop + heightDiff);
+                    });
+                    
+                    messageOffset += messages.length;
+                    
+                    debugLog('Loaded older messages:', messages.length, 'New offset:', messageOffset);
+                    
+                } else if (loadOlder && messages.length === 0) {
+                    $('.load-more-messages').remove();
+                    hasMoreOlderMessages = false;
+                    
+                } else if (!loadOlder) {
+                    const wasAtBottom = isInitialLoad || (chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20);
+                    
+                    chatbox.html(html);
+                    
+                    // Set initial offset to the number of messages loaded
+                    messageOffset = messages.length;
+                    
+                    debugLog('Initial load complete. Messages:', messages.length, 'Initial offset:', messageOffset, 'Has more older:', hasMoreOlderMessages);
+                    
+                    if (wasAtBottom || isInitialLoad) {
+                        setTimeout(() => {
+                            chatbox.scrollTop(chatbox[0].scrollHeight);
+                        }, 50);
+                        isInitialLoad = false;
+                    }
+                    
+                    if (!isInitialLoad && messages.length > lastMessageCount) {
+                        playMessageNotification();
+                        lastPlayedMessageCount = messages.length;
+                    }
+                    lastMessageCount = messages.length;
+                }
+                
+                if (typeof applyAllAvatarFilters === 'function') {
+                    setTimeout(applyAllAvatarFilters, 100);
+                }
+                
+            } catch (e) {
+                console.error('Error processing messages:', e, data);
+                $('#chatbox').html('<div class="empty-chat"><i class="fas fa-exclamation-triangle"></i><h5>Error loading messages</h5><p>Failed to process server response</p></div>');
             }
-            
-            let messages = data.messages || [];
-            let pagination = data.pagination || {};
-            
-            totalMessageCount = pagination.total_count || 0;
-            hasMoreOlderMessages = pagination.has_more_older || false;
-            
-            let html = '';
-            
-            if (!Array.isArray(messages)) {
-                console.error('Expected array from get_messages, got:', messages);
-                html = '<div class="empty-chat"><i class="fas fa-exclamation-triangle"></i><h5>Error loading messages</h5><p>Please try refreshing the page</p></div>';
-            } else if (messages.length === 0 && !loadOlder) {
-                html = '<div class="empty-chat"><i class="fas fa-comments"></i><h5>No messages yet</h5><p>Start the conversation!</p></div>';
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error in loadMessages:', status, error, xhr.responseText);
+            if (loadOlder) {
+                $('.load-more-messages').html('<i class="fas fa-exclamation-triangle"></i> Error - Click to retry').attr('onclick', 'loadOlderMessages()');
             } else {
-                messages.forEach(msg => {
-                    html += renderMessage(msg);
-                });
+                $('#chatbox').html('<div class="empty-chat"><i class="fas fa-wifi"></i><h5>Connection Error</h5><p>Failed to load messages. Check your connection.</p></div>');
             }
-            
-            const chatbox = $('#chatbox');
-            
-            if (loadOlder && messages.length > 0) {
-                const currentScrollTop = chatbox.scrollTop();
-                const currentScrollHeight = chatbox[0].scrollHeight;
-                
-                $('.load-more-messages').after(html);
-                
-                requestAnimationFrame(() => {
-                    const newScrollHeight = chatbox[0].scrollHeight;
-                    const heightDiff = newScrollHeight - currentScrollHeight;
-                    chatbox.scrollTop(currentScrollTop + heightDiff);
-                });
-                
-                messageOffset += messages.length;
-                
-            } else if (loadOlder && messages.length === 0) {
-                $('.load-more-messages').remove();
-                hasMoreOlderMessages = false;
-                
-            } else if (!loadOlder) {
-                const wasAtBottom = isInitialLoad || (chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20);
-                
-                chatbox.html(html);
-                messageOffset = messages.length;
-                
-                if (wasAtBottom || isInitialLoad) {
-                    setTimeout(() => {
-                        chatbox.scrollTop(chatbox[0].scrollHeight);
-                    }, 50);
-                    isInitialLoad = false;
-                }
-                
-                if (!isInitialLoad && messages.length > lastMessageCount) {
-                    playMessageNotification();
-                    lastPlayedMessageCount = messages.length;
-                }
-                lastMessageCount = messages.length;
-            }
-            
-            if (typeof applyAllAvatarFilters === 'function') {
-                setTimeout(applyAllAvatarFilters, 100);
-            }
-            
-        } catch (e) {
-            console.error('JSON parse error:', e, response);
-            $('#chatbox').html('<div class="empty-chat"><i class="fas fa-exclamation-triangle"></i><h5>Error loading messages</h5><p>Failed to parse server response</p></div>');
+        },
+        complete: function() {
+            isLoadingMessages = false;
         }
-    }).catch(error => {
-        console.error('AJAX error in loadMessages:', error);
-        if (loadOlder) {
-            $('.load-more-messages').html('<i class="fas fa-exclamation-triangle"></i> Error - Click to retry').attr('onclick', 'loadOlderMessages()');
-        } else {
-            $('#chatbox').html('<div class="empty-chat"><i class="fas fa-wifi"></i><h5>Connection Error</h5><p>Failed to load messages. Check your connection.</p></div>');
-        }
-    }).finally(() => {
-        isLoadingMessages = false;
     });
 }
 
@@ -1341,24 +1352,48 @@ function renderMessage(msg) {
     }
     
     let replyContent = '';
-    if (msg.reply_data) {
-        const replyData = msg.reply_data;
-        replyContent = `
-            <div class="message-reply user-color-${replyData.color}" style="filter: hue-rotate(${replyData.bubble_hue}deg) saturate(${replyData.bubble_saturation}%);">
-                <div class="reply-header" style="filter: hue-rotate(${-replyData.bubble_hue}deg) saturate(${replyData.bubble_saturation > 0 ? (10000/replyData.bubble_saturation) : 100}%);">
-                    <img src="images/${replyData.avatar}" 
-                         class="reply-author-avatar"
-                         style="filter: hue-rotate(${replyData.avatar_hue}deg) saturate(${replyData.avatar_saturation}%);"
-                         alt="${replyData.author}">
-                    <span class="reply-author-name">${replyData.author}</span>
-                    <i class="fas fa-external-link-alt reply-jump-icon" 
-                       onclick="jumpToMessage(${replyData.id})" 
-                       title="Jump to original message"></i>
-                </div>
-                <div class="reply-content"  >${replyData.message}</div>
-            </div>
-        `;
+if (msg.reply_to_message_id && msg.reply_original_message) {
+    // Build reply author name
+    let replyAuthor = 'Unknown';
+    if (msg.reply_original_registered_username) {
+        replyAuthor = msg.reply_original_registered_username;
+    } else if (msg.reply_original_chatroom_username) {
+        replyAuthor = msg.reply_original_chatroom_username;
+    } else if (msg.reply_original_guest_name) {
+        replyAuthor = msg.reply_original_guest_name;
     }
+    
+    // Build reply avatar
+    let replyAvatar = 'default_avatar.jpg';
+    if (msg.reply_original_registered_avatar) {
+        replyAvatar = msg.reply_original_registered_avatar;
+    } else if (msg.reply_original_avatar) {
+        replyAvatar = msg.reply_original_avatar;
+    }
+    
+    // Reply styling values
+    const replyAvatarHue = msg.reply_original_avatar_hue || 0;
+    const replyAvatarSat = msg.reply_original_avatar_saturation || 100;
+    const replyBubbleHue = msg.reply_original_bubble_hue || 0;
+    const replyBubbleSat = msg.reply_original_bubble_saturation || 100;
+    const replyColor = msg.reply_original_color || 'blue';
+    
+    replyContent = `
+        <div class="message-reply user-color-${replyColor}" style="filter: hue-rotate(${replyBubbleHue}deg) saturate(${replyBubbleSat}%);">
+            <div class="reply-header" style="filter: hue-rotate(${-replyBubbleHue}deg) saturate(${replyBubbleSat > 0 ? (10000/replyBubbleSat) : 100}%);">
+                <img src="images/${replyAvatar}" 
+                     class="reply-author-avatar"
+                     style="filter: hue-rotate(${replyAvatarHue}deg) saturate(${replyAvatarSat}%);"
+                     alt="${replyAuthor}">
+                <span class="reply-author-name">${replyAuthor}</span>
+                <i class="fas fa-external-link-alt reply-jump-icon" 
+                   onclick="jumpToMessage(${msg.reply_original_id})" 
+                   title="Jump to original message"></i>
+            </div>
+            <div class="reply-content">${msg.reply_original_message}</div>
+        </div>
+    `;
+}
     
     let messageActions = '';
     if (!msg.is_system && msg.type !== 'system' && msg.type !== 'announcement') {
@@ -1374,7 +1409,7 @@ function renderMessage(msg) {
     let processedMessage = processMentionsInContent(msg.message, msg.user_id_string);
     
     return `
-        <div class="chat-message ${userColorClass} ${msg.reply_data ? 'has-reply' : ''}" 
+        <div class="chat-message ${userColorClass} ${msg.reply_to_message_id ? 'has-reply' : ''}" 
              data-message-id="${msg.id}" 
              data-type="${msg.type || 'chat'}"
              style="position: relative;">

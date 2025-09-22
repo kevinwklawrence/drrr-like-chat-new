@@ -1,5 +1,5 @@
 body {
-            background-color: #1a1a1a;
+            background-color: #0e0e0e;
             color: #e0e0e0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
@@ -23,7 +23,7 @@ body {
         
         .container-fluid {
             background-color: #1a1a1a;
-            min-height: 100vh;
+            min-height: 100%;
             padding: 0px;
             display: flex;
             align-items: center;
@@ -35,7 +35,7 @@ body {
             border: 1px solid #333;
             border-radius: 15px;
             padding: 40px;
-            margin: 0 auto;
+            margin: 40px auto;
             max-width: 1400px;
             width: 100%;
             box-shadow: 0 8px 25px rgba(0,0,0,0.3);
@@ -66,13 +66,13 @@ body {
         }
         
         .avatar-container {
-            max-height: 581px;
+            height: 449px;
             overflow-y: auto;
             border: 2px solid #404040;
             border-radius: 10px;
             padding: 15px;
             background: #1a1a1a;
-            margin-bottom: 20px;
+            /* margin-bottom: 20px; */
         }
         
         .avatar-container::-webkit-scrollbar {
@@ -311,6 +311,13 @@ body {
         /* Mobile optimizations */
         @media (max-width: 768px) {
 
+            .links-section .btn{
+        font-size:12px;
+        padding: 12px;
+        border:0;
+        border-radius: 0;
+        }
+
             
 
             .container-fluid {
@@ -385,14 +392,28 @@ body {
                 display:none;
             }
 
+            .col-lg-4 .avatar-selection-card {
+                border-top: 2px solid #404040;
+                border-radius:0;
+                margin:0;
+                padding-top:20px;
+                height: 100%;
+                background: #1a1a1a;
+            }
+
             .avatar-selection-card {
                 border:none;
                 border-radius:0;
                 margin:0;
                 padding:0;
+                height: 100%;
             }
 
             .avatar-selection-card .form-label {
+                display: none;
+            }
+
+            .avatar-selection-card .btn-sm {
                 display: none;
             }
 
@@ -417,8 +438,9 @@ body {
             }
             
             .avatar-container {
-                max-height: 50vh;
-                padding: 0;
+                /* padding: 64px 0 34px 0; */
+                height: 100vh;
+                max-height: calc(100vh - 272px);
             }
             
             .avatar {
@@ -470,12 +492,7 @@ body {
             padding: 20px;
             text-align: center;
         }
-        .links-section .btn{
-        font-size:12px;
-        padding: 12px;
-        border:0;
-        border-radius: 0;
-        }
+        
         
         .links-section a {
             color: #007bff;

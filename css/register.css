@@ -7,7 +7,7 @@ body {
         
         .container-fluid {
             background-color: #1a1a1a;
-            min-height: 100vh;
+            min-height: 100%;
             padding: 20px;
             display: flex;
             align-items: center;
@@ -19,7 +19,7 @@ body {
             border: 1px solid #333;
             border-radius: 15px;
             padding: 40px;
-            margin: 0 auto;
+            margin: 40px auto;
             max-width: 1200px;
             width: 100%;
             box-shadow: 0 8px 25px rgba(0,0,0,0.3);
@@ -210,11 +210,10 @@ body {
                 margin: 0;
             }
             .container-fluid {
-                padding: 0;
+                padding: 20px 0;
                 border: none;
                 border-radius: 0;
                 background-color: #2a2a2a;
-                
             }
 
             .links-section a {

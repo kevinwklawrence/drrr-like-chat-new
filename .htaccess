@@ -5,7 +5,7 @@
 RewriteEngine On
 
 # Force HTTPS (uncomment when you have SSL certificate)
- RewriteCond %{HTTPS} off
+ RewriteCond %{HTTPS} on
  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # Deny access to sensitive files and directories
@@ -37,6 +37,7 @@ RedirectMatch 403 ^/migration/.*$
 RedirectMatch 403 ^/chat_logs/.*$
 RedirectMatch 403 ^/admin/.*$
 RedirectMatch 403 ^/cron/.*$
+RedirectMatch 403 ^/error/.*$
 
 
 # Custom error pages (optional)

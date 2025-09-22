@@ -98,7 +98,7 @@ $(document).ready(function() {
 
     $('#customizationModal').on('show.bs.modal', function() {
     syncModalPreviews();
-});
+    });
 
     $(document).on('click', '.color-option', function() {
         const colorName = $(this).data('color');

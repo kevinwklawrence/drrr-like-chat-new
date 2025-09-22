@@ -381,6 +381,7 @@
 
     .row {
         --bs-gutter-x: 0 !important;
+        margin-bottom: 0 !important;
     }
     .room-header-enhanced {
         padding: 12px 15px;
@@ -597,7 +598,7 @@
 }
 
 body {
-            background-color: #1a1a1a;
+            background-color: #0e0e0e;
             color: #e0e0e0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
@@ -605,7 +606,7 @@ body {
         
         .container-fluid {
             background-color: #1a1a1a;
-            min-height: 100vh;
+            min-height: 100%;
             padding: 0;
         }
         

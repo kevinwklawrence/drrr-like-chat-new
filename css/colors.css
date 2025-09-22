@@ -1,0 +1,56 @@
+:root {
+  /* Main Brand Colors */
+  --main-color: #007bff;
+  --secondary-color: #6c757d;
+  --accent-color: #28a745;
+  --danger-color: #dc3545;
+  --warning-color: #ffc107;
+  
+  /* Background Colors */
+  --bg-primary: #0e0e0e;
+  --bg-secondary: #f8f9fa;
+  --bg-dark: #343a40;
+  --bg-darker: #212529;
+  
+  /* Text Colors */
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  --text-light: #ffffff;
+  --text-muted: #999999;
+  
+  /* Border Colors */
+  --border-light: #dee2e6;
+  --border-medium: #ced4da;
+  --border-dark: #495057;
+  
+  /* Interactive States */
+  --hover-overlay: rgba(0, 0, 0, 0.1);
+  --active-overlay: rgba(0, 0, 0, 0.2);
+  --focus-shadow: rgba(0, 123, 255, 0.25);
+}
+
+.btn-primary {
+  background-color: var(--main-color);
+  border-color: var(--main-color);
+  color: var(--text-light);
+}
+
+.btn-primary:hover {
+  background-color: color-mix(in srgb, var(--main-color) 85%, black);
+  border-color: color-mix(in srgb, var(--main-color) 85%, black);
+}
+
+.card {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
+}
+
+.text-main { color: var(--main-color); }
+.text-secondary { color: var(--text-secondary); }
+.bg-main { background-color: var(--main-color); }
+
+.container-fluid {
+  background-color: var(--bg-primary) !important;
+}
+

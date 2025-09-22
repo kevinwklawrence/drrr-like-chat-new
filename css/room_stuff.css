@@ -23,7 +23,7 @@ body {
             border: 1px solid #333;
             border-radius: 15px;
             padding: 40px;
-            margin: 0 auto;
+            margin: 40px auto;
             max-width: 1400px;
             width: 100%;
             box-shadow: 0 8px 25px rgba(0,0,0,0.3);
@@ -280,6 +280,7 @@ body {
                 padding: 0;
                 border-radius: 0;
                 border: none;
+                margin: 0;
             }
 
             .lounge-header {

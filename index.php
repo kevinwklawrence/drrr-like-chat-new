@@ -44,6 +44,7 @@ include 'db_connect.php';
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="css/colors.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
     <link href="css/style.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
     <link href="css/guest_login.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
     <link href="css/bubble_colors.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
@@ -51,6 +52,7 @@ include 'db_connect.php';
     <link href="css/private_bubble_colors.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
     <link href="css/cus_modal.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
     <link href="css/loading.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
+    <link href="css/pagination.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
     <?php include 'fav.php'; ?>
 </head>
 <body>
@@ -62,6 +64,7 @@ include 'db_connect.php';
         <div id="status">0 / 0</div>
     </div>
 </div>
+<?php include 'navbar.php'; ?>
     <div class="container-fluid">
         <div class="login-container">
             <!-- Header -->
@@ -79,52 +82,91 @@ include 'db_connect.php';
                 <div class="row">
                     <div class="col-lg-8">
                         <div class="avatar-selection-card">
-                            <label class="form-label mb-3">
-                                <i class="fas fa-images"></i> Choose Your Avatar
+                            <label class="form-label mb-3 me-2">
+                                <i class="fas fa-images"></i> Choose Your Avatar, or let us pick one for you:
                             </label>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="randomAvatar()">
+                                        <i class="fas fa-random"></i> Random
+                                    </button>
                             <div class="avatar-container">
-                                <?php
-                                $image_base_dir = __DIR__ . '/images';
-                                $web_base_dir = 'images/';
-                                $priority_folders = ['time-limited', 'community', 'default', 'mushoku', 'secret', 'drrrjp', 'drrrkari', 'drrrx2'];
-                                $drrrcom = ['drrr.com'];
-                                $allowed_ext = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+    <!-- Pagination Controls -->
+    <div class="avatar-pagination-controls d-flex justify-content-between align-items-center mb-3">
+        <button type="button" class="btn btn-outline-primary" id="prevPage" onclick="changePage(-1)">
+            <i class="fas fa-chevron-left"></i> Previous
+        </button>
+        <div class="pagination-info">
+            <span id="currentPageInfo">Page 1 of 1</span>
+        </div>
+        <button type="button" class="btn btn-outline-primary" id="nextPage" onclick="changePage(1)">
+            Next <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
 
-                                foreach ($priority_folders as $folder) {
-                                    $folder_path = $image_base_dir . '/' . $folder;
-                                    if (is_dir($folder_path)) {
-                                        echo '<div class="avatar-section">';
-                                        echo '<h6><i class="fas fa-star"></i> ' . ucfirst($folder) . ' Avatars</h6>';
-                                        echo '<div class="d-flex flex-wrap justify-content-center">';
-                                        foreach (glob($folder_path . '/*.{png,jpg,jpeg,gif,webp}', GLOB_BRACE) as $img_path) {
-                                            $img_file = basename($img_path);
-                                            $ext = strtolower(pathinfo($img_file, PATHINFO_EXTENSION));
-                                            if (in_array($ext, $allowed_ext)) {
-                                                echo '<img src="' . $web_base_dir . $folder . '/' . $img_file . '" class="avatar" data-avatar="' . $folder . '/' . $img_file . '" alt="Avatar option">';
-                                            }
-                                        }
-                                        echo '</div></div>';
-                                    }
-                                }
+    <!-- Avatar Pages Container -->
+    <div id="avatarPages">
+        <?php
+        $image_base_dir = __DIR__ . '/images';
+        $web_base_dir = 'images/';
+        $allowed_ext = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+        
+        // Define pagination structure for index.php
+        $avatar_pages = [];
+        
+        // Page 1: Special page with time-limited, community, and default
+        $page1_folders = ['time-limited', 'community', 'default'];
+        $avatar_pages[0] = $page1_folders;
+        
+        // Other folders for subsequent pages
+        $other_folders = ['mushoku', 'secret', 'drrrjp', 'drrrkari', 'drrrx2', 'drrr.com'];
+        
+        // Each other folder gets its own page
+        foreach ($other_folders as $folder) {
+            if (is_dir($image_base_dir . '/' . $folder)) {
+                $avatar_pages[] = [$folder];
+            }
+        }
+        
+        // Generate pages
+        foreach ($avatar_pages as $page_index => $folders) {
+            $page_num = $page_index + 1;
+            echo '<div class="avatar-page" data-page="' . $page_num . '" style="' . ($page_index === 0 ? '' : 'display: none;') . '">';
+            
+           /* if ($page_index === 0) {
+                echo '<h6 class="text-center mb-3"><i class="fas fa-star"></i> Featured Avatars</h6>';
+            }*/
+            
+            foreach ($folders as $folder) {
+                $folder_path = $image_base_dir . '/' . $folder;
+                if (is_dir($folder_path)) {
+                    $folder_avatars = glob($folder_path . '/*.{png,jpg,jpeg,gif,webp}', GLOB_BRACE);
+                    $folder_count = count($folder_avatars);
+                    
+                    if ($folder_count > 0) {
+                        echo '<div class="avatar-section">';
+                       /* if ($page_index !== 0) {
+                            echo '<h6><i class="fas fa-star"></i> ' . ucfirst($folder) . ' Avatars (' . $folder_count . ')</h6>';
+                        } else {
+                            echo '<div class="mb-2"><small class="text-muted">' . ucfirst($folder) . ' (' . $folder_count . ')</small></div>';
+                        }*/
+                        echo '<div class="d-flex flex-wrap justify-content-center">';
+                        
+                        foreach ($folder_avatars as $img_path) {
+                            $img_file = basename($img_path);
+                            $ext = strtolower(pathinfo($img_file, PATHINFO_EXTENSION));
+                            if (in_array($ext, $allowed_ext)) {
+                                echo '<img src="' . $web_base_dir . $folder . '/' . $img_file . '" class="avatar" data-avatar="' . $folder . '/' . $img_file . '" alt="Avatar option">';
+                            }
+                        }
+                        echo '</div></div>';
+                    }
+                }
+            }
+            echo '</div>';
+        }
+        ?>
+    </div>
+</div>
 
-                                foreach ($drrrcom as $folder) {
-                                    $folder_path = $image_base_dir . '/' . $folder;
-                                    if (is_dir($folder_path)) {
-                                        echo '<div class="avatar-section">';
-                                        echo '<h6><i class="fas fa-star"></i> ' . ucfirst($folder) . ' Avatars</h6>';
-                                        echo '<div class="d-flex flex-wrap justify-content-center">';
-                                        foreach (glob($folder_path . '/*.{png,jpg,jpeg,gif,webp}', GLOB_BRACE) as $img_path) {
-                                            $img_file = basename($img_path);
-                                            $ext = strtolower(pathinfo($img_file, PATHINFO_EXTENSION));
-                                            if (in_array($ext, $allowed_ext)) {
-                                                echo '<img src="' . $web_base_dir . $folder . '/' . $img_file . '" class="avatar x2style" data-avatar="' . $folder . '/' . $img_file . '" alt="Avatar option">';
-                                            }
-                                        }
-                                        echo '</div></div>';
-                                    }
-                                }
-                                ?>
-                            </div>
                             <input type="hidden" id="selectedAvatar" name="avatar" required>
                             <div class="form-text text-muted">
                                 <i class="fas fa-info-circle"></i> Scroll through the avatar gallery above to find one you like
@@ -570,7 +612,7 @@ include 'db_connect.php';
                 </div>
     </div>
         
-
+       
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/index.js?v=<?php echo $versions['version']; ?>"></script>

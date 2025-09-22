@@ -159,14 +159,16 @@
 </div>
 
 <script>
-// Handle Terms and Privacy links
 $(document).ready(function() {
+    // Move modals to be right after <body>
+    $('body').prepend($('#termsModal, #privacyModal'));
+
     // Terms of Service link handler
     $('a[href="terms.php"]').on('click', function(e) {
         e.preventDefault();
         $('#termsModal').modal('show');
     });
-    
+
     // Privacy Policy link handler
     $('a[href="privacy.php"]').on('click', function(e) {
         e.preventDefault();

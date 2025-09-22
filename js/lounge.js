@@ -23,7 +23,7 @@ $(document).ready(function() {
         loadOnlineUsers();
         loadRoomsWithUsers();
         loadUserRoomKeys();
-        sendHeartbeat();
+       // sendHeartbeat();
     }, 5000); // Every 5 seconds
     
     setInterval(checkForKnocks, 3000); // Every 3 seconds
@@ -553,12 +553,41 @@ function loadOnlineUsers() {
         method: 'GET',
         dataType: 'json',
         timeout: 8000, // 8 second timeout
-        success: function(users) {
-            debugLog('Online users loaded:', users);
-            displayOnlineUsers(users);
+        success: function(response) {
+            // Check for logout signal
+            if (response && response.__logout_required__) {
+                console.log('Auto-logout detected - redirecting to index page');
+                
+                // Show brief message before redirect (optional)
+                if (typeof showNotification === 'function') {
+                    showNotification('Session expired due to inactivity. Redirecting...', 'warning');
+                }
+                
+                // Clear local storage if used
+                if (typeof localStorage !== 'undefined') {
+                    localStorage.removeItem('currentUser');
+                    localStorage.removeItem('userSettings');
+                }
+                
+                // Redirect immediately
+                window.location.href = 'index.php';
+                return;
+            }
+            
+            // Normal response - display users
+            debugLog('Online users loaded:', response);
+            displayOnlineUsers(response);
         },
         error: function(xhr, status, error) {
             console.error('Error loading online users:', error);
+            
+            // Check if it's an authentication error
+            if (xhr.status === 401 || xhr.status === 403) {
+                console.log('Authentication error - redirecting to index page');
+                window.location.href = 'index.php';
+                return;
+            }
+            
             if (status !== 'timeout') {
                 debugLog('Failed to load online users, keeping current list');
             }

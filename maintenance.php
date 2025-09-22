@@ -44,6 +44,7 @@ if (isset($_SESSION['admin_bypass']) || !isMaintenanceMode()) {
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="css/colors.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
     <style>
         body {
             margin: 0;

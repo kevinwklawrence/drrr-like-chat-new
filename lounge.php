@@ -108,6 +108,7 @@ if (!empty($user_id_string)) {
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="css/colors.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
     <link href="css/style.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
     <link href="css/lounge.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
     <link href="css/room.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
@@ -133,6 +134,7 @@ if (!empty($user_id_string)) {
         <div id="status">0 / 0</div>
     </div>
 </div>
+<?php include 'navbar.php'; ?>
     <div class="container-fluid">
         <div class="lounge-container">
             <!-- Header -->
@@ -438,6 +440,6 @@ document.addEventListener('DOMContentLoaded', function() {
     <script src="js/profile_system.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/loading.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/friend_notifications.js?v=<?php echo $versions['version']; ?>"></script>
-
+<?php include 'user_settings.php'; ?>
 </body>
 </html>

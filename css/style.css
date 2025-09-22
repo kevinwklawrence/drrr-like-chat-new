@@ -12,8 +12,19 @@ body::-webkit-scrollbar {
 .d-flex {
     flex-wrap: wrap;
 } 
+    .modal-backdrop {
+        display:none !important;
+    }
 }
-.avatar { width: 58px; height: 58px; cursor: pointer; margin: 3px; }
+.avatar { width: 58px; 
+         height: 58px; 
+         cursor: pointer; 
+         margin: 3px; 
+         opacity: 0.5 !important;
+        }
+.avatar.selected { 
+         opacity: 1 !important;
+        }
 .chatroom { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
 #chatbox { height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
 #chatbox img { margin-right: 5px; height:58px; width:58px; }

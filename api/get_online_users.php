@@ -1,5 +1,5 @@
 <?php
-// api/get_online_users.php - Get truly active users with better filtering
+// api/get_online_users.php - Get truly active users with automatic logout for inactive users
 session_start();
 header('Content-Type: application/json');
 
@@ -11,11 +11,101 @@ if (!isset($_SESSION['user'])) {
 include '../db_connect.php';
 
 try {
-    // Only show users active within the last 2 minutes (120 seconds)
-    // This ensures we only show users who are actually online
-    $active_threshold = 2; // minutes
+    // Active threshold in minutes (2 minutes)
+    $active_threshold = 30;
     
-    // First check if avatar customization columns exist
+    // First, identify and logout users who exceed the threshold
+    $inactive_users_sql = "SELECT user_id_string, username, guest_name 
+                          FROM global_users 
+                          WHERE last_activity < DATE_SUB(NOW(), INTERVAL ? MINUTE)";
+    
+    $inactive_stmt = $conn->prepare($inactive_users_sql);
+    $inactive_stmt->bind_param("i", $active_threshold);
+    $inactive_stmt->execute();
+    $inactive_result = $inactive_stmt->get_result();
+    
+    $logged_out_users = [];
+    $current_user_logged_out = false;
+    $current_user_id = $_SESSION['user']['user_id'] ?? '';
+    
+    // Begin transaction for cleanup
+    $conn->begin_transaction();
+    
+    while ($inactive_user = $inactive_result->fetch_assoc()) {
+        $user_id_string = $inactive_user['user_id_string'];
+        $display_name = $inactive_user['username'] ?: $inactive_user['guest_name'] ?: 'Unknown User';
+        
+        // Check if this is the current user
+        if ($user_id_string === $current_user_id) {
+            $current_user_logged_out = true;
+        }
+        
+        // Remove from chatroom_users (with disconnect messages)
+        $remove_from_rooms = $conn->prepare("
+            SELECT cu.room_id, c.name as room_name 
+            FROM chatroom_users cu 
+            JOIN chatrooms c ON cu.room_id = c.id 
+            WHERE cu.user_id_string = ?
+        ");
+        $remove_from_rooms->bind_param("s", $user_id_string);
+        $remove_from_rooms->execute();
+        $rooms_result = $remove_from_rooms->get_result();
+        
+        while ($room = $rooms_result->fetch_assoc()) {
+            $room_id = $room['room_id'];
+            
+            // Add disconnect message to room
+            $disconnect_message = "$display_name disconnected due to inactivity.";
+            $add_message = $conn->prepare("
+                INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) 
+                VALUES (?, '', ?, 1, NOW(), 'disconnect.png', 'system')
+            ");
+            $add_message->bind_param("is", $room_id, $disconnect_message);
+            $add_message->execute();
+            $add_message->close();
+        }
+        $remove_from_rooms->close();
+        
+        // Remove from chatroom_users
+        $delete_chatroom = $conn->prepare("DELETE FROM chatroom_users WHERE user_id_string = ?");
+        $delete_chatroom->bind_param("s", $user_id_string);
+        $delete_chatroom->execute();
+        $delete_chatroom->close();
+        
+        // Remove from global_users
+        $delete_global = $conn->prepare("DELETE FROM global_users WHERE user_id_string = ?");
+        $delete_global->bind_param("s", $user_id_string);
+        $delete_global->execute();
+        $delete_global->close();
+        
+        $logged_out_users[] = $display_name;
+    }
+    
+    $inactive_stmt->close();
+    $conn->commit();
+    
+    // If current user was logged out, clear session and return logout signal
+    if ($current_user_logged_out) {
+        // Preserve firewall session while clearing user data
+        $preserve_firewall = $_SESSION['firewall_passed'] ?? false;
+        unset($_SESSION['user']);
+        unset($_SESSION['room_id']);
+        unset($_SESSION['pending_invite']);
+        if ($preserve_firewall) {
+            $_SESSION['firewall_passed'] = true;
+        }
+        
+        // Return special logout response
+        echo json_encode(['__logout_required__' => true]);
+        exit;
+    }
+    
+    // Log the logout activity
+    if (!empty($logged_out_users)) {
+        error_log("Auto-logged out " . count($logged_out_users) . " inactive users: " . implode(', ', $logged_out_users));
+    }
+    
+    // Now get the remaining active users
     $columns_check = $conn->query("SHOW COLUMNS FROM global_users");
     $available_columns = [];
     while ($row = $columns_check->fetch_assoc()) {
@@ -110,12 +200,19 @@ try {
     
     $stmt->close();
     
-    // Log the count for debugging (but don't expose in response)
-    error_log("Online users query returned " . count($users) . " active users (threshold: {$active_threshold} minutes)");
+    // Log the count for debugging
+    $log_message = "Online users query returned " . count($users) . " active users (threshold: {$active_threshold} minutes)";
+    if (!empty($logged_out_users)) {
+        $log_message .= ". Auto-logged out: " . count($logged_out_users) . " users";
+    }
+    error_log($log_message);
     
     echo json_encode($users);
     
 } catch (Exception $e) {
+    if (isset($conn) && $conn->connect_errno === 0) {
+        $conn->rollback();
+    }
     error_log("Error getting online users: " . $e->getMessage());
     echo json_encode([]);
 }

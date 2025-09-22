@@ -195,6 +195,7 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="css/colors.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
     <link href="css/style.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
     <link href="css/room.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
     <link href="css/iframe_styler.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
@@ -213,6 +214,7 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
         <link href="css/ghost_mode.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
         <link rel="stylesheet" href="css/notifications.css?v=<?php echo $versions['version']; ?>">
         <link rel="stylesheet" href="css/friend_notifications.css?v=<?php echo $versions['version']; ?>">
+        
 
 
 
@@ -231,6 +233,7 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
         <div id="status">0 / 0</div>
     </div> 
 </div>
+<?php include 'navbar.php'; ?>
     <div class="room-container">
         <!-- Room Header -->
         <div class="room-header">
@@ -243,22 +246,22 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
                         </span>
                     <?php endif; ?>
                     <?php if ($is_admin): ?>
-                        <span class="badge bg-danger ms-2">
+                        <span class="admin-badge">
                             <i class="fas fa-shield-alt"></i> Admin
                         </span>
                     <?php endif; ?>
                     <?php if ($is_moderator && !$is_admin): ?>
-                        <span class="badge bg-warning ms-2">
+                        <span class="mod-badge">
                             <i class="fas fa-gavel"></i> Moderator
                         </span>
                     <?php endif; ?>
                     <?php if ($ghost_mode): ?>
-                        <span class="badge bg-secondary ms-2" title="You are invisible to other users">
+                        <span class="ghost-badge" title="You are invisible to other users">
                             <i class="fas fa-ghost"></i> Ghost Mode
                         </span>
                     <?php endif; ?>
                     <?php if ($youtube_enabled): ?>
-                        <span class="badge bg-danger ms-2">
+                        <span class="admin-badge">
                             <i class="fab fa-youtube"></i> YouTube Enabled
                         </span>
                     <?php endif; ?>
@@ -286,10 +289,7 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
                         </a>
                         </button>
                     <?php endif; ?>
-                    <button id="notificationBell" class="btn chat-control-btn" title="Notifications">
-        <i class="fas fa-bell"></i>
-        <!-- Badge will be added dynamically by JavaScript -->
-    </button>
+                    
                     <?php if ($_SESSION['user']['type'] === 'user'): ?>
         <button class="btn friends-btn" onclick="showFriendsPanel()">
     <i class="fas fa-user-friends"></i>
@@ -302,6 +302,10 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
                             <i class="fas fa-cog"></i>
                         </button>
                     <?php endif; ?>
+
+                    <button class="btn btn-outline-secondary" onclick="openUserSettings()" title="User Settings" aria-label="User Settings">
+    <i class="fas fa-cog"></i>
+</button>
                     
                     <button class="btn btn-leave-room" onclick="leaveRoom()">
                         <i class="fas fa-sign-out-alt"></i>
@@ -848,6 +852,6 @@ $('<style>').text(`
     <script src="js/loading.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/notifications.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/friend_notifications.js?v=<?php echo $versions['version']; ?>"></script>
-
+    <?php include 'user_settings.php'; ?>
 </body>
 </html>

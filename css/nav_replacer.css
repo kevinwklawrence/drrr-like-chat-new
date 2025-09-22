@@ -1,0 +1,48 @@
+.container-fluid {
+align-items: flex-start;
+}
+.rooms-section-header {
+    display:none;
+}
+.lounge-header {
+    display:none;
+}
+.register-header {
+    display:none;
+}
+.user-profile-card {
+    display:none;
+}
+.login-header {
+    display:none;
+}
+.links-section {
+    display:none;
+}
+.col-lg-8 {
+    height: inherit;
+}
+.login-section {
+    min-height: inherit;
+    overflow: auto;
+}
+.room-actions {
+    display:none;
+}
+.room-title {
+    font-size:20px;
+}
+.btn-test-user {
+    display:none;
+}
+#globalNavbar {
+    background: #222 !important;
+    border-color: #333 !important;
+}
+.dropdown-menu-dark {
+    background: #222 !important;
+    border-color: #333 !important;
+}
+.dropdown-item.active {
+    background: #111;
+}

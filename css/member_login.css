@@ -19,7 +19,7 @@ body {
             border: 1px solid #333;
             border-radius: 15px;
             padding: 40px;
-            margin: 0 auto;
+            margin: 40px auto;
             max-width: 1400px;
             width: 100%;
             box-shadow: 0 8px 25px rgba(0,0,0,0.3);
@@ -65,13 +65,13 @@ body {
         }
         
         .avatar-container {
-            max-height: 642px;
             overflow-y: auto;
             border: 2px solid #404040;
             border-radius: 10px;
             padding: 20px;
             background: #1a1a1a;
             margin-top: 15px;
+            height: 500px;
         }
         
         .avatar-container::-webkit-scrollbar {
@@ -663,7 +663,7 @@ body {
             }
 
             .col-lg-8 {
-                margin-top: -20px !important;
+                margin-top: -10px !important;
             }
 
             .form-text.text-muted {
@@ -713,7 +713,7 @@ body {
             }
             
             .login-container {
-                padding: 0 !important;
+                padding: 10px 0 !important;
                 margin: 0 !important;
                 border-radius: 0 !important;
                 border: 0 !important;
@@ -723,6 +723,7 @@ body {
             .avatar-container {
                 max-height: 50vh !important;
                 padding: 0 !important;
+                margin: 0 !important;
             }
 
             .login-section {

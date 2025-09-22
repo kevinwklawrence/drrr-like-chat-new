@@ -81,37 +81,75 @@ $(document).ready(function() {
         const colorName = $(this).data('color');
         selectColor(colorName, this, false); // false = manual selection
     });
+
+    $(document).on('click', '.avatar', function() {
+        $('.avatar').removeClass('selected').css('filter', '');
+        $(this).addClass('selected');
+        
+        const avatarPath = $(this).data('avatar');
+        $('#selectedAvatar').val(avatarPath);
+        
+        if (!userManuallySelectedColor) {
+            const defaultColor = typeof getAvatarDefaultColor === 'function' ?
+                getAvatarDefaultColor(avatarPath) : 'black';
+            selectColor(defaultColor, document.querySelector(`[data-color="${defaultColor}"]`), true);
+        }
+        
+        // Update preview
+        $('#selectedAvatarImg').attr('src', $(this).attr('src'));
+        $('#selectedAvatarPreview').show();
+        $('#noAvatarSelected').hide();
+        
+        updateAvatarFilter();
+        syncModalPreviews(); // Sync with modals if they exist
+    });
+
+    // Initialize pagination
+    const totalPages = document.querySelectorAll('.avatar-page').length;
+    if (totalPages > 0) {
+        currentPage = 1;
+        updatePaginationUI();
+        
+        // Ensure only the first page is visible
+        document.querySelectorAll('.avatar-page').forEach((page, index) => {
+            page.style.display = index === 0 ? 'block' : 'none';
+        });
+    }
 });
 
 function syncModalPreviews() {
-    const mainAvatarPreview = $('#selectedAvatarPreview');
-    const mainAvatarImg = $('#selectedAvatarImg');
-    const mainNoAvatar = $('#noAvatarSelected');
+    const mainAvatarPreview = document.getElementById('selectedAvatarPreview');
+    const mainAvatarImg = document.getElementById('selectedAvatarImg');
+    const mainNoAvatar = document.getElementById('noAvatarSelected');
     
-    const modalAvatarPreview = $('#modalSelectedAvatarPreview');
-    const modalAvatarImg = $('#modalSelectedAvatarImg');
-    const modalNoAvatar = $('#modalNoAvatarSelected');
+    const modalAvatarPreview = document.getElementById('modalSelectedAvatarPreview');
+    const modalAvatarImg = document.getElementById('modalSelectedAvatarImg');
+    const modalNoAvatar = document.getElementById('modalNoAvatarSelected');
     
-    if (mainAvatarPreview.is(':visible')) {
-        modalAvatarImg.attr('src', mainAvatarImg.attr('src'));
+    if (mainAvatarPreview && mainAvatarPreview.style.display !== 'none') {
+        if (modalAvatarImg && mainAvatarImg) {
+            modalAvatarImg.src = mainAvatarImg.src;
+            
+            const currentFilter = mainAvatarImg.style.filter || '';
+            modalAvatarImg.style.filter = currentFilter;
+        }
         
-        const currentFilter = mainAvatarImg.css('filter') || '';
-        modalAvatarImg.css('filter', currentFilter);
-        
-        modalAvatarPreview.show();
-        modalNoAvatar.hide();
+        if (modalAvatarPreview) modalAvatarPreview.style.display = 'block';
+        if (modalNoAvatar) modalNoAvatar.style.display = 'none';
     } else {
-        modalAvatarPreview.hide();
-        modalNoAvatar.show();
+        if (modalAvatarPreview) modalAvatarPreview.style.display = 'none';
+        if (modalNoAvatar) modalNoAvatar.style.display = 'block';
     }
     
-    const mainColorPreview = $('#selectedColorPreview');
-    const modalColorPreview = $('#modalSelectedColorPreview');
+    const mainColorPreview = document.getElementById('selectedColorPreview');
+    const modalColorPreview = document.getElementById('modalSelectedColorPreview');
     
-    modalColorPreview.attr('class', mainColorPreview.attr('class'));
-    
-    const currentColorFilter = mainColorPreview.css('filter') || '';
-    modalColorPreview.css('filter', currentColorFilter);
+    if (modalColorPreview && mainColorPreview) {
+        modalColorPreview.className = mainColorPreview.className;
+        
+        const currentColorFilter = mainColorPreview.style.filter || '';
+        modalColorPreview.style.filter = currentColorFilter;
+    }
 }
 
 let guestLoginInProgress = false;
@@ -251,28 +289,36 @@ function resetAllSettings() {
 }
 
 function updateAvatarFilter() {
-    const hue = $('#hueSlider').val() || 0;
-    const saturation = $('#saturationSlider').val() || 100;
+    const hueSlider = document.getElementById('hueSlider');
+    const saturationSlider = document.getElementById('saturationSlider');
     
-    $('#hueValue').text(hue + '°');
-    $('#saturationValue').text(saturation + '%');
+    if (!hueSlider || !saturationSlider) return;
+    
+    const hue = hueSlider.value || 0;
+    const saturation = saturationSlider.value || 100;
+    
+    const hueValue = document.getElementById('hueValue');
+    const saturationValue = document.getElementById('saturationValue');
+    
+    if (hueValue) hueValue.textContent = hue + '°';
+    if (saturationValue) saturationValue.textContent = saturation + '%';
     
     const filter = `hue-rotate(${hue}deg) saturate(${saturation}%)`;
     
-    const selectedAvatar = $('.avatar.selected');
-    if (selectedAvatar.length > 0) {
-        selectedAvatar.css('filter', filter);
-        selectedAvatar.addClass('avatar-customized');
+    const selectedAvatar = document.querySelector('.avatar.selected');
+    if (selectedAvatar) {
+        selectedAvatar.style.filter = filter;
+        selectedAvatar.classList.add('avatar-customized');
     }
     
-    const previewImg = $('#selectedAvatarImg');
-    if (previewImg.length > 0 && previewImg.is(':visible')) {
-        previewImg.css('filter', filter);
+    const previewImg = document.getElementById('selectedAvatarImg');
+    if (previewImg && previewImg.style.display !== 'none') {
+        previewImg.style.filter = filter;
     }
     
-    const modalAvatarImg = $('#modalSelectedAvatarImg');
-    if (modalAvatarImg.length > 0) {
-        modalAvatarImg.css('filter', filter);
+    const modalAvatarImg = document.getElementById('modalSelectedAvatarImg');
+    if (modalAvatarImg) {
+        modalAvatarImg.style.filter = filter;
     }
 }
 
@@ -327,3 +373,188 @@ $(document).on('click', '.color-option', function() {
     const colorName = $(this).data('color');
     selectColor(colorName, this, false); // false = manual selection
 });
+
+// Additional JavaScript functions for index.js pagination support
+
+// Initialize pagination variables
+let currentPage = 1;
+
+// Update pagination UI function
+function updatePaginationUI() {
+    const totalPages = document.querySelectorAll('.avatar-page').length;
+    if (totalPages === 0) return;
+    
+    const currentPageInfo = document.getElementById('currentPageInfo');
+    if (currentPageInfo) {
+        currentPageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+    }
+    
+    const prevBtn = document.getElementById('prevPage');
+    const nextBtn = document.getElementById('nextPage');
+    
+    // Update disabled states
+    if (prevBtn) {
+        if (currentPage === 1) {
+            prevBtn.disabled = true;
+            prevBtn.classList.add('disabled');
+        } else {
+            prevBtn.disabled = false;
+            prevBtn.classList.remove('disabled');
+        }
+    }
+    
+    if (nextBtn) {
+        if (currentPage === totalPages) {
+            nextBtn.disabled = true;
+            nextBtn.classList.add('disabled');
+        } else {
+            nextBtn.disabled = false;
+            nextBtn.classList.remove('disabled');
+        }
+    }
+}
+
+// Enhanced page change function
+function changePage(direction) {
+    const totalPages = document.querySelectorAll('.avatar-page').length;
+    const newPage = currentPage + direction;
+    
+    if (newPage >= 1 && newPage <= totalPages) {
+        // Hide current page
+        const currentPageElement = document.querySelector(`.avatar-page[data-page="${currentPage}"]`);
+        if (currentPageElement) {
+            currentPageElement.style.display = 'none';
+        }
+        
+        // Show new page
+        currentPage = newPage;
+        const newPageElement = document.querySelector(`.avatar-page[data-page="${currentPage}"]`);
+        if (newPageElement) {
+            newPageElement.style.display = 'block';
+        }
+        
+        updatePaginationUI();
+        
+        // Smooth scroll to avatar container on mobile for better UX
+        if (window.innerWidth <= 768) {
+            const avatarContainer = document.querySelector('.avatar-container');
+            if (avatarContainer) {
+                avatarContainer.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            }
+        }
+    }
+}
+
+// Random avatar selection that works with pagination
+function randomAvatar() {
+    const currentPageElement = document.querySelector(`.avatar-page[data-page="${currentPage}"]`);
+    if (!currentPageElement) return;
+    
+    const visibleAvatars = currentPageElement.querySelectorAll('.avatar');
+    
+    if (visibleAvatars.length > 0) {
+        const randomIndex = Math.floor(Math.random() * visibleAvatars.length);
+        const randomAvatar = visibleAvatars[randomIndex];
+        
+        // Trigger click event on the random avatar
+        if (randomAvatar.click) {
+            randomAvatar.click();
+        } else {
+            // Fallback for older browsers
+            const event = new Event('click', { bubbles: true });
+            randomAvatar.dispatchEvent(event);
+        }
+    }
+}
+
+// Clear avatar selection function that works with pagination
+function clearAvatarSelection() {
+    // Remove selection from all avatars across all pages
+    document.querySelectorAll('.avatar').forEach(avatar => {
+        avatar.classList.remove('selected');
+        avatar.style.border = '';
+        avatar.style.boxShadow = '';
+        if (avatar.style.filter) {
+            avatar.style.filter = '';
+        }
+    });
+    
+    // Clear any stored avatar selection
+    const selectedAvatarInput = document.getElementById('selectedAvatar');
+    if (selectedAvatarInput) {
+        selectedAvatarInput.value = '';
+    }
+    
+    // Update preview if it exists
+    const avatarPreview = document.getElementById('selectedAvatarPreview');
+    if (avatarPreview) {
+        avatarPreview.style.display = 'none';
+    }
+    
+    const noAvatarSelected = document.getElementById('noAvatarSelected');
+    if (noAvatarSelected) {
+        noAvatarSelected.style.display = 'block';
+    }
+}
+
+// Initialize pagination when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Set up pagination
+    const totalPages = document.querySelectorAll('.avatar-page').length;
+    if (totalPages > 0) {
+        currentPage = 1;
+        updatePaginationUI();
+        
+        // Ensure only the first page is visible
+        document.querySelectorAll('.avatar-page').forEach((page, index) => {
+            page.style.display = index === 0 ? 'block' : 'none';
+        });
+    }
+    
+    // Add keyboard navigation support
+    document.addEventListener('keydown', function(e) {
+        // Only handle keys when not typing in input fields
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            return;
+        }
+        
+        if (e.key === 'ArrowLeft' && currentPage > 1) {
+            e.preventDefault();
+            changePage(-1);
+        } else if (e.key === 'ArrowRight' && currentPage < totalPages) {
+            e.preventDefault();
+            changePage(1);
+        }
+    });
+});
+
+// Swipe support for mobile devices
+let touchStartX = 0;
+let touchEndX = 0;
+
+document.addEventListener('touchstart', function(e) {
+    touchStartX = e.changedTouches[0].screenX;
+});
+
+document.addEventListener('touchend', function(e) {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+});
+
+function handleSwipe() {
+    const swipeThreshold = 50; // Minimum distance for a swipe
+    const swipeDistance = touchEndX - touchStartX;
+    
+    if (Math.abs(swipeDistance) > swipeThreshold) {
+        if (swipeDistance > 0 && currentPage > 1) {
+            // Swipe right - go to previous page
+            changePage(-1);
+        } else if (swipeDistance < 0 && currentPage < document.querySelectorAll('.avatar-page').length) {
+            // Swipe left - go to next page
+            changePage(1);
+        }
+    }
+}
