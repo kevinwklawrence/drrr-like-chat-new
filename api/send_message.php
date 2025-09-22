@@ -2,6 +2,7 @@
 session_start();
 include '../db_connect.php';
 
+
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -217,6 +218,26 @@ if ($_SESSION['user']['type'] === 'user') {
 } else {
     $user_id_string = $_SESSION['user']['user_id'] ?? '';
 }
+
+$verify_stmt = $conn->prepare("SELECT 1 FROM chatroom_users WHERE room_id = ? AND user_id_string = ? LIMIT 1");
+$verify_stmt->bind_param("is", $room_id, $user_id_string);
+$verify_stmt->execute();
+$verify_result = $verify_stmt->get_result();
+$verify_stmt->close();
+
+if ($verify_result->num_rows === 0) {
+    // User is not in room - they were kicked/disconnected
+    unset($_SESSION['room_id']);
+    echo json_encode([
+        'status' => 'not_in_room',
+        'message' => 'You have been disconnected from the room',
+        'redirect' => '/lounge'
+    ]);
+    exit;
+}
+
+require_once __DIR__ . '/reset_inactivity.php';
+resetInactivityTimer($conn, $room_id, $user_id_string);
 
 error_log("Inserting message: room_id=$room_id, user_id=$user_id, guest_name=$guest_name, avatar=$avatar, user_id_string=$user_id_string, message=$message, reply_to=$reply_to_message_id");
 

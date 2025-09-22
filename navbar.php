@@ -27,6 +27,7 @@ if (!$is_logged_in) {
     $nav_items = [
         ['href' => '#', 'icon' => 'fas fa-plus', 'text' => 'Create Room', 'onclick' => 'showCreateRoomModal()', 'class' => 'btn-success'],
        // ['href' => '#', 'icon' => 'fas fa-user-edit', 'text' => 'Profile', 'onclick' => 'showProfileEditor()'],
+       ['href' => '#', 'icon' => 'fas fa-filter', 'text' => 'Filter', 'onclick' => 'showFilterModal()'],
         ['href' => '#', 'icon' => 'fas fa-cog', 'text' => 'Settings', 'onclick' => 'openUserSettings()'],
         ['href' => 'logout.php', 'icon' => 'fas fa-sign-out-alt', 'text' => 'Logout', 'class' => 'btn-danger']
     ];

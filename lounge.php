@@ -44,7 +44,7 @@ if (isset($_GET['invite']) && !empty($_GET['invite'])) {
     $invite_code = trim($_GET['invite']);
     error_log("INVITE_LINK: Processing invite code: $invite_code");
     
-    $invite_stmt = $conn->prepare("SELECT id, name, invite_code FROM chatrooms WHERE invite_code = ? AND invite_only = 1");
+    $invite_stmt = $conn->prepare("SELECT id, name, invite_code FROM chatrooms WHERE invite_code = ?");
     if ($invite_stmt) {
         $invite_stmt->bind_param("s", $invite_code);
         $invite_stmt->execute();
@@ -136,6 +136,111 @@ if (!empty($user_id_string)) {
 </div>
 <?php include 'navbar.php'; ?>
     <div class="container-fluid">
+        <div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="background: #2a2a2a; border: 1px solid #404040;">
+            <div class="modal-header" style="border-bottom: 1px solid #404040;">
+                <h5 class="modal-title" id="filterModalLabel" style="color: #fff;">
+                    <i class="fas fa-filter"></i> Room Filters
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: invert(1);"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Search Inputs -->
+                <div class="row mb-3">
+                    <div class="col-md-4 col-12 mb-2">
+                        <label class="form-label text-muted small">
+                            <i class="fas fa-search"></i> Room Name
+                        </label>
+                        <input type="text" class="form-control" id="filterRoomName" placeholder="Search by room name..." style="background: #333; border: 1px solid #555; color: #fff;">
+                    </div>
+                    <div class="col-md-4 col-12 mb-2">
+                        <label class="form-label text-muted small">
+                            <i class="fas fa-align-left"></i> Description
+                        </label>
+                        <input type="text" class="form-control" id="filterDescription" placeholder="Search description..." style="background: #333; border: 1px solid #555; color: #fff;">
+                    </div>
+                    <div class="col-md-4 col-12 mb-2">
+                        <label class="form-label text-muted small">
+                            <i class="fas fa-user"></i> User in Room
+                        </label>
+                        <input type="text" class="form-control" id="filterUsername" placeholder="Search by user..." style="background: #333; border: 1px solid #555; color: #fff;">
+                    </div>
+                </div>
+
+                <hr style="border-color: #404040;">
+
+                <!-- Tag Filters -->
+                <div class="mb-3">
+                    <label class="form-label" style="color: #e0e0e0; font-weight: 500;">
+                        <i class="fas fa-tags"></i> Room Tags & Features
+                    </label>
+                    <div class="filter-tags d-flex flex-wrap gap-2">
+                        <button class="btn btn-sm filter-tag-btn" data-filter="rp" onclick="toggleTagFilter('rp')">
+                            <i class="fas fa-theater-masks"></i> Roleplay
+                        </button>
+                        <button class="btn btn-sm filter-tag-btn" data-filter="youtube" onclick="toggleTagFilter('youtube')">
+                            <i class="fab fa-youtube"></i> YouTube
+                        </button>
+                        <button class="btn btn-sm filter-tag-btn" data-filter="permanent" onclick="toggleTagFilter('permanent')">
+                            <i class="fas fa-star"></i> Permanent
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Room Settings Filters -->
+                <div class="mb-3">
+                    <label class="form-label" style="color: #e0e0e0; font-weight: 500;">
+                        <i class="fas fa-cog"></i> Room Settings
+                    </label>
+                    <div class="filter-tags d-flex flex-wrap gap-2">
+                        <button class="btn btn-sm filter-tag-btn" data-filter="password" onclick="toggleTagFilter('password')">
+                            <i class="fas fa-lock"></i> Password Protected
+                        </button>
+                        <button class="btn btn-sm filter-tag-btn" data-filter="friends" onclick="toggleTagFilter('friends')">
+                            <i class="fas fa-user-friends"></i> Friends Only
+                        </button>
+                        <button class="btn btn-sm filter-tag-btn" data-filter="members" onclick="toggleTagFilter('members')">
+                            <i class="fas fa-id-badge"></i> Members Only
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Special Filters (Members Only) -->
+                <?php if ($_SESSION['user']['type'] === 'user'): ?>
+                <div class="mb-3">
+                    <label class="form-label" style="color: #e0e0e0; font-weight: 500;">
+                        <i class="fas fa-user-check"></i> Member Filters
+                    </label>
+                    <div class="filter-tags d-flex flex-wrap gap-2">
+                        <button class="btn btn-sm filter-tag-btn" data-filter="with-friends" onclick="toggleTagFilter('with-friends')">
+                            <i class="fas fa-users"></i> Rooms with Friends
+                        </button>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <hr style="border-color: #404040;">
+
+                <!-- Invite Code Section -->
+                
+
+                <!-- Filter Status -->
+                <div class="alert alert-info mb-0" style="background: #1a2332; border: 1px solid #2d5a8f;">
+                    <i class="fas fa-info-circle"></i> <span id="filterResultCount">Showing all public rooms</span>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid #404040;">
+                <button class="btn btn-outline-danger" onclick="clearAllFilters()">
+                    <i class="fas fa-times"></i> Clear Filters
+                </button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                    <i class="fas fa-check"></i> Apply Filters
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
         <div class="lounge-container">
             <!-- Header -->
             <div class="lounge-header">
@@ -148,6 +253,7 @@ if (!empty($user_id_string)) {
             </div>
             
             <div class="row">
+                
                 <!-- User Profile Sidebar -->
                 <div class="col-lg-3">
                     <div class="user-profile-card">
@@ -193,6 +299,8 @@ if (!empty($user_id_string)) {
                             </div>
                         </div>
                     </div>
+
+                    
                     
                     <!-- Online Users -->
                     <div class="card online-users-card">
@@ -249,6 +357,26 @@ if (!empty($user_id_string)) {
                             </div>
                         </div>
                     </div>
+                    
+<div class="mb-3">
+                    <label class="form-label" style="color: #e0e0e0; font-weight: 500;">
+                        <i class="fas fa-key"></i> Join Room with Invite Code
+                    </label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="inviteCodeInput" placeholder="Enter invite code or link..." style="background: #333; border: 1px solid #555; color: #fff;">
+                        <button class="btn btn-success" onclick="joinRoomByInvite()">
+                            <i class="fas fa-sign-in-alt"></i> Join
+                        </button>
+                        
+                    </div>
+                    <!--<button class="btn btn-outline-secondary me-2" onclick="showFilterModal()">
+                    <i class="fas fa-filter"></i> Filters
+                    <span class="badge bg-primary ms-1" id="activeFilterCount" style="display: none;">0</span>
+                </button>-->
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> You can paste invite links like: lounge.php?invite=abc123
+                    </small>
+                </div>
                     <div id="roomsList">
                         <div class="text-center py-5">
                             <div class="loading-spinner mb-3" style="width: 30px; height: 30px;"></div>
@@ -348,9 +476,9 @@ if (!empty($user_id_string)) {
 // Show invite modal when page loads
 document.addEventListener('DOMContentLoaded', function() {
     const inviteData = <?php echo json_encode($_SESSION['pending_invite']); ?>;
-    <?php unset($_SESSION['pending_invite']); // Clear after use ?>
+    <?php unset($_SESSION['pending_invite']); ?>
     
-    showInviteModal(inviteData);
+    joinInviteRoom(inviteData.room_id, inviteData.invite_code);
 });
 
 function showInviteModal(inviteData) {
@@ -391,9 +519,7 @@ function showInviteModal(inviteData) {
 }
 
 function joinInviteRoom(roomId, inviteCode) {
-    const button = $('#inviteModal .btn-primary');
-    const originalText = button.html();
-    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Joining...');
+    console.log('joinInviteRoom called with:', {roomId, inviteCode});
     
     $.ajax({
         url: 'api/join_room.php',
@@ -404,17 +530,16 @@ function joinInviteRoom(roomId, inviteCode) {
         },
         dataType: 'json',
         success: function(response) {
+            console.log('Response:', response);
             if (response.status === 'success') {
                 window.location.href = '/room';
             } else {
                 alert('Error: ' + response.message);
-                button.prop('disabled', false).html(originalText);
             }
         },
         error: function(xhr, status, error) {
             console.error('Error:', error);
             alert('Failed to join room: ' + error);
-            button.prop('disabled', false).html(originalText);
         }
     });
 }

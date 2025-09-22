@@ -270,12 +270,13 @@ if (in_array('permanent', $chatroom_columns)) {
     }
     
     if (in_array('invite_code', $chatroom_columns)) {
-        $insert_fields[] = 'invite_code';
-        $insert_values[] = '?';
-        $param_types .= 's';
-        $param_values[] = $invite_code;
-        error_log("CREATE_ROOM_DEBUG: Adding invite_code = " . ($invite_code ?: 'NULL'));
-    }
+    $invite_code = bin2hex(random_bytes(16));
+    $insert_fields[] = 'invite_code';
+    $insert_values[] = '?';
+    $param_types .= 's';
+    $param_values[] = $invite_code;
+    error_log("CREATE_ROOM_DEBUG: Generated invite code for all rooms: $invite_code");
+}
     
     if (in_array('members_only', $chatroom_columns)) {
         $insert_fields[] = 'members_only';
@@ -525,10 +526,10 @@ if ($permanent) {
     ];
     
     // NEW: Include invite code in response if invite_only is enabled
-    if ($invite_only && $invite_code) {
-        $response['invite_code'] = $invite_code;
-        $response['invite_link'] = "lounge.php?invite=" . $invite_code;
-    }
+    if ($invite_code) {
+    $response['invite_code'] = $invite_code;
+    $response['invite_link'] = "lounge.php?invite=" . $invite_code;
+}
     
     echo json_encode($response);
     

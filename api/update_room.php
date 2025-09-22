@@ -212,29 +212,25 @@ try {
         }
     }
     
-    // NEW: Generate invite code if invite_only is enabled and no code exists
-    if ($invite_only && in_array('invite_code', $existing_columns)) {
-        // Check if room already has an invite code
-        $check_stmt = $conn->prepare("SELECT invite_code FROM chatrooms WHERE id = ?");
-        if ($check_stmt) {
-            $check_stmt->bind_param("i", $room_id);
-            $check_stmt->execute();
-            $check_result = $check_stmt->get_result();
-            $current_room = $check_result->fetch_assoc();
-            $check_stmt->close();
-            
-            if (empty($current_room['invite_code'])) {
-                $invite_code = bin2hex(random_bytes(16)); // 32 character hex string
-                $update_fields[] = 'invite_code = ?';
-                $param_types .= 's';
-                $param_values[] = $invite_code;
-                error_log("Generated new invite code for room $room_id: $invite_code");
-            }
+    if (in_array('invite_code', $existing_columns)) {
+    $check_stmt = $conn->prepare("SELECT invite_code FROM chatrooms WHERE id = ?");
+    if ($check_stmt) {
+        $check_stmt->bind_param("i", $room_id);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
+        $current_room = $check_result->fetch_assoc();
+        $check_stmt->close();
+        
+        if (empty($current_room['invite_code'])) {
+            $invite_code = bin2hex(random_bytes(16));
+            $update_fields[] = 'invite_code = ?';
+            $param_types .= 's';
+            $param_values[] = $invite_code;
+        } else {
+            $invite_code = $current_room['invite_code'];
         }
-    } elseif (!$invite_only && in_array('invite_code', $existing_columns)) {
-        // Clear invite code if invite_only is disabled
-        $update_fields[] = 'invite_code = NULL';
     }
+}
     
     // Add room_id to parameters
     $param_types .= 'i';
@@ -369,10 +365,10 @@ if ($settings_event_stmt) {
     ];
     
     // Include invite code in response if invite_only is enabled
-    if ($invite_only && isset($invite_code)) {
-        $response['invite_code'] = $invite_code;
-        $response['invite_link'] = "lounge.php?invite=" . $invite_code;
-    }
+    if (isset($invite_code)) {
+    $response['invite_code'] = $invite_code;
+    $response['invite_link'] = "lounge.php?invite=" . $invite_code;
+}
     
     error_log("Room settings updated: room_id=$room_id, name=$name, theme=$theme, permanent=$permanent, host=$host_name");
     echo json_encode($response);

@@ -24,6 +24,8 @@ try {
     $user_session = $_SESSION['user'];
     include '../db_connect.php';
     include '../check_site_ban.php';
+    require_once __DIR__ . '/reset_inactivity.php';
+resetInactivityTimer($conn, $room_id, $user_id_string);
 
     // Check for site ban before processing (but skip for admins/moderators)
     $is_admin = false;
@@ -149,6 +151,16 @@ try {
 
     // BYPASS: Skip all access restrictions for admins and moderators
     $access_granted = $is_admin || $is_moderator || $is_returning_permanent_host;
+
+    $used_invite_code = false;
+$provided_invite = $_POST['invite_code'] ?? $_GET['invite'] ?? '';
+$room_invite_code = $room['invite_code'] ?? '';
+
+if (!empty($provided_invite) && !empty($room_invite_code) && $provided_invite === $room_invite_code) {
+    $used_invite_code = true;
+    $access_granted = true; // Invite code bypasses ALL access controls
+    error_log("JOIN_ROOM: Valid invite code provided, bypassing all access controls");
+}
     
     if (!$access_granted) {
         // Check invite-only access
@@ -222,6 +234,32 @@ try {
     } else {
         error_log("JOIN_ROOM_DEBUG: Access restrictions bypassed for admin/moderator");
     }
+
+    if ($used_invite_code && $room['has_password'] == 1 && $room_keys_column_exists) {
+    $room_keys = [];
+    if (!empty($room['room_keys']) && $room['room_keys'] !== 'null') {
+        $decoded = json_decode($room['room_keys'], true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            $room_keys = $decoded;
+        }
+    }
+    
+    $room_keys[$user_id_string] = [
+        'granted_by' => 'invite_code',
+        'granted_at' => time(),
+        'expires_at' => time() + (7 * 24 * 60 * 60),
+        'from_invite' => true
+    ];
+    
+    $room_keys_json = json_encode($room_keys, JSON_UNESCAPED_SLASHES);
+    $stmt = $conn->prepare("UPDATE chatrooms SET room_keys = ? WHERE id = ?");
+    if ($stmt) {
+        $stmt->bind_param("si", $room_keys_json, $room_id);
+        $stmt->execute();
+        $stmt->close();
+        error_log("JOIN_ROOM: Granted room key via invite code");
+    }
+}
 
     // Check if user is already in the room
     $stmt = $conn->prepare("SELECT id FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");

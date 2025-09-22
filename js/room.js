@@ -71,17 +71,7 @@ let lastActivityUpdate = 0;
 let userIsActive = true;
 let activityTrackingEnabled = false;*/
 
-const ACTIVITY_CONFIG = {
-    HEARTBEAT_INTERVAL: 15000,         // 15 seconds (updated from 30s)
-    ACTIVITY_UPDATE_INTERVAL: 120000,  // 2 minutes
-    DISCONNECT_CHECK_INTERVAL: 150000, // 2.5 minutes
-    STATUS_CHECK_INTERVAL: 20000,      // 20 seconds
-    MIN_ACTIVITY_INTERVAL: 30000,      // 30 seconds between activity updates
-    
-    AFK_TIMEOUT_MINUTES: 20,           // 20 minutes to AFK
-    DISCONNECT_TIMEOUT_MINUTES: 80,    // 80 minutes to disconnect
-    SESSION_TIMEOUT_MINUTES: 60        // 60 minutes session timeout
-};
+
 
 let lastScrollTop = 0;
 let lastMessageCount = 0;
@@ -120,301 +110,7 @@ let isReloadingSettings = false;
 
 
 
-let activityTracker = {
-    enabled: false,
-    intervals: {
-        heartbeat: null,
-        activityUpdate: null,
-        disconnectCheck: null,
-        statusCheck: null
-    },
-    lastActivityUpdate: 0,
-    lastInteraction: 0,
-    userIsActive: false,
-    activityQueue: [],
-    
-    init() {
-        if (this.enabled) {
-            debugLog('🔄 Activity tracking already initialized');
-            return;
-        }
-        
-        debugLog('🔄 Initializing activity tracking system...');
-        this.enabled = true;
-        
-        // Clear any existing intervals
-        this.cleanup();
-        
-        // Set up heartbeat (15 seconds)
-        this.intervals.heartbeat = setInterval(() => {
-            this.sendHeartbeat();
-        }, ACTIVITY_CONFIG.HEARTBEAT_INTERVAL);
-        
-        // Set up activity queue processing (2 minutes)
-        this.intervals.activityUpdate = setInterval(() => {
-            this.processActivityQueue();
-        }, ACTIVITY_CONFIG.ACTIVITY_UPDATE_INTERVAL);
-        
-        // Set up disconnect check (2.5 minutes)
-        this.intervals.disconnectCheck = setInterval(() => {
-            this.triggerDisconnectCheck();
-        }, ACTIVITY_CONFIG.DISCONNECT_CHECK_INTERVAL);
-        
-        // Set up status check (20 seconds)
-        this.intervals.statusCheck = setInterval(() => {
-            this.checkUserStatus();
-        }, ACTIVITY_CONFIG.STATUS_CHECK_INTERVAL);
-        
-        // Set up activity listeners
-        this.setupActivityListeners();
-        
-        // Record initial activity
-        this.recordActivity('system_start');
-        
-        debugLog('✅ Activity tracking system initialized');
-    },
-    
-    cleanup() {
-        debugLog('🛑 Cleaning up activity tracking intervals');
-        Object.keys(this.intervals).forEach(key => {
-            if (this.intervals[key]) {
-                clearInterval(this.intervals[key]);
-                this.intervals[key] = null;
-            }
-        });
-        this.enabled = false;
-    },
-    
-    setupActivityListeners() {
-        debugLog('🎯 Setting up activity listeners...');
-        
-        // Remove any existing listeners
-        $(document).off('mousemove.activity keypress.activity scroll.activity click.activity touchstart.activity touchmove.activity');
-        $(window).off('focus.activity blur.activity');
-        
-        let activityTimeout;
-        const markUserActive = () => {
-            const now = Date.now();
-            
-            // Throttle to prevent excessive calls
-            if (now - this.lastInteraction < 1000) return;
-            
-            this.lastInteraction = now;
-            this.userIsActive = true;
-            
-            clearTimeout(activityTimeout);
-            activityTimeout = setTimeout(() => {
-                this.recordActivity('interaction');
-            }, 2000);
-        };
-        
-        // Desktop and mobile event listeners
-        $(document).on('mousemove.activity keypress.activity scroll.activity click.activity touchstart.activity touchmove.activity', markUserActive);
-        
-        // Window focus
-        $(window).on('focus.activity', () => {
-            this.recordActivity('window_focus');
-        });
-        
-        // Page visibility
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                this.recordActivity('page_focus');
-            }
-        });
-        
-        debugLog('✅ Activity listeners set up (desktop + mobile)');
-    },
-    
-    recordActivity(activityType) {
-        if (!this.enabled) return;
-        
-        const now = Date.now();
-        
-        // Only record if enough time has passed since last update
-        if (now - this.lastActivityUpdate >= ACTIVITY_CONFIG.MIN_ACTIVITY_INTERVAL) {
-            this.activityQueue.push({
-                type: activityType,
-                timestamp: now
-            });
-            
-            debugLog(`📝 Recorded activity: ${activityType}`);
-        }
-    },
-    
-    processActivityQueue() {
-        if (!this.enabled || this.activityQueue.length === 0) return;
-        
-        const latestActivity = this.activityQueue[this.activityQueue.length - 1];
-        this.activityQueue = []; // Clear queue
-        
-        const now = Date.now();
-        
-        if (now - this.lastActivityUpdate >= ACTIVITY_CONFIG.MIN_ACTIVITY_INTERVAL) {
-            this.sendActivityUpdate(latestActivity.type);
-            this.lastActivityUpdate = now;
-        }
-    },
-    
-    sendActivityUpdate(activityType) {
-        if (!this.enabled) return;
-        
-        debugLog(`📡 Sending activity update: ${activityType}`);
-        
-        $.ajax({
-            url: 'api/update_activity.php',
-            method: 'POST',
-            data: { activity_type: activityType },
-            dataType: 'json',
-            timeout: 5000,
-            success: (response) => {
-                if (response.status === 'success') {
-                    debugLog(`✅ Activity updated: ${activityType}`);
-                    
-                    // Check if user returned from AFK
-                    if (response.afk_status_changed && response.returned_from_afk) {
-                        debugLog('🔄 User returned from AFK automatically');
-                        this.handleAFKStatusChange(false);
-                        
-                        if (typeof showToast === 'function') {
-                            showToast('You are no longer AFK', 'info');
-                        }
-                        
-                        // Refresh UI
-                        setTimeout(() => {
-                            if (typeof loadUsers === 'function') loadUsers();
-                            if (typeof loadMessages === 'function') loadMessages();
-                        }, 500);
-                    }
-                } else if (response.status === 'not_in_room') {
-                    debugLog('❌ Not in room - stopping activity tracking');
-                    this.cleanup();
-                    
-                    if (typeof checkUserStatus === 'function') {
-                        checkUserStatus();
-                    }
-                }
-            },
-            error: (xhr, status, error) => {
-                debugError(`⚠️ Activity update failed: ${status} - ${error}`);
-                
-                if (xhr.status === 403 || xhr.status === 401) {
-                    this.cleanup();
-                }
-            }
-        });
-    },
-    
-    sendHeartbeat() {
-        if (!this.enabled) return;
-        
-        debugLog('💓 Sending heartbeat');
-        
-        $.ajax({
-            url: 'api/heartbeat.php',
-            method: 'POST',
-            data: { room_id: roomId },
-            dataType: 'json',
-            timeout: 8000,
-            success: (response) => {
-                if (response.status === 'success') {
-                    debugLog('💓 Heartbeat successful');
-                } else {
-                    debugLog('💔 Heartbeat failed:', response.message);
-                    if (!response.session_valid) {
-                        debugLog('💔 Session appears to be invalid');
-                    }
-                }
-            },
-            error: (xhr, status, error) => {
-                debugError(`💔 Heartbeat error: ${status} - ${error}`);
-            }
-        });
-    },
-    
-    triggerDisconnectCheck() {
-        if (!this.enabled) return;
-        
-        debugLog('🔍 Triggering disconnect check...');
-        
-        $.ajax({
-            url: 'api/check_disconnects.php',
-            method: 'GET',
-            dataType: 'json',
-            timeout: 10000,
-            success: (response) => {
-                if (response.status === 'success' && response.summary) {
-                    debugLog('📊 Disconnect check completed:', response.summary);
-                    
-                    const changesDetected = 
-                        response.summary.users_marked_afk > 0 ||
-                        response.summary.users_disconnected > 0 ||
-                        response.summary.hosts_transferred > 0 ||
-                        response.summary.rooms_deleted > 0;
-                    
-                    if (changesDetected) {
-                        debugLog('🔄 ' + (response.summary.users_marked_afk + response.summary.users_disconnected) + ' changes detected, refreshing UI');
-                        
-                        if (typeof loadUsers === 'function') loadUsers();
-                        if (typeof loadMessages === 'function') loadMessages();
-                    }
-                } else {
-                    debugLog('❌ Disconnect check failed:', response.message || 'Unknown error');
-                }
-            },
-            error: (xhr, status, error) => {
-                debugError(`⚠️ Disconnect check error: ${status} - ${error}`);
-            }
-        });
-    },
-    
-    checkUserStatus() {
-        if (!this.enabled) return;
-        
-        $.ajax({
-            url: 'api/check_user_status.php',
-            method: 'GET',
-            data: { room_id: roomId },
-            dataType: 'json',
-            timeout: 5000,
-            success: (response) => {
-                if (response.status === 'banned' || response.status === 'removed' || response.status === 'room_deleted') {
-                    debugLog('👤 User not in room, redirecting to lounge');
-                    window.location.href = '/lounge';
 
-                } else if (response.status === 'success' || response.status === 'active') {
-                    debugLog('✅ User status: Active');
-                    consecutiveErrors = 0;
-                }
-            },
-            error: (xhr, status, error) => {
-                consecutiveErrors++;
-                debugError(`❌ Server error: ${status} - ${error}`);
-                
-                if (consecutiveErrors >= 5) {
-                    debugLog('🔥 Too many consecutive errors, redirecting');
-                    showToast('Connection lost. Redirecting to lounge.', 'warning');
-                    setTimeout(() => {
-                        window.location.href = '/lounge';
-
-                    }, 2000);
-                }
-            }
-        });
-    },
-    
-    handleAFKStatusChange(isAFK) {
-        currentUserAFK = isAFK;
-        
-        if (typeof updateAFKButton === 'function') {
-            updateAFKButton(isAFK);
-        }
-        
-        if (typeof loadUsers === 'function') {
-            loadUsers();
-        }
-    }
-};
 
 if (typeof debugLog === 'undefined') {
     window.debugLog = function(...args) {
@@ -992,6 +688,8 @@ function clearFriendshipCache(userId = null) {
 function sendMessage() {
     const messageInput = $('#message');
     const message = messageInput.val().trim();
+
+    
     
     if (!message) {
         messageInput.focus();
@@ -1115,7 +813,7 @@ function sendValidatedMessage(message) {
     sendBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
     
     if (typeof activityTracker !== 'undefined') {
-        activityTracker.recordActivity('message_send');
+       // activityTracker.recordActivity('message_send');
     }
     
     const sendData = {
@@ -1133,6 +831,12 @@ function sendValidatedMessage(message) {
         data: sendData,
         dataType: 'json',
         success: function(response) {
+            if (response.status === 'not_in_room') {
+    alert(response.message || 'You have been disconnected from the room');
+    window.location.href = '/lounge';
+    return;
+}
+
             if (response.status === 'success') {
                 messageInput.val('');
                 if (typeof clearReplyInterface === 'function') {
@@ -1142,7 +846,7 @@ function sendValidatedMessage(message) {
                 if (response.afk_cleared) {
                     debugLog('🔄 AFK status was cleared due to sending message');
                     if (typeof activityTracker !== 'undefined') {
-                        activityTracker.handleAFKStatusChange(false);
+                       // activityTracker.handleAFKStatusChange(false);
                     }
                     
                     if (typeof showToast === 'function') {
@@ -1668,7 +1372,7 @@ function renderUser(user) {
                     const pmText = user.is_afk ? 'PM (AFK)' : 'PM';
                     actions += `
                         <button class="btn btn-primary ${user.is_afk ? 'afk-user' : ''}" onclick="openPrivateMessage(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
-                            <i class="fas fa-envelope"></i> ${pmText}
+                            <i class="fas fa-envelope"></i>
                         </button>
                     `;
                 } else {
@@ -1693,7 +1397,7 @@ function renderUser(user) {
                                 const pmText = user.is_afk ? 'PM (AFK)' : 'PM';
                                 container.html(`
                                     <button class="btn btn-primary ${user.is_afk ? 'afk-user' : ''}" onclick="openPrivateMessage(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
-                                        <i class="fas fa-envelope"></i> ${pmText}
+                                        <i class="fas fa-envelope"></i>
                                     </button>
                                 `);
                             } else {
@@ -2335,7 +2039,7 @@ function stopYouTubePlayer() {
 }
 
 function checkUserStatus() {
-    activityTracker.checkUserStatus();
+   // activityTracker.checkUserStatus();
 }
 
 function handleUserBanned(response) {
@@ -2483,23 +2187,23 @@ function stopKickDetection() {
 function initializeActivityTracking() {
     debugLog('🚀 Initializing room activity tracking...');
     
-    activityTracker.init();
+   // activityTracker.init();
     
     
     if (roomId) {
-        activityTracker.recordActivity('room_join');
+       // activityTracker.recordActivity('room_join');
     }
     
     $(document).on('submit', '.private-message-form', function() {
-        activityTracker.recordActivity('private_message');
+       // activityTracker.recordActivity('private_message');
     });
     
     $(document).on('submit', '.whisper-form', function() {
-        activityTracker.recordActivity('whisper');
+       // activityTracker.recordActivity('whisper');
     });
     
     $(document).on('click', '.btn-toggle-afk', function() {
-        activityTracker.recordActivity('manual_activity');
+       // activityTracker.recordActivity('manual_activity');
     });
     
     debugLog('✅ Activity tracking initialization complete');
@@ -2541,16 +2245,16 @@ function initializeActivityTracking() {
 }*/
 
 function updateUserActivity(activityType = 'general') {
-    activityTracker.recordActivity(activityType);
+   // activityTracker.recordActivity(activityType);
 }
 
 function triggerDisconnectCheck() {
-    activityTracker.triggerDisconnectCheck();
+   // activityTracker.triggerDisconnectCheck();
 }
 
 function stopActivityTracking() {
     debugLog('🛑 Stopping activity tracking system');
-    activityTracker.cleanup();
+   // activityTracker.cleanup();
 }
 
 function showRoomSettings() {
@@ -2695,7 +2399,11 @@ function displayRoomSettingsModal(settings) {
                                                 <small class="form-text text-muted">Let users request access when they don't know the password</small>
                                             </div>
                                         </div>
+
+                                        
                                         <div class="col-md-6">
+
+                                        ${currentUser.type === 'user' ? `
                                             <div class="mb-3">
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="checkbox" id="settingsMembersOnly"${settings.members_only ? ' checked' : ''}>
@@ -2706,7 +2414,7 @@ function displayRoomSettingsModal(settings) {
                                                 <small class="form-text text-muted">Only registered users can join</small>
                                             </div>
                                             
-                                            ${currentUser.type === 'user' ? `
+                                            
                                             <div class="mb-3">
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="checkbox" id="settingsFriendsOnly"${settings.friends_only ? ' checked' : ''}>
@@ -2718,24 +2426,26 @@ function displayRoomSettingsModal(settings) {
                                             </div>
                                             ` : ''}
                                             
-                                            <div class="mb-3">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="settingsInviteOnly"${settings.invite_only ? ' checked' : ''}>
-                                                    <label class="form-check-label" for="settingsInviteOnly">
-                                                        <i class="fas fa-link"></i> Invite Only
-                                                    </label>
-                                                </div>
-                                                <small class="form-text text-muted">Generate a special invite link</small>
-                                                ${settings.invite_only && settings.invite_code ? `
-                                                <div class="mt-2 p-2" style="background: #333; border-radius: 4px;">
-                                                    <small class="text-success">Current invite link:</small><br>
-                                                    <small style="word-break: break-all;">${window.location.origin}/lounge?invite=${settings.invite_code}</small>
-                                                    <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="copyInviteLink('${settings.invite_code}')">
-                                                        <i class="fas fa-copy"></i> Copy
-                                                    </button>
-                                                </div>
-                                                ` : ''}
-                                            </div>
+                                            <div class="mb-4">
+    <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" id="settingsInviteOnly"${settings.invite_only ? ' checked' : ''}>
+        <label class="form-check-label" for="settingsInviteOnly">
+            <i class="fas fa-link"></i> Invite Only
+        </label>
+    </div>
+    <small class="form-text text-muted">Require invite link to join</small>
+    ${settings.invite_code ? `
+    <div class="mt-2 p-2" style="background: #333; border-radius: 4px;">
+        <small class="text-${settings.invite_only ? 'success' : 'info'}">
+            ${settings.invite_only ? 'Required invite link:' : 'Optional invite link (can bypass access controls):'}
+        </small><br>
+        <small style="word-break: break-all;">${window.location.origin}/lounge.php?invite=${settings.invite_code}</small>
+        <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="copyInviteLink('${settings.invite_code}')">
+            <i class="fas fa-copy"></i> Copy
+        </button>
+    </div>
+    ` : ''}
+</div>
                                         </div>
                                     </div>
                                 </div>
@@ -5442,3 +5152,4 @@ function checkHostStatusChange(users) {
         }
     }
 }
+$.getScript('js/inactivity_warning.js');

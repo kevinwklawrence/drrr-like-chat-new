@@ -10,6 +10,15 @@ function debugLog(message, data = null) {
     }
 }
 
+let roomFilters = {
+    name: '',
+    description: '',
+    username: '',
+    tags: [], // ['rp', 'youtube', 'permanent', 'password', 'friends', 'members', 'invite', 'with-friends']
+    allRooms: [], // Store all rooms for filtering
+    friendUserIds: [] // Store friend IDs for filtering
+};
+
 $(document).ready(function() {
     debugLog('Lounge loaded');
     
@@ -31,6 +40,25 @@ $(document).ready(function() {
     setInterval(cleanupInactiveUsers, 60000); // Every minute
     
     setTimeout(initializePrivateMessaging, 1000);
+
+    $('#filterRoomName').on('input', function() {
+        roomFilters.name = $(this).val().toLowerCase();
+        applyFilters();
+    });
+    
+    $('#filterDescription').on('input', function() {
+        roomFilters.description = $(this).val().toLowerCase();
+        applyFilters();
+    });
+    
+    $('#filterUsername').on('input', function() {
+        roomFilters.username = $(this).val().toLowerCase();
+        applyFilters();
+    });
+    
+    // Load friend IDs if user is a member
+    loadFriendIds();
+    updateFilterBadge();
 });
 
 function sendHeartbeat() {
@@ -124,7 +152,8 @@ function loadRoomsWithUsers() {
                     if (completedRooms === rooms.length) {
                         const validRooms = roomsWithUsers.filter(r => r !== undefined);
                         debugLog('All rooms processed, displaying:', validRooms);
-                        displayRoomsWithUsers(validRooms);
+                        storeAndDisplayRooms(validRooms);
+
                         
                         setTimeout(() => {
                             $('#roomsList').removeClass('updating');
@@ -220,8 +249,17 @@ function loadUsersForRoom(room, callback) {
 
 
 
+// COMPLETE displayRoomsWithUsers function with invite_only filter
+// Replace the entire function in js/lounge.js
+
 function displayRoomsWithUsers(rooms) {
     debugLog('displayRoomsWithUsers called with:', rooms);
+    
+    // Store all rooms for filtering
+    if (!roomFilters.allRooms || roomFilters.allRooms.length === 0) {
+        roomFilters.allRooms = rooms;
+    }
+    
     let html = '';
     
     if (!Array.isArray(rooms) || rooms.length === 0) {
@@ -233,249 +271,250 @@ function displayRoomsWithUsers(rooms) {
             </div>
         `;
     } else {
-        rooms.sort((a, b) => {
-            const aIsPermanent = Boolean(a.permanent);  // FIXED: Use Boolean() instead of parseInt()
-            const bIsPermanent = Boolean(b.permanent);  // FIXED: Use Boolean() instead of parseInt()
-            
-            if (aIsPermanent && !bIsPermanent) return -1;
-            if (!aIsPermanent && bIsPermanent) return 1;
-            
-            const aUserCount = a.user_count || 0;
-            const bUserCount = b.user_count || 0;
-            return bUserCount - aUserCount;
-        });
+        // FILTER OUT INVITE-ONLY ROOMS HERE
+        let visibleRooms = rooms.filter(room => !room.invite_only);
         
-        html += '<div class="row">';
-        
-        rooms.forEach((room, index) => {
-            try {
-                const isPermanent = Boolean(room.permanent);
-                const isPasswordProtected = Boolean(room.has_password);
-                const allowsKnocking = Boolean(room.allow_knocking);
-                const isRP = Boolean(room.is_rp);
-                const youtubeEnabled = Boolean(room.youtube_enabled);
-                const friendsOnly = Boolean(room.friends_only);
-                const inviteOnly = Boolean(room.invite_only);
-                const membersOnly = Boolean(room.members_only);
-                const disappearingMessages = Boolean(room.disappearing_messages);
+        if (visibleRooms.length === 0) {
+            html = `
+                <div class="text-center py-5" style="color: #ccc;">
+                    <i class="fas fa-door-closed fa-3x mb-3" style="color: #555;"></i>
+                    <h4 style="color: #aaa;">No public rooms available</h4>
+                    <p style="color: #777;">All rooms are invite-only. Use an invite code to join!</p>
+                </div>
+            `;
+        } else {
+            // Sort rooms - permanent first, then by user count
+            visibleRooms.sort((a, b) => {
+                const aIsPermanent = Boolean(a.permanent);
+                const bIsPermanent = Boolean(b.permanent);
                 
-                const userCount = room.user_count || 0;
-                const capacity = room.capacity || 10;
-                const hasKey = hasRoomKey(room.id);
-                const host = room.host;
-                const regularUsers = room.regularUsers || [];
-                const canAccessFriendsOnly = room.can_access_friends_only !== false;
+                if (aIsPermanent && !bIsPermanent) return -1;
+                if (!aIsPermanent && bIsPermanent) return 1;
+                
+                const aUserCount = a.user_count || 0;
+                const bUserCount = b.user_count || 0;
+                return bUserCount - aUserCount;
+            });
+            
+            html += '<div class="row">';
+            
+            visibleRooms.forEach((room, index) => {
+                try {
+                    const isPermanent = Boolean(room.permanent);
+                    const isPasswordProtected = Boolean(room.has_password);
+                    const allowsKnocking = Boolean(room.allow_knocking);
+                    const isRP = Boolean(room.is_rp);
+                    const youtubeEnabled = Boolean(room.youtube_enabled);
+                    const friendsOnly = Boolean(room.friends_only);
+                    const inviteOnly = Boolean(room.invite_only);
+                    const membersOnly = Boolean(room.members_only);
+                    const disappearingMessages = Boolean(room.disappearing_messages);
+                    
+                    const userCount = room.user_count || 0;
+                    const capacity = room.capacity || 10;
+                    const hasKey = hasRoomKey(room.id);
+                    const host = room.host;
+                    const regularUsers = room.regularUsers || [];
+                    const canAccessFriendsOnly = room.can_access_friends_only !== false;
 
-                debugLog(`🔍 Room "${room.name}": permanent=${isPermanent}, rp=${isRP}, youtube=${youtubeEnabled}, friends=${friendsOnly}`);
+                    debugLog(`🔍 Room "${room.name}": permanent=${isPermanent}, rp=${isRP}, youtube=${youtubeEnabled}, friends=${friendsOnly}`);
 
-                let headerClass = 'room-header-enhanced';
-                let actionButtons = '';
-                let cardClass = 'room-card-enhanced';
+                    let headerClass = 'room-header-enhanced';
+                    let actionButtons = '';
+                    let cardClass = 'room-card-enhanced';
 
-                if (isPermanent) {
-                 //   headerClass += ' permanent-room';
-                    cardClass += ' permanent-room-card';
-                }
-
-                // Access checking logic
-                if (inviteOnly) {
-                    headerClass += ' access-denied';
-                    actionButtons = `<button class="btn btn-danger btn-sm" onclick="alert('This room requires a valid invite code')"><i class="fas fa-ban"></i> Invite Required</button>`;
-                } else if (membersOnly && currentUser.type !== 'user') {
-                    headerClass += ' access-denied';
-                    actionButtons = `<button class="btn btn-danger btn-sm" onclick="alert('This room is for registered members only')"><i class="fas fa-ban"></i> Members Only</button>`;
-                } else if (friendsOnly && !canAccessFriendsOnly) {
-                    headerClass += ' access-denied';
-                    actionButtons = `<button class="btn btn-danger btn-sm" onclick="alert('This room is for friends of the host only')"><i class="fas fa-ban"></i> Friends Only</button>`;
-                } else if (isPasswordProtected && hasKey) {
-                    headerClass += ' has-access';
-                    actionButtons = `<button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})"><i class="fas fa-key"></i> Enter Room</button>`;
-                } else if (isPasswordProtected) {
-                    headerClass += allowsKnocking ? ' knock-available' : ' password-protected';
-                    actionButtons = `<button class="btn btn-warning btn-sm" onclick="showPasswordModal(${room.id}, '${room.name.replace(/'/g, "\\'")}')"><i class="fas fa-key"></i> Enter Room</button>`;
-                    if (allowsKnocking) {
-                        actionButtons += `<button class="btn btn-outline-primary btn-sm" onclick="knockOnRoom(${room.id}, '${room.name.replace(/'/g, "\\'")}')"><i class="fas fa-hand-paper"></i> Knock</button>`;
+                    if (isPermanent) {
+                        cardClass += ' permanent-room-card';
                     }
-                } else {
-                    actionButtons = `<button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})"><i class="fas fa-sign-in-alt"></i> Enter Room</button>`;
-                }
 
-                let featureIndicators = '';
-                
-                if (isPermanent) {
-                   // featureIndicators += '<span class="room-indicator permanent-indicator" title="Permanent Room - Never deleted automatically"><i class="fas fa-star"></i> PERMANENT</span>';
-                   // debugLog(`✅ Added permanent indicator for: ${room.name}`);
-                }
-                
-                if (isRP) {
-                    featureIndicators += '<span class="room-indicator rp-indicator" style="background: #e91e63; color: white;" title="Roleplay Room"><i class="fas fa-theater-masks"></i> RP</span>';
-                    debugLog(`✅ Added RP indicator for: ${room.name}`);
-                }
-                
-                if (youtubeEnabled) {
-                    featureIndicators += '<span class="room-indicator youtube-indicator" style="background: #f44336; color: white;" title="YouTube Player Enabled"><i class="fab fa-youtube"></i> VIDEO</span>';
-                    debugLog(`✅ Added YouTube indicator for: ${room.name}`);
-                }
-                
-                if (friendsOnly) {
-                    featureIndicators += '<span class="room-indicator friends-indicator" style="background: #2196f3; color: white;" title="Friends Only"><i class="fas fa-user-friends"></i> FRIENDS</span>';
-                    debugLog(`✅ Added Friends Only indicator for: ${room.name}`);
-                }
-                
-                if (inviteOnly) {
-                    featureIndicators += '<span class="room-indicator invite-indicator" style="background: #ff9800; color: white;" title="Invite Only"><i class="fas fa-link"></i> INVITE</span>';
-                    debugLog(`✅ Added Invite Only indicator for: ${room.name}`);
-                }
-                
-                if (membersOnly) {
-                    featureIndicators += '<span class="room-indicator members-indicator" style="background: #4caf50; color: white;" title="Members Only"><i class="fas fa-user-check"></i> MEMBERS</span>';
-                    debugLog(`✅ Added Members Only indicator for: ${room.name}`);
-                }
-                
-                if (disappearingMessages) {
-                    const lifetime = room.message_lifetime_minutes || 30;
-                    featureIndicators += `<span class="room-indicator disappearing-indicator" style="background: #9c27b0; color: white;" title="Disappearing Messages (${lifetime} minutes)"><i class="fas fa-clock"></i> TEMP</span>`;
-                    debugLog(`✅ Added Disappearing Messages indicator for: ${room.name}`);
-                }
+                    // Access checking logic
+                    if (inviteOnly) {
+                        headerClass += ' access-denied';
+                        actionButtons = `<button class="btn btn-danger btn-sm" onclick="alert('This room requires a valid invite code')"><i class="fas fa-ban"></i> Invite Required</button>`;
+                    } else if (membersOnly && currentUser.type !== 'user') {
+                        headerClass += ' access-denied';
+                        actionButtons = `<button class="btn btn-danger btn-sm" onclick="alert('This room is for registered members only')"><i class="fas fa-ban"></i> Members Only</button>`;
+                    } else if (friendsOnly && !canAccessFriendsOnly) {
+                        headerClass += ' access-denied';
+                        actionButtons = `<button class="btn btn-danger btn-sm" onclick="alert('This room is for friends of the host only')"><i class="fas fa-ban"></i> Friends Only</button>`;
+                    } else if (isPasswordProtected && hasKey) {
+                        headerClass += ' has-access';
+                        actionButtons = `<button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})"><i class="fas fa-key"></i> Enter Room</button>`;
+                    } else if (isPasswordProtected) {
+                        headerClass += allowsKnocking ? ' knock-available' : ' password-protected';
+                        actionButtons = `<button class="btn btn-warning btn-sm" onclick="showPasswordModal(${room.id}, '${room.name.replace(/'/g, "\\'")}')"><i class="fas fa-key"></i> Enter Room</button>`;
+                        if (allowsKnocking) {
+                            actionButtons += `<button class="btn btn-outline-primary btn-sm" onclick="knockOnRoom(${room.id}, '${room.name.replace(/'/g, "\\'")}')"><i class="fas fa-hand-paper"></i> Knock</button>`;
+                        }
+                    } else {
+                        actionButtons = `<button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})"><i class="fas fa-sign-in-alt"></i> Enter Room</button>`;
+                    }
 
-                let themeClass = (room.theme && room.theme !== 'default') ? `theme-${room.theme}` : '';
-
-                // Build host section
-                let hostHtml = '';
-                if (host) {
-                    const hostAvatar = host.avatar || host.user_avatar || host.guest_avatar || 'default_avatar.jpg';
-                    const hostName = host.display_name || host.username || host.guest_name || 'Unknown Host';
-                    const hostHue = host.avatar_hue || host.user_avatar_hue || 0;
-                    const hostSaturation = host.avatar_saturation || host.user_avatar_saturation || 100;
+                    let featureIndicators = '';
                     
-                    hostHtml = `
-                        <div class="room-host">
-                            <h6><i class="fas fa-crown"></i> Host</h6>
-                            <div class="d-flex align-items-center">
-                                <img src="images/${hostAvatar}" width="32" height="32" class="me-2" style="filter: hue-rotate(${hostHue}deg) saturate(${hostSaturation}%);" alt="${hostName}">
-                                <div>
-                                    <div class="fw-bold">${hostName}</div>
-                                    <div class="user-badges">
-                                        ${parseInt(host.is_admin) === 1 ? '<span class="user-badge badge-admin"><i class="fas fa-shield-alt" title="Admin"></i></span>' : ''}
-                                        ${host.user_type === 'registered' || host.user_id ? '<span class="badge bg-success badge-sm">Verified</span>' : '<span class="badge bg-secondary badge-sm">Guest</span>'}
-                                        ${isPermanent ? '<span class="badge bg-warning badge-sm">Offline Host</span>' : ''}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                } else if (isPermanent) {
-                    hostHtml = `
-                        <div class="room-host">
-                            <h6><i class="fas fa-crown"></i> Host</h6>
-                            <div class="d-flex align-items-center text-warning">
-                                <i class="fas fa-user-slash fa-2x me-3"></i>
-                                <div>
-                                    <div class="fw-bold">Host is offline</div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    hostHtml = `<div class="room-host"><h6><i class="fas fa-crown"></i> Host</h6><div class="text-muted">No host available</div></div>`;
-                }
-
-                // Build users list
-                let usersHtml = '';
-                if (regularUsers.length > 0) {
-                    usersHtml = `<div class="room-users"><h6><i class="fas fa-users"></i> Users (${regularUsers.length})</h6><div class="users-grid-two-column">`;
+                    if (isPermanent) {
+                        // featureIndicators += '<span class="room-indicator permanent-indicator" title="Permanent Room - Never deleted automatically"><i class="fas fa-star"></i> PERMANENT</span>';
+                        // debugLog(`✅ Added permanent indicator for: ${room.name}`);
+                    }
                     
-                    regularUsers.slice(0, 8).forEach(user => {
-                        const userAvatar = user.avatar || user.user_avatar || user.guest_avatar || 'default_avatar.jpg';
-                        const userName = user.display_name || user.username || user.guest_name || 'Unknown';
-                        const userHue = user.avatar_hue || user.user_avatar_hue || 0;
-                        const userSaturation = user.avatar_saturation || user.user_avatar_saturation || 100;
+                    if (isRP) {
+                        featureIndicators += '<span class="badge bg-info"><i class="fas fa-theater-masks"></i> RP</span> ';
+                    }
+                    if (youtubeEnabled) {
+                        featureIndicators += '<span class="badge bg-danger"><i class="fab fa-youtube"></i> YouTube</span> ';
+                    }
+                    if (friendsOnly) {
+                        featureIndicators += '<span class="badge bg-primary"><i class="fas fa-user-friends"></i> Friends Only</span> ';
+                    }
+                    if (membersOnly) {
+                        featureIndicators += '<span class="badge bg-success"><i class="fas fa-id-badge"></i> Members Only</span> ';
+                    }
+                    if (disappearingMessages) {
+                        featureIndicators += '<span class="badge bg-warning"><i class="fas fa-clock"></i> Disappearing</span> ';
+                    }
+                    
+                    let themeClass = '';
+                    if (room.theme && room.theme !== 'default') {
+                        themeClass = `theme-${room.theme}`;
+                    }
+
+                    // Build host section
+                    let hostHtml = '';
+                    if (host) {
+                        const hostAvatar = host.avatar || host.user_avatar || host.guest_avatar || 'default_avatar.jpg';
+                        const hostName = host.display_name || host.username || host.guest_name || 'Unknown Host';
+                        const hostHue = host.avatar_hue || host.user_avatar_hue || 0;
+                        const hostSaturation = host.avatar_saturation || host.user_avatar_saturation || 100;
                         
-                        usersHtml += `
-                            <div class="user-item-mini d-flex align-items-center">
-                                <img src="images/${userAvatar}" width="24" height="24" class="me-2" style="filter: hue-rotate(${userHue}deg) saturate(${userSaturation}%);" alt="${userName}">
-                                <div class="user-info">
-                                    <div class="user-name">${userName}</div>
-                                    <div class="user-badges">
-                                        ${parseInt(user.is_admin) === 1 ? '<span class="badge bg-danger badge-sm">Admin</span>' : ''}
-                                        ${user.user_type === 'registered' || user.user_id ? '<span class="badge bg-success badge-sm">Verified</span>' : '<span class="badge bg-secondary badge-sm">Guest</span>'}
+                        hostHtml = `
+                            <div class="room-host">
+                                <h6><i class="fas fa-crown"></i> Host</h6>
+                                <div class="d-flex align-items-center">
+                                    <img src="images/${hostAvatar}" width="38" height="38" class="me-2" style="filter: hue-rotate(${hostHue}deg) saturate(${hostSaturation}%);" alt="${hostName}">
+                                    <div>
+                                        <div class="fw-bold" style="color: #e0e0e0;">${hostName}</div>
+                                        <div class="small">
+                                            ${parseInt(host.is_admin) === 1 ? '<span class="user-badge badge-admin"><i class="fas fa-shield-alt" title="Admin"></i></span>' : ''}
+                                            ${host.user_type === 'registered' || host.user_id ? '<span class="badge bg-success badge-sm">Verified</span>' : '<span class="badge bg-secondary badge-sm">Guest</span>'}
+                                            ${isPermanent ? '<span class="badge bg-warning badge-sm">Offline Host</span>' : ''}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         `;
-                    });
-                    
-                    if (regularUsers.length > 8) {
-                        usersHtml += `<div class="text-muted small users-more-indicator">+ ${regularUsers.length - 8} more users</div>`;
+                    } else if (isPermanent) {
+                        hostHtml = `
+                            <div class="room-host">
+                                <h6><i class="fas fa-crown"></i> Host</h6>
+                                <div class="d-flex align-items-center text-warning">
+                                    <i class="fas fa-user-slash fa-2x me-3"></i>
+                                    <div>
+                                        <div class="fw-bold">Host is offline</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        hostHtml = `<div class="room-host"><h6><i class="fas fa-crown"></i> Host</h6><div class="text-muted">No host available</div></div>`;
                     }
-                    
-                    usersHtml += `</div></div>`;
-                } else {
-                    usersHtml = `<div class="room-users"><h6><i class="fas fa-users"></i> Users (0)</h6><div class="text-muted small">No other users in room</div></div>`;
-                }
 
-                html += `
-                    <div class="col-lg-6 col-12 room-card-wrapper">
-                        <div class="${cardClass} ${themeClass}">
-                            <div class="${headerClass}">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="room-title-section">
-                                        <h5 class="room-title">
-                                            ${isPermanent ? '<i class="fas fa-star permanent-star" title="Permanent Room"></i>' : ''}
-                                            ${room.name}
-                                            ${isPasswordProtected ? '<i class="fas fa-lock" title="Password protected"></i>' : ''}
-                                            ${hasKey ? '<i class="fas fa-key" title="You have access"></i>' : ''}
-                                        </h5>
-                                        <div class="room-meta">
-                                            <span class="capacity-info"><i class="fas fa-users"></i> ${userCount}/${capacity}</span>
-                                            ${room.theme && room.theme !== 'default' ? `<span class="theme-info"><i class="fas fa-palette"></i> ${room.theme}</span>` : ''}
-                                            ${isPermanent ? '<span class="permanent-info"><i class="fas fa-star"></i> Permanent</span>' : ''}
+                    // Build users list
+                    let usersHtml = '';
+                    if (regularUsers.length > 0) {
+                        usersHtml = `<div class="room-users"><h6><i class="fas fa-users"></i> Users (${regularUsers.length})</h6><div class="users-grid-two-column">`;
+                        
+                        regularUsers.slice(0, 8).forEach(user => {
+                            const userAvatar = user.avatar || user.user_avatar || user.guest_avatar || 'default_avatar.jpg';
+                            const userName = user.display_name || user.username || user.guest_name || 'Unknown';
+                            const userHue = user.avatar_hue || user.user_avatar_hue || 0;
+                            const userSaturation = user.avatar_saturation || user.user_avatar_saturation || 100;
+                            
+                            usersHtml += `
+                                <div class="user-item-mini d-flex align-items-center">
+                                    <img src="images/${userAvatar}" width="24" height="24" class="me-2" style="filter: hue-rotate(${userHue}deg) saturate(${userSaturation}%);" alt="${userName}">
+                                    <div class="user-info">
+                                        <div class="user-name">${userName}</div>
+                                        <div class="user-badges">
+                                            ${parseInt(user.is_admin) === 1 ? '<span class="badge bg-danger badge-sm">Admin</span>' : ''}
+                                            ${user.user_type === 'registered' || user.user_id ? '<span class="badge bg-success badge-sm">Verified</span>' : '<span class="badge bg-secondary badge-sm">Guest</span>'}
                                         </div>
-                                        
                                     </div>
-                                    <div class="action-buttons">${actionButtons}</div>
                                 </div>
-                                ${featureIndicators ? `<div class="room-features mt-2">${featureIndicators}</div>` : ''}
-                                ${hasKey ? '<div class="mt-2"><span class="badge bg-success"><i class="fas fa-key"></i> Access Granted</span></div>' : ''}
-                            </div>
-                            <div class="room-content">
-                                <div class="room-description"><p>${room.description || 'No description'}</p></div>
-                                <div class="row">
-                                    <div class="col-12">${usersHtml}</div>
-                                    <div class="col-12 mt-3">${hostHtml}</div>
+                            `;
+                        });
+                        
+                        if (regularUsers.length > 8) {
+                            usersHtml += `<div class="text-muted small users-more-indicator">+ ${regularUsers.length - 8} more users</div>`;
+                        }
+                        
+                        usersHtml += `</div></div>`;
+                    } else {
+                        usersHtml = `<div class="room-users"><h6><i class="fas fa-users"></i> Users (0)</h6><div class="text-muted small">No other users in room</div></div>`;
+                    }
+
+                    html += `
+                        <div class="col-lg-6 col-12 room-card-wrapper">
+                            <div class="${cardClass} ${themeClass}">
+                                <div class="${headerClass}">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="room-title-section">
+                                            <h5 class="room-title">
+                                                ${isPermanent ? '<i class="fas fa-star permanent-star" title="Permanent Room"></i>' : ''}
+                                                ${room.name}
+                                                ${isPasswordProtected ? '<i class="fas fa-lock" title="Password protected"></i>' : ''}
+                                                ${hasKey ? '<i class="fas fa-key" title="You have access"></i>' : ''}
+                                            </h5>
+                                            <div class="room-meta">
+                                                <span class="capacity-info"><i class="fas fa-users"></i> ${userCount}/${capacity}</span>
+                                                ${room.theme && room.theme !== 'default' ? `<span class="theme-info"><i class="fas fa-palette"></i> ${room.theme}</span>` : ''}
+                                                ${isPermanent ? '<span class="permanent-info"><i class="fas fa-star"></i> Permanent</span>' : ''}
+                                            </div>
+                                            
+                                        </div>
+                                        <div class="action-buttons">${actionButtons}</div>
+                                    </div>
+                                    ${featureIndicators ? `<div class="room-features mt-2">${featureIndicators}</div>` : ''}
+                                    ${hasKey ? '<div class="mt-2"><span class="badge bg-success"><i class="fas fa-key"></i> Access Granted</span></div>' : ''}
+                                </div>
+                                <div class="room-content">
+                                    <div class="room-description"><p>${room.description || 'No description'}</p></div>
+                                    <div class="row">
+                                        <div class="col-12">${usersHtml}</div>
+                                        <div class="col-12 mt-3">${hostHtml}</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                `;
-                
-            } catch (error) {
-                console.error('Error rendering room:', room, error);
-                html += `
-                    <div class="col-lg-6 col-12 room-card-wrapper">
-                        <div class="room-card-enhanced">
-                            <div class="room-header-enhanced">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="room-title-section">
-                                        <h5 class="room-title">${room.name || 'Unknown Room'}</h5>
-                                        <div class="room-meta">
-                                            <span class="text-danger">Error loading room details</span>
+                    `;
+                    
+                } catch (error) {
+                    console.error('Error rendering room:', room, error);
+                    html += `
+                        <div class="col-lg-6 col-12 room-card-wrapper">
+                            <div class="room-card-enhanced">
+                                <div class="room-header-enhanced">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="room-title-section">
+                                            <h5 class="room-title">${room.name || 'Unknown Room'}</h5>
+                                            <div class="room-meta">
+                                                <span class="text-danger">Error loading room details</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="action-buttons">
-                                        <button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})">
-                                            <i class="fas fa-sign-in-alt"></i> Join Room
-                                        </button>
+                                        <div class="action-buttons">
+                                            <button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})">
+                                                <i class="fas fa-sign-in-alt"></i> Join Room
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                `;
-            }
-        });
-        
-        html += '</div>';
+                    `;
+                }
+            });
+            
+            html += '</div>';
+        }
     }
     
     const $roomsList = $('#roomsList');
@@ -489,28 +528,33 @@ function displayRoomsWithUsers(rooms) {
         $roomsList.html(html);
     }
     
-    const permanentCount = rooms.filter(r => Boolean(r.permanent)).length;
-    const rpCount = rooms.filter(r => Boolean(r.is_rp)).length;
-    const youtubeCount = rooms.filter(r => Boolean(r.youtube_enabled)).length;
-    const friendsCount = rooms.filter(r => Boolean(r.friends_only)).length;
-    
+    const visibleRooms = rooms.filter(room => !room.invite_only);
+    const permanentCount = visibleRooms.filter(r => Boolean(r.permanent)).length;
+    const rpCount = visibleRooms.filter(r => Boolean(r.is_rp)).length;
+    const youtubeCount = visibleRooms.filter(r => Boolean(r.youtube_enabled)).length;
+    const friendsCount = visibleRooms.filter(r => Boolean(r.friends_only)).length;
 }
 
 
-window.joinRoom = function(roomId) {
-    debugLog('joinRoom: Attempting to join room', roomId);
+window.joinRoom = function(roomId, inviteCode = null) {
+    debugLog('joinRoom: Attempting to join room', roomId, 'with invite:', inviteCode);
     
-    const button = $(`button[onclick="joinRoom(${roomId})"]`);
+    const button = $(`button[onclick*="joinRoom(${roomId}"]`);
     const originalText = button.html();
     
     button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Joining...');
     
+    const requestData = { room_id: roomId };
+    if (inviteCode) {
+        requestData.invite_code = inviteCode;
+    }
+    
     $.ajax({
         url: 'api/join_room.php',
         method: 'POST',
-        data: { room_id: roomId },
+        data: requestData,
         dataType: 'json',
-        timeout: 10000, // 10 second timeout
+        timeout: 10000,
         success: function(response) {
             if (response.status === 'success') {
                 if (response.used_room_key) {
@@ -535,7 +579,6 @@ window.joinRoom = function(roomId) {
         },
         error: function(xhr, status, error) {
             console.error('joinRoom error:', error);
-            
             button.prop('disabled', false).html(originalText);
             
             if (status === 'timeout') {
@@ -890,7 +933,7 @@ window.showCreateRoomModal = function() {
                                                 </label>
                                             </div>
                                         </div>
-                                        
+                                        ${currentUser.type === 'user' ? `
                                         <div class="mb-3">
                                             <div class="form-check">
                                                 <input class="form-check-input" type="checkbox" id="membersOnly">
@@ -902,7 +945,7 @@ window.showCreateRoomModal = function() {
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        ${currentUser.type === 'user' ? `
+                                        
                                         <div class="mb-3">
                                             <div class="form-check">
                                                 <input class="form-check-input" type="checkbox" id="friendsOnly">
@@ -1790,4 +1833,236 @@ function sendAnnouncement() {
             button.prop('disabled', false).html(originalText);
         }
     });
+}
+
+// Toggle filter panel
+function toggleFilterPanel() {
+    const panel = $('#filterPanelBody');
+    const icon = $('#filterToggleIcon');
+    
+    if (panel.is(':visible')) {
+        panel.slideUp(300);
+        icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+    } else {
+        panel.slideDown(300);
+        icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+    }
+}
+
+// Toggle tag filter
+function toggleTagFilter(tag) {
+    const btn = $(`.filter-tag-btn[data-filter="${tag}"]`);
+    const index = roomFilters.tags.indexOf(tag);
+    
+    if (index > -1) {
+        roomFilters.tags.splice(index, 1);
+        btn.removeClass('active');
+    } else {
+        roomFilters.tags.push(tag);
+        btn.addClass('active');
+    }
+    
+    applyFilters();
+}
+
+// Clear all filters
+function clearAllFilters() {
+    roomFilters.name = '';
+    roomFilters.description = '';
+    roomFilters.username = '';
+    roomFilters.tags = [];
+    
+    $('#filterRoomName').val('');
+    $('#filterDescription').val('');
+    $('#filterUsername').val('');
+    $('.filter-tag-btn').removeClass('active');
+    
+    updateFilterBadge();
+    applyFilters();
+}
+
+// Load friend IDs for filtering
+function loadFriendIds() {
+    $.ajax({
+        url: 'api/friends.php',
+        method: 'GET',
+        data: { action: 'get' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success' && response.friends) {
+                roomFilters.friendUserIds = response.friends
+                    .filter(f => f.status === 'accepted')
+                    .map(f => String(f.friend_user_id));
+            }
+        }
+    });
+}
+
+// Enhanced displayRoomsWithUsers to store all rooms
+function storeAndDisplayRooms(rooms) {
+    if (!roomFilters.allRooms || roomFilters.allRooms.length === 0) {
+        roomFilters.allRooms = rooms;
+    }
+    applyFilters();
+}
+
+// Apply all filters
+function applyFilters() {
+    // Start with all rooms, filter out invite-only
+    let filtered = roomFilters.allRooms.filter(room => !room.invite_only);
+    
+    // Text filters
+    if (roomFilters.name) {
+        filtered = filtered.filter(room => 
+            room.name.toLowerCase().includes(roomFilters.name)
+        );
+    }
+    
+    if (roomFilters.description) {
+        filtered = filtered.filter(room => 
+            (room.description || '').toLowerCase().includes(roomFilters.description)
+        );
+    }
+    
+    if (roomFilters.username) {
+        filtered = filtered.filter(room => {
+            if (!room.users || !Array.isArray(room.users)) return false;
+            return room.users.some(user => {
+                const displayName = user.display_name || user.username || user.guest_name || '';
+                return displayName.toLowerCase().includes(roomFilters.username);
+            });
+        });
+    }
+    
+    // Tag filters
+    roomFilters.tags.forEach(tag => {
+        switch(tag) {
+            case 'rp':
+                filtered = filtered.filter(room => room.is_rp);
+                break;
+            case 'youtube':
+                filtered = filtered.filter(room => room.youtube_enabled);
+                break;
+            case 'permanent':
+                filtered = filtered.filter(room => room.permanent);
+                break;
+            case 'password':
+                filtered = filtered.filter(room => room.has_password);
+                break;
+            case 'friends':
+                filtered = filtered.filter(room => room.friends_only);
+                break;
+            case 'members':
+                filtered = filtered.filter(room => room.members_only);
+                break;
+            case 'with-friends':
+                filtered = filtered.filter(room => {
+                    if (!room.users || !Array.isArray(room.users)) return false;
+                    return room.users.some(user => 
+                        roomFilters.friendUserIds.includes(String(user.user_id)) ||
+                        roomFilters.friendUserIds.includes(String(user.user_id_string))
+                    );
+                });
+                break;
+        }
+    });
+    
+    // Update result count
+    const visibleTotal = roomFilters.allRooms.filter(r => !r.invite_only).length;
+    const showing = filtered.length;
+    const filterCount = $('#filterResultCount');
+    
+    if (filterCount.length > 0) {
+        if (showing === visibleTotal) {
+            filterCount.text('Showing all public rooms');
+            filterCount.removeClass('text-warning').addClass('text-muted');
+        } else {
+            filterCount.text(`Showing ${showing} of ${visibleTotal} public rooms`);
+            filterCount.removeClass('text-muted').addClass('text-warning');
+        }
+    }
+    
+    // Update filter badge
+    updateFilterBadge();
+    
+    // Reset stored rooms to prevent double-filtering
+    const storedRooms = roomFilters.allRooms;
+    roomFilters.allRooms = [];
+    
+    // Display filtered rooms
+    displayRoomsWithUsers(filtered);
+    
+    // Restore all rooms
+    roomFilters.allRooms = storedRooms;
+}
+
+// Join room by invite code
+function joinRoomByInvite() {
+    const input = $('#inviteCodeInput').val().trim();
+    
+    if (!input) {
+        alert('Please enter an invite code or link');
+        return;
+    }
+    
+    // Extract invite code from various formats
+    let inviteCode = input;
+    
+    // Handle full URL: https://example.com/lounge.php?invite=abc123
+    if (input.includes('invite=')) {
+        const match = input.match(/invite=([^&\s]+)/);
+        if (match) inviteCode = match[1];
+    }
+    
+    // Handle query string: ?invite=abc123
+    if (input.startsWith('?invite=')) {
+        inviteCode = input.substring(8);
+    }
+    
+    const btn = $('#inviteCodeInput').next('button');
+    const originalText = btn.html();
+    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Joining...');
+    
+    $.ajax({
+        url: 'api/join_room_by_invite.php',
+        method: 'POST',
+        data: { invite_code: inviteCode },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                window.location.href = '/room';
+            } else {
+                alert('Error: ' + response.message);
+                btn.prop('disabled', false).html(originalText);
+            }
+        },
+        error: function(xhr, status, error) {
+            alert('Failed to join room: ' + error);
+            btn.prop('disabled', false).html(originalText);
+        }
+    });
+}
+
+function showFilterModal() {
+    const modal = new bootstrap.Modal(document.getElementById('filterModal'));
+    modal.show();
+}
+
+function updateFilterBadge() {
+    let activeCount = 0;
+    
+    // Count active text filters
+    if (roomFilters.name) activeCount++;
+    if (roomFilters.description) activeCount++;
+    if (roomFilters.username) activeCount++;
+    
+    // Count active tag filters
+    activeCount += roomFilters.tags.length;
+    
+    const badge = $('#activeFilterCount');
+    if (activeCount > 0) {
+        badge.text(activeCount).show();
+    } else {
+        badge.hide();
+    }
 }

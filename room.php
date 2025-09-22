@@ -9,7 +9,7 @@ error_log("Session data in room.php: " . print_r($_SESSION, true));
 
 if (!isset($_SESSION['user']) || !isset($_SESSION['room_id'])) {
     error_log("Missing user or room_id in session, redirecting to index.php");
-    header("Location: /guest");
+    header("Location: /lounge");
     exit;
 }
 
@@ -142,6 +142,24 @@ $is_host = false;
 $is_admin = false;
 $is_moderator = false;
 $ghost_mode = false;
+
+if ($room_id > 0 && $user_id_string) {
+    $verify = $conn->prepare("SELECT 1 FROM chatroom_users WHERE room_id = ? AND user_id_string = ? LIMIT 1");
+    $verify->bind_param("is", $room_id, $user_id_string);
+    $verify->execute();
+    $result = $verify->get_result();
+    $verify->close();
+    
+    if ($result->num_rows === 0) {
+        // User is NOT in room - disconnected/kicked
+        unset($_SESSION['room_id']);
+        header("Location: /lounge?disconnected=1");
+        exit;
+    }
+} else {
+    header("Location: /lounge");
+    exit;
+}
 
 if (!empty($user_id_string)) {
     // Check host status
@@ -473,6 +491,23 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
         
         <!-- YouTube Player Toggle Button -->
         
+    </div>
+
+     <!-- Mobile User List Modal -->
+    <div class="modal fade" id="mobileUsersModal" tabindex="-1" aria-labelledby="mobileUsersModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="mobileUsersModalLabel">
+                        <i class="fas fa-users"></i> Users in Room
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="mobileUserListContent">
+                    <!-- User list will be populated here -->
+                </div>
+            </div>
+        </div>
     </div>
                 
     <!-- Friends Panel -->
@@ -852,6 +887,10 @@ $('<style>').text(`
     <script src="js/loading.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/notifications.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/friend_notifications.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/inactivity_warning.js"></script>
+    <script src="js/disconnect_checker.js"></script>
+
+
     <?php include 'user_settings.php'; ?>
 </body>
 </html>
