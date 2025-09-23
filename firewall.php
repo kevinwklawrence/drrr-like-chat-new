@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'A7d9K2pL', 'Q4w8Z1xC', 'M3n6V5bT', 'J2k8H7sD', 'P9l3R6qW',
         'S5f2G8mN', 'B1v7C4zX', 'T6y3U9jK', 'E8r2W5tY', 'L4p9O7aS',
         'F3g6D1hJ', 'N2m8K5lQ', 'V7b4X1cZ', 'H6s3J9kL', 'R8q2P5wE',
-        'G5m2N8fS', 'C1z7X4vB', 'U6j3K9yT', 'W8t2Y5rE', 'O4a9S7lP', 'D4r45U', 'F4C3B00K', 'V1R3W00D'
+        'G5m2N8fS', 'C1z7X4vB', 'U6j3K9yT', 'W8t2Y5rE', 'O4a9S7lP', 'D4r45U', 'F4C3B00K', 'V1R3W00D', 'baccano'
     ]; // Array of site passwords
     
     header('Content-Type: application/json');

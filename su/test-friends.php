@@ -54,7 +54,7 @@
             $('#sendResult').html('<span class="info">Sending request...</span>');
             
             $.ajax({
-                url: 'api/friends.php',
+                url: '../api/friends.php',
                 method: 'POST',
                 data: {
                     action: 'add',
@@ -79,7 +79,7 @@
             $('#friendsResult').html('<span class="info">Loading friends...</span>');
             
             $.ajax({
-                url: 'api/friends.php',
+                url: '../api/friends.php',
                 method: 'GET',
                 data: { action: 'get' },
                 dataType: 'json',
@@ -116,7 +116,7 @@
             $('#acceptResult').html('<span class="info">Accepting request...</span>');
             
             $.ajax({
-                url: 'api/friends.php',
+                url: '../api/friends.php',
                 method: 'POST',
                 data: {
                     action: 'accept',
@@ -146,7 +146,7 @@
             // Test 1: Basic friends API
             tests.push(
                 $.ajax({
-                    url: 'api/friends.php',
+                    url: '../api/friends.php',
                     method: 'GET',
                     data: { action: 'get' },
                     dataType: 'json'

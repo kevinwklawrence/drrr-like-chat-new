@@ -1,0 +1,8 @@
+[16-Sep-2025 19:56:39 America/Chicago] LOUNGE.PHP: Updating global_users for user: Lenn#620229
+[16-Sep-2025 19:56:44 America/Chicago] LOUNGE.PHP: Updating global_users for user: Lenn#620229
+[16-Sep-2025 19:57:40 America/Chicago] Session data in room.php: Array
+(
+    [firewall_passed] => 1
+)
+
+[16-Sep-2025 19:57:40 America/Chicago] Missing user or room_id in session, redirecting to index.php

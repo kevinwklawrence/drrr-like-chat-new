@@ -2,11 +2,11 @@
 // config/maintenance.php - Maintenance mode configuration
 
 // === MAINTENANCE MODE SETTINGS ===
-define('MAINTENANCE_MODE', false); // Set to true to enable maintenance mode
+define('MAINTENANCE_MODE', true); // Set to true to enable maintenance mode
 
 // Admin credentials for maintenance bypass
-define('MAINTENANCE_ADMIN_USERNAME', 'webadmin');
-define('MAINTENANCE_ADMIN_PASSWORD', 'admin123'); // CHANGE THIS!
+define('MAINTENANCE_ADMIN_USERNAME', 'admin');
+define('MAINTENANCE_ADMIN_PASSWORD', 'dezinger14*'); // CHANGE THIS!
 
 // Maintenance message (optional - can be customized)
 define('MAINTENANCE_MESSAGE', 'We\'re currently performing scheduled maintenance to improve your experience. Please check back in a few minutes.');

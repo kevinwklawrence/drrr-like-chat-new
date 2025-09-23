@@ -9,5 +9,5 @@ unset($_SESSION['firewall_passed']);
 // session_unset();
 // session_destroy();
 
-header("Location: /guest");
+header("Location: index.php");
 ?>

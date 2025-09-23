@@ -43,6 +43,6 @@ if ($preserve_firewall) {
 }
 
 // Redirect to index page (user can now use guest login)
-header("Location: /guest");
+header("Location: index.php");
 exit;
 ?>

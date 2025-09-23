@@ -10,5 +10,4 @@ if ($conn->connect_error) {
 }
 $conn->query("SET SESSION wait_timeout = 60");
 $conn->query("SET SESSION interactive_timeout = 60");
-$conn->query("SET SESSION max_connections = 200");
 ?>
