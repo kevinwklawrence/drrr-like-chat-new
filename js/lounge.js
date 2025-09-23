@@ -1,1 +1,2068 @@
-const _0x4602fe=_0x6066;(function(_0x4f5838,_0x2f7920){const _0x384b9a=_0x6066,_0x8ca229=_0x4f5838();while(!![]){try{const _0x2e2066=-parseInt(_0x384b9a(0x18c))/0x1*(-parseInt(_0x384b9a(0x143))/0x2)+parseInt(_0x384b9a(0x266))/0x3+-parseInt(_0x384b9a(0x239))/0x4+parseInt(_0x384b9a(0x23b))/0x5+parseInt(_0x384b9a(0x16a))/0x6+parseInt(_0x384b9a(0x1d3))/0x7+-parseInt(_0x384b9a(0x13f))/0x8;if(_0x2e2066===_0x2f7920)break;else _0x8ca229['push'](_0x8ca229['shift']());}catch(_0x501ada){_0x8ca229['push'](_0x8ca229['shift']());}}}(_0x4c2d,0x52afc));const DEBUG_MODE=![];function debugLog(_0x5b169d,_0x16f121=null){const _0x2cb6e2=_0x6066;DEBUG_MODE&&(_0x16f121!==null?debugLog('[LOUNGE]',_0x5b169d,_0x16f121):debugLog(_0x2cb6e2(0x240),_0x5b169d));}let roomFilters={'name':'','description':'','username':'','tags':[],'allRooms':[],'friendUserIds':[]};$(document)['ready'](function(){const _0x1c1814=_0x6066;debugLog('Lounge\x20loaded');let _0x59204d=[];loadUserRoomKeys(),loadRoomsWithUsers(),loadOnlineUsers(),setInterval(()=>{loadOnlineUsers(),loadRoomsWithUsers(),loadUserRoomKeys();},0x1388),setInterval(checkForKnocks,0xbb8),setInterval(cleanupInactiveUsers,0xea60),setTimeout(initializePrivateMessaging,0x3e8),$(_0x1c1814(0x1e8))['on'](_0x1c1814(0x1e4),function(){const _0xe0df8b=_0x1c1814;roomFilters[_0xe0df8b(0x20f)]=$(this)['val']()[_0xe0df8b(0x2b0)](),applyFilters();}),$('#filterDescription')['on'](_0x1c1814(0x1e4),function(){const _0x5122d5=_0x1c1814;roomFilters[_0x5122d5(0x178)]=$(this)[_0x5122d5(0x1fb)]()[_0x5122d5(0x2b0)](),applyFilters();}),$('#filterUsername')['on']('input',function(){roomFilters['username']=$(this)['val']()['toLowerCase'](),applyFilters();}),loadFriendIds(),updateFilterBadge();});function sendHeartbeat(){const _0x3e8e1c=_0x6066;debugLog(_0x3e8e1c(0x12f)),$[_0x3e8e1c(0x156)]({'url':_0x3e8e1c(0x2ab),'method':'POST','dataType':'json','success':function(_0x2c2d0d){debugLog('Heartbeat\x20sent\x20successfully');},'error':function(){const _0x3f55c2=_0x3e8e1c;debugLog(_0x3f55c2(0x294));}});}function cleanupInactiveUsers(){const _0x4e9b6a=_0x6066;debugLog(_0x4e9b6a(0x217)),$[_0x4e9b6a(0x156)]({'url':_0x4e9b6a(0x264),'method':_0x4e9b6a(0x2ad),'dataType':_0x4e9b6a(0x15b),'success':function(_0x147a9c){const _0x677bc5=_0x4e9b6a;debugLog('Cleanup\x20response:',_0x147a9c),_0x147a9c[_0x677bc5(0x192)]>0x0&&(debugLog(_0x677bc5(0x238)+_0x147a9c[_0x677bc5(0x192)]+_0x677bc5(0x163)),loadOnlineUsers());},'error':function(){debugLog('Cleanup\x20failed\x20(silent\x20fail)');}});}function loadUserRoomKeys(){const _0x2e448b=_0x6066;debugLog(_0x2e448b(0x14d)),$['ajax']({'url':_0x2e448b(0x193),'method':_0x2e448b(0x1ad),'dataType':_0x2e448b(0x15b),'success':function(_0x565a72){const _0x150ed1=_0x2e448b;debugLog('User\x20room\x20keys\x20loaded:',_0x565a72),userRoomKeys=Array[_0x150ed1(0x1ec)](_0x565a72)?_0x565a72:[];},'error':function(_0x59b061,_0x58edff,_0x4bea57){const _0x315d19=_0x2e448b;debugLog(_0x315d19(0x25e),_0x4bea57),userRoomKeys=[];}});}function hasRoomKey(_0x41d42e){const _0x27e64a=_0x6066;return userRoomKeys[_0x27e64a(0x120)](parseInt(_0x41d42e));}function loadRoomsWithUsers(){const _0x17f51a=_0x6066;debugLog(_0x17f51a(0x209)),$('#roomsList\x20.room-card-enhanced')[_0x17f51a(0x299)]>0x0&&$(_0x17f51a(0x195))[_0x17f51a(0x20d)](_0x17f51a(0x23f)),$[_0x17f51a(0x156)]({'url':'api/get_rooms.php','method':'GET','dataType':_0x17f51a(0x15b),'timeout':0x2710,'success':function(_0x3559a4){const _0x4f6227=_0x17f51a;debugLog(_0x4f6227(0x126),_0x3559a4);if(!Array[_0x4f6227(0x1ec)](_0x3559a4)||_0x3559a4[_0x4f6227(0x299)]===0x0){displayRoomsWithUsers([]);return;}let _0x5da108=0x0,_0x1a247f=[];_0x3559a4['forEach']((_0x22b73e,_0x3429ed)=>{loadUsersForRoom(_0x22b73e,_0xc3ef83=>{const _0xfcbba2=_0x6066;_0x1a247f[_0x3429ed]=_0xc3ef83,_0x5da108++,debugLog(_0xfcbba2(0x27e)+_0x22b73e['id']+_0xfcbba2(0x25c),_0xc3ef83);if(_0x5da108===_0x3559a4['length']){const _0x3ae7b6=_0x1a247f['filter'](_0x5869d5=>_0x5869d5!==undefined);debugLog(_0xfcbba2(0x259),_0x3ae7b6),storeAndDisplayRooms(_0x3ae7b6),setTimeout(()=>{const _0x283415=_0xfcbba2;$(_0x283415(0x195))[_0x283415(0x29a)](_0x283415(0x23f));},0x12c);}});});},'error':function(_0x2eb246,_0x247db4,_0x1be0bf){const _0x291efa=_0x17f51a;console[_0x291efa(0x1ab)](_0x291efa(0x134),_0x1be0bf),$(_0x291efa(0x195))['removeClass'](_0x291efa(0x23f)),(_0x247db4!=='timeout'||$(_0x291efa(0x159))[_0x291efa(0x299)]===0x0)&&$(_0x291efa(0x195))[_0x291efa(0x1eb)](_0x291efa(0x16d)+_0x1be0bf+_0x291efa(0x249));}});}function loadUsersForRoom(_0x553ffa,_0x369541){const _0xf25a35=_0x6066;debugLog(_0xf25a35(0x2c8)+_0x553ffa['id']+_0xf25a35(0x227)),$[_0xf25a35(0x156)]({'url':_0xf25a35(0x1c1),'method':_0xf25a35(0x1ad),'data':{'room_id':_0x553ffa['id']},'dataType':_0xf25a35(0x15b),'timeout':0x1f40,'success':function(_0x2795e5){const _0x462708=_0xf25a35;debugLog('Raw\x20users\x20data\x20for\x20room\x20'+_0x553ffa['id']+':',_0x2795e5);try{let _0x493633=_0x2795e5;typeof _0x2795e5===_0x462708(0x11e)&&(_0x493633=JSON[_0x462708(0x1e5)](_0x2795e5));!Array[_0x462708(0x1ec)](_0x493633)&&(_0x493633=[]);const _0x3199e5=_0x493633[_0x462708(0x28b)](_0x269e72=>parseInt(_0x269e72[_0x462708(0x140)])===0x1)||null,_0xa2fcc3=_0x493633[_0x462708(0x2a4)](_0x59856a=>parseInt(_0x59856a[_0x462708(0x140)])!==0x1);debugLog(_0x462708(0x27e)+_0x553ffa['id']+_0x462708(0x1ba),{'total':_0x493633['length'],'host':_0x3199e5?_0x3199e5[_0x462708(0x2ca)]||_0x3199e5[_0x462708(0x1ef)]||_0x3199e5[_0x462708(0x2cd)]:_0x462708(0x119),'regularUsers':_0xa2fcc3[_0x462708(0x299)]});const _0x3b9f51={..._0x553ffa,'users':_0x493633,'host':_0x3199e5,'regularUsers':_0xa2fcc3,'user_count':_0x493633[_0x462708(0x299)]};_0x369541(_0x3b9f51);}catch(_0x5994d9){console[_0x462708(0x1ab)](_0x462708(0x245)+_0x553ffa['id']+':',_0x5994d9,_0x2795e5),_0x369541({..._0x553ffa,'users':[],'host':null,'regularUsers':[],'user_count':0x0});}},'error':function(_0x1c2613,_0x58ab48,_0x32ca5b){const _0x23694c=_0xf25a35;console['error'](_0x23694c(0x174)+_0x553ffa['id']+':',_0x32ca5b),_0x369541({..._0x553ffa,'users':[],'host':null,'regularUsers':[],'user_count':0x0});}});}function displayRoomsWithUsers(_0x2081ac){const _0x1d1cd2=_0x6066;debugLog(_0x1d1cd2(0x298),_0x2081ac);(!roomFilters[_0x1d1cd2(0x19f)]||roomFilters[_0x1d1cd2(0x19f)]['length']===0x0)&&(roomFilters['allRooms']=_0x2081ac);let _0x2faae1='';if(!Array['isArray'](_0x2081ac)||_0x2081ac[_0x1d1cd2(0x299)]===0x0)_0x2faae1=_0x1d1cd2(0x184);else{let _0x356e97=_0x2081ac[_0x1d1cd2(0x2a4)](_0x5db1c2=>!_0x5db1c2['invite_only']);_0x356e97[_0x1d1cd2(0x299)]===0x0?_0x2faae1=_0x1d1cd2(0x1d8):(_0x356e97['sort']((_0x6a99cd,_0x5985b2)=>{const _0x4583bd=_0x1d1cd2,_0x590e2c=Boolean(_0x6a99cd[_0x4583bd(0x196)]),_0x557951=Boolean(_0x5985b2[_0x4583bd(0x196)]);if(_0x590e2c&&!_0x557951)return-0x1;if(!_0x590e2c&&_0x557951)return 0x1;const _0x2e6272=_0x6a99cd[_0x4583bd(0x148)]||0x0,_0x19b1b1=_0x5985b2[_0x4583bd(0x148)]||0x0;return _0x19b1b1-_0x2e6272;}),_0x2faae1+='<div\x20class=\x22row\x22>',_0x356e97[_0x1d1cd2(0x1a0)]((_0x454fd2,_0x4147a4)=>{const _0x13c69f=_0x1d1cd2;try{const _0x28c66c=Boolean(_0x454fd2[_0x13c69f(0x196)]),_0x5df981=Boolean(_0x454fd2[_0x13c69f(0x175)]),_0x29347b=Boolean(_0x454fd2[_0x13c69f(0x1a5)]),_0xb8e1d=Boolean(_0x454fd2['is_rp']),_0x34b537=Boolean(_0x454fd2[_0x13c69f(0x2d3)]),_0x4cea28=Boolean(_0x454fd2[_0x13c69f(0x25b)]),_0x59db26=Boolean(_0x454fd2[_0x13c69f(0x15c)]),_0x2adcd7=Boolean(_0x454fd2['members_only']),_0x37b9bb=Boolean(_0x454fd2[_0x13c69f(0x14b)]),_0x845dee=_0x454fd2['user_count']||0x0,_0x3ab27c=_0x454fd2[_0x13c69f(0x1f4)]||0xa,_0x4e7b32=hasRoomKey(_0x454fd2['id']),_0x54bd03=_0x454fd2[_0x13c69f(0x1b9)],_0xc7d481=_0x454fd2[_0x13c69f(0x168)]||[],_0x3703ca=_0x454fd2[_0x13c69f(0x21d)]!==![];debugLog(_0x13c69f(0x211)+_0x454fd2[_0x13c69f(0x20f)]+_0x13c69f(0x230)+_0x28c66c+_0x13c69f(0x1c5)+_0xb8e1d+_0x13c69f(0x1e3)+_0x34b537+_0x13c69f(0x2ae)+_0x4cea28);let _0x1cc956='room-header-enhanced',_0x47c36a='',_0x56822b=_0x13c69f(0x170);_0x28c66c&&(_0x56822b+=_0x13c69f(0x14e));if(_0x59db26)_0x1cc956+=_0x13c69f(0x1c2),_0x47c36a=_0x13c69f(0x13e);else{if(_0x2adcd7&&currentUser[_0x13c69f(0x226)]!==_0x13c69f(0x15d))_0x1cc956+='\x20access-denied',_0x47c36a=_0x13c69f(0x285);else{if(_0x4cea28&&!_0x3703ca)_0x1cc956+=_0x13c69f(0x1c2),_0x47c36a=_0x13c69f(0x1f9);else{if(_0x5df981&&_0x4e7b32)_0x1cc956+=_0x13c69f(0x280),_0x47c36a=_0x13c69f(0x2c0)+_0x454fd2['id']+')\x22><i\x20class=\x22fas\x20fa-key\x22></i>\x20Enter\x20Room</button>';else _0x5df981?(_0x1cc956+=_0x29347b?_0x13c69f(0x12b):_0x13c69f(0x149),_0x47c36a=_0x13c69f(0x181)+_0x454fd2['id']+_0x13c69f(0x24c)+_0x454fd2['name']['replace'](/'/g,'\x5c\x27')+_0x13c69f(0x2d1),_0x29347b&&(_0x47c36a+=_0x13c69f(0x132)+_0x454fd2['id']+_0x13c69f(0x24c)+_0x454fd2[_0x13c69f(0x20f)]['replace'](/'/g,'\x5c\x27')+_0x13c69f(0x2aa))):_0x47c36a=_0x13c69f(0x2c0)+_0x454fd2['id']+_0x13c69f(0x137);}}}let _0x1075b4='';if(_0x28c66c){}_0xb8e1d&&(_0x1075b4+='<span\x20class=\x22badge\x20bg-info\x22><i\x20class=\x22fas\x20fa-theater-masks\x22></i>\x20RP</span>\x20');_0x34b537&&(_0x1075b4+='<span\x20class=\x22badge\x20bg-danger\x22><i\x20class=\x22fab\x20fa-youtube\x22></i>\x20YouTube</span>\x20');_0x4cea28&&(_0x1075b4+=_0x13c69f(0x17c));_0x2adcd7&&(_0x1075b4+=_0x13c69f(0x229));_0x37b9bb&&(_0x1075b4+=_0x13c69f(0x17f));let _0x564aa8='';_0x454fd2[_0x13c69f(0x133)]&&_0x454fd2[_0x13c69f(0x133)]!==_0x13c69f(0x29f)&&(_0x564aa8=_0x13c69f(0x2b5)+_0x454fd2[_0x13c69f(0x133)]);let _0x338332='';if(_0x54bd03){const _0x32d28f=_0x54bd03[_0x13c69f(0x2a1)]||_0x54bd03[_0x13c69f(0x2c6)]||_0x54bd03[_0x13c69f(0x165)]||_0x13c69f(0x20b),_0x519a23=_0x54bd03[_0x13c69f(0x2ca)]||_0x54bd03[_0x13c69f(0x1ef)]||_0x54bd03[_0x13c69f(0x2cd)]||_0x13c69f(0x21c),_0x316814=_0x54bd03[_0x13c69f(0x1ce)]||_0x54bd03[_0x13c69f(0x139)]||0x0,_0x27b031=_0x54bd03[_0x13c69f(0x257)]||_0x54bd03[_0x13c69f(0x12c)]||0x64;_0x338332='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22room-host\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h6><i\x20class=\x22fas\x20fa-crown\x22></i>\x20Host</h6>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22d-flex\x20align-items-center\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22images/'+_0x32d28f+_0x13c69f(0x19a)+_0x316814+_0x13c69f(0x124)+_0x27b031+'%);\x22\x20alt=\x22'+_0x519a23+_0x13c69f(0x283)+_0x519a23+_0x13c69f(0x1be)+(parseInt(_0x54bd03['is_admin'])===0x1?'<span\x20class=\x22user-badge\x20badge-admin\x22><i\x20class=\x22fas\x20fa-shield-alt\x22\x20title=\x22Admin\x22></i></span>':'')+_0x13c69f(0x123)+(_0x54bd03[_0x13c69f(0x24f)]===_0x13c69f(0x1ff)||_0x54bd03[_0x13c69f(0x2ba)]?_0x13c69f(0x232):_0x13c69f(0x1b4))+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+(_0x28c66c?_0x13c69f(0x1f1):'')+_0x13c69f(0x244);}else _0x28c66c?_0x338332='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22room-host\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h6><i\x20class=\x22fas\x20fa-crown\x22></i>\x20Host</h6>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22d-flex\x20align-items-center\x20text-warning\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-user-slash\x20fa-2x\x20me-3\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22fw-bold\x22>Host\x20is\x20offline</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20':_0x338332=_0x13c69f(0x1cb);let _0x5f3b0c='';_0xc7d481[_0x13c69f(0x299)]>0x0?(_0x5f3b0c=_0x13c69f(0x2c7)+_0xc7d481['length']+_0x13c69f(0x187),_0xc7d481[_0x13c69f(0x22c)](0x0,0x8)[_0x13c69f(0x1a0)](_0x57130f=>{const _0x32fe8c=_0x13c69f,_0x588079=_0x57130f[_0x32fe8c(0x2a1)]||_0x57130f[_0x32fe8c(0x2c6)]||_0x57130f[_0x32fe8c(0x165)]||_0x32fe8c(0x20b),_0x406483=_0x57130f[_0x32fe8c(0x2ca)]||_0x57130f[_0x32fe8c(0x1ef)]||_0x57130f[_0x32fe8c(0x2cd)]||_0x32fe8c(0x273),_0x33ba32=_0x57130f['avatar_hue']||_0x57130f[_0x32fe8c(0x139)]||0x0,_0x3e63b4=_0x57130f[_0x32fe8c(0x257)]||_0x57130f[_0x32fe8c(0x12c)]||0x64;_0x5f3b0c+=_0x32fe8c(0x146)+_0x588079+_0x32fe8c(0x1f7)+_0x33ba32+_0x32fe8c(0x124)+_0x3e63b4+_0x32fe8c(0x20c)+_0x406483+'\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22user-info\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22user-name\x22>'+_0x406483+_0x32fe8c(0x2d0)+(parseInt(_0x57130f['is_admin'])===0x1?'<span\x20class=\x22badge\x20bg-danger\x20badge-sm\x22>Admin</span>':'')+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+(_0x57130f['user_type']===_0x32fe8c(0x1ff)||_0x57130f[_0x32fe8c(0x2ba)]?_0x32fe8c(0x232):_0x32fe8c(0x1b4))+_0x32fe8c(0x265);}),_0xc7d481[_0x13c69f(0x299)]>0x8&&(_0x5f3b0c+=_0x13c69f(0x14a)+(_0xc7d481[_0x13c69f(0x299)]-0x8)+_0x13c69f(0x15e)),_0x5f3b0c+=_0x13c69f(0x24d)):_0x5f3b0c='<div\x20class=\x22room-users\x22><h6><i\x20class=\x22fas\x20fa-users\x22></i>\x20Users\x20(0)</h6><div\x20class=\x22text-muted\x20small\x22>No\x20other\x20users\x20in\x20room</div></div>',_0x2faae1+=_0x13c69f(0x290)+_0x56822b+'\x20'+_0x564aa8+_0x13c69f(0x25a)+_0x1cc956+_0x13c69f(0x166)+(_0x28c66c?_0x13c69f(0x297):'')+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+_0x454fd2[_0x13c69f(0x20f)]+_0x13c69f(0x251)+(_0x5df981?_0x13c69f(0x2b6):'')+_0x13c69f(0x251)+(_0x4e7b32?_0x13c69f(0x14f):'')+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</h5>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22room-meta\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20class=\x22capacity-info\x22><i\x20class=\x22fas\x20fa-users\x22></i>\x20'+_0x845dee+'/'+_0x3ab27c+_0x13c69f(0x18b)+(_0x454fd2[_0x13c69f(0x133)]&&_0x454fd2[_0x13c69f(0x133)]!==_0x13c69f(0x29f)?'<span\x20class=\x22theme-info\x22><i\x20class=\x22fas\x20fa-palette\x22></i>\x20'+_0x454fd2[_0x13c69f(0x133)]+_0x13c69f(0x1db):'')+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+(_0x28c66c?_0x13c69f(0x1f6):'')+_0x13c69f(0x15a)+_0x47c36a+_0x13c69f(0x2cc)+(_0x1075b4?_0x13c69f(0x186)+_0x1075b4+_0x13c69f(0x1d7):'')+_0x13c69f(0x172)+(_0x4e7b32?_0x13c69f(0x2b3):'')+_0x13c69f(0x190)+(_0x454fd2['description']||_0x13c69f(0x173))+_0x13c69f(0x206)+_0x5f3b0c+_0x13c69f(0x208)+_0x338332+_0x13c69f(0x271);}catch(_0x10719f){console[_0x13c69f(0x1ab)](_0x13c69f(0x2b4),_0x454fd2,_0x10719f),_0x2faae1+=_0x13c69f(0x2af)+(_0x454fd2[_0x13c69f(0x20f)]||_0x13c69f(0x1d2))+_0x13c69f(0x260)+_0x454fd2['id']+_0x13c69f(0x27d);}}),_0x2faae1+=_0x1d1cd2(0x1d7));}const _0x538cf6=$(_0x1d1cd2(0x195));_0x538cf6[_0x1d1cd2(0x142)]()[_0x1d1cd2(0x299)]>0x0&&!_0x538cf6[_0x1d1cd2(0x1b2)]('updating')?(_0x538cf6[_0x1d1cd2(0x20d)]('fade-transition'),setTimeout(()=>{const _0x444592=_0x1d1cd2;_0x538cf6[_0x444592(0x1eb)](_0x2faae1),_0x538cf6['removeClass'](_0x444592(0x2c1));},0x96)):_0x538cf6['html'](_0x2faae1);const _0x15be40=_0x2081ac['filter'](_0x5e0e6b=>!_0x5e0e6b['invite_only']),_0x47f849=_0x15be40[_0x1d1cd2(0x2a4)](_0xa6aca0=>Boolean(_0xa6aca0[_0x1d1cd2(0x196)]))['length'],_0x16ade3=_0x15be40[_0x1d1cd2(0x2a4)](_0x13f64c=>Boolean(_0x13f64c['is_rp']))[_0x1d1cd2(0x299)],_0x5ae691=_0x15be40['filter'](_0x1e4158=>Boolean(_0x1e4158[_0x1d1cd2(0x2d3)]))[_0x1d1cd2(0x299)],_0x30df5c=_0x15be40[_0x1d1cd2(0x2a4)](_0x43f0ba=>Boolean(_0x43f0ba[_0x1d1cd2(0x25b)]))[_0x1d1cd2(0x299)];}window[_0x4602fe(0x198)]=function(_0x1737e1,_0x5b16da=null){const _0x1d5c7a=_0x4602fe;debugLog(_0x1d5c7a(0x1ed),_0x1737e1,_0x1d5c7a(0x2b2),_0x5b16da);const _0x2b6c24=$(_0x1d5c7a(0x295)+_0x1737e1+'\x22]'),_0x5d6f69=_0x2b6c24[_0x1d5c7a(0x1eb)]();_0x2b6c24[_0x1d5c7a(0x194)](_0x1d5c7a(0x2be),!![])['html'](_0x1d5c7a(0x154));const _0xc0d4b8={'room_id':_0x1737e1};_0x5b16da&&(_0xc0d4b8[_0x1d5c7a(0x29e)]=_0x5b16da),$['ajax']({'url':'api/join_room.php','method':_0x1d5c7a(0x2ad),'data':_0xc0d4b8,'dataType':_0x1d5c7a(0x15b),'timeout':0x2710,'success':function(_0x41ecea){const _0x497afd=_0x1d5c7a;if(_0x41ecea[_0x497afd(0x1d0)]===_0x497afd(0x182))_0x41ecea[_0x497afd(0x26e)]&&loadUserRoomKeys(),window[_0x497afd(0x25d)][_0x497afd(0x28f)]='/room';else{if(_0x41ecea[_0x497afd(0x248)]&&_0x41ecea[_0x497afd(0x248)]['toLowerCase']()[_0x497afd(0x120)](_0x497afd(0x278)))showPasswordModal(_0x1737e1,_0x497afd(0x27e)+_0x1737e1);else _0x41ecea[_0x497afd(0x248)]&&(_0x41ecea[_0x497afd(0x248)][_0x497afd(0x120)](_0x497afd(0x121))||_0x41ecea[_0x497afd(0x248)][_0x497afd(0x120)]('members\x20only')||_0x41ecea['message']['includes'](_0x497afd(0x246)))?alert(_0x497afd(0x164)+_0x41ecea[_0x497afd(0x248)]):alert('Error:\x20'+_0x41ecea[_0x497afd(0x248)]);_0x2b6c24[_0x497afd(0x194)](_0x497afd(0x2be),![])[_0x497afd(0x1eb)](_0x5d6f69);}},'error':function(_0x50856e,_0x52a4cf,_0x515307){const _0x19d09f=_0x1d5c7a;console[_0x19d09f(0x1ab)]('joinRoom\x20error:',_0x515307),_0x2b6c24['prop'](_0x19d09f(0x2be),![])[_0x19d09f(0x1eb)](_0x5d6f69),_0x52a4cf===_0x19d09f(0x1d4)?alert(_0x19d09f(0x183)):alert(_0x19d09f(0x224)+_0x515307);}});};function loadOnlineUsers(){const _0x211fff=_0x4602fe;$[_0x211fff(0x156)]({'url':'api/get_online_users.php','method':_0x211fff(0x1ad),'dataType':_0x211fff(0x15b),'timeout':0x1f40,'success':function(_0x50c2a0){const _0x2b821e=_0x211fff;if(_0x50c2a0&&_0x50c2a0[_0x2b821e(0x22b)]){console[_0x2b821e(0x221)](_0x2b821e(0x284));typeof showNotification===_0x2b821e(0x1f5)&&showNotification('Session\x20expired\x20due\x20to\x20inactivity.\x20Redirecting...',_0x2b821e(0x2d6));typeof localStorage!=='undefined'&&(localStorage[_0x2b821e(0x27c)](_0x2b821e(0x1cd)),localStorage[_0x2b821e(0x27c)](_0x2b821e(0x19b)));window[_0x2b821e(0x25d)]['href']='/guest';return;}debugLog('Online\x20users\x20loaded:',_0x50c2a0),displayOnlineUsers(_0x50c2a0);},'error':function(_0x44deea,_0x1a0ab7,_0x41b5ec){const _0x3bca01=_0x211fff;console[_0x3bca01(0x1ab)]('Error\x20loading\x20online\x20users:',_0x41b5ec);if(_0x44deea[_0x3bca01(0x1d0)]===0x191||_0x44deea[_0x3bca01(0x1d0)]===0x193){console[_0x3bca01(0x221)]('Authentication\x20error\x20-\x20redirecting\x20to\x20index\x20page'),window['location'][_0x3bca01(0x28f)]=_0x3bca01(0x145);return;}_0x1a0ab7!==_0x3bca01(0x1d4)&&debugLog('Failed\x20to\x20load\x20online\x20users,\x20keeping\x20current\x20list');}});}function displayOnlineUsers(_0x8b5e7a){const _0x3ccb78=_0x4602fe;let _0x5baac7='';!Array['isArray'](_0x8b5e7a)||_0x8b5e7a[_0x3ccb78(0x299)]===0x0?_0x5baac7='<p\x20style=\x22color:\x20#666;\x22>No\x20users\x20online</p>':_0x8b5e7a[_0x3ccb78(0x1a0)](_0x4294e5=>{const _0x4ea523=_0x3ccb78,_0x91c4c9=_0x4294e5[_0x4ea523(0x1ef)]||_0x4294e5[_0x4ea523(0x2cd)]||_0x4ea523(0x273),_0x50eaa4=_0x4294e5[_0x4ea523(0x2a1)]||_0x4294e5[_0x4ea523(0x165)]||_0x4ea523(0x20b),_0x1114a8=_0x4294e5[_0x4ea523(0x2c9)],_0x4417ef=_0x4294e5['avatar_hue']||0x0,_0x3e598e=_0x4294e5['avatar_saturation']||0x64,_0x36a35f=_0x4294e5['username']&&_0x4294e5[_0x4ea523(0x1ef)][_0x4ea523(0x2bf)]()!=='',_0x4df8ce=_0x4294e5[_0x4ea523(0x144)]===currentUser[_0x4ea523(0x2ba)];let _0x2d8686='';if(_0x36a35f)_0x2d8686=_0x4ea523(0x1da)+_0x4294e5[_0x4ea523(0x144)]+'\x27,\x20\x27'+_0x4294e5[_0x4ea523(0x1ef)][_0x4ea523(0x286)](/'/g,'\x5c\x27')+_0x4ea523(0x1ac);else _0x4df8ce&&(_0x2d8686=_0x4ea523(0x24b));let _0x54dd8e='';if(_0x1114a8){const _0x51160d=new Date(),_0x2135fc=new Date(_0x1114a8[_0x4ea523(0x286)]('\x20','T')),_0x4a1385=Math[_0x4ea523(0x1a7)]((_0x51160d-_0x2135fc)/(0x3e8*0x3c));}let _0x2b905a='';_0x4294e5['is_admin']&&(_0x2b905a+=_0x4ea523(0x27a)),_0x4294e5[_0x4ea523(0x1e9)]&&(_0x2b905a+='<span\x20class=\x22user-badge\x20badge-mod\x20me-2\x22><i\x20class=\x22fas\x20fa-shield-alt\x22\x20title=\x22Moderator\x22></i>Moderator</span>'),_0x5baac7+='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22d-flex\x20align-items-center\x20mb-2\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22images/'+_0x50eaa4+_0x4ea523(0x11c)+_0x4417ef+_0x4ea523(0x124)+_0x3e598e+_0x4ea523(0x262)+(_0x2d8686?'cursor:\x20pointer;':'')+_0x4ea523(0x23e)+_0x2d8686+_0x4ea523(0x242)+_0x91c4c9+_0x4ea523(0x293)+_0x91c4c9+_0x4ea523(0x1bc)+_0x2b905a+_0x4ea523(0x21a)+_0x54dd8e+_0x4ea523(0x29b);}),$(_0x3ccb78(0x1e0))[_0x3ccb78(0x1eb)](_0x5baac7);}function handleAvatarClick(_0x22d2da,_0x570e4a,_0x440605){const _0x10eee3=_0x4602fe;_0x22d2da[_0x10eee3(0x18d)](),_0x22d2da['stopPropagation'](),debugLog(_0x10eee3(0x2bc),_0x570e4a,_0x10eee3(0x17a),_0x440605),_0x440605&&_0x440605[_0x10eee3(0x2bf)]()!==''&&getUserIdFromUsername(_0x440605,function(_0x51f64b){const _0x4549c3=_0x10eee3;_0x51f64b&&(_0x51f64b==currentUser['id']?showUserProfile(_0x51f64b,_0x22d2da[_0x4549c3(0x11d)]):showUserProfile(_0x51f64b,_0x22d2da[_0x4549c3(0x11d)]));});}function getUserIdFromUsername(_0x2c4591,_0x3e32c7){const _0x2b2e0a=_0x4602fe;$[_0x2b2e0a(0x156)]({'url':'api/get_user_id_from_username.php','method':_0x2b2e0a(0x1ad),'data':{'username':_0x2c4591},'dataType':_0x2b2e0a(0x15b),'success':function(_0x4f5115){const _0x5de402=_0x2b2e0a;_0x4f5115[_0x5de402(0x1d0)]===_0x5de402(0x182)?_0x3e32c7(_0x4f5115[_0x5de402(0x2ba)]):_0x3e32c7(null);},'error':function(){_0x3e32c7(null);}});}window['showPasswordModal']=function(_0x313028,_0x4a4967){const _0x47adc1=_0x4602fe,_0xacdb56=_0x47adc1(0x152)+_0x4a4967+_0x47adc1(0x16b)+_0x313028+_0x47adc1(0x1e6);$('#passwordModal')[_0x47adc1(0x1a4)](),$(_0x47adc1(0x288))[_0x47adc1(0x216)](_0xacdb56);const _0x59618d=new bootstrap[(_0x47adc1(0x1f8))](document[_0x47adc1(0x2bd)]('passwordModal'));_0x59618d['show'](),$(_0x47adc1(0x29d))['on']('shown.bs.modal',function(){const _0x1af2d9=_0x47adc1;$('#roomPasswordInput')[_0x1af2d9(0x19c)]();}),$('#roomPasswordInput')['on'](_0x47adc1(0x277),function(_0x38a87){const _0x1ed03b=_0x47adc1;_0x38a87[_0x1ed03b(0x2ac)]===0xd&&joinRoomWithPassword(_0x313028);});},window[_0x4602fe(0x1fa)]=function(_0x440f23){const _0x3fb786=_0x4602fe,_0x11fde5=$(_0x3fb786(0x1c4))[_0x3fb786(0x1fb)]();if(!_0x11fde5){alert('Please\x20enter\x20the\x20password'),$(_0x3fb786(0x1c4))[_0x3fb786(0x19c)]();return;}$['ajax']({'url':_0x3fb786(0x27b),'method':'POST','data':{'room_id':_0x440f23,'password':_0x11fde5},'dataType':_0x3fb786(0x15b),'success':function(_0x1116d6){const _0x16ffb5=_0x3fb786;_0x1116d6[_0x16ffb5(0x1d0)]==='success'?window[_0x16ffb5(0x25d)][_0x16ffb5(0x28f)]='/room':(alert(_0x16ffb5(0x1d9)+_0x1116d6[_0x16ffb5(0x248)]),$(_0x16ffb5(0x1c4))['val']('')[_0x16ffb5(0x19c)]());},'error':function(_0x50be48,_0x4ce0f5,_0x1ec871){const _0x2ef76f=_0x3fb786;console[_0x2ef76f(0x1ab)](_0x2ef76f(0x29c),_0x1ec871),alert(_0x2ef76f(0x224)+_0x1ec871);}});},window[_0x4602fe(0x247)]=function(){const _0x2d5701=_0x4602fe;$(_0x2d5701(0x153))['remove']();const _0x506a36=_0x2d5701(0x220)+(currentUser[_0x2d5701(0x272)]||currentUser[_0x2d5701(0x1e9)]?_0x2d5701(0x241):'')+_0x2d5701(0x125)+(currentUser[_0x2d5701(0x226)]===_0x2d5701(0x15d)?'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22form-check\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20class=\x22form-check-input\x22\x20type=\x22checkbox\x22\x20id=\x22membersOnly\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-check-label\x22\x20for=\x22membersOnly\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-user-check\x22></i>\x20Members\x20Only\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22text-muted\x22>Only\x20registered\x20users\x20can\x20join</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22col-md-6\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22form-check\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20class=\x22form-check-input\x22\x20type=\x22checkbox\x22\x20id=\x22friendsOnly\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-check-label\x22\x20for=\x22friendsOnly\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-user-friends\x22></i>\x20Friends\x20Only\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22text-muted\x22>Only\x20your\x20friends\x20can\x20join</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20':'')+_0x2d5701(0x1dc)+(currentUser['is_admin']||currentUser[_0x2d5701(0x1e9)]?_0x2d5701(0x17d):'')+_0x2d5701(0x130);$(_0x2d5701(0x153))[_0x2d5701(0x1a4)](),$(_0x2d5701(0x288))[_0x2d5701(0x216)](_0x506a36),$(_0x2d5701(0x282))['on'](_0x2d5701(0x254),function(){const _0x241f1f=_0x2d5701;this['checked']?($('#passwordField')[_0x241f1f(0x219)](),$(_0x241f1f(0x258))[_0x241f1f(0x219)]()):($(_0x241f1f(0x11a))[_0x241f1f(0x201)](),$(_0x241f1f(0x258))[_0x241f1f(0x201)](),$(_0x241f1f(0x1b5))[_0x241f1f(0x1fb)](''),$(_0x241f1f(0x167))[_0x241f1f(0x194)](_0x241f1f(0x177),!![]));}),$(_0x2d5701(0x2b1))['on'](_0x2d5701(0x254),function(){const _0x30448e=_0x2d5701;this[_0x30448e(0x177)]?$(_0x30448e(0x18a))[_0x30448e(0x219)]():$(_0x30448e(0x18a))['hide']();}),$(_0x2d5701(0x1dd))['on'](_0x2d5701(0x277),function(_0x214478){_0x214478['which']===0xd&&(_0x214478['preventDefault'](),createRoom());}),$(_0x2d5701(0x153))[_0x2d5701(0x279)]('show');},window[_0x4602fe(0x2b9)]=function(){const _0x160f77=_0x4602fe;debugLog('Creating\x20room\x20with\x20new\x20features...');const _0x4f1c16=$('#createRoomModal\x20.btn-primary');if(_0x4f1c16[_0x160f77(0x194)](_0x160f77(0x2be))){debugLog('Create\x20button\x20already\x20disabled,\x20preventing\x20duplicate\x20submission');return;}const _0x40e186={'name':$('#roomName')['val']()[_0x160f77(0x2bf)](),'description':$(_0x160f77(0x268))[_0x160f77(0x1fb)]()[_0x160f77(0x2bf)](),'capacity':$(_0x160f77(0x2d4))[_0x160f77(0x1fb)](),'theme':$(_0x160f77(0x1bf))[_0x160f77(0x1fb)](),'has_password':$(_0x160f77(0x282))['is'](_0x160f77(0x1e2))?0x1:0x0,'password':$('#hasPassword')['is'](_0x160f77(0x1e2))?$(_0x160f77(0x1b5))[_0x160f77(0x1fb)]():'','allow_knocking':$('#allowKnocking')['is'](_0x160f77(0x1e2))?0x1:0x0,'is_rp':$(_0x160f77(0x1d1))['is'](_0x160f77(0x1e2))?0x1:0x0,'youtube_enabled':$(_0x160f77(0x218))['is'](':checked')?0x1:0x0,'friends_only':$('#friendsOnly')['is'](_0x160f77(0x1e2))?0x1:0x0,'invite_only':$('#inviteOnly')['is'](_0x160f77(0x1e2))?0x1:0x0,'members_only':$(_0x160f77(0x292))['is'](_0x160f77(0x1e2))?0x1:0x0,'disappearing_messages':$('#disappearingMessages')['is'](_0x160f77(0x1e2))?0x1:0x0,'message_lifetime_minutes':$(_0x160f77(0x2b1))['is'](':checked')?$(_0x160f77(0x2c5))[_0x160f77(0x1fb)]():0x0,'permanent':$(_0x160f77(0x296))['is'](_0x160f77(0x1e2))?0x1:0x0};debugLog('Form\x20data\x20being\x20sent:',_0x40e186);if(!_0x40e186[_0x160f77(0x20f)]){alert(_0x160f77(0x180));return;}if(_0x40e186[_0x160f77(0x175)]&&!_0x40e186[_0x160f77(0x278)]){alert(_0x160f77(0x23d));return;}const _0x377253=_0x4f1c16[_0x160f77(0x1eb)]();_0x4f1c16[_0x160f77(0x194)]('disabled',!![])[_0x160f77(0x1eb)](_0x160f77(0x138));const _0x4826d6=$('#createRoomModal\x20.btn-secondary');_0x4826d6[_0x160f77(0x194)](_0x160f77(0x2be),!![]),$[_0x160f77(0x156)]({'url':_0x160f77(0x204),'method':_0x160f77(0x2ad),'data':_0x40e186,'dataType':_0x160f77(0x15b),'timeout':0x3a98,'success':function(_0x1900f1){const _0x526217=_0x160f77;debugLog('Create\x20room\x20response:',_0x1900f1);if(_0x1900f1[_0x526217(0x1d0)]===_0x526217(0x182)){$(_0x526217(0x153))['modal']('hide');let _0x3e66a8=_0x526217(0x26b);_0x40e186[_0x526217(0x196)]&&(_0x3e66a8+=_0x526217(0x250));if(_0x1900f1[_0x526217(0x29e)]){const _0x5819d1=window[_0x526217(0x25d)]['origin']+'/'+_0x1900f1[_0x526217(0x2cb)];_0x3e66a8+=_0x526217(0x11b)+_0x5819d1,navigator[_0x526217(0x12e)]?navigator['clipboard'][_0x526217(0x2d2)](_0x5819d1)[_0x526217(0x2a5)](()=>{_0x3e66a8+='\x5cn\x5cn(Invite\x20link\x20copied\x20to\x20clipboard!)',alert(_0x3e66a8);})['catch'](()=>{alert(_0x3e66a8);}):alert(_0x3e66a8);}else alert(_0x3e66a8);setTimeout(()=>{const _0x5634ec=_0x526217;window['location'][_0x5634ec(0x28f)]=_0x5634ec(0x20a);},0x0);}else alert(_0x526217(0x1d9)+_0x1900f1[_0x526217(0x248)]),_0x4f1c16['prop'](_0x526217(0x2be),![])[_0x526217(0x1eb)](_0x377253),_0x4826d6[_0x526217(0x194)](_0x526217(0x2be),![]);},'error':function(_0x1dfde7,_0x6957f2,_0x31774e){const _0x215563=_0x160f77;console['error'](_0x215563(0x128),_0x31774e),console[_0x215563(0x1ab)](_0x215563(0x18e),_0x1dfde7['responseText']),alert('Error\x20creating\x20room:\x20'+_0x31774e),_0x4f1c16['prop']('disabled',![])[_0x215563(0x1eb)](_0x377253),_0x4826d6[_0x215563(0x194)]('disabled',![]);}});},window[_0x4602fe(0x1ee)]=function(_0x7585c2,_0x976d72){const _0x163f46=_0x4602fe;if(!confirm(_0x163f46(0x1f3)+_0x976d72+'\x22?'))return;$[_0x163f46(0x156)]({'url':'api/knock_room.php','method':_0x163f46(0x2ad),'data':{'room_id':_0x7585c2},'dataType':'json','success':function(_0x5b0ce9){const _0x12a772=_0x163f46;_0x5b0ce9['status']==='success'?alert(_0x12a772(0x179)):alert(_0x12a772(0x1d9)+_0x5b0ce9[_0x12a772(0x248)]);},'error':function(_0x1a265b,_0x3c013d,_0x3001ca){const _0x40e002=_0x163f46;console[_0x40e002(0x1ab)](_0x40e002(0x26d),_0x3001ca),alert('Error\x20sending\x20knock:\x20'+_0x3001ca);}});};function checkForKnocks(){const _0x2fb37f=_0x4602fe;$[_0x2fb37f(0x156)]({'url':_0x2fb37f(0x1af),'method':_0x2fb37f(0x1ad),'dataType':_0x2fb37f(0x15b),'success':function(_0x1f094c){const _0x250763=_0x2fb37f;Array['isArray'](_0x1f094c)&&_0x1f094c[_0x250763(0x299)]>0x0&&_0x1f094c[_0x250763(0x1a0)](_0x2d6636=>{const _0xee0c94=_0x250763;$('#knock-'+_0x2d6636['id'])[_0xee0c94(0x299)]===0x0&&showKnockNotification(_0x2d6636);});},'error':function(){}});}function showKnockNotification(_0x3eb7c1){const _0x5f2fb9=_0x4602fe,_0x52f57d=_0x3eb7c1[_0x5f2fb9(0x1ef)]||_0x3eb7c1[_0x5f2fb9(0x2cd)]||_0x5f2fb9(0x255),_0x29cea1=_0x3eb7c1[_0x5f2fb9(0x1cf)]||_0x5f2fb9(0x1d2);confirm(_0x52f57d+_0x5f2fb9(0x2c4)+_0x29cea1+_0x5f2fb9(0x2d9))?respondToKnock(_0x3eb7c1['id'],_0x5f2fb9(0x207)):respondToKnock(_0x3eb7c1['id'],_0x5f2fb9(0x2d5));}window['respondToKnock']=function(_0xd18209,_0x550c43){const _0x28c29a=_0x4602fe;$[_0x28c29a(0x156)]({'url':_0x28c29a(0x1bb),'method':_0x28c29a(0x2ad),'data':{'knock_id':_0xd18209,'response':_0x550c43},'dataType':_0x28c29a(0x15b),'success':function(_0x3b8e17){const _0x3079e6=_0x28c29a;_0x3b8e17[_0x3079e6(0x1d0)]===_0x3079e6(0x182)&&(_0x550c43==='accepted'&&(alert('Knock\x20accepted!\x20User\x20can\x20now\x20join.'),loadUserRoomKeys()));},'error':function(_0x4561c7,_0x4c3cfa,_0x1ea3cc){const _0x2717d5=_0x28c29a;console[_0x2717d5(0x1ab)]('Error\x20responding\x20to\x20knock:',_0x1ea3cc);}});};let openPrivateChats=new Map(),friends=[];function initializePrivateMessaging(){const _0xc664a8=_0x4602fe;if(currentUser[_0xc664a8(0x226)]!==_0xc664a8(0x15d))return;loadFriends(),checkForNewPrivateMessages(),setInterval(checkForNewPrivateMessages,0x1f4);}function openPrivateMessage(_0x45eb91,_0x42ca67){const _0x3dd09e=_0x4602fe;debugLog('Opening\x20private\x20message\x20for\x20user:',_0x45eb91,_0x42ca67);if(openPrivateChats&&openPrivateChats[_0x3dd09e(0x1e1)](_0x45eb91)){$(_0x3dd09e(0x18f)+_0x45eb91)[_0x3dd09e(0x219)]();return;}const _0x336efc=_0x3dd09e(0x276)+_0x45eb91+_0x3dd09e(0x24a)+_0x42ca67+_0x3dd09e(0x1b7)+_0x45eb91+_0x3dd09e(0x233)+_0x45eb91+'\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20Loading\x20messages...\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-input\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<form\x20class=\x22private-message-form\x22\x20onsubmit=\x22sendPrivateMessage('+_0x45eb91+_0x3dd09e(0x20e)+_0x45eb91+_0x3dd09e(0x1c6);$('body')[_0x3dd09e(0x216)](_0x336efc),typeof openPrivateChats!==_0x3dd09e(0x27f)&&openPrivateChats[_0x3dd09e(0x122)](_0x45eb91,{'username':_0x42ca67,'color':'blue'}),typeof loadPrivateMessages==='function'?loadPrivateMessages(_0x45eb91):$('#pm-body-'+_0x45eb91)[_0x3dd09e(0x1eb)](_0x3dd09e(0x1d5));}function closePrivateMessage(_0x293024){const _0x304c64=_0x4602fe;$(_0x304c64(0x18f)+_0x293024)['remove'](),typeof openPrivateChats!=='undefined'&&openPrivateChats[_0x304c64(0x1aa)](_0x293024);}function sendPrivateMessage(_0x2b9b10){const _0x279733=_0x4602fe;if(typeof loadPrivateMessages===_0x279733(0x1f5)){const _0x43a631=$(_0x279733(0x1a1)+_0x2b9b10),_0xe3c200=_0x43a631['val']()[_0x279733(0x2bf)]();if(!_0xe3c200)return![];$['ajax']({'url':_0x279733(0x26c),'method':_0x279733(0x2ad),'data':{'action':'send','recipient_id':_0x2b9b10,'message':_0xe3c200},'dataType':_0x279733(0x15b),'success':function(_0xc3988b){const _0x54174a=_0x279733;_0xc3988b[_0x54174a(0x1d0)]==='success'?(_0x43a631[_0x54174a(0x1fb)](''),loadPrivateMessages(_0x2b9b10)):alert('Error:\x20'+_0xc3988b[_0x54174a(0x248)]);},'error':function(){const _0x3c01b1=_0x279733;alert(_0x3c01b1(0x19e));}});}else alert(_0x279733(0x1c3));return![];}function closePrivateMessage(_0x21e0a4){const _0x33ab50=_0x4602fe;$(_0x33ab50(0x18f)+_0x21e0a4)[_0x33ab50(0x1a4)](),openPrivateChats['delete'](_0x21e0a4);}function sendPrivateMessage(_0x319192){const _0x215352=_0x4602fe,_0x802b3c=$(_0x215352(0x1a1)+_0x319192),_0x57b3fa=_0x802b3c[_0x215352(0x1fb)]()[_0x215352(0x2bf)]();if(!_0x57b3fa)return;$[_0x215352(0x156)]({'url':'api/private_messages.php','method':_0x215352(0x2ad),'data':{'action':_0x215352(0x263),'recipient_id':_0x319192,'message':_0x57b3fa},'dataType':'json','success':function(_0x17335e){const _0x272ad5=_0x215352;_0x17335e[_0x272ad5(0x1d0)]===_0x272ad5(0x182)?(_0x802b3c[_0x272ad5(0x1fb)](''),loadPrivateMessages(_0x319192)):alert(_0x272ad5(0x1d9)+_0x17335e[_0x272ad5(0x248)]);},'error':function(){const _0x24a028=_0x215352;alert(_0x24a028(0x19e));}});}function loadPrivateMessages(_0xb7cc40){const _0x2bbfe1=_0x4602fe;debugLog(_0x2bbfe1(0x1fc),_0xb7cc40),!openPrivateChats['get'](_0xb7cc40)['color']&&$[_0x2bbfe1(0x156)]({'url':'api/get_user_info.php','method':'GET','data':{'user_id':_0xb7cc40},'dataType':_0x2bbfe1(0x15b),'success':function(_0x356353){const _0x3a7c47=_0x2bbfe1;if(_0x356353[_0x3a7c47(0x1d0)]===_0x3a7c47(0x182)){const _0x35e63f=openPrivateChats[_0x3a7c47(0x2c2)](_0xb7cc40);_0x35e63f['color']=_0x356353['user'][_0x3a7c47(0x291)]||_0x3a7c47(0x15f),openPrivateChats[_0x3a7c47(0x122)](_0xb7cc40,_0x35e63f);}}}),$[_0x2bbfe1(0x156)]({'url':_0x2bbfe1(0x26c),'method':_0x2bbfe1(0x1ad),'data':{'action':'get','other_user_id':_0xb7cc40},'dataType':_0x2bbfe1(0x15b),'success':function(_0x374bf3){const _0x225082=_0x2bbfe1;debugLog(_0x225082(0x213),_0x374bf3),_0x374bf3['status']===_0x225082(0x182)?displayPrivateMessages(_0xb7cc40,_0x374bf3[_0x225082(0x158)]):$(_0x225082(0x1df)+_0xb7cc40)[_0x225082(0x1eb)]('<div\x20style=\x22color:\x20#f44336;\x20padding:\x2010px;\x22>Error:\x20'+_0x374bf3['message']+_0x225082(0x1d7));},'error':function(_0x3e6173,_0x369613,_0x5b4fc1){const _0x1b2059=_0x2bbfe1;console['error'](_0x1b2059(0x13c),_0x5b4fc1,_0x3e6173[_0x1b2059(0x1c8)]),$(_0x1b2059(0x1df)+_0xb7cc40)[_0x1b2059(0x1eb)]('<div\x20style=\x22color:\x20#f44336;\x20padding:\x2010px;\x22>Failed\x20to\x20load\x20messages</div>');}});}function displayPrivateMessages(_0x129124,_0x55e742){const _0x51d308=_0x4602fe,_0x8f8495=$(_0x51d308(0x1df)+_0x129124),_0x249a0a=_0x8f8495[0x0]?_0x8f8495['scrollTop']()+_0x8f8495['innerHeight']()>=_0x8f8495[0x0]['scrollHeight']-0x14:!![];let _0x77f1b8='';_0x55e742['length']===0x0?_0x77f1b8='<div\x20style=\x22text-align:\x20center;\x20color:\x20#999;\x20padding:\x2020px;\x22>No\x20messages\x20yet</div>':_0x55e742['forEach'](_0x111e18=>{const _0x306f21=_0x51d308,_0xcd7297=_0x111e18[_0x306f21(0x1c0)]==currentUser['id'],_0xd785e0=new Date(_0x111e18[_0x306f21(0x188)])[_0x306f21(0x189)]([],{'hour':_0x306f21(0x155),'minute':'2-digit'}),_0xf52209=_0xcd7297?currentUser[_0x306f21(0x1ef)]||currentUser[_0x306f21(0x20f)]:_0x111e18[_0x306f21(0x171)],_0x31f715=_0xcd7297?currentUser['avatar']||'default_avatar.jpg':_0x111e18['sender_avatar']||_0x306f21(0x20b),_0x164caa=_0xcd7297?currentUser['color']||'blue':_0x111e18[_0x306f21(0x210)]||_0x306f21(0x15f),_0x3d13a3=_0xcd7297?currentUser[_0x306f21(0x1ce)]||0x0:_0x111e18[_0x306f21(0x127)]||0x0,_0x187c9a=_0xcd7297?currentUser[_0x306f21(0x257)]||0x64:_0x111e18['sender_avatar_saturation']||0x64,_0xa727ee=_0xcd7297?currentUser['bubble_hue']||0x0:_0x111e18[_0x306f21(0x2a0)]||0x0,_0xcf4867=_0xcd7297?currentUser['bubble_saturation']||0x64:_0x111e18[_0x306f21(0x2b7)]||0x64;_0x77f1b8+='\x0a\x20\x20\x20\x20<div\x20class=\x22private-chat-message\x20'+(_0xcd7297?_0x306f21(0x28e):_0x306f21(0x135))+_0x306f21(0x2c3)+_0x31f715+_0x306f21(0x2d8)+_0x3d13a3+'deg)\x20saturate('+_0x187c9a+_0x306f21(0x1f0)+_0xf52209+_0x306f21(0x26a)+(_0xcd7297?_0x306f21(0x28e):'received')+_0x306f21(0x281)+_0x164caa+_0x306f21(0x1b8)+_0xa727ee+_0x306f21(0x124)+_0xcf4867+'%);\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-header-info\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-author\x22>'+_0xf52209+_0x306f21(0x22f)+_0xd785e0+_0x306f21(0x289)+_0x111e18['message']+_0x306f21(0x2d7);}),_0x8f8495[_0x51d308(0x1eb)](_0x77f1b8),_0x249a0a&&_0x8f8495[_0x51d308(0x269)](_0x8f8495[0x0][_0x51d308(0x13b)]);}function checkForNewPrivateMessages(){const _0x13d7af=_0x4602fe;if(currentUser[_0x13d7af(0x226)]!==_0x13d7af(0x15d))return;openPrivateChats['forEach']((_0x256be6,_0x45c4b4)=>{const _0x2cd191=_0x13d7af,_0x1192d4=$('#pm-input-'+_0x45c4b4),_0x1572ba=_0x1192d4['is'](_0x2cd191(0x162))&&_0x1192d4[_0x2cd191(0x1fb)]()[_0x2cd191(0x299)]>0x0;!_0x1572ba&&loadPrivateMessages(_0x45c4b4);}),$(_0x13d7af(0x2a6))['is'](':visible')&&loadConversations();}$(document)['ready'](function(){setInterval(()=>{const _0x5ebbe6=_0x6066;$('.room-card-enhanced\x20.fa-spinner')[_0x5ebbe6(0x141)](function(){const _0xe4b95e=_0x5ebbe6;debugLog(_0xe4b95e(0x235),this[_0xe4b95e(0x21f)](_0xe4b95e(0x1fe))),debugLog(_0xe4b95e(0x202),this[_0xe4b95e(0x21f)]('button'));});},0x3e8),initializePrivateMessaging();});function showFriendsPanel(){const _0x8aa9fb=_0x4602fe;$('#friendsPanel')[_0x8aa9fb(0x219)](),loadFriends(),loadConversations();}function closeFriendsPanel(){const _0x17804e=_0x4602fe;$('#friendsPanel')[_0x17804e(0x201)]();}function updateFriendsPanel(){const _0x42cf44=_0x4602fe;debugLog(_0x42cf44(0x203),friends);let _0x387558=_0x42cf44(0x1fd);!friends||friends['length']===0x0?_0x387558+=_0x42cf44(0x22e):friends[_0x42cf44(0x1a0)](_0xfd97cb=>{const _0x2fec42=_0x42cf44;if(_0xfd97cb[_0x2fec42(0x1d0)]===_0x2fec42(0x207))_0x387558+=_0x2fec42(0x23a)+(_0xfd97cb['avatar']||_0x2fec42(0x20b))+'\x22\x20width=\x2224\x22\x20height=\x2224\x22\x20class=\x22me-2\x22\x20style=\x22border-radius:\x202px;\x20filter:\x20hue-rotate('+(_0xfd97cb[_0x2fec42(0x1ce)]||0x0)+'deg)\x20saturate('+(_0xfd97cb[_0x2fec42(0x257)]||0x64)+'%);\x22>\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22flex-grow-1\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20style=\x22color:\x20#e0e0e0;\x22>'+_0xfd97cb['username']+_0x2fec42(0x169)+_0xfd97cb[_0x2fec42(0x21e)]+_0x2fec42(0x24c)+_0xfd97cb[_0x2fec42(0x1ef)]+_0x2fec42(0x118);else _0xfd97cb[_0x2fec42(0x1d0)]==='pending'&&_0xfd97cb[_0x2fec42(0x222)]==='received'&&(_0x387558+=_0x2fec42(0x129)+(_0xfd97cb[_0x2fec42(0x2a1)]||_0x2fec42(0x20b))+'\x22\x20width=\x2224\x22\x20height=\x2224\x22\x20class=\x22me-2\x22\x20style=\x22border-radius:\x202px;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22flex-grow-1\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20style=\x22color:\x20#e0e0e0;\x22>'+_0xfd97cb[_0x2fec42(0x1ef)]+_0x2fec42(0x12a)+_0xfd97cb['id']+_0x2fec42(0x2bb));}),_0x387558+=_0x42cf44(0x24d),$(_0x42cf44(0x2a2))['html'](_0x387558),loadConversations();}function addFriend(){const _0x17078d=_0x4602fe,_0x217ff0=$(_0x17078d(0x212))[_0x17078d(0x1fb)]()[_0x17078d(0x2bf)]();if(!_0x217ff0)return;$['ajax']({'url':_0x17078d(0x2cf),'method':_0x17078d(0x2ad),'data':{'action':_0x17078d(0x253),'friend_username':_0x217ff0},'dataType':_0x17078d(0x15b),'success':function(_0xde72c1){const _0x496f02=_0x17078d;_0xde72c1[_0x496f02(0x1d0)]===_0x496f02(0x182)?($(_0x496f02(0x212))[_0x496f02(0x1fb)](''),alert('Friend\x20request\x20sent!'),loadFriends()):alert(_0x496f02(0x1d9)+_0xde72c1[_0x496f02(0x248)]);}});}function acceptFriend(_0x301028){const _0x19899b=_0x4602fe,_0x44ca3c=$(_0x19899b(0x22d)+_0x301028+_0x19899b(0x270)),_0x5163e8=_0x44ca3c[_0x19899b(0x1eb)]();_0x44ca3c[_0x19899b(0x194)](_0x19899b(0x2be),!![])['html'](_0x19899b(0x2ce)),$[_0x19899b(0x156)]({'url':_0x19899b(0x2cf),'method':_0x19899b(0x2ad),'data':{'action':'accept','friend_id':_0x301028},'dataType':_0x19899b(0x15b),'timeout':0x2710,'success':function(_0xe2f3ad){const _0xcfa14c=_0x19899b;_0xe2f3ad['status']===_0xcfa14c(0x182)?(showNotification(_0xcfa14c(0x12d),_0xcfa14c(0x182)),loadFriends(),typeof clearFriendshipCache===_0xcfa14c(0x1f5)&&clearFriendshipCache(),typeof loadUsers===_0xcfa14c(0x1f5)&&loadUsers()):showNotification(_0xcfa14c(0x1d9)+(_0xe2f3ad[_0xcfa14c(0x248)]||'Unknown\x20error'),_0xcfa14c(0x1ab));},'error':function(_0x508c28,_0x260270,_0x53b584){const _0x3ac912=_0x19899b;console['error'](_0x3ac912(0x25f),{'xhr':_0x508c28,'status':_0x260270,'error':_0x53b584});let _0x24d192=_0x3ac912(0x205);if(_0x260270===_0x3ac912(0x1d4))_0x24d192='Request\x20timed\x20out.\x20Please\x20try\x20again.';else _0x508c28['responseJSON']&&_0x508c28[_0x3ac912(0x237)][_0x3ac912(0x248)]&&(_0x24d192=_0x508c28[_0x3ac912(0x237)][_0x3ac912(0x248)]);showNotification(_0x3ac912(0x16f)+_0x24d192,_0x3ac912(0x1ab));},'complete':function(){const _0x315d27=_0x19899b;_0x44ca3c[_0x315d27(0x194)](_0x315d27(0x2be),![])[_0x315d27(0x1eb)](_0x5163e8);}});}function loadConversations(){const _0x577afd=_0x4602fe;$[_0x577afd(0x156)]({'url':_0x577afd(0x26c),'method':_0x577afd(0x1ad),'data':{'action':_0x577afd(0x1a3)},'dataType':_0x577afd(0x15b),'success':function(_0x4d0470){const _0x5b850d=_0x577afd;_0x4d0470[_0x5b850d(0x1d0)]===_0x5b850d(0x182)&&displayConversations(_0x4d0470['conversations']);}});}function displayConversations(_0x27ebf7){const _0x5bbb88=_0x4602fe;let _0x1861d8='';_0x27ebf7[_0x5bbb88(0x299)]===0x0?_0x1861d8=_0x5bbb88(0x1b3):_0x27ebf7[_0x5bbb88(0x1a0)](_0x3e04e0=>{const _0x5c6a20=_0x5bbb88,_0x3e5823=_0x3e04e0[_0x5c6a20(0x11f)]>0x0?'<span\x20class=\x22badge\x20bg-danger\x22>'+_0x3e04e0[_0x5c6a20(0x11f)]+_0x5c6a20(0x1db):'';_0x1861d8+=_0x5c6a20(0x136)+_0x3e04e0[_0x5c6a20(0x161)]+_0x5c6a20(0x24c)+_0x3e04e0[_0x5c6a20(0x1ef)]+'\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22images/'+_0x3e04e0['avatar']+_0x5c6a20(0x1bd)+(_0x3e04e0[_0x5c6a20(0x1ce)]||0x0)+_0x5c6a20(0x124)+(_0x3e04e0[_0x5c6a20(0x257)]||0x64)+_0x5c6a20(0x1a6)+_0x3e04e0[_0x5c6a20(0x1ef)]+_0x5c6a20(0x1ca)+(_0x3e04e0[_0x5c6a20(0x176)]?_0x3e04e0['last_message'][_0x5c6a20(0x19d)](0x0,0x1e)+_0x5c6a20(0x227):_0x5c6a20(0x234))+_0x5c6a20(0x26f)+_0x3e5823+_0x5c6a20(0x1de);}),$('#conversationsList')[_0x5bbb88(0x1eb)](_0x1861d8);}function loadFriends(){const _0x12e744=_0x4602fe;debugLog(_0x12e744(0x1cc)),$[_0x12e744(0x156)]({'url':_0x12e744(0x2cf),'method':_0x12e744(0x1ad),'data':{'action':_0x12e744(0x2c2)},'dataType':_0x12e744(0x15b),'success':function(_0x48dc9a){const _0x50e3ab=_0x12e744;debugLog(_0x50e3ab(0x2a7),_0x48dc9a),_0x48dc9a['status']===_0x50e3ab(0x182)?(friends=_0x48dc9a['friends'],updateFriendsPanel()):$(_0x50e3ab(0x2a2))[_0x50e3ab(0x1eb)](_0x50e3ab(0x191)+_0x48dc9a[_0x50e3ab(0x248)]+_0x50e3ab(0x1f2));},'error':function(_0x362cdd,_0x5d2c9d,_0x11e069){const _0x205ac1=_0x12e744;console['error'](_0x205ac1(0x225),_0x11e069,_0x362cdd[_0x205ac1(0x1c8)]),$('#friendsList')[_0x205ac1(0x1eb)](_0x205ac1(0x28d));}});}function applyAvatarFilter(_0x189d89,_0x19a468,_0x304425){const _0x22fe2d=_0x4602fe;if(_0x19a468!==undefined&&_0x304425!==undefined){const _0x526c60=parseInt(_0x19a468)||0x0,_0x529f34=parseInt(_0x304425)||0x64,_0x125182=_0x22fe2d(0x151)+_0x526c60+_0x22fe2d(0x124)+_0x529f34+'%)',_0x27b053=_0x526c60+'-'+_0x529f34;_0x189d89['data'](_0x22fe2d(0x228))!==_0x27b053&&(_0x189d89['css'](_0x22fe2d(0x2a4),_0x125182),_0x189d89[_0x22fe2d(0x1c9)](_0x22fe2d(0x228),_0x27b053),_0x189d89[_0x22fe2d(0x20d)](_0x22fe2d(0x214)));}}function _0x4c2d(){const _0x247470=['#roomsList\x20.room-card-enhanced','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22action-buttons\x22>','json','invite_only','user','\x20more\x20users</div>','blue','map','other_user_id',':focus','\x20inactive\x20users','Access\x20Denied:\x20','guest_avatar','\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22d-flex\x20justify-content-between\x20align-items-start\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22room-title-section\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h5\x20class=\x22room-title\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','#allowKnocking','regularUsers','</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-sm\x20btn-primary\x22\x20onclick=\x22openPrivateMessage(','2851842HtQBbe','</strong>:</p>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22password\x22\x20class=\x22form-control\x22\x20id=\x22roomPasswordInput\x22\x20placeholder=\x22Room\x20password\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-footer\x22\x20style=\x22border-top:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-secondary\x22\x20data-bs-dismiss=\x22modal\x22>Cancel</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-primary\x22\x20onclick=\x22joinRoomWithPassword(','#filterUsername','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22alert\x20alert-danger\x22\x20style=\x22background:\x20#2a2a2a;\x20border:\x201px\x20solid\x20#d32f2f;\x20color:\x20#f44336;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h5>Error\x20loading\x20rooms</h5>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p>Error:\x20','members','Error\x20accepting\x20friend\x20request:\x20','room-card-enhanced','sender_username','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','No\x20description','Error\x20loading\x20users\x20for\x20room\x20','has_password','last_message','checked','description','Knock\x20sent!\x20The\x20host\x20will\x20be\x20notified.','username:','friendUserIds','<span\x20class=\x22badge\x20bg-primary\x22><i\x20class=\x22fas\x20fa-user-friends\x22></i>\x20Friends\x20Only</span>\x20','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22tab-pane\x20fade\x22\x20id=\x22admin\x22\x20role=\x22tabpanel\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22row\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22col-12\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22alert\x20alert-warning\x22\x20style=\x22background:\x20rgba(255,\x20193,\x207,\x200.1);\x20border:\x201px\x20solid\x20rgba(255,\x20193,\x207,\x200.3);\x20color:\x20#ffc107;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-shield-alt\x22></i>\x20<strong>Administrator\x20Settings</strong><br>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20These\x20options\x20are\x20only\x20available\x20to\x20moderators\x20and\x20administrators.\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-4\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22form-check\x20form-switch\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20class=\x22form-check-input\x22\x20type=\x22checkbox\x22\x20id=\x22permanentRoom\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-check-label\x22\x20for=\x22permanentRoom\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-star\x20text-warning\x22></i>\x20<strong>Permanent\x20Room</strong>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22form-text\x20text-muted\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20This\x20room\x20will\x20never\x20be\x20automatically\x20deleted,\x20even\x20when\x20empty.\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20It\x20will\x20be\x20displayed\x20at\x20the\x20top\x20of\x20the\x20room\x20list\x20with\x20a\x20special\x20indicator.\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mt-2\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22text-info\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-info-circle\x22></i>\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20When\x20the\x20host\x20of\x20a\x20permanent\x20room\x20leaves,\x20they\x20retain\x20host\x20privileges\x20even\x20while\x20offline.\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','#filterToggleIcon','<span\x20class=\x22badge\x20bg-warning\x22><i\x20class=\x22fas\x20fa-clock\x22></i>\x20Disappearing</span>\x20','Room\x20name\x20is\x20required','<button\x20class=\x22btn\x20btn-warning\x20btn-sm\x22\x20onclick=\x22showPasswordModal(','success','Request\x20timed\x20out.\x20Please\x20try\x20again.','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22text-center\x20py-5\x22\x20style=\x22color:\x20#ccc;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-door-closed\x20fa-3x\x20mb-3\x22\x20style=\x22color:\x20#555;\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h4\x20style=\x22color:\x20#aaa;\x22>No\x20rooms\x20available</h4>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p\x20style=\x22color:\x20#777;\x22>Be\x20the\x20first\x20to\x20create\x20a\x20room!</p>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20','\x20public\x20rooms','<div\x20class=\x22room-features\x20mt-2\x22>',')</h6><div\x20class=\x22users-grid-two-column\x22>','created_at','toLocaleTimeString','#messageLifetimeField','</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','265551lOplTe','preventDefault','Response\x20text:','#pm-','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22room-content\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22room-description\x22><p>','<p\x20class=\x22text-danger\x22>Error:\x20','cleaned_count','api/check_user_room_keys.php','prop','#roomsList','permanent','slideUp','joinRoom','#filterDescription','\x22\x20width=\x2238\x22\x20height=\x2238\x22\x20class=\x22me-2\x22\x20style=\x22filter:\x20hue-rotate(','userSettings','focus','substring','Error\x20sending\x20message','allRooms','forEach','#pm-input-','saturation','get_conversations','remove','allow_knocking','%);\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22flex-grow-1\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small>','floor','#filterPanelBody','match','delete','error','\x27)\x22\x20style=\x22cursor:\x20pointer;\x22','GET','hue','api/check_knocks.php','#filterResultCount','some','hasClass','<p\x20class=\x22text-muted\x20small\x22>No\x20conversations\x20yet</p>','<span\x20class=\x22badge\x20bg-secondary\x20badge-sm\x22>Guest</span>','#roomPassword','Please\x20enter\x20an\x20invite\x20code\x20or\x20link','</h6>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22private-message-close\x22\x20onclick=\x22closePrivateMessage(','\x22\x20style=\x22filter:\x20hue-rotate(','host','\x20processed:','api/respond_knocks.php','</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','\x22\x20width=\x2224\x22\x20height=\x2224\x22\x20class=\x22me-2\x22\x20style=\x22border-radius:\x202px;\x20filter:\x20hue-rotate(','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22small\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','#roomTheme','sender_id','api/get_room_users.php','\x20access-denied','Private\x20messaging\x20not\x20available\x20in\x20lounge','#roomPasswordInput',',\x20rp=','\x22\x20placeholder=\x22Type\x20a\x20message...\x22\x20required>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22submit\x22>Send</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</form>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20','Showing\x20all\x20public\x20rooms','responseText','data','</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<br><small\x20class=\x22text-muted\x22>','<div\x20class=\x22room-host\x22><h6><i\x20class=\x22fas\x20fa-crown\x22></i>\x20Host</h6><div\x20class=\x22text-muted\x22>No\x20host\x20available</div></div>','Loading\x20friends...','currentUser','avatar_hue','room_name','status','#isRP','Unknown\x20Room','2922724IvMbWk','timeout','<div\x20style=\x22color:\x20#f44336;\x20padding:\x2010px;\x22>Private\x20messaging\x20not\x20available\x20in\x20lounge</div>','startsWith','</div>','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22text-center\x20py-5\x22\x20style=\x22color:\x20#ccc;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-door-closed\x20fa-3x\x20mb-3\x22\x20style=\x22color:\x20#555;\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h4\x20style=\x22color:\x20#aaa;\x22>No\x20public\x20rooms\x20available</h4>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p\x20style=\x22color:\x20#777;\x22>All\x20rooms\x20are\x20invite-only.\x20Use\x20an\x20invite\x20code\x20to\x20join!</p>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','Error:\x20','onclick=\x22handleAvatarClick(event,\x20\x27','</span>','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22form-check\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20class=\x22form-check-input\x22\x20type=\x22checkbox\x22\x20id=\x22inviteOnly\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-check-label\x22\x20for=\x22inviteOnly\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-link\x22></i>\x20Invite\x20Only\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22text-muted\x22>Generate\x20a\x20special\x20invite\x20link</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<!--\x20Features\x20Tab\x20-->\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22tab-pane\x20fade\x22\x20id=\x22features\x22\x20role=\x22tabpanel\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22row\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22col-md-12\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-4\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22form-check\x20form-switch\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20class=\x22form-check-input\x22\x20type=\x22checkbox\x22\x20id=\x22youtubeEnabled\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-check-label\x22\x20for=\x22youtubeEnabled\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fab\x20fa-youtube\x20text-danger\x22></i>\x20<strong>Enable\x20YouTube\x20Player</strong>\x20<span\x20class=\x22betatext\x22\x20/>\x20<span\x20class=\x22betatext2\x22\x20/>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22form-text\x20text-muted\x22>Allow\x20synchronized\x20video\x20playback\x20for\x20all\x20users</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-4\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22form-check\x20form-switch\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20class=\x22form-check-input\x22\x20type=\x22checkbox\x22\x20id=\x22disappearingMessages\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-check-label\x22\x20for=\x22disappearingMessages\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-clock\x22></i>\x20<strong>Disappearing\x20Messages</strong>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22form-text\x20text-muted\x22>Messages\x20automatically\x20delete\x20after\x20a\x20set\x20time</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22col-md-6\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22\x20id=\x22messageLifetimeField\x22\x20style=\x22display:\x20none;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22messageLifetime\x22\x20class=\x22form-label\x22>Message\x20Lifetime\x20(minutes)</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<select\x20class=\x22form-select\x22\x20id=\x22messageLifetime\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x225\x22>5\x20minutes</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x2215\x22>15\x20minutes</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x2230\x22\x20selected>30\x20minutes</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x2260\x22>1\x20hour</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22120\x22>2\x20hours</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22360\x22>6\x20hours</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22720\x22>12\x20hours</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x221440\x22>24\x20hours</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</select>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<!--\x20Admin\x20Tab\x20(only\x20for\x20moderators/admins)\x20-->\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','#createRoomModal\x20input','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','#pm-body-','#onlineUsersList','has',':checked',',\x20youtube=','input','parse',')\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-sign-in-alt\x22></i>\x20Join\x20Room\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20','#announcementModal\x20.btn-warning','#filterRoomName','is_moderator','splice','html','isArray','joinRoom:\x20Attempting\x20to\x20join\x20room','knockOnRoom','username','%);\x22\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20alt=\x22','<span\x20class=\x22badge\x20bg-warning\x20badge-sm\x22>Offline\x20Host</span>','</p>','Send\x20a\x20knock\x20request\x20to\x20\x22','capacity','function','<span\x20class=\x22permanent-info\x22><i\x20class=\x22fas\x20fa-star\x22></i>\x20Permanent</span>','\x22\x20width=\x2224\x22\x20height=\x2224\x22\x20class=\x22me-2\x22\x20style=\x22filter:\x20hue-rotate(','Modal','<button\x20class=\x22btn\x20btn-danger\x20btn-sm\x22\x20onclick=\x22alert(\x27This\x20room\x20is\x20for\x20friends\x20of\x20the\x20host\x20only\x27)\x22><i\x20class=\x22fas\x20fa-ban\x22></i>\x20Friends\x20Only</button>','joinRoomWithPassword','val','Loading\x20private\x20messages\x20with\x20user:','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22input-group\x20input-group-sm\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22text\x22\x20class=\x22form-control\x22\x20id=\x22addFriendInput\x22\x20placeholder=\x22Username\x20to\x20add\x22\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-primary\x22\x20onclick=\x22addFriend()\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-user-plus\x22></i>\x20Add\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h6\x20style=\x22color:\x20#e0e0e0;\x22>Recent\x20Conversations</h6>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20id=\x22conversationsList\x22>Loading\x20conversations...</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h6\x20style=\x22color:\x20#e0e0e0;\x22>Friends</h6>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20id=\x22friendsListContent\x22>\x0a\x20\x20\x20\x20','.room-card-enhanced','registered','\x20of\x20','hide','Parent\x20button:','Updating\x20friends\x20panel\x20with:','api/create_room.php','Network\x20error\x20occurred','</p></div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22row\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22col-12\x22>','accepted','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22col-12\x20mt-3\x22>','Loading\x20rooms\x20with\x20users...','/room','default_avatar.jpg','%);\x22\x20alt=\x22','addClass',');\x20return\x20false;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22text\x22\x20id=\x22pm-input-','name','sender_color','🔍\x20Room\x20\x22','#addFriendInput','Load\x20messages\x20response:','avatar-filtered','friends','append','Requesting\x20cleanup\x20of\x20inactive\x20users...','#youtubeEnabled','show','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','fa-chevron-down','Unknown\x20Host','can_access_friends_only','friend_user_id','closest','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal\x20fade\x22\x20id=\x22createRoomModal\x22\x20tabindex=\x22-1\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-dialog\x20modal-lg\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-content\x22\x20style=\x22background:\x20#2a2a2a;\x20border:\x201px\x20solid\x20#444;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-header\x22\x20style=\x22background:\x20#333;\x20border-bottom:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h5\x20class=\x22modal-title\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-plus-circle\x22></i>\x20Create\x20New\x20Room\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</h5>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn-close\x22\x20data-bs-dismiss=\x22modal\x22\x20style=\x22filter:\x20invert(1);\x22></button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-body\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<!--\x20Nav\x20Tabs\x20-->\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<ul\x20class=\x22nav\x20nav-tabs\x20mb-3\x22\x20id=\x22createRoomTabs\x22\x20role=\x22tablist\x22\x20style=\x22border-bottom:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<li\x20class=\x22nav-item\x22\x20role=\x22presentation\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22nav-link\x20active\x22\x20id=\x22basic-tab\x22\x20data-bs-toggle=\x22tab\x22\x20data-bs-target=\x22#basic\x22\x20type=\x22button\x22\x20role=\x22tab\x22\x20style=\x22color:\x20#fff;\x20background:\x20transparent;\x20border:\x20none;\x22>Basic\x20Settings</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</li>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<li\x20class=\x22nav-item\x22\x20role=\x22presentation\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22nav-link\x22\x20id=\x22access-tab\x22\x20data-bs-toggle=\x22tab\x22\x20data-bs-target=\x22#access\x22\x20type=\x22button\x22\x20role=\x22tab\x22\x20style=\x22color:\x20#fff;\x20background:\x20transparent;\x20border:\x20none;\x22>Access\x20Control</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</li>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<li\x20class=\x22nav-item\x22\x20role=\x22presentation\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22nav-link\x22\x20id=\x22features-tab\x22\x20data-bs-toggle=\x22tab\x22\x20data-bs-target=\x22#features\x22\x20type=\x22button\x22\x20role=\x22tab\x22\x20style=\x22color:\x20#fff;\x20background:\x20transparent;\x20border:\x20none;\x22>Features</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</li>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','log','request_type','beforeunload','Error\x20joining\x20room:\x20','Friends\x20API\x20error:','type','...','filter-applied','<span\x20class=\x22badge\x20bg-success\x22><i\x20class=\x22fas\x20fa-id-badge\x22></i>\x20Members\x20Only</span>\x20','push','__logout_required__','slice','button[onclick=\x22acceptFriend(','<p\x20class=\x22text-muted\x20small\x22>No\x20friends\x20yet.\x20Add\x20someone\x20using\x20the\x20form\x20above!</p>','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-time\x22>','\x22:\x20permanent=','#announcementMessage','<span\x20class=\x22badge\x20bg-success\x20badge-sm\x22>Verified</span>',')\x22>&times;</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-body\x22\x20id=\x22pm-body-','No\x20messages','PERSISTENT\x20SPINNER\x20DETECTED:','tags','responseJSON','Cleaned\x20up\x20','1534716GYHCAH','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22d-flex\x20align-items-center\x20mb-2\x20p-2\x22\x20style=\x22background:\x20#333;\x20border-radius:\x204px;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22images/','1292595hZtzpb','text-warning','Password\x20is\x20required\x20when\x20password\x20protection\x20is\x20enabled','\x22\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','updating','[LOUNGE]','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<li\x20class=\x22nav-item\x22\x20role=\x22presentation\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22nav-link\x22\x20id=\x22admin-tab\x22\x20data-bs-toggle=\x22tab\x22\x20data-bs-target=\x22#admin\x22\x20type=\x22button\x22\x20role=\x22tab\x22\x20style=\x22color:\x20#fff;\x20background:\x20transparent;\x20border:\x20none;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-shield-alt\x22></i>\x20Admin\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</li>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20alt=\x22','button','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','Error\x20parsing\x20users\x20for\x20room\x20','invite','showCreateRoomModal','message','</p>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-outline-light\x20btn-sm\x22\x20onclick=\x22loadRoomsWithUsers()\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-retry\x22></i>\x20Retry\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-header\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h6\x20class=\x22private-message-title\x22>Chat\x20with\x20','onclick=\x22showProfileEditor()\x22\x20style=\x22cursor:\x20pointer;\x22',',\x20\x27','</div></div>','Failed\x20to\x20send\x20announcement:\x20','user_type','\x20This\x20is\x20now\x20a\x20permanent\x20room.','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','?invite=','add','change','Unknown\x20User','css','avatar_saturation','#knockingField','All\x20rooms\x20processed,\x20displaying:','\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22','friends_only','\x20users\x20loaded:','location','Error\x20loading\x20user\x20room\x20keys:','Accept\x20friend\x20error:','</h5>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22room-meta\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20class=\x22text-danger\x22>Error\x20loading\x20room\x20details</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22action-buttons\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-success\x20btn-sm\x22\x20onclick=\x22joinRoom(','#activeFilterCount','%);\x20border-radius:\x202px;\x20','send','api/cleanup_inactive_users.php','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','1000551lLtreA','text','#roomDescription','scrollTop','\x27s\x20avatar\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-bubble\x20','Room\x20created\x20successfully!','api/private_messages.php','Error\x20knocking\x20on\x20room:','used_room_key','</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20',')\x22]','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','is_admin','Unknown','#inviteCodeInput','is_rp','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-window\x22\x20id=\x22pm-','keypress','password','modal','<span\x20class=\x22user-badge\x20badge-admin\x20me-2\x22><i\x20class=\x22fas\x20fa-shield-alt\x22\x20title=\x22Admin\x22></i>Admin</span>','api/join_room.php','removeItem',')\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-sign-in-alt\x22></i>\x20Join\x20Room\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','Room\x20','undefined','\x20has-access','\x20user-color-','#hasPassword','\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22fw-bold\x22\x20style=\x22color:\x20#e0e0e0;\x22>','Auto-logout\x20detected\x20-\x20redirecting\x20to\x20index\x20page','<button\x20class=\x22btn\x20btn-danger\x20btn-sm\x22\x20onclick=\x22alert(\x27This\x20room\x20is\x20for\x20registered\x20members\x20only\x27)\x22><i\x20class=\x22fas\x20fa-ban\x22></i>\x20Members\x20Only</button>','replace','youtube','body','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-content\x22>','Failed\x20to\x20join\x20room:\x20','find','#announcementModal','<p\x20class=\x22text-danger\x22>Failed\x20to\x20load\x20friends.\x20Check\x20console\x20for\x20details.</p>','sent','href','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22col-lg-6\x20col-12\x20room-card-wrapper\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22','color','#membersOnly','\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20style=\x22flex-grow:\x201;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22fw-bold\x22\x20style=\x22color:\x20#fff;\x22>','Heartbeat\x20failed\x20(silent\x20fail)','button[onclick*=\x22joinRoom(','#permanentRoom','<i\x20class=\x22fas\x20fa-star\x20permanent-star\x22\x20title=\x22Permanent\x20Room\x22></i>','displayRoomsWithUsers\x20called\x20with:','length','removeClass','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','Error\x20joining\x20room:','#passwordModal','invite_code','default','bubble_hue','avatar','#friendsList','invite=','filter','then','#friendsPanel','Friends\x20response:','indexOf','fa-chevron-up','\x27)\x22><i\x20class=\x22fas\x20fa-hand-paper\x22></i>\x20Knock</button>','api/heartbeat.php','which','POST',',\x20friends=','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22col-lg-6\x20col-12\x20room-card-wrapper\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22room-card-enhanced\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22room-header-enhanced\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22d-flex\x20justify-content-between\x20align-items-start\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22room-title-section\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h5\x20class=\x22room-title\x22>','toLowerCase','#disappearingMessages','with\x20invite:','<div\x20class=\x22mt-2\x22><span\x20class=\x22badge\x20bg-success\x22><i\x20class=\x22fas\x20fa-key\x22></i>\x20Access\x20Granted</span></div>','Error\x20rendering\x20room:','theme-','<i\x20class=\x22fas\x20fa-lock\x22\x20title=\x22Password\x20protected\x22></i>','bubble_saturation','users','createRoom','user_id',')\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-check\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','Lounge\x20avatar\x20clicked\x20-\x20userIdString:','getElementById','disabled','trim','<button\x20class=\x22btn\x20btn-success\x20btn-sm\x22\x20onclick=\x22joinRoom(','fade-transition','get','\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22images/','\x20wants\x20to\x20join\x20','#messageLifetime','user_avatar','<div\x20class=\x22room-users\x22><h6><i\x20class=\x22fas\x20fa-users\x22></i>\x20Users\x20(','Loading\x20users\x20for\x20room\x20','last_activity','display_name','invite_link','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','guest_name','<i\x20class=\x22fas\x20fa-spinner\x20fa-spin\x22></i>','api/friends.php','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22user-badges\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','\x27)\x22><i\x20class=\x22fas\x20fa-key\x22></i>\x20Enter\x20Room</button>','writeText','youtube_enabled','#roomCapacity','denied','warning','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20class=\x22private-message-avatar\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20style=\x22filter:\x20hue-rotate(','.\x20Accept?','\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-comment\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','None','#passwordField','\x5cn\x5cnInvite\x20link:\x20','\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20width=\x2230\x22\x20height=\x2230\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20class=\x22me-2\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20style=\x22filter:\x20hue-rotate(','target','string','unread_count','includes','friends\x20only','set','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','deg)\x20saturate(','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</ul>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22tab-content\x22\x20id=\x22createRoomTabsContent\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<!--\x20Basic\x20Settings\x20Tab\x20-->\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22tab-pane\x20fade\x20show\x20active\x22\x20id=\x22basic\x22\x20role=\x22tabpanel\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22row\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22col-md-6\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22roomName\x22\x20class=\x22form-label\x22>Room\x20Name</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22text\x22\x20class=\x22form-control\x22\x20id=\x22roomName\x22\x20required\x20maxlength=\x2250\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22roomCapacity\x22\x20class=\x22form-label\x22>Capacity</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<select\x20class=\x22form-select\x22\x20id=\x22roomCapacity\x22\x20required\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x225\x22>5\x20users</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x2210\x22\x20selected>10\x20users</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x2220\x22>20\x20users</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x2250\x22>50\x20users</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</select>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22roomTheme\x22\x20class=\x22form-label\x22>Theme</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<select\x20class=\x22form-select\x22\x20id=\x22roomTheme\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22default\x22>Default</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22cyberpunk\x22>Cyberpunk</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22forest\x22>Forest</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22ocean\x22>Ocean</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22sunset\x22>Sunset</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</select>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22col-md-6\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22roomDescription\x22\x20class=\x22form-label\x22>Description</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<textarea\x20class=\x22form-control\x22\x20id=\x22roomDescription\x22\x20rows=\x224\x22\x20maxlength=\x22200\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22></textarea>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22form-check\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20class=\x22form-check-input\x22\x20type=\x22checkbox\x22\x20id=\x22isRP\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-check-label\x22\x20for=\x22isRP\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-theater-masks\x22></i>\x20Roleplay\x20Room\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22text-muted\x22>Mark\x20this\x20room\x20as\x20suitable\x20for\x20roleplay</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<!--\x20Access\x20Control\x20Tab\x20-->\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22tab-pane\x20fade\x22\x20id=\x22access\x22\x20role=\x22tabpanel\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22row\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22col-md-6\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22form-check\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20class=\x22form-check-input\x22\x20type=\x22checkbox\x22\x20id=\x22hasPassword\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-check-label\x22\x20for=\x22hasPassword\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-lock\x22></i>\x20Password\x20Protected\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22\x20id=\x22passwordField\x22\x20style=\x22display:\x20none;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22roomPassword\x22\x20class=\x22form-label\x22>Password</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22password\x22\x20class=\x22form-control\x22\x20id=\x22roomPassword\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22\x20id=\x22knockingField\x22\x20style=\x22display:\x20none;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22form-check\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20class=\x22form-check-input\x22\x20type=\x22checkbox\x22\x20id=\x22allowKnocking\x22\x20checked>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-check-label\x22\x20for=\x22allowKnocking\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-hand-paper\x22></i>\x20Allow\x20Knocking\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','Rooms\x20loaded:','sender_avatar_hue','Error\x20creating\x20room:','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22d-flex\x20align-items-center\x20mb-2\x20p-2\x22\x20style=\x22background:\x20#4a4a2a;\x20border-radius:\x204px;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22images/','</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<br><small\x20class=\x22text-warning\x22>Pending\x20request</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-sm\x20btn-success\x22\x20onclick=\x22acceptFriend(','\x20knock-available','user_avatar_saturation','Friend\x20request\x20accepted!','clipboard','Sending\x20heartbeat...','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-footer\x22\x20style=\x22border-top:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-secondary\x22\x20data-bs-dismiss=\x22modal\x22>Cancel</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-primary\x22\x20onclick=\x22createRoom()\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-plus\x22></i>\x20Create\x20Room\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20','<i\x20class=\x22fas\x20fa-spinner\x20fa-spin\x22></i>\x20Sending...','<button\x20class=\x22btn\x20btn-outline-primary\x20btn-sm\x22\x20onclick=\x22knockOnRoom(','theme','Error\x20loading\x20rooms:','received','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22d-flex\x20align-items-center\x20mb-2\x20p-2\x22\x20style=\x22background:\x20#333;\x20border-radius:\x204px;\x20cursor:\x20pointer;\x22\x20onclick=\x22openPrivateMessage(',')\x22><i\x20class=\x22fas\x20fa-sign-in-alt\x22></i>\x20Enter\x20Room</button>','<i\x20class=\x22fas\x20fa-spinner\x20fa-spin\x22></i>\x20Creating...','user_avatar_hue','with-friends','scrollHeight','Load\x20messages\x20error:','active','<button\x20class=\x22btn\x20btn-danger\x20btn-sm\x22\x20onclick=\x22alert(\x27This\x20room\x20requires\x20a\x20valid\x20invite\x20code\x27)\x22><i\x20class=\x22fas\x20fa-ban\x22></i>\x20Invite\x20Required</button>','10348912QCEVhw','is_host','each','children','4YAYJmO','user_id_string','/guest','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22user-item-mini\x20d-flex\x20align-items-center\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22images/','text-muted','user_count','\x20password-protected','<div\x20class=\x22text-muted\x20small\x20users-more-indicator\x22>+\x20','disappearing_messages','members_only','Loading\x20user\x20room\x20keys...','\x20permanent-room-card','<i\x20class=\x22fas\x20fa-key\x22\x20title=\x22You\x20have\x20access\x22></i>','showAvatarSelector','hue-rotate(','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal\x20fade\x22\x20id=\x22passwordModal\x22\x20tabindex=\x22-1\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-dialog\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-content\x22\x20style=\x22background:\x20#2a2a2a;\x20border:\x201px\x20solid\x20#444;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-header\x22\x20style=\x22border-bottom:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h5\x20class=\x22modal-title\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-key\x22></i>\x20Password\x20Required\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</h5>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn-close\x22\x20data-bs-dismiss=\x22modal\x22\x20style=\x22filter:\x20invert(1);\x22></button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-body\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p>Enter\x20the\x20password\x20for\x20<strong>','#createRoomModal','<i\x20class=\x22fas\x20fa-spinner\x20fa-spin\x22></i>\x20Joining...','2-digit','ajax','api/join_room_by_invite.php','messages'];_0x4c2d=function(){return _0x247470;};return _0x4c2d();}function applyAllAvatarFilters(){const _0x2ad353=_0x4602fe;$('.avatar-filtered,\x20.message-avatar,\x20.user-avatar,\x20.private-message-avatar')[_0x2ad353(0x141)](function(){const _0x36f736=_0x2ad353,_0x8cacb7=$(this),_0x3acbf1=_0x8cacb7[_0x36f736(0x1c9)](_0x36f736(0x1ae)),_0x431e51=_0x8cacb7[_0x36f736(0x1c9)](_0x36f736(0x1a2));if(_0x3acbf1===undefined||_0x431e51===undefined)return;const _0x446a50=_0x3acbf1+'-'+_0x431e51,_0x118a84=_0x8cacb7[_0x36f736(0x1c9)](_0x36f736(0x228));if(_0x118a84!==_0x446a50){const _0x257d79=_0x36f736(0x151)+_0x3acbf1+'deg)\x20saturate('+_0x431e51+'%)';_0x8cacb7[_0x36f736(0x256)]('filter',_0x257d79),_0x8cacb7[_0x36f736(0x1c9)](_0x36f736(0x228),_0x446a50);}});}$(window)['on'](_0x4602fe(0x223),function(){const _0x537728=_0x4602fe;typeof cleanupInactiveUsers!==_0x537728(0x27f)&&clearInterval(cleanupInactiveUsers);}),window[_0x4602fe(0x150)]=function(){showProfileEditor();};function showAnnouncementModal(){const _0x4321c9=_0x4602fe,_0x147f4b='\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal\x20fade\x22\x20id=\x22announcementModal\x22\x20tabindex=\x22-1\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-dialog\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-content\x22\x20style=\x22background:\x20#2a2a2a;\x20border:\x201px\x20solid\x20#444;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-header\x22\x20style=\x22border-bottom:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h5\x20class=\x22modal-title\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-bullhorn\x22></i>\x20Send\x20Site\x20Announcement\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</h5>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn-close\x22\x20data-bs-dismiss=\x22modal\x22\x20style=\x22filter:\x20invert(1);\x22></button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-body\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22announcementMessage\x22\x20class=\x22form-label\x22>Announcement\x20Message</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<textarea\x20class=\x22form-control\x22\x20id=\x22announcementMessage\x22\x20rows=\x224\x22\x20maxlength=\x22500\x22\x20placeholder=\x22Enter\x20your\x20announcement\x20message...\x22\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22></textarea>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22form-text\x20text-muted\x22>Maximum\x20500\x20characters.\x20This\x20will\x20be\x20sent\x20to\x20all\x20active\x20rooms.</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-footer\x22\x20style=\x22border-top:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-secondary\x22\x20data-bs-dismiss=\x22modal\x22>Cancel</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-warning\x22\x20onclick=\x22sendAnnouncement()\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-bullhorn\x22></i>\x20Send\x20Announcement\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20';$(_0x4321c9(0x28c))[_0x4321c9(0x1a4)](),$(_0x4321c9(0x288))[_0x4321c9(0x216)](_0x147f4b),$(_0x4321c9(0x28c))[_0x4321c9(0x279)](_0x4321c9(0x219));}function sendAnnouncement(){const _0x59d894=_0x4602fe,_0x333c98=$(_0x59d894(0x231))[_0x59d894(0x1fb)]()['trim']();if(!_0x333c98){alert('Please\x20enter\x20an\x20announcement\x20message');return;}const _0x235a51=$(_0x59d894(0x1e7)),_0x3c35ea=_0x235a51[_0x59d894(0x1eb)]();_0x235a51[_0x59d894(0x194)](_0x59d894(0x2be),!![])['html'](_0x59d894(0x131)),$[_0x59d894(0x156)]({'url':'api/send_announcement.php','method':_0x59d894(0x2ad),'data':{'message':_0x333c98},'dataType':'json','success':function(_0x5dd39c){const _0x127212=_0x59d894;_0x5dd39c[_0x127212(0x1d0)]===_0x127212(0x182)?(alert('Announcement\x20sent\x20successfully\x20to\x20all\x20rooms!'),$('#announcementModal')[_0x127212(0x279)](_0x127212(0x201)),typeof loadMessages==='function'&&setTimeout(loadMessages,0x3e8)):alert('Error:\x20'+_0x5dd39c[_0x127212(0x248)]);},'error':function(_0x1bd701,_0x698292,_0x3e4ec1){const _0x367a76=_0x59d894;alert(_0x367a76(0x24e)+_0x3e4ec1);},'complete':function(){const _0x3855ed=_0x59d894;_0x235a51['prop'](_0x3855ed(0x2be),![])[_0x3855ed(0x1eb)](_0x3c35ea);}});}function _0x6066(_0x110b68,_0x564e95){const _0x4c2d77=_0x4c2d();return _0x6066=function(_0x606652,_0x3f3ffb){_0x606652=_0x606652-0x118;let _0x2fac01=_0x4c2d77[_0x606652];return _0x2fac01;},_0x6066(_0x110b68,_0x564e95);}function toggleFilterPanel(){const _0x5eea0c=_0x4602fe,_0x4bbe1e=$(_0x5eea0c(0x1a8)),_0x226217=$(_0x5eea0c(0x17e));_0x4bbe1e['is'](':visible')?(_0x4bbe1e[_0x5eea0c(0x197)](0x12c),_0x226217[_0x5eea0c(0x29a)]('fa-chevron-up')[_0x5eea0c(0x20d)](_0x5eea0c(0x21b))):(_0x4bbe1e['slideDown'](0x12c),_0x226217[_0x5eea0c(0x29a)]('fa-chevron-down')[_0x5eea0c(0x20d)](_0x5eea0c(0x2a9)));}function toggleTagFilter(_0x1c5d4d){const _0x3d1c7d=_0x4602fe,_0x24cd2e=$('.filter-tag-btn[data-filter=\x22'+_0x1c5d4d+'\x22]'),_0x34c3b8=roomFilters['tags'][_0x3d1c7d(0x2a8)](_0x1c5d4d);_0x34c3b8>-0x1?(roomFilters[_0x3d1c7d(0x236)][_0x3d1c7d(0x1ea)](_0x34c3b8,0x1),_0x24cd2e[_0x3d1c7d(0x29a)](_0x3d1c7d(0x13d))):(roomFilters['tags'][_0x3d1c7d(0x22a)](_0x1c5d4d),_0x24cd2e[_0x3d1c7d(0x20d)](_0x3d1c7d(0x13d))),applyFilters();}function clearAllFilters(){const _0x4d9689=_0x4602fe;roomFilters[_0x4d9689(0x20f)]='',roomFilters[_0x4d9689(0x178)]='',roomFilters[_0x4d9689(0x1ef)]='',roomFilters['tags']=[],$('#filterRoomName')[_0x4d9689(0x1fb)](''),$(_0x4d9689(0x199))[_0x4d9689(0x1fb)](''),$(_0x4d9689(0x16c))[_0x4d9689(0x1fb)](''),$('.filter-tag-btn')[_0x4d9689(0x29a)](_0x4d9689(0x13d)),updateFilterBadge(),applyFilters();}function loadFriendIds(){const _0x174337=_0x4602fe;$[_0x174337(0x156)]({'url':_0x174337(0x2cf),'method':_0x174337(0x1ad),'data':{'action':'get'},'dataType':_0x174337(0x15b),'success':function(_0x20124f){const _0x26cdbd=_0x174337;_0x20124f[_0x26cdbd(0x1d0)]===_0x26cdbd(0x182)&&_0x20124f[_0x26cdbd(0x215)]&&(roomFilters[_0x26cdbd(0x17b)]=_0x20124f[_0x26cdbd(0x215)][_0x26cdbd(0x2a4)](_0x9ff050=>_0x9ff050[_0x26cdbd(0x1d0)]===_0x26cdbd(0x207))[_0x26cdbd(0x160)](_0x125c09=>String(_0x125c09[_0x26cdbd(0x21e)])));}});}function storeAndDisplayRooms(_0x2b09b0){const _0x2435a4=_0x4602fe;(!roomFilters[_0x2435a4(0x19f)]||roomFilters['allRooms'][_0x2435a4(0x299)]===0x0)&&(roomFilters['allRooms']=_0x2b09b0),applyFilters();}function applyFilters(){const _0x41082c=_0x4602fe;let _0x3d443d=roomFilters['allRooms']['filter'](_0x5b6476=>!_0x5b6476['invite_only']);roomFilters[_0x41082c(0x20f)]&&(_0x3d443d=_0x3d443d[_0x41082c(0x2a4)](_0x286d82=>_0x286d82[_0x41082c(0x20f)]['toLowerCase']()[_0x41082c(0x120)](roomFilters[_0x41082c(0x20f)])));roomFilters[_0x41082c(0x178)]&&(_0x3d443d=_0x3d443d[_0x41082c(0x2a4)](_0x5a5cd2=>(_0x5a5cd2[_0x41082c(0x178)]||'')['toLowerCase']()[_0x41082c(0x120)](roomFilters[_0x41082c(0x178)])));roomFilters[_0x41082c(0x1ef)]&&(_0x3d443d=_0x3d443d['filter'](_0x24f2a1=>{const _0x1c9375=_0x41082c;if(!_0x24f2a1['users']||!Array['isArray'](_0x24f2a1[_0x1c9375(0x2b8)]))return![];return _0x24f2a1[_0x1c9375(0x2b8)][_0x1c9375(0x1b1)](_0xdf06f7=>{const _0x21da16=_0x1c9375,_0x27039a=_0xdf06f7[_0x21da16(0x2ca)]||_0xdf06f7[_0x21da16(0x1ef)]||_0xdf06f7[_0x21da16(0x2cd)]||'';return _0x27039a[_0x21da16(0x2b0)]()[_0x21da16(0x120)](roomFilters[_0x21da16(0x1ef)]);});}));roomFilters[_0x41082c(0x236)][_0x41082c(0x1a0)](_0x3662d8=>{const _0x5dd4e4=_0x41082c;switch(_0x3662d8){case'rp':_0x3d443d=_0x3d443d[_0x5dd4e4(0x2a4)](_0xcb5698=>_0xcb5698[_0x5dd4e4(0x275)]);break;case _0x5dd4e4(0x287):_0x3d443d=_0x3d443d[_0x5dd4e4(0x2a4)](_0x1fe714=>_0x1fe714[_0x5dd4e4(0x2d3)]);break;case _0x5dd4e4(0x196):_0x3d443d=_0x3d443d[_0x5dd4e4(0x2a4)](_0x351bc8=>_0x351bc8['permanent']);break;case _0x5dd4e4(0x278):_0x3d443d=_0x3d443d[_0x5dd4e4(0x2a4)](_0x273c58=>_0x273c58[_0x5dd4e4(0x175)]);break;case'friends':_0x3d443d=_0x3d443d['filter'](_0x5e2ec6=>_0x5e2ec6[_0x5dd4e4(0x25b)]);break;case _0x5dd4e4(0x16e):_0x3d443d=_0x3d443d[_0x5dd4e4(0x2a4)](_0x1c1612=>_0x1c1612[_0x5dd4e4(0x14c)]);break;case _0x5dd4e4(0x13a):_0x3d443d=_0x3d443d[_0x5dd4e4(0x2a4)](_0x5d0654=>{const _0x4c559f=_0x5dd4e4;if(!_0x5d0654['users']||!Array[_0x4c559f(0x1ec)](_0x5d0654[_0x4c559f(0x2b8)]))return![];return _0x5d0654[_0x4c559f(0x2b8)][_0x4c559f(0x1b1)](_0x292cdd=>roomFilters[_0x4c559f(0x17b)]['includes'](String(_0x292cdd[_0x4c559f(0x2ba)]))||roomFilters['friendUserIds'][_0x4c559f(0x120)](String(_0x292cdd[_0x4c559f(0x144)])));});break;}});const _0xc901a9=roomFilters[_0x41082c(0x19f)][_0x41082c(0x2a4)](_0x2d21fb=>!_0x2d21fb[_0x41082c(0x15c)])[_0x41082c(0x299)],_0x3576e1=_0x3d443d[_0x41082c(0x299)],_0x29016c=$(_0x41082c(0x1b0));_0x29016c[_0x41082c(0x299)]>0x0&&(_0x3576e1===_0xc901a9?(_0x29016c[_0x41082c(0x267)](_0x41082c(0x1c7)),_0x29016c[_0x41082c(0x29a)](_0x41082c(0x23c))[_0x41082c(0x20d)]('text-muted')):(_0x29016c[_0x41082c(0x267)]('Showing\x20'+_0x3576e1+_0x41082c(0x200)+_0xc901a9+_0x41082c(0x185)),_0x29016c['removeClass'](_0x41082c(0x147))[_0x41082c(0x20d)]('text-warning')));updateFilterBadge();const _0x36a58b=roomFilters[_0x41082c(0x19f)];roomFilters[_0x41082c(0x19f)]=[],displayRoomsWithUsers(_0x3d443d),roomFilters['allRooms']=_0x36a58b;}function joinRoomByInvite(){const _0x473830=_0x4602fe,_0x2c61d7=$('#inviteCodeInput')[_0x473830(0x1fb)]()[_0x473830(0x2bf)]();if(!_0x2c61d7){alert(_0x473830(0x1b6));return;}let _0x14dbfa=_0x2c61d7;if(_0x2c61d7[_0x473830(0x120)](_0x473830(0x2a3))){const _0x205225=_0x2c61d7[_0x473830(0x1a9)](/invite=([^&\s]+)/);if(_0x205225)_0x14dbfa=_0x205225[0x1];}_0x2c61d7[_0x473830(0x1d6)](_0x473830(0x252))&&(_0x14dbfa=_0x2c61d7[_0x473830(0x19d)](0x8));const _0x1121d2=$(_0x473830(0x274))['next'](_0x473830(0x243)),_0x6b07ac=_0x1121d2[_0x473830(0x1eb)]();_0x1121d2['prop'](_0x473830(0x2be),!![])[_0x473830(0x1eb)](_0x473830(0x154)),$[_0x473830(0x156)]({'url':_0x473830(0x157),'method':_0x473830(0x2ad),'data':{'invite_code':_0x14dbfa},'dataType':_0x473830(0x15b),'success':function(_0x21dca1){const _0x40710b=_0x473830;_0x21dca1['status']==='success'?window[_0x40710b(0x25d)][_0x40710b(0x28f)]=_0x40710b(0x20a):(alert(_0x40710b(0x1d9)+_0x21dca1[_0x40710b(0x248)]),_0x1121d2['prop'](_0x40710b(0x2be),![])[_0x40710b(0x1eb)](_0x6b07ac));},'error':function(_0x6b1a15,_0x4f52db,_0x2527c6){const _0x4e5846=_0x473830;alert(_0x4e5846(0x28a)+_0x2527c6),_0x1121d2['prop'](_0x4e5846(0x2be),![])[_0x4e5846(0x1eb)](_0x6b07ac);}});}function showFilterModal(){const _0x12f66f=_0x4602fe,_0x1c7382=new bootstrap[(_0x12f66f(0x1f8))](document[_0x12f66f(0x2bd)]('filterModal'));_0x1c7382['show']();}function updateFilterBadge(){const _0x458fd2=_0x4602fe;let _0xca9ade=0x0;if(roomFilters['name'])_0xca9ade++;if(roomFilters['description'])_0xca9ade++;if(roomFilters[_0x458fd2(0x1ef)])_0xca9ade++;_0xca9ade+=roomFilters['tags'][_0x458fd2(0x299)];const _0x39f9e3=$(_0x458fd2(0x261));_0xca9ade>0x0?_0x39f9e3['text'](_0xca9ade)[_0x458fd2(0x219)]():_0x39f9e3[_0x458fd2(0x201)]();}
+const DEBUG_MODE = false;
+
+function debugLog(message, data = null) {
+    if (DEBUG_MODE) {
+        if (data !== null) {
+            debugLog('[LOUNGE]', message, data);
+        } else {
+            debugLog('[LOUNGE]', message);
+        }
+    }
+}
+
+let roomFilters = {
+    name: '',
+    description: '',
+    username: '',
+    tags: [], // ['rp', 'youtube', 'permanent', 'password', 'friends', 'members', 'invite', 'with-friends']
+    allRooms: [], // Store all rooms for filtering
+    friendUserIds: [] // Store friend IDs for filtering
+};
+
+$(document).ready(function() {
+    debugLog('Lounge loaded');
+    
+    let userRoomKeys = [];
+    
+    loadUserRoomKeys();
+    loadRoomsWithUsers();
+    loadOnlineUsers();
+    
+    setInterval(() => {
+        loadOnlineUsers();
+        loadRoomsWithUsers();
+        loadUserRoomKeys();
+       // sendHeartbeat();
+    }, 5000); // Every 5 seconds
+    
+    setInterval(checkForKnocks, 3000); // Every 3 seconds
+    
+    setInterval(cleanupInactiveUsers, 60000); // Every minute
+    
+    setTimeout(initializePrivateMessaging, 1000);
+
+    $('#filterRoomName').on('input', function() {
+        roomFilters.name = $(this).val().toLowerCase();
+        applyFilters();
+    });
+    
+    $('#filterDescription').on('input', function() {
+        roomFilters.description = $(this).val().toLowerCase();
+        applyFilters();
+    });
+    
+    $('#filterUsername').on('input', function() {
+        roomFilters.username = $(this).val().toLowerCase();
+        applyFilters();
+    });
+    
+    // Load friend IDs if user is a member
+    loadFriendIds();
+    updateFilterBadge();
+});
+
+function sendHeartbeat() {
+    debugLog('Sending heartbeat...');
+    $.ajax({
+        url: 'api/heartbeat.php',
+        method: 'POST',
+        dataType: 'json',
+        success: function(response) {
+            debugLog('Heartbeat sent successfully');
+        },
+        error: function() {
+            debugLog('Heartbeat failed (silent fail)');
+            // Silent fail - don't show errors for heartbeat
+        }
+    });
+}
+
+function cleanupInactiveUsers() {
+    debugLog('Requesting cleanup of inactive users...');
+    $.ajax({
+        url: 'api/cleanup_inactive_users.php',
+        method: 'POST',
+        dataType: 'json',
+        success: function(response) {
+            debugLog('Cleanup response:', response);
+            if (response.cleaned_count > 0) {
+                debugLog(`Cleaned up ${response.cleaned_count} inactive users`);
+                // Immediately refresh online users list to reflect cleanup
+                loadOnlineUsers();
+            }
+        },
+        error: function() {
+            debugLog('Cleanup failed (silent fail)');
+            // Silent fail
+        }
+    });
+}
+
+function loadUserRoomKeys() {
+    debugLog('Loading user room keys...');
+    $.ajax({
+        url: 'api/check_user_room_keys.php',
+        method: 'GET',
+        dataType: 'json',
+        success: function(keys) {
+            debugLog('User room keys loaded:', keys);
+            userRoomKeys = Array.isArray(keys) ? keys : [];
+        },
+        error: function(xhr, status, error) {
+            debugLog('Error loading user room keys:', error);
+            userRoomKeys = [];
+        }
+    });
+}
+
+function hasRoomKey(roomId) {
+    return userRoomKeys.includes(parseInt(roomId));
+}
+
+function loadRoomsWithUsers() {
+    debugLog('Loading rooms with users...');
+    
+    if ($('#roomsList .room-card-enhanced').length > 0) {
+        $('#roomsList').addClass('updating');
+    }
+    
+    $.ajax({
+        url: 'api/get_rooms.php',
+        method: 'GET',
+        dataType: 'json',
+        timeout: 10000, // 10 second timeout
+        success: function(rooms) {
+            debugLog('Rooms loaded:', rooms);
+            
+            if (!Array.isArray(rooms) || rooms.length === 0) {
+                displayRoomsWithUsers([]);
+                return;
+            }
+            
+            let completedRooms = 0;
+            let roomsWithUsers = [];
+            
+            rooms.forEach((room, index) => {
+                loadUsersForRoom(room, (roomWithUsers) => {
+                    roomsWithUsers[index] = roomWithUsers;
+                    completedRooms++;
+                    
+                    debugLog(`Room ${room.id} users loaded:`, roomWithUsers);
+                    
+                    if (completedRooms === rooms.length) {
+                        const validRooms = roomsWithUsers.filter(r => r !== undefined);
+                        debugLog('All rooms processed, displaying:', validRooms);
+                        storeAndDisplayRooms(validRooms);
+
+                        
+                        setTimeout(() => {
+                            $('#roomsList').removeClass('updating');
+                        }, 300);
+                    }
+                });
+            });
+            
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading rooms:', error);
+            $('#roomsList').removeClass('updating');
+            
+            if (status !== 'timeout' || $('#roomsList .room-card-enhanced').length === 0) {
+                $('#roomsList').html(`
+                    <div class="alert alert-danger" style="background: #2a2a2a; border: 1px solid #d32f2f; color: #f44336;">
+                        <h5>Error loading rooms</h5>
+                        <p>Error: ${error}</p>
+                        <button class="btn btn-outline-light btn-sm" onclick="loadRoomsWithUsers()">
+                            <i class="fas fa-retry"></i> Retry
+                        </button>
+                    </div>
+                `);
+            }
+        }
+    });
+}
+
+function loadUsersForRoom(room, callback) {
+    debugLog(`Loading users for room ${room.id}...`);
+    
+    $.ajax({
+        url: 'api/get_room_users.php',
+        method: 'GET',
+        data: { room_id: room.id },
+        dataType: 'json',
+        timeout: 8000, // 8 second timeout
+        success: function(users) {
+            debugLog(`Raw users data for room ${room.id}:`, users);
+            
+            try {
+                let parsedUsers = users;
+                if (typeof users === 'string') {
+                    parsedUsers = JSON.parse(users);
+                }
+                
+                if (!Array.isArray(parsedUsers)) {
+                    parsedUsers = [];
+                }
+                
+                const host = parsedUsers.find(user => parseInt(user.is_host) === 1) || null;
+                const regularUsers = parsedUsers.filter(user => parseInt(user.is_host) !== 1);
+                
+                debugLog(`Room ${room.id} processed:`, {
+                    total: parsedUsers.length,
+                    host: host ? (host.display_name || host.username || host.guest_name) : 'None',
+                    regularUsers: regularUsers.length
+                });
+                
+                const roomWithUsers = {
+                    ...room,
+                    users: parsedUsers,
+                    host: host,
+                    regularUsers: regularUsers,
+                    user_count: parsedUsers.length
+                };
+                
+                callback(roomWithUsers);
+                
+            } catch (e) {
+                console.error(`Error parsing users for room ${room.id}:`, e, users);
+                callback({
+                    ...room,
+                    users: [],
+                    host: null,
+                    regularUsers: [],
+                    user_count: 0
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error(`Error loading users for room ${room.id}:`, error);
+            callback({
+                ...room,
+                users: [],
+                host: null,
+                regularUsers: [],
+                user_count: 0
+            });
+        }
+    });
+}
+
+
+
+// COMPLETE displayRoomsWithUsers function with invite_only filter
+// Replace the entire function in js/lounge.js
+
+function displayRoomsWithUsers(rooms) {
+    debugLog('displayRoomsWithUsers called with:', rooms);
+    
+    // Store all rooms for filtering
+    if (!roomFilters.allRooms || roomFilters.allRooms.length === 0) {
+        roomFilters.allRooms = rooms;
+    }
+    
+    let html = '';
+    
+    if (!Array.isArray(rooms) || rooms.length === 0) {
+        html = `
+            <div class="text-center py-5" style="color: #ccc;">
+                <i class="fas fa-door-closed fa-3x mb-3" style="color: #555;"></i>
+                <h4 style="color: #aaa;">No rooms available</h4>
+                <p style="color: #777;">Be the first to create a room!</p>
+            </div>
+        `;
+    } else {
+        // FILTER OUT INVITE-ONLY ROOMS HERE
+        let visibleRooms = rooms.filter(room => !room.invite_only);
+        
+        if (visibleRooms.length === 0) {
+            html = `
+                <div class="text-center py-5" style="color: #ccc;">
+                    <i class="fas fa-door-closed fa-3x mb-3" style="color: #555;"></i>
+                    <h4 style="color: #aaa;">No public rooms available</h4>
+                    <p style="color: #777;">All rooms are invite-only. Use an invite code to join!</p>
+                </div>
+            `;
+        } else {
+            // Sort rooms - permanent first, then by user count
+            visibleRooms.sort((a, b) => {
+                const aIsPermanent = Boolean(a.permanent);
+                const bIsPermanent = Boolean(b.permanent);
+                
+                if (aIsPermanent && !bIsPermanent) return -1;
+                if (!aIsPermanent && bIsPermanent) return 1;
+                
+                const aUserCount = a.user_count || 0;
+                const bUserCount = b.user_count || 0;
+                return bUserCount - aUserCount;
+            });
+            
+            html += '<div class="row">';
+            
+            visibleRooms.forEach((room, index) => {
+                try {
+                    const isPermanent = Boolean(room.permanent);
+                    const isPasswordProtected = Boolean(room.has_password);
+                    const allowsKnocking = Boolean(room.allow_knocking);
+                    const isRP = Boolean(room.is_rp);
+                    const youtubeEnabled = Boolean(room.youtube_enabled);
+                    const friendsOnly = Boolean(room.friends_only);
+                    const inviteOnly = Boolean(room.invite_only);
+                    const membersOnly = Boolean(room.members_only);
+                    const disappearingMessages = Boolean(room.disappearing_messages);
+                    
+                    const userCount = room.user_count || 0;
+                    const capacity = room.capacity || 10;
+                    const hasKey = hasRoomKey(room.id);
+                    const host = room.host;
+                    const regularUsers = room.regularUsers || [];
+                    const canAccessFriendsOnly = room.can_access_friends_only !== false;
+
+                    debugLog(`🔍 Room "${room.name}": permanent=${isPermanent}, rp=${isRP}, youtube=${youtubeEnabled}, friends=${friendsOnly}`);
+
+                    let headerClass = 'room-header-enhanced';
+                    let actionButtons = '';
+                    let cardClass = 'room-card-enhanced';
+
+                    if (isPermanent) {
+                        cardClass += ' permanent-room-card';
+                    }
+
+                    // Access checking logic
+                    if (inviteOnly) {
+                        headerClass += ' access-denied';
+                        actionButtons = `<button class="btn btn-danger btn-sm" onclick="alert('This room requires a valid invite code')"><i class="fas fa-ban"></i> Invite Required</button>`;
+                    } else if (membersOnly && currentUser.type !== 'user') {
+                        headerClass += ' access-denied';
+                        actionButtons = `<button class="btn btn-danger btn-sm" onclick="alert('This room is for registered members only')"><i class="fas fa-ban"></i> Members Only</button>`;
+                    } else if (friendsOnly && !canAccessFriendsOnly) {
+                        headerClass += ' access-denied';
+                        actionButtons = `<button class="btn btn-danger btn-sm" onclick="alert('This room is for friends of the host only')"><i class="fas fa-ban"></i> Friends Only</button>`;
+                    } else if (isPasswordProtected && hasKey) {
+                        headerClass += ' has-access';
+                        actionButtons = `<button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})"><i class="fas fa-key"></i> Enter Room</button>`;
+                    } else if (isPasswordProtected) {
+                        headerClass += allowsKnocking ? ' knock-available' : ' password-protected';
+                        actionButtons = `<button class="btn btn-warning btn-sm" onclick="showPasswordModal(${room.id}, '${room.name.replace(/'/g, "\\'")}')"><i class="fas fa-key"></i> Enter Room</button>`;
+                        if (allowsKnocking) {
+                            actionButtons += `<button class="btn btn-outline-primary btn-sm" onclick="knockOnRoom(${room.id}, '${room.name.replace(/'/g, "\\'")}')"><i class="fas fa-hand-paper"></i> Knock</button>`;
+                        }
+                    } else {
+                        actionButtons = `<button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})"><i class="fas fa-sign-in-alt"></i> Enter Room</button>`;
+                    }
+
+                    let featureIndicators = '';
+                    
+                    if (isPermanent) {
+                        // featureIndicators += '<span class="room-indicator permanent-indicator" title="Permanent Room - Never deleted automatically"><i class="fas fa-star"></i> PERMANENT</span>';
+                        // debugLog(`✅ Added permanent indicator for: ${room.name}`);
+                    }
+                    
+                    if (isRP) {
+                        featureIndicators += '<span class="badge bg-info"><i class="fas fa-theater-masks"></i> RP</span> ';
+                    }
+                    if (youtubeEnabled) {
+                        featureIndicators += '<span class="badge bg-danger"><i class="fab fa-youtube"></i> YouTube</span> ';
+                    }
+                    if (friendsOnly) {
+                        featureIndicators += '<span class="badge bg-primary"><i class="fas fa-user-friends"></i> Friends Only</span> ';
+                    }
+                    if (membersOnly) {
+                        featureIndicators += '<span class="badge bg-success"><i class="fas fa-id-badge"></i> Members Only</span> ';
+                    }
+                    if (disappearingMessages) {
+                        featureIndicators += '<span class="badge bg-warning"><i class="fas fa-clock"></i> Disappearing</span> ';
+                    }
+                    
+                    let themeClass = '';
+                    if (room.theme && room.theme !== 'default') {
+                        themeClass = `theme-${room.theme}`;
+                    }
+
+                    // Build host section
+                    let hostHtml = '';
+                    if (host) {
+                        const hostAvatar = host.avatar || host.user_avatar || host.guest_avatar || 'default_avatar.jpg';
+                        const hostName = host.display_name || host.username || host.guest_name || 'Unknown Host';
+                        const hostHue = host.avatar_hue || host.user_avatar_hue || 0;
+                        const hostSaturation = host.avatar_saturation || host.user_avatar_saturation || 100;
+                        
+                        hostHtml = `
+                            <div class="room-host">
+                                <h6><i class="fas fa-crown"></i> Host</h6>
+                                <div class="d-flex align-items-center">
+                                    <img src="images/${hostAvatar}" width="38" height="38" class="me-2" style="filter: hue-rotate(${hostHue}deg) saturate(${hostSaturation}%);" alt="${hostName}">
+                                    <div>
+                                        <div class="fw-bold" style="color: #e0e0e0;">${hostName}</div>
+                                        <div class="small">
+                                            ${parseInt(host.is_admin) === 1 ? '<span class="user-badge badge-admin"><i class="fas fa-shield-alt" title="Admin"></i></span>' : ''}
+                                            ${host.user_type === 'registered' || host.user_id ? '<span class="badge bg-success badge-sm">Verified</span>' : '<span class="badge bg-secondary badge-sm">Guest</span>'}
+                                            ${isPermanent ? '<span class="badge bg-warning badge-sm">Offline Host</span>' : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else if (isPermanent) {
+                        hostHtml = `
+                            <div class="room-host">
+                                <h6><i class="fas fa-crown"></i> Host</h6>
+                                <div class="d-flex align-items-center text-warning">
+                                    <i class="fas fa-user-slash fa-2x me-3"></i>
+                                    <div>
+                                        <div class="fw-bold">Host is offline</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        hostHtml = `<div class="room-host"><h6><i class="fas fa-crown"></i> Host</h6><div class="text-muted">No host available</div></div>`;
+                    }
+
+                    // Build users list
+                    let usersHtml = '';
+                    if (regularUsers.length > 0) {
+                        usersHtml = `<div class="room-users"><h6><i class="fas fa-users"></i> Users (${regularUsers.length})</h6><div class="users-grid-two-column">`;
+                        
+                        regularUsers.slice(0, 8).forEach(user => {
+                            const userAvatar = user.avatar || user.user_avatar || user.guest_avatar || 'default_avatar.jpg';
+                            const userName = user.display_name || user.username || user.guest_name || 'Unknown';
+                            const userHue = user.avatar_hue || user.user_avatar_hue || 0;
+                            const userSaturation = user.avatar_saturation || user.user_avatar_saturation || 100;
+                            
+                            usersHtml += `
+                                <div class="user-item-mini d-flex align-items-center">
+                                    <img src="images/${userAvatar}" width="24" height="24" class="me-2" style="filter: hue-rotate(${userHue}deg) saturate(${userSaturation}%);" alt="${userName}">
+                                    <div class="user-info">
+                                        <div class="user-name">${userName}</div>
+                                        <div class="user-badges">
+                                            ${parseInt(user.is_admin) === 1 ? '<span class="badge bg-danger badge-sm">Admin</span>' : ''}
+                                            ${user.user_type === 'registered' || user.user_id ? '<span class="badge bg-success badge-sm">Verified</span>' : '<span class="badge bg-secondary badge-sm">Guest</span>'}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        if (regularUsers.length > 8) {
+                            usersHtml += `<div class="text-muted small users-more-indicator">+ ${regularUsers.length - 8} more users</div>`;
+                        }
+                        
+                        usersHtml += `</div></div>`;
+                    } else {
+                        usersHtml = `<div class="room-users"><h6><i class="fas fa-users"></i> Users (0)</h6><div class="text-muted small">No other users in room</div></div>`;
+                    }
+
+                    html += `
+                        <div class="col-lg-6 col-12 room-card-wrapper">
+                            <div class="${cardClass} ${themeClass}">
+                                <div class="${headerClass}">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="room-title-section">
+                                            <h5 class="room-title">
+                                                ${isPermanent ? '<i class="fas fa-star permanent-star" title="Permanent Room"></i>' : ''}
+                                                ${room.name}
+                                                ${isPasswordProtected ? '<i class="fas fa-lock" title="Password protected"></i>' : ''}
+                                                ${hasKey ? '<i class="fas fa-key" title="You have access"></i>' : ''}
+                                            </h5>
+                                            <div class="room-meta">
+                                                <span class="capacity-info"><i class="fas fa-users"></i> ${userCount}/${capacity}</span>
+                                                ${room.theme && room.theme !== 'default' ? `<span class="theme-info"><i class="fas fa-palette"></i> ${room.theme}</span>` : ''}
+                                                ${isPermanent ? '<span class="permanent-info"><i class="fas fa-star"></i> Permanent</span>' : ''}
+                                            </div>
+                                            
+                                        </div>
+                                        <div class="action-buttons">${actionButtons}</div>
+                                    </div>
+                                    ${featureIndicators ? `<div class="room-features mt-2">${featureIndicators}</div>` : ''}
+                                    ${hasKey ? '<div class="mt-2"><span class="badge bg-success"><i class="fas fa-key"></i> Access Granted</span></div>' : ''}
+                                </div>
+                                <div class="room-content">
+                                    <div class="room-description"><p>${room.description || 'No description'}</p></div>
+                                    <div class="row">
+                                        <div class="col-12">${usersHtml}</div>
+                                        <div class="col-12 mt-3">${hostHtml}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                } catch (error) {
+                    console.error('Error rendering room:', room, error);
+                    html += `
+                        <div class="col-lg-6 col-12 room-card-wrapper">
+                            <div class="room-card-enhanced">
+                                <div class="room-header-enhanced">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="room-title-section">
+                                            <h5 class="room-title">${room.name || 'Unknown Room'}</h5>
+                                            <div class="room-meta">
+                                                <span class="text-danger">Error loading room details</span>
+                                            </div>
+                                        </div>
+                                        <div class="action-buttons">
+                                            <button class="btn btn-success btn-sm" onclick="joinRoom(${room.id})">
+                                                <i class="fas fa-sign-in-alt"></i> Join Room
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            html += '</div>';
+        }
+    }
+    
+    const $roomsList = $('#roomsList');
+    if ($roomsList.children().length > 0 && !$roomsList.hasClass('updating')) {
+        $roomsList.addClass('fade-transition');
+        setTimeout(() => {
+            $roomsList.html(html);
+            $roomsList.removeClass('fade-transition');
+        }, 150);
+    } else {
+        $roomsList.html(html);
+    }
+    
+    const visibleRooms = rooms.filter(room => !room.invite_only);
+    const permanentCount = visibleRooms.filter(r => Boolean(r.permanent)).length;
+    const rpCount = visibleRooms.filter(r => Boolean(r.is_rp)).length;
+    const youtubeCount = visibleRooms.filter(r => Boolean(r.youtube_enabled)).length;
+    const friendsCount = visibleRooms.filter(r => Boolean(r.friends_only)).length;
+}
+
+
+window.joinRoom = function(roomId, inviteCode = null) {
+    debugLog('joinRoom: Attempting to join room', roomId, 'with invite:', inviteCode);
+    
+    const button = $(`button[onclick*="joinRoom(${roomId}"]`);
+    const originalText = button.html();
+    
+    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Joining...');
+    
+    const requestData = { room_id: roomId };
+    if (inviteCode) {
+        requestData.invite_code = inviteCode;
+    }
+    
+    $.ajax({
+        url: 'api/join_room.php',
+        method: 'POST',
+        data: requestData,
+        dataType: 'json',
+        timeout: 10000,
+        success: function(response) {
+            if (response.status === 'success') {
+                if (response.used_room_key) {
+                    loadUserRoomKeys();
+                }
+                window.location.href = '/room';
+            } else {
+                if (response.message && response.message.toLowerCase().includes('password')) {
+                    showPasswordModal(roomId, 'Room ' + roomId);
+                } else if (response.message && (
+                    response.message.includes('friends only') || 
+                    response.message.includes('members only') || 
+                    response.message.includes('invite')
+                )) {
+                    alert('Access Denied: ' + response.message);
+                } else {
+                    alert('Error: ' + response.message);
+                }
+                
+                button.prop('disabled', false).html(originalText);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('joinRoom error:', error);
+            button.prop('disabled', false).html(originalText);
+            
+            if (status === 'timeout') {
+                alert('Request timed out. Please try again.');
+            } else {
+                alert('Error joining room: ' + error);
+            }
+        }
+    });
+};
+
+function loadOnlineUsers() {
+    $.ajax({
+        url: 'api/get_online_users.php',
+        method: 'GET',
+        dataType: 'json',
+        timeout: 8000, // 8 second timeout
+        success: function(response) {
+            // Check for logout signal
+            if (response && response.__logout_required__) {
+                console.log('Auto-logout detected - redirecting to index page');
+                
+                // Show brief message before redirect (optional)
+                if (typeof showNotification === 'function') {
+                    showNotification('Session expired due to inactivity. Redirecting...', 'warning');
+                }
+                
+                // Clear local storage if used
+                if (typeof localStorage !== 'undefined') {
+                    localStorage.removeItem('currentUser');
+                    localStorage.removeItem('userSettings');
+                }
+                
+                // Redirect immediately
+                window.location.href = '/guest';
+                return;
+            }
+            
+            // Normal response - display users
+            debugLog('Online users loaded:', response);
+            displayOnlineUsers(response);
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading online users:', error);
+            
+            // Check if it's an authentication error
+            if (xhr.status === 401 || xhr.status === 403) {
+                console.log('Authentication error - redirecting to index page');
+                window.location.href = '/guest';
+                return;
+            }
+            
+            if (status !== 'timeout') {
+                debugLog('Failed to load online users, keeping current list');
+            }
+        }
+    });
+}
+
+function displayOnlineUsers(users) {
+    let html = '';
+    
+    if (!Array.isArray(users) || users.length === 0) {
+        html = '<p style="color: #666;">No users online</p>';
+    } else {
+        users.forEach(user => {
+            const name = user.username || user.guest_name || 'Unknown';
+            const avatar = user.avatar || user.guest_avatar || 'default_avatar.jpg';
+            const lastActivity = user.last_activity;
+            const hue = user.avatar_hue || 0;
+            const saturation = user.avatar_saturation || 100;
+            
+            const isRegisteredUser = user.username && user.username.trim() !== '';
+            const isCurrentUser = user.user_id_string === currentUser.user_id;
+
+            let avatarClickHandler = '';
+            if (isRegisteredUser) {
+                avatarClickHandler = `onclick="handleAvatarClick(event, '${user.user_id_string}', '${user.username.replace(/'/g, "\\'")}')" style="cursor: pointer;"`;
+            } else if (isCurrentUser) {
+                avatarClickHandler = `onclick="showProfileEditor()" style="cursor: pointer;"`;
+            }
+            
+            let activityIndicator = '';
+            if (lastActivity) {
+                const now = new Date();
+                const lastActiveTime = new Date(lastActivity.replace(' ', 'T'));
+                const diffMinutes = Math.floor((now - lastActiveTime) / (1000 * 60));
+                
+                /*if (diffMinutes < 15) {
+                    activityIndicator = '<span class="badge bg-success badge-sm">Online</span>';
+                } else if (diffMinutes < 30) {
+                    activityIndicator = `<span class="badge bg-warning badge-sm">${diffMinutes}m ago</span>`;
+                } else {
+                    activityIndicator = '<span class="badge bg-secondary badge-sm">Away</span>';
+                }*/
+            }
+
+            let badges = '';
+            if (user.is_admin) {
+                badges += '<span class="user-badge badge-admin me-2"><i class="fas fa-shield-alt" title="Admin"></i>Admin</span>';
+            }
+            if (user.is_moderator) {
+                badges += '<span class="user-badge badge-mod me-2"><i class="fas fa-shield-alt" title="Moderator"></i>Moderator</span>';
+            }
+            
+            html += `
+                <div class="d-flex align-items-center mb-2">
+                    <img src="images/${avatar}" 
+                         width="30" height="30" 
+                         class="me-2" 
+                         style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); border-radius: 2px; ${avatarClickHandler ? 'cursor: pointer;' : ''}"
+                         ${avatarClickHandler}
+                         alt="${name}">
+                    <div style="flex-grow: 1;">
+                        <small class="fw-bold" style="color: #fff;">${name}</small>
+                        <div>
+                            ${badges}
+                            ${activityIndicator}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    $('#onlineUsersList').html(html);
+}
+
+function handleAvatarClick(event, userIdString, username) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    debugLog('Lounge avatar clicked - userIdString:', userIdString, 'username:', username);
+    
+    if (username && username.trim() !== '') {
+        getUserIdFromUsername(username, function(userId) {
+            if (userId) {
+                if (userId == currentUser.id) {
+                    showUserProfile(userId, event.target);
+                } else {
+                    showUserProfile(userId, event.target);
+                }
+            }
+        });
+    }
+}
+
+function getUserIdFromUsername(username, callback) {
+    $.ajax({
+        url: 'api/get_user_id_from_username.php',
+        method: 'GET',
+        data: { username: username },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                callback(response.user_id);
+            } else {
+                callback(null);
+            }
+        },
+        error: function() {
+            callback(null);
+        }
+    });
+}
+
+window.showPasswordModal = function(roomId, roomName) {
+    const modalHtml = `
+        <div class="modal fade" id="passwordModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
+                    <div class="modal-header" style="border-bottom: 1px solid #444;">
+                        <h5 class="modal-title">
+                            <i class="fas fa-key"></i> Password Required
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Enter the password for <strong>${roomName}</strong>:</p>
+                        <div class="mb-3">
+                            <input type="password" class="form-control" id="roomPasswordInput" placeholder="Room password" 
+                                   style="background: #333; border: 1px solid #555; color: #fff;">
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid #444;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="joinRoomWithPassword(${roomId})">
+                            <i class="fas fa-sign-in-alt"></i> Join Room
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#passwordModal').remove();
+    $('body').append(modalHtml);
+    
+    const modal = new bootstrap.Modal(document.getElementById('passwordModal'));
+    modal.show();
+    
+    $('#passwordModal').on('shown.bs.modal', function() {
+        $('#roomPasswordInput').focus();
+    });
+    
+    $('#roomPasswordInput').on('keypress', function(e) {
+        if (e.which === 13) {
+            joinRoomWithPassword(roomId);
+        }
+    });
+};
+
+window.joinRoomWithPassword = function(roomId) {
+    const password = $('#roomPasswordInput').val();
+    
+    if (!password) {
+        alert('Please enter the password');
+        $('#roomPasswordInput').focus();
+        return;
+    }
+    
+    $.ajax({
+        url: 'api/join_room.php',
+        method: 'POST',
+        data: {
+            room_id: roomId,
+            password: password
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                window.location.href = '/room';
+            } else {
+                alert('Error: ' + response.message);
+                $('#roomPasswordInput').val('').focus();
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error joining room:', error);
+            alert('Error joining room: ' + error);
+        }
+    });
+};
+
+window.showCreateRoomModal = function() {
+    $('#createRoomModal').remove();
+
+    const modalHtml = `
+        <div class="modal fade" id="createRoomModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
+                    <div class="modal-header" style="background: #333; border-bottom: 1px solid #444;">
+                        <h5 class="modal-title">
+                            <i class="fas fa-plus-circle"></i> Create New Room
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Nav Tabs -->
+                        <ul class="nav nav-tabs mb-3" id="createRoomTabs" role="tablist" style="border-bottom: 1px solid #444;">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic" type="button" role="tab" style="color: #fff; background: transparent; border: none;">Basic Settings</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="access-tab" data-bs-toggle="tab" data-bs-target="#access" type="button" role="tab" style="color: #fff; background: transparent; border: none;">Access Control</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="features-tab" data-bs-toggle="tab" data-bs-target="#features" type="button" role="tab" style="color: #fff; background: transparent; border: none;">Features</button>
+                            </li>
+                            ${(currentUser.is_admin || currentUser.is_moderator) ? `
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" type="button" role="tab" style="color: #fff; background: transparent; border: none;">
+                                    <i class="fas fa-shield-alt"></i> Admin
+                                </button>
+                            </li>
+                            ` : ''}
+                        </ul>
+
+                        <div class="tab-content" id="createRoomTabsContent">
+                            <!-- Basic Settings Tab -->
+                            <div class="tab-pane fade show active" id="basic" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="roomName" class="form-label">Room Name</label>
+                                            <input type="text" class="form-control" id="roomName" required maxlength="50" 
+                                                   style="background: #333; border: 1px solid #555; color: #fff;">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="roomCapacity" class="form-label">Capacity</label>
+                                            <select class="form-select" id="roomCapacity" required 
+                                                    style="background: #333; border: 1px solid #555; color: #fff;">
+                                                <option value="5">5 users</option>
+                                                <option value="10" selected>10 users</option>
+                                                <option value="20">20 users</option>
+                                                <option value="50">50 users</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="roomTheme" class="form-label">Theme</label>
+                                            <select class="form-select" id="roomTheme" 
+                                                    style="background: #333; border: 1px solid #555; color: #fff;">
+                                                <option value="default">Default</option>
+                                                <option value="cyberpunk">Cyberpunk</option>
+                                                <option value="forest">Forest</option>
+                                                <option value="ocean">Ocean</option>
+                                                <option value="sunset">Sunset</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="roomDescription" class="form-label">Description</label>
+                                            <textarea class="form-control" id="roomDescription" rows="4" maxlength="200" 
+                                                      style="background: #333; border: 1px solid #555; color: #fff;"></textarea>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="isRP">
+                                                <label class="form-check-label" for="isRP">
+                                                    <i class="fas fa-theater-masks"></i> Roleplay Room
+                                                </label>
+                                            </div>
+                                            <small class="text-muted">Mark this room as suitable for roleplay</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Access Control Tab -->
+                            <div class="tab-pane fade" id="access" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="hasPassword">
+                                                <label class="form-check-label" for="hasPassword">
+                                                    <i class="fas fa-lock"></i> Password Protected
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3" id="passwordField" style="display: none;">
+                                            <label for="roomPassword" class="form-label">Password</label>
+                                            <input type="password" class="form-control" id="roomPassword" 
+                                                   style="background: #333; border: 1px solid #555; color: #fff;">
+                                        </div>
+                                        <div class="mb-3" id="knockingField" style="display: none;">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="allowKnocking" checked>
+                                                <label class="form-check-label" for="allowKnocking">
+                                                    <i class="fas fa-hand-paper"></i> Allow Knocking
+                                                </label>
+                                            </div>
+                                        </div>
+                                        ${currentUser.type === 'user' ? `
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="membersOnly">
+                                                <label class="form-check-label" for="membersOnly">
+                                                    <i class="fas fa-user-check"></i> Members Only
+                                                </label>
+                                            </div>
+                                            <small class="text-muted">Only registered users can join</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="friendsOnly">
+                                                <label class="form-check-label" for="friendsOnly">
+                                                    <i class="fas fa-user-friends"></i> Friends Only
+                                                </label>
+                                            </div>
+                                            <small class="text-muted">Only your friends can join</small>
+                                        </div>
+                                        ` : ''}
+                                        
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="inviteOnly">
+                                                <label class="form-check-label" for="inviteOnly">
+                                                    <i class="fas fa-link"></i> Invite Only
+                                                </label>
+                                            </div>
+                                            <small class="text-muted">Generate a special invite link</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Features Tab -->
+                            <div class="tab-pane fade" id="features" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="mb-4">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="youtubeEnabled">
+                                                <label class="form-check-label" for="youtubeEnabled">
+                                                    <i class="fab fa-youtube text-danger"></i> <strong>Enable YouTube Player</strong> <span class="betatext" /> <span class="betatext2" />
+                                                </label>
+                                            </div>
+                                            <small class="form-text text-muted">Allow synchronized video playback for all users</small>
+                                        </div>
+                                        
+                                        <div class="mb-4">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="disappearingMessages">
+                                                <label class="form-check-label" for="disappearingMessages">
+                                                    <i class="fas fa-clock"></i> <strong>Disappearing Messages</strong>
+                                                </label>
+                                            </div>
+                                            <small class="form-text text-muted">Messages automatically delete after a set time</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3" id="messageLifetimeField" style="display: none;">
+                                            <label for="messageLifetime" class="form-label">Message Lifetime (minutes)</label>
+                                            <select class="form-select" id="messageLifetime" 
+                                                    style="background: #333; border: 1px solid #555; color: #fff;">
+                                                <option value="5">5 minutes</option>
+                                                <option value="15">15 minutes</option>
+                                                <option value="30" selected>30 minutes</option>
+                                                <option value="60">1 hour</option>
+                                                <option value="120">2 hours</option>
+                                                <option value="360">6 hours</option>
+                                                <option value="720">12 hours</option>
+                                                <option value="1440">24 hours</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Admin Tab (only for moderators/admins) -->
+                            ${(currentUser.is_admin || currentUser.is_moderator) ? `
+                            <div class="tab-pane fade" id="admin" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="alert alert-warning" style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); color: #ffc107;">
+                                            <i class="fas fa-shield-alt"></i> <strong>Administrator Settings</strong><br>
+                                            These options are only available to moderators and administrators.
+                                        </div>
+                                        
+                                        <div class="mb-4">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="permanentRoom">
+                                                <label class="form-check-label" for="permanentRoom">
+                                                    <i class="fas fa-star text-warning"></i> <strong>Permanent Room</strong>
+                                                </label>
+                                            </div>
+                                            <small class="form-text text-muted">
+                                                This room will never be automatically deleted, even when empty. 
+                                                It will be displayed at the top of the room list with a special indicator.
+                                            </small>
+                                            <div class="mt-2">
+                                                <small class="text-info">
+                                                    <i class="fas fa-info-circle"></i> 
+                                                    When the host of a permanent room leaves, they retain host privileges even while offline.
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid #444;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="createRoom()">
+                            <i class="fas fa-plus"></i> Create Room
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#createRoomModal').remove();
+    $('body').append(modalHtml);
+    
+    $('#hasPassword').on('change', function() {
+        if (this.checked) {
+            $('#passwordField').show();
+            $('#knockingField').show();
+        } else {
+            $('#passwordField').hide();
+            $('#knockingField').hide();
+            $('#roomPassword').val('');
+            $('#allowKnocking').prop('checked', true);
+        }
+    });
+    
+    $('#disappearingMessages').on('change', function() {
+        if (this.checked) {
+            $('#messageLifetimeField').show();
+        } else {
+            $('#messageLifetimeField').hide();
+        }
+    });
+    
+    $('#createRoomModal input').on('keypress', function(e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            createRoom();
+        }
+    });
+    
+    $('#createRoomModal').modal('show');
+};
+
+window.createRoom = function() {
+    debugLog('Creating room with new features...');
+    
+    const createButton = $('#createRoomModal .btn-primary');
+    if (createButton.prop('disabled')) {
+        debugLog('Create button already disabled, preventing duplicate submission');
+        return;
+    }
+    
+    const formData = {
+        name: $('#roomName').val().trim(),
+        description: $('#roomDescription').val().trim(),
+        capacity: $('#roomCapacity').val(),
+        theme: $('#roomTheme').val(),
+        has_password: $('#hasPassword').is(':checked') ? 1 : 0,
+        password: $('#hasPassword').is(':checked') ? $('#roomPassword').val() : '',
+        allow_knocking: $('#allowKnocking').is(':checked') ? 1 : 0,
+        is_rp: $('#isRP').is(':checked') ? 1 : 0,
+        youtube_enabled: $('#youtubeEnabled').is(':checked') ? 1 : 0,
+        friends_only: $('#friendsOnly').is(':checked') ? 1 : 0,
+        invite_only: $('#inviteOnly').is(':checked') ? 1 : 0,
+        members_only: $('#membersOnly').is(':checked') ? 1 : 0,
+        disappearing_messages: $('#disappearingMessages').is(':checked') ? 1 : 0,
+        message_lifetime_minutes: $('#disappearingMessages').is(':checked') ? $('#messageLifetime').val() : 0,
+        permanent: $('#permanentRoom').is(':checked') ? 1 : 0  // NEW: Add permanent setting
+    };
+    
+    debugLog('Form data being sent:', formData);
+    
+    if (!formData.name) {
+        alert('Room name is required');
+        return;
+    }
+    
+    if (formData.has_password && !formData.password) {
+        alert('Password is required when password protection is enabled');
+        return;
+    }
+    
+    const originalText = createButton.html();
+    createButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating...');
+    
+    const cancelButton = $('#createRoomModal .btn-secondary');
+    cancelButton.prop('disabled', true);
+    
+    $.ajax({
+        url: 'api/create_room.php',
+        method: 'POST',
+        data: formData,
+        dataType: 'json',
+        timeout: 15000, // 15 second timeout
+        success: function(response) {
+            debugLog('Create room response:', response);
+            
+            if (response.status === 'success') {
+                $('#createRoomModal').modal('hide');
+                
+                let message = 'Room created successfully!';
+                if (formData.permanent) {
+                    message += ' This is now a permanent room.';
+                }
+                if (response.invite_code) {
+                    const inviteLink = window.location.origin + '/' + response.invite_link;
+                    message += '\\n\\nInvite link: ' + inviteLink;
+                    
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(inviteLink).then(() => {
+                            message += '\\n\\n(Invite link copied to clipboard!)';
+                            alert(message);
+                        }).catch(() => {
+                            alert(message);
+                        });
+                    } else {
+                        alert(message);
+                    }
+                } else {
+                    alert(message);
+                }
+                
+                setTimeout(() => {
+                    window.location.href = '/room';
+                }, 0);
+            } else {
+                alert('Error: ' + response.message);
+                createButton.prop('disabled', false).html(originalText);
+                cancelButton.prop('disabled', false);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error creating room:', error);
+            console.error('Response text:', xhr.responseText);
+            alert('Error creating room: ' + error);
+            
+            createButton.prop('disabled', false).html(originalText);
+            cancelButton.prop('disabled', false);
+        }
+    });
+};
+
+window.knockOnRoom = function(roomId, roomName) {
+    if (!confirm(`Send a knock request to "${roomName}"?`)) {
+        return;
+    }
+    
+    $.ajax({
+        url: 'api/knock_room.php',
+        method: 'POST',
+        data: { room_id: roomId },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                alert('Knock sent! The host will be notified.');
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error knocking on room:', error);
+            alert('Error sending knock: ' + error);
+        }
+    });
+};
+
+function checkForKnocks() {
+    $.ajax({
+        url: 'api/check_knocks.php',
+        method: 'GET',
+        dataType: 'json',
+        success: function(knocks) {
+            if (Array.isArray(knocks) && knocks.length > 0) {
+                knocks.forEach(knock => {
+                    if ($(`#knock-${knock.id}`).length === 0) {
+                        showKnockNotification(knock);
+                    }
+                });
+            }
+        },
+        error: function() {
+            // Silently fail
+        }
+    });
+}
+
+function showKnockNotification(knock) {
+    const userName = knock.username || knock.guest_name || 'Unknown User';
+    const roomName = knock.room_name || 'Unknown Room';
+    
+    if (confirm(`${userName} wants to join ${roomName}. Accept?`)) {
+        respondToKnock(knock.id, 'accepted');
+    } else {
+        respondToKnock(knock.id, 'denied');
+    }
+}
+
+window.respondToKnock = function(knockId, response) {
+    $.ajax({
+        url: 'api/respond_knocks.php',
+        method: 'POST',
+        data: {
+            knock_id: knockId,
+            response: response
+        },
+        dataType: 'json',
+        success: function(result) {
+            if (result.status === 'success') {
+                if (response === 'accepted') {
+                    alert('Knock accepted! User can now join.');
+                    loadUserRoomKeys();
+                }
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error responding to knock:', error);
+        }
+    });
+};
+
+
+let openPrivateChats = new Map();
+let friends = [];
+
+function initializePrivateMessaging() {
+    if (currentUser.type !== 'user') return;
+    
+    loadFriends();
+    checkForNewPrivateMessages();
+    setInterval(checkForNewPrivateMessages, 500);
+}
+
+function openPrivateMessage(userId, username) {
+    debugLog('Opening private message for user:', userId, username);
+    
+    if (openPrivateChats && openPrivateChats.has(userId)) {
+        $(`#pm-${userId}`).show();
+        return;
+    }
+    
+    const windowHtml = `
+        <div class="private-message-window" id="pm-${userId}">
+            <div class="private-message-header">
+                <h6 class="private-message-title">Chat with ${username}</h6>
+                <button class="private-message-close" onclick="closePrivateMessage(${userId})">&times;</button>
+            </div>
+            <div class="private-message-body" id="pm-body-${userId}">
+                Loading messages...
+            </div>
+            <div class="private-message-input">
+                <form class="private-message-form" onsubmit="sendPrivateMessage(${userId}); return false;">
+                    <input type="text" id="pm-input-${userId}" placeholder="Type a message..." required>
+                    <button type="submit">Send</button>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    $('body').append(windowHtml);
+    
+    if (typeof openPrivateChats !== 'undefined') {
+        openPrivateChats.set(userId, { username: username, color: 'blue' });
+    }
+    
+    if (typeof loadPrivateMessages === 'function') {
+        loadPrivateMessages(userId);
+    } else {
+        $('#pm-body-' + userId).html('<div style="color: #f44336; padding: 10px;">Private messaging not available in lounge</div>');
+    }
+}
+
+function closePrivateMessage(userId) {
+    $(`#pm-${userId}`).remove();
+    if (typeof openPrivateChats !== 'undefined') {
+        openPrivateChats.delete(userId);
+    }
+}
+
+function sendPrivateMessage(recipientId) {
+    if (typeof loadPrivateMessages === 'function') {
+        const input = $(`#pm-input-${recipientId}`);
+        const message = input.val().trim();
+        
+        if (!message) return false;
+        
+        $.ajax({
+            url: 'api/private_messages.php',
+            method: 'POST',
+            data: {
+                action: 'send',
+                recipient_id: recipientId,
+                message: message
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    input.val('');
+                    loadPrivateMessages(recipientId);
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('Error sending message');
+            }
+        });
+    } else {
+        alert('Private messaging not available in lounge');
+    }
+    
+    return false;
+}
+
+function closePrivateMessage(userId) {
+    $(`#pm-${userId}`).remove();
+    openPrivateChats.delete(userId);
+}
+
+function sendPrivateMessage(recipientId) {
+    const input = $(`#pm-input-${recipientId}`);
+    const message = input.val().trim();
+    
+    if (!message) return;
+    
+    $.ajax({
+        url: 'api/private_messages.php',
+        method: 'POST',
+        data: {
+            action: 'send',
+            recipient_id: recipientId,
+            message: message
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                input.val('');
+                loadPrivateMessages(recipientId);
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function() {
+            alert('Error sending message');
+        }
+    });
+}
+
+function loadPrivateMessages(otherUserId) {
+    debugLog('Loading private messages with user:', otherUserId);
+    
+    if (!openPrivateChats.get(otherUserId).color) {
+        $.ajax({
+            url: 'api/get_user_info.php',
+            method: 'GET',
+            data: { user_id: otherUserId },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    const chatData = openPrivateChats.get(otherUserId);
+                    chatData.color = response.user.color || 'blue';
+                    openPrivateChats.set(otherUserId, chatData);
+                }
+            }
+        });
+    }
+    
+    $.ajax({
+        url: 'api/private_messages.php',
+        method: 'GET',
+        data: {
+            action: 'get',
+            other_user_id: otherUserId
+        },
+        dataType: 'json',
+        success: function(response) {
+            debugLog('Load messages response:', response);
+            if (response.status === 'success') {
+                displayPrivateMessages(otherUserId, response.messages);
+            } else {
+                $(`#pm-body-${otherUserId}`).html('<div style="color: #f44336; padding: 10px;">Error: ' + response.message + '</div>');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Load messages error:', error, xhr.responseText);
+            $(`#pm-body-${otherUserId}`).html('<div style="color: #f44336; padding: 10px;">Failed to load messages</div>');
+        }
+    });
+}
+
+function displayPrivateMessages(otherUserId, messages) {
+    const container = $(`#pm-body-${otherUserId}`);
+    
+    const wasAtBottom = container[0] ? 
+        (container.scrollTop() + container.innerHeight() >= container[0].scrollHeight - 20) : true;
+    
+    let html = '';
+    
+    if (messages.length === 0) {
+        html = '<div style="text-align: center; color: #999; padding: 20px;">No messages yet</div>';
+    } else {
+        messages.forEach(msg => {
+            const isOwn = msg.sender_id == currentUser.id;
+            const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            const author = isOwn ? (currentUser.username || currentUser.name) : msg.sender_username;
+            const avatar = isOwn ? (currentUser.avatar || 'default_avatar.jpg') : (msg.sender_avatar || 'default_avatar.jpg');
+            const userColor = isOwn ? (currentUser.color || 'blue') : (msg.sender_color || 'blue');
+            const avatarHue = isOwn ? (currentUser.avatar_hue || 0) : (msg.sender_avatar_hue || 0);
+const avatarSat = isOwn ? (currentUser.avatar_saturation || 100) : (msg.sender_avatar_saturation || 100);
+const bubbleHue = isOwn ? (currentUser.bubble_hue || 0) : (msg.bubble_hue || 0);
+const bubbleSat = isOwn ? (currentUser.bubble_saturation || 100) : (msg.bubble_saturation || 100);
+
+            
+            html += `
+    <div class="private-chat-message ${isOwn ? 'sent' : 'received'}">
+        <img src="images/${avatar}" 
+             class="private-message-avatar" 
+             style="filter: hue-rotate(${avatarHue}deg) saturate(${avatarSat}%);"
+             alt="${author}'s avatar">
+                    <div class="private-message-bubble ${isOwn ? 'sent' : 'received'} user-color-${userColor}" style="filter: hue-rotate(${bubbleHue}deg) saturate(${bubbleSat}%);">
+                        <div class="private-message-header-info">
+                            <div class="private-message-author">${author}</div>
+                            <div class="private-message-time">${time}</div>
+                        </div>
+                        <div class="private-message-content">${msg.message}</div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    container.html(html);
+    
+    if (wasAtBottom) {
+        container.scrollTop(container[0].scrollHeight);
+    }
+}
+
+function checkForNewPrivateMessages() {
+    if (currentUser.type !== 'user') return;
+    
+    openPrivateChats.forEach((data, userId) => {
+        const input = $(`#pm-input-${userId}`);
+        const isTyping = input.is(':focus') && input.val().length > 0;
+        
+        if (!isTyping) {
+            loadPrivateMessages(userId);
+        }
+    });
+    
+    if ($('#friendsPanel').is(':visible')) {
+        loadConversations();
+    }
+}
+
+$(document).ready(function() {
+     setInterval(() => {
+        $('.room-card-enhanced .fa-spinner').each(function() {
+            debugLog('PERSISTENT SPINNER DETECTED:', this.closest('.room-card-enhanced'));
+            debugLog('Parent button:', this.closest('button'));
+        });
+    }, 1000);
+    initializePrivateMessaging();
+});
+
+function showFriendsPanel() {
+    $('#friendsPanel').show();
+    loadFriends();
+    loadConversations();
+}
+
+function closeFriendsPanel() {
+    $('#friendsPanel').hide();
+}
+
+function updateFriendsPanel() {
+    debugLog('Updating friends panel with:', friends);
+    
+    let html = `
+        <div class="mb-3">
+            <div class="input-group input-group-sm">
+                <input type="text" class="form-control" id="addFriendInput" placeholder="Username to add" style="background: #333; border: 1px solid #555; color: #fff;">
+                <button class="btn btn-primary" onclick="addFriend()">
+                    <i class="fas fa-user-plus"></i> Add
+                </button>
+            </div>
+        </div>
+        <div class="mb-3">
+            <h6 style="color: #e0e0e0;">Recent Conversations</h6>
+            <div id="conversationsList">Loading conversations...</div>
+        </div>
+        <div>
+            <h6 style="color: #e0e0e0;">Friends</h6>
+            <div id="friendsListContent">
+    `;
+    
+    if (!friends || friends.length === 0) {
+        html += '<p class="text-muted small">No friends yet. Add someone using the form above!</p>';
+    } else {
+        friends.forEach(friend => {
+            if (friend.status === 'accepted') {
+                html += `
+                    <div class="d-flex align-items-center mb-2 p-2" style="background: #333; border-radius: 4px;">
+                        <img src="images/${friend.avatar || 'default_avatar.jpg'}" width="24" height="24" class="me-2" style="border-radius: 2px; filter: hue-rotate(${friend.avatar_hue || 0}deg) saturate(${friend.avatar_saturation || 100}%);">                        
+                        <div class="flex-grow-1">
+                            <small style="color: #e0e0e0;">${friend.username}</small>
+                        </div>
+                        <button class="btn btn-sm btn-primary" onclick="openPrivateMessage(${friend.friend_user_id}, '${friend.username}')">
+                            <i class="fas fa-comment"></i>
+                        </button>
+                    </div>
+                `;
+            } else if (friend.status === 'pending' && friend.request_type === 'received') {
+                html += `
+                    <div class="d-flex align-items-center mb-2 p-2" style="background: #4a4a2a; border-radius: 4px;">
+                        <img src="images/${friend.avatar || 'default_avatar.jpg'}" width="24" height="24" class="me-2" style="border-radius: 2px;">
+                        <div class="flex-grow-1">
+                            <small style="color: #e0e0e0;">${friend.username}</small>
+                            <br><small class="text-warning">Pending request</small>
+                        </div>
+                        <button class="btn btn-sm btn-success" onclick="acceptFriend(${friend.id})">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    </div>
+                `;
+            }
+        });
+    }
+    
+    html += '</div></div>';
+    $('#friendsList').html(html);
+    
+    loadConversations();
+}
+
+
+function addFriend() {
+    const username = $('#addFriendInput').val().trim();
+    if (!username) return;
+    
+    $.ajax({
+        url: 'api/friends.php',
+        method: 'POST',
+        data: {
+            action: 'add',
+            friend_username: username
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                $('#addFriendInput').val('');
+                alert('Friend request sent!');
+                loadFriends();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        }
+    });
+}
+
+function acceptFriend(friendId) {
+    // Disable button to prevent double-clicks
+    const acceptBtn = $(`button[onclick="acceptFriend(${friendId})"]`);
+    const originalHtml = acceptBtn.html();
+    acceptBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+    
+    $.ajax({
+        url: 'api/friends.php',
+        method: 'POST',
+        data: {
+            action: 'accept',
+            friend_id: friendId
+        },
+        dataType: 'json',
+        timeout: 10000, // 10 second timeout
+        success: function(response) {
+            if (response.status === 'success') {
+                // Success - show brief feedback then reload
+                showNotification('Friend request accepted!', 'success');
+                loadFriends();
+                
+                // Update other UI elements if they exist
+                if (typeof clearFriendshipCache === 'function') {
+                    clearFriendshipCache();
+                }
+                if (typeof loadUsers === 'function') {
+                    loadUsers();
+                }
+            } else {
+                showNotification('Error: ' + (response.message || 'Unknown error'), 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Accept friend error:', {xhr, status, error});
+            let errorMsg = 'Network error occurred';
+            
+            if (status === 'timeout') {
+                errorMsg = 'Request timed out. Please try again.';
+            } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            }
+            
+            showNotification('Error accepting friend request: ' + errorMsg, 'error');
+        },
+        complete: function() {
+            // Re-enable button
+            acceptBtn.prop('disabled', false).html(originalHtml);
+        }
+    });
+}
+
+function loadConversations() {
+    $.ajax({
+        url: 'api/private_messages.php',
+        method: 'GET',
+        data: { action: 'get_conversations' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                displayConversations(response.conversations);
+            }
+        }
+    });
+}
+
+function displayConversations(conversations) {
+    let html = '';
+    
+    if (conversations.length === 0) {
+        html = '<p class="text-muted small">No conversations yet</p>';
+    } else {
+        conversations.forEach(conv => {
+            const unreadBadge = conv.unread_count > 0 ? `<span class="badge bg-danger">${conv.unread_count}</span>` : '';
+            html += `
+                <div class="d-flex align-items-center mb-2 p-2" style="background: #333; border-radius: 4px; cursor: pointer;" onclick="openPrivateMessage(${conv.other_user_id}, '${conv.username}')">
+                    <img src="images/${conv.avatar}" width="24" height="24" class="me-2" style="border-radius: 2px; filter: hue-rotate(${conv.avatar_hue || 0}deg) saturate(${conv.avatar_saturation || 100}%);">
+                    <div class="flex-grow-1">
+                        <small>${conv.username}</small>
+                        <br><small class="text-muted">${conv.last_message ? conv.last_message.substring(0, 30) + '...' : 'No messages'}</small>
+                    </div>
+                    ${unreadBadge}
+                </div>
+            `;
+        });
+    }
+    
+    $('#conversationsList').html(html);
+}
+function loadFriends() {
+    debugLog('Loading friends...');
+    $.ajax({
+        url: 'api/friends.php',
+        method: 'GET',
+        data: { action: 'get' },
+        dataType: 'json',
+        success: function(response) {
+            debugLog('Friends response:', response);
+            if (response.status === 'success') {
+                friends = response.friends;
+                updateFriendsPanel();
+            } else {
+                $('#friendsList').html('<p class="text-danger">Error: ' + response.message + '</p>');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Friends API error:', error, xhr.responseText);
+            $('#friendsList').html('<p class="text-danger">Failed to load friends. Check console for details.</p>');
+        }
+    });
+}
+
+function applyAvatarFilter(imgElement, hue, saturation) {
+    if (hue !== undefined && saturation !== undefined) {
+        const hueValue = parseInt(hue) || 0;
+        const satValue = parseInt(saturation) || 100;
+        const filterValue = `hue-rotate(${hueValue}deg) saturate(${satValue}%)`;
+        const filterKey = `${hueValue}-${satValue}`;
+        
+        if (imgElement.data('filter-applied') !== filterKey) {
+            imgElement.css('filter', filterValue);
+            imgElement.data('filter-applied', filterKey);
+            imgElement.addClass('avatar-filtered');
+        }
+    }
+}
+
+function applyAllAvatarFilters() {
+    $('.avatar-filtered, .message-avatar, .user-avatar, .private-message-avatar').each(function() {
+        const $img = $(this);
+        const hue = $img.data('hue');
+        const sat = $img.data('saturation');
+        
+        if (hue === undefined || sat === undefined) return;
+        
+        const filterKey = `${hue}-${sat}`;
+        const appliedKey = $img.data('filter-applied');
+        
+        if (appliedKey !== filterKey) {
+            const filterValue = `hue-rotate(${hue}deg) saturate(${sat}%)`;
+            $img.css('filter', filterValue);
+            $img.data('filter-applied', filterKey);
+        }
+    });
+}
+
+
+$(window).on('beforeunload', function() {
+    if (typeof cleanupInactiveUsers !== 'undefined') {
+        clearInterval(cleanupInactiveUsers);
+    }
+});
+
+window.showAvatarSelector = function() {
+    showProfileEditor();
+};
+
+function showAnnouncementModal() {
+    const modalHtml = `
+        <div class="modal fade" id="announcementModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
+                    <div class="modal-header" style="border-bottom: 1px solid #444;">
+                        <h5 class="modal-title">
+                            <i class="fas fa-bullhorn"></i> Send Site Announcement
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="announcementMessage" class="form-label">Announcement Message</label>
+                            <textarea class="form-control" id="announcementMessage" rows="4" maxlength="500" placeholder="Enter your announcement message..." style="background: #333; border: 1px solid #555; color: #fff;"></textarea>
+                            <div class="form-text text-muted">Maximum 500 characters. This will be sent to all active rooms.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid #444;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-warning" onclick="sendAnnouncement()">
+                            <i class="fas fa-bullhorn"></i> Send Announcement
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#announcementModal').remove();
+    $('body').append(modalHtml);
+    $('#announcementModal').modal('show');
+}
+
+function sendAnnouncement() {
+    const message = $('#announcementMessage').val().trim();
+    
+    if (!message) {
+        alert('Please enter an announcement message');
+        return;
+    }
+    
+    const button = $('#announcementModal .btn-warning');
+    const originalText = button.html();
+    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+    
+    $.ajax({
+        url: 'api/send_announcement.php',
+        method: 'POST',
+        data: { message: message },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                alert('Announcement sent successfully to all rooms!');
+                $('#announcementModal').modal('hide');
+                if (typeof loadMessages === 'function') {
+                    setTimeout(loadMessages, 1000);
+                }
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            alert('Failed to send announcement: ' + error);
+        },
+        complete: function() {
+            button.prop('disabled', false).html(originalText);
+        }
+    });
+}
+
+// Toggle filter panel
+function toggleFilterPanel() {
+    const panel = $('#filterPanelBody');
+    const icon = $('#filterToggleIcon');
+    
+    if (panel.is(':visible')) {
+        panel.slideUp(300);
+        icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+    } else {
+        panel.slideDown(300);
+        icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+    }
+}
+
+// Toggle tag filter
+function toggleTagFilter(tag) {
+    const btn = $(`.filter-tag-btn[data-filter="${tag}"]`);
+    const index = roomFilters.tags.indexOf(tag);
+    
+    if (index > -1) {
+        roomFilters.tags.splice(index, 1);
+        btn.removeClass('active');
+    } else {
+        roomFilters.tags.push(tag);
+        btn.addClass('active');
+    }
+    
+    applyFilters();
+}
+
+// Clear all filters
+function clearAllFilters() {
+    roomFilters.name = '';
+    roomFilters.description = '';
+    roomFilters.username = '';
+    roomFilters.tags = [];
+    
+    $('#filterRoomName').val('');
+    $('#filterDescription').val('');
+    $('#filterUsername').val('');
+    $('.filter-tag-btn').removeClass('active');
+    
+    updateFilterBadge();
+    applyFilters();
+}
+
+// Load friend IDs for filtering
+function loadFriendIds() {
+    $.ajax({
+        url: 'api/friends.php',
+        method: 'GET',
+        data: { action: 'get' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success' && response.friends) {
+                roomFilters.friendUserIds = response.friends
+                    .filter(f => f.status === 'accepted')
+                    .map(f => String(f.friend_user_id));
+            }
+        }
+    });
+}
+
+// Enhanced displayRoomsWithUsers to store all rooms
+function storeAndDisplayRooms(rooms) {
+    if (!roomFilters.allRooms || roomFilters.allRooms.length === 0) {
+        roomFilters.allRooms = rooms;
+    }
+    applyFilters();
+}
+
+// Apply all filters
+function applyFilters() {
+    // Start with all rooms, filter out invite-only
+    let filtered = roomFilters.allRooms.filter(room => !room.invite_only);
+    
+    // Text filters
+    if (roomFilters.name) {
+        filtered = filtered.filter(room => 
+            room.name.toLowerCase().includes(roomFilters.name)
+        );
+    }
+    
+    if (roomFilters.description) {
+        filtered = filtered.filter(room => 
+            (room.description || '').toLowerCase().includes(roomFilters.description)
+        );
+    }
+    
+    if (roomFilters.username) {
+        filtered = filtered.filter(room => {
+            if (!room.users || !Array.isArray(room.users)) return false;
+            return room.users.some(user => {
+                const displayName = user.display_name || user.username || user.guest_name || '';
+                return displayName.toLowerCase().includes(roomFilters.username);
+            });
+        });
+    }
+    
+    // Tag filters
+    roomFilters.tags.forEach(tag => {
+        switch(tag) {
+            case 'rp':
+                filtered = filtered.filter(room => room.is_rp);
+                break;
+            case 'youtube':
+                filtered = filtered.filter(room => room.youtube_enabled);
+                break;
+            case 'permanent':
+                filtered = filtered.filter(room => room.permanent);
+                break;
+            case 'password':
+                filtered = filtered.filter(room => room.has_password);
+                break;
+            case 'friends':
+                filtered = filtered.filter(room => room.friends_only);
+                break;
+            case 'members':
+                filtered = filtered.filter(room => room.members_only);
+                break;
+            case 'with-friends':
+                filtered = filtered.filter(room => {
+                    if (!room.users || !Array.isArray(room.users)) return false;
+                    return room.users.some(user => 
+                        roomFilters.friendUserIds.includes(String(user.user_id)) ||
+                        roomFilters.friendUserIds.includes(String(user.user_id_string))
+                    );
+                });
+                break;
+        }
+    });
+    
+    // Update result count
+    const visibleTotal = roomFilters.allRooms.filter(r => !r.invite_only).length;
+    const showing = filtered.length;
+    const filterCount = $('#filterResultCount');
+    
+    if (filterCount.length > 0) {
+        if (showing === visibleTotal) {
+            filterCount.text('Showing all public rooms');
+            filterCount.removeClass('text-warning').addClass('text-muted');
+        } else {
+            filterCount.text(`Showing ${showing} of ${visibleTotal} public rooms`);
+            filterCount.removeClass('text-muted').addClass('text-warning');
+        }
+    }
+    
+    // Update filter badge
+    updateFilterBadge();
+    
+    // Reset stored rooms to prevent double-filtering
+    const storedRooms = roomFilters.allRooms;
+    roomFilters.allRooms = [];
+    
+    // Display filtered rooms
+    displayRoomsWithUsers(filtered);
+    
+    // Restore all rooms
+    roomFilters.allRooms = storedRooms;
+}
+
+// Join room by invite code
+function joinRoomByInvite() {
+    const input = $('#inviteCodeInput').val().trim();
+    
+    if (!input) {
+        alert('Please enter an invite code or link');
+        return;
+    }
+    
+    // Extract invite code from various formats
+    let inviteCode = input;
+    
+    // Handle full URL: https://example.com/lounge.php?invite=abc123
+    if (input.includes('invite=')) {
+        const match = input.match(/invite=([^&\s]+)/);
+        if (match) inviteCode = match[1];
+    }
+    
+    // Handle query string: ?invite=abc123
+    if (input.startsWith('?invite=')) {
+        inviteCode = input.substring(8);
+    }
+    
+    const btn = $('#inviteCodeInput').next('button');
+    const originalText = btn.html();
+    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Joining...');
+    
+    $.ajax({
+        url: 'api/join_room_by_invite.php',
+        method: 'POST',
+        data: { invite_code: inviteCode },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                window.location.href = '/room';
+            } else {
+                alert('Error: ' + response.message);
+                btn.prop('disabled', false).html(originalText);
+            }
+        },
+        error: function(xhr, status, error) {
+            alert('Failed to join room: ' + error);
+            btn.prop('disabled', false).html(originalText);
+        }
+    });
+}
+
+function showFilterModal() {
+    const modal = new bootstrap.Modal(document.getElementById('filterModal'));
+    modal.show();
+}
+
+function updateFilterBadge() {
+    let activeCount = 0;
+    
+    // Count active text filters
+    if (roomFilters.name) activeCount++;
+    if (roomFilters.description) activeCount++;
+    if (roomFilters.username) activeCount++;
+    
+    // Count active tag filters
+    activeCount += roomFilters.tags.length;
+    
+    const badge = $('#activeFilterCount');
+    if (activeCount > 0) {
+        badge.text(activeCount).show();
+    } else {
+        badge.hide();
+    }
+}

@@ -1,1 +1,5155 @@
-const _0x2fa9e7=_0x4a42;(function(_0x2c61c3,_0x11034b){const _0x485ebc=_0x4a42,_0x5a2f07=_0x2c61c3();while(!![]){try{const _0x50f721=-parseInt(_0x485ebc(0x218))/0x1+-parseInt(_0x485ebc(0x258))/0x2*(-parseInt(_0x485ebc(0x3d1))/0x3)+parseInt(_0x485ebc(0x1a2))/0x4+parseInt(_0x485ebc(0x2d2))/0x5*(parseInt(_0x485ebc(0x41f))/0x6)+-parseInt(_0x485ebc(0x4ba))/0x7*(-parseInt(_0x485ebc(0x3e0))/0x8)+parseInt(_0x485ebc(0x160))/0x9+-parseInt(_0x485ebc(0x2ef))/0xa*(parseInt(_0x485ebc(0x4ad))/0xb);if(_0x50f721===_0x11034b)break;else _0x5a2f07['push'](_0x5a2f07['shift']());}catch(_0x2b1c99){_0x5a2f07['push'](_0x5a2f07['shift']());}}}(_0x85d2,0x6502c));const DEBUG_MODE=![],SHOW_SENSITIVE_DATA=![];function debugLog(_0x4b9273,_0xc01404=null){const _0x248f84=_0x4a42;DEBUG_MODE&&(_0xc01404!==null?debugLog(_0x248f84(0x43e),_0x4b9273,_0xc01404):debugLog(_0x248f84(0x43e),_0x4b9273));}function debugError(_0x58b53a,_0x2b1e08=null){const _0x12441b=_0x4a42;DEBUG_MODE&&(_0x2b1e08!==null?console[_0x12441b(0x1c3)](_0x12441b(0x43e),_0x58b53a,_0x2b1e08):console[_0x12441b(0x1c3)](_0x12441b(0x43e),_0x58b53a));}function criticalError(_0x28a5e3,_0x654c87=null){const _0x1ccadf=_0x4a42;_0x654c87!==null?console['error']('[CRITICAL]',_0x28a5e3,_0x654c87):console[_0x1ccadf(0x1c3)]('[CRITICAL]',_0x28a5e3);}let youtubeUpdateInterval=null,isYoutubeUpdating=![],messageOffset=0x0,messageLimit=0x32,totalMessageCount=0x0,isLoadingMessages=![],hasMoreOlderMessages=![],isInitialLoad=!![],lastSeenMessageId=null,initializedMessages=![],friendshipCache=new Map(),friendshipCacheTimeout=new Map(),kickDetectionInterval,userKickedModalShown=![],kickDetectionEnabled=!![],lastStatusCheck=0x0,consecutiveErrors=0x0,lastScrollTop=0x0,lastMessageCount=0x0,userIsScrolling=![],lastPlayedMessageCount=0x0;function playMessageNotification(){const _0x5a10d7=_0x4a42,_0x7b54e8=new Audio('/sounds/message_notification.mp3');_0x7b54e8[_0x5a10d7(0x449)]();}let youtubePlayer=null,youtubePlayerReady=![],youtubeEnabled=![],isYoutubeHost=![],playerHidden=![],lastSyncToken=null,playerSyncInterval=null,queueUpdateInterval=null,currentVideoData=null,playerQueue=[],playerSuggestions=[],youtubeAPIReady=![],mentionNotifications=[],currentReplyTo=null,mentionCheckInterval=null,mentionPanelOpen=![],currentUserAFK=![],manualAFK=![],lastProcessedSettingsEvent=null,isReloadingSettings=![];typeof debugLog===_0x2fa9e7(0x391)&&(window[_0x2fa9e7(0x184)]=function(..._0x5d6081){const _0x450ff8=_0x2fa9e7;console[_0x450ff8(0x2c5)]('[DEBUG]',..._0x5d6081);});class RequestManager{constructor(){const _0x47b0be=_0x2fa9e7;this[_0x47b0be(0x4f3)]=0x0,this[_0x47b0be(0x35d)]=0x2,this[_0x47b0be(0x3bf)]=[],this[_0x47b0be(0x211)]=![],this[_0x47b0be(0x183)]=new Map();}async[_0x2fa9e7(0x423)](_0x2fdbfa){return new Promise((_0x23e42d,_0x195d68)=>{const _0x19f463=_0x4a42;this['requestQueue'][_0x19f463(0x452)]({'options':_0x2fdbfa,'resolve':_0x23e42d,'reject':_0x195d68}),this[_0x19f463(0x3f0)]();});}async[_0x2fa9e7(0x3f0)](){const _0x22525=_0x2fa9e7;if(this[_0x22525(0x211)]||this[_0x22525(0x3bf)][_0x22525(0x36d)]===0x0)return;this[_0x22525(0x211)]=!![];while(this['requestQueue'][_0x22525(0x36d)]>0x0&&this[_0x22525(0x4f3)]<this['maxConcurrentRequests']){const {options:_0x21bc9d,resolve:_0x22286c,reject:_0x5ebb3c}=this[_0x22525(0x3bf)][_0x22525(0x49c)]();this[_0x22525(0x25a)](_0x21bc9d,_0x22286c,_0x5ebb3c);}this[_0x22525(0x211)]=![],this['requestQueue']['length']>0x0&&setTimeout(()=>this[_0x22525(0x3f0)](),0x64);}[_0x2fa9e7(0x25a)](_0x1dda7f,_0x445a2b,_0xc43b60){const _0x465133=_0x2fa9e7;this[_0x465133(0x4f3)]++;const _0x54a7e0=Date[_0x465133(0x456)](),_0x17cb16=_0x1dda7f[_0x465133(0x195)];!this['requestStats'][_0x465133(0x33e)](_0x17cb16)&&this[_0x465133(0x183)]['set'](_0x17cb16,{'count':0x0,'totalTime':0x0,'avgTime':0x0});const _0x5ee573=_0x1dda7f['success']||(()=>{}),_0xa12e67=_0x1dda7f['error']||(()=>{});_0x1dda7f[_0x465133(0x4d2)]=_0x5030f7=>{const _0x2a0530=_0x465133;this['activeRequests']--;const _0x3ea769=Date[_0x2a0530(0x456)]()-_0x54a7e0,_0x47e633=this[_0x2a0530(0x183)]['get'](_0x17cb16);_0x47e633[_0x2a0530(0x2de)]++,_0x47e633[_0x2a0530(0x28c)]+=_0x3ea769,_0x47e633[_0x2a0530(0x3de)]=_0x47e633['totalTime']/_0x47e633[_0x2a0530(0x2de)],DEBUG_MODE&&console[_0x2a0530(0x2c5)]('✅\x20'+_0x17cb16+':\x20'+_0x3ea769+_0x2a0530(0x40d)+Math[_0x2a0530(0x181)](_0x47e633[_0x2a0530(0x3de)])+_0x2a0530(0x4a7)),_0x5ee573(_0x5030f7),_0x445a2b(_0x5030f7),this['processQueue']();},_0x1dda7f[_0x465133(0x1c3)]=(_0x4ad694,_0x37f253,_0xea3eda)=>{const _0x366a99=_0x465133;this[_0x366a99(0x4f3)]--,DEBUG_MODE&&console[_0x366a99(0x1c3)]('❌\x20'+_0x17cb16+':\x20'+_0xea3eda),_0xa12e67(_0x4ad694,_0x37f253,_0xea3eda),_0xc43b60(_0xea3eda),this[_0x366a99(0x3f0)]();},$['ajax'](_0x1dda7f);}[_0x2fa9e7(0x2e9)](){const _0x31b8fc={};return this['requestStats']['forEach']((_0x4d9b15,_0x252d19)=>{const _0x490dbb=_0x4a42;_0x31b8fc[_0x252d19]={'count':_0x4d9b15[_0x490dbb(0x2de)],'avgTime':Math['round'](_0x4d9b15[_0x490dbb(0x3de)])};}),_0x31b8fc;}}const requestManager=new RequestManager();function _0x4a42(_0x1673ab,_0x414454){const _0x85d263=_0x85d2();return _0x4a42=function(_0x4a4256,_0x9ce11b){_0x4a4256=_0x4a4256-0x14b;let _0x5894c=_0x85d263[_0x4a4256];return _0x5894c;},_0x4a42(_0x1673ab,_0x414454);}function managedAjax(_0x5e603b){const _0x1ee568=_0x2fa9e7;return requestManager[_0x1ee568(0x423)](_0x5e603b);}function loadYouTubeAPI(){const _0x1f2f9f=_0x2fa9e7;if(window['YT']&&window['YT'][_0x1f2f9f(0x1e8)]){youtubeAPIReady=!![],initializeYouTubePlayer();return;}if(document[_0x1f2f9f(0x21c)](_0x1f2f9f(0x35a)))return;const _0x281a55=document[_0x1f2f9f(0x415)](_0x1f2f9f(0x46f));_0x281a55[_0x1f2f9f(0x306)]='https://www.youtube.com/iframe_api';const _0x341907=document[_0x1f2f9f(0x1fb)](_0x1f2f9f(0x46f))[0x0];_0x341907[_0x1f2f9f(0x4c4)]['insertBefore'](_0x281a55,_0x341907),debugLog(_0x1f2f9f(0x1af));}function fetchAllRoomData(){const _0x37993a=_0x2fa9e7,_0x2ec19b=[];return _0x2ec19b[_0x37993a(0x452)](managedAjax({'url':_0x37993a(0x4f4),'method':'GET','data':{'room_id':roomId,'limit':messageLimit,'offset':0x0},'dataType':_0x37993a(0x3e3)})[_0x37993a(0x384)](_0x3e3b93=>{handleMessagesResponse(_0x3e3b93);})[_0x37993a(0x367)](_0x31057e=>{const _0x17f2f5=_0x37993a;console[_0x17f2f5(0x1c3)](_0x17f2f5(0x273),_0x31057e);})),_0x2ec19b['push'](managedAjax({'url':_0x37993a(0x20b),'method':_0x37993a(0x280),'data':{'room_id':roomId},'dataType':_0x37993a(0x3e3)})[_0x37993a(0x384)](_0x4ba2bb=>{handleUsersResponse(_0x4ba2bb);})[_0x37993a(0x367)](_0x3d6d78=>{const _0x3379dd=_0x37993a;console[_0x3379dd(0x1c3)]('Users\x20error:',_0x3d6d78);})),_0x2ec19b[_0x37993a(0x452)](managedAjax({'url':'api/get_mentions.php','method':_0x37993a(0x280),'dataType':'json'})[_0x37993a(0x384)](_0x318311=>{handleMentionsResponse(_0x318311);})[_0x37993a(0x367)](_0xfa791e=>{const _0x20e36f=_0x37993a;console[_0x20e36f(0x1c3)]('Mentions\x20error:',_0xfa791e);})),_0x2ec19b[_0x37993a(0x452)](managedAjax({'url':_0x37993a(0x3d3),'method':_0x37993a(0x280),'data':{'action':_0x37993a(0x4b3)},'dataType':_0x37993a(0x3e3)})[_0x37993a(0x384)](_0x1040a2=>{handleWhispersResponse(_0x1040a2);})[_0x37993a(0x367)](_0x36f9d6=>{const _0xc0e8c0=_0x37993a;console[_0xc0e8c0(0x1c3)](_0xc0e8c0(0x441),_0x36f9d6);})),currentUser[_0x37993a(0x2b5)]===_0x37993a(0x159)&&_0x2ec19b[_0x37993a(0x452)](managedAjax({'url':_0x37993a(0x416),'method':'GET','data':{'action':_0x37993a(0x18c)},'dataType':_0x37993a(0x3e3)})[_0x37993a(0x384)](_0x342867=>{handleFriendsResponse(_0x342867);})['catch'](_0x36dc07=>{const _0x445eb3=_0x37993a;console[_0x445eb3(0x1c3)](_0x445eb3(0x21d),_0x36dc07);})),currentUser['type']===_0x37993a(0x159)&&_0x2ec19b[_0x37993a(0x452)](managedAjax({'url':_0x37993a(0x22f),'method':'GET','data':{'action':_0x37993a(0x4b3)},'dataType':_0x37993a(0x3e3)})[_0x37993a(0x384)](_0x4467e4=>{handleConversationsResponse(_0x4467e4);})[_0x37993a(0x367)](_0x4d5f9c=>{const _0x5ee75d=_0x37993a;console[_0x5ee75d(0x1c3)](_0x5ee75d(0x403),_0x4d5f9c);})),_0x2ec19b[_0x37993a(0x452)](managedAjax({'url':'api/check_room_settings.php','method':_0x37993a(0x280),'data':{'room_id':roomId},'dataType':_0x37993a(0x3e3)})['then'](_0x5af237=>{const _0xb98fcb=_0x37993a;if(_0x5af237[_0xb98fcb(0x33c)]==='success'&&_0x5af237[_0xb98fcb(0x266)]&&_0x5af237[_0xb98fcb(0x3e1)]){const _0x22aeaf=_0xb98fcb(0x4e2)+roomId+'_'+_0x5af237[_0xb98fcb(0x3e1)];!sessionStorage[_0xb98fcb(0x357)](_0x22aeaf)&&(sessionStorage[_0xb98fcb(0x4a3)](_0x22aeaf,_0xb98fcb(0x4b7)),showToast(_0xb98fcb(0x4ed),_0xb98fcb(0x4cc)),setTimeout(()=>{const _0x58b335=_0xb98fcb;window[_0x58b335(0x235)][_0x58b335(0x2b7)]();},0x5dc));}})['catch'](_0x1e3a9f=>{const _0x53bcfe=_0x37993a;console['error'](_0x53bcfe(0x382),_0x1e3a9f);})),currentUser[_0x37993a(0x2b5)]===_0x37993a(0x159)&&openPrivateChats[_0x37993a(0x3bc)]>0x0&&openPrivateChats[_0x37993a(0x4b5)]((_0x3b98b1,_0x2e8ef2)=>{const _0x2128b0=_0x37993a,_0x4005cf=$('#pm-input-'+_0x2e8ef2),_0x2bbff9=_0x4005cf['is'](_0x2128b0(0x1aa))&&_0x4005cf[_0x2128b0(0x246)]()['length']>0x0;!_0x2bbff9&&_0x2ec19b[_0x2128b0(0x452)](managedAjax({'url':_0x2128b0(0x22f),'method':'GET','data':{'action':'get','other_user_id':_0x2e8ef2},'dataType':_0x2128b0(0x3e3)})[_0x2128b0(0x384)](_0x597836=>{const _0x35f4b0=_0x2128b0;_0x597836[_0x35f4b0(0x33c)]===_0x35f4b0(0x4d2)&&displayPrivateMessages(_0x2e8ef2,_0x597836['messages']);})[_0x2128b0(0x367)](_0x5b473d=>{const _0x47baa9=_0x2128b0;console[_0x47baa9(0x1c3)](_0x47baa9(0x328)+_0x2e8ef2+':',_0x5b473d);}));}),youtubeEnabled&&_0x2ec19b['push'](managedAjax({'url':_0x37993a(0x25e),'method':_0x37993a(0x280),'dataType':_0x37993a(0x3e3)})[_0x37993a(0x384)](_0x505779=>{handleYouTubeResponse(_0x505779);})['catch'](_0x477cb1=>{const _0x135967=_0x37993a;console[_0x135967(0x1c3)](_0x135967(0x47c),_0x477cb1);})),Promise['allSettled'](_0x2ec19b);}function handleMessagesResponse(_0x9c24d2){const _0x2522ff=_0x2fa9e7;if(_0x9c24d2[_0x2522ff(0x33c)]===_0x2522ff(0x4d2)){const _0x242ab9=_0x9c24d2['messages']||[];let _0x35e4dc='';_0x242ab9[_0x2522ff(0x36d)]===0x0?_0x35e4dc=_0x2522ff(0x43f):_0x242ab9['forEach'](_0x54e851=>{_0x35e4dc+=renderMessage(_0x54e851);});const _0x5a1442=$(_0x2522ff(0x1f6)),_0x30c57f=isInitialLoad||_0x5a1442[_0x2522ff(0x3cf)]()+_0x5a1442[_0x2522ff(0x31d)]()>=_0x5a1442[0x0][_0x2522ff(0x28a)]-0x14;_0x5a1442['html'](_0x35e4dc),(_0x30c57f||isInitialLoad)&&(setTimeout(()=>{_0x5a1442['scrollTop'](_0x5a1442[0x0]['scrollHeight']);},0x32),isInitialLoad=![]),typeof applyAllAvatarFilters===_0x2522ff(0x3a2)&&setTimeout(applyAllAvatarFilters,0x64);}}function handleUsersResponse(_0xf6e4f1){const _0x48b625=_0x2fa9e7;checkHostStatusChange(_0xf6e4f1);if(Array[_0x48b625(0x388)](_0xf6e4f1)){let _0x54dd4b='';_0xf6e4f1[_0x48b625(0x36d)]===0x0?_0x54dd4b=_0x48b625(0x3b8):(_0xf6e4f1[_0x48b625(0x19d)]((_0x2623d9,_0xd78443)=>{const _0x3fdc3e=_0x48b625;if(_0x2623d9[_0x3fdc3e(0x1b3)]&&!_0xd78443[_0x3fdc3e(0x1b3)])return-0x1;if(!_0x2623d9['is_host']&&_0xd78443[_0x3fdc3e(0x1b3)])return 0x1;const _0x445be3=_0x2623d9[_0x3fdc3e(0x23c)]||_0x2623d9[_0x3fdc3e(0x315)]||_0x2623d9[_0x3fdc3e(0x4ae)]||_0x3fdc3e(0x2d1),_0x42f050=_0xd78443[_0x3fdc3e(0x23c)]||_0xd78443[_0x3fdc3e(0x315)]||_0xd78443[_0x3fdc3e(0x4ae)]||'Unknown';return _0x445be3[_0x3fdc3e(0x482)](_0x42f050);}),_0xf6e4f1[_0x48b625(0x4b5)](_0x5e483f=>{_0x54dd4b+=renderUser(_0x5e483f);})),$(_0x48b625(0x2ed))[_0x48b625(0x153)](_0x54dd4b);}}function handleMentionsResponse(_0x460c95){const _0x208c1f=_0x2fa9e7;_0x460c95[_0x208c1f(0x33c)]===_0x208c1f(0x4d2)&&(mentionNotifications=_0x460c95[_0x208c1f(0x3e9)],updateMentionCounter(_0x460c95[_0x208c1f(0x21e)]),_0x460c95[_0x208c1f(0x21e)]>0x0&&!mentionPanelOpen&&showNewMentionNotification(_0x460c95['unread_count']));}function handleWhispersResponse(_0x2bb53a){const _0x36eb9b=_0x2fa9e7;_0x2bb53a[_0x36eb9b(0x33c)]===_0x36eb9b(0x4d2)&&_0x2bb53a[_0x36eb9b(0x196)][_0x36eb9b(0x4b5)](_0x1821f2=>{const _0x1cafa2=_0x36eb9b,_0x547c91=_0x1821f2[_0x1cafa2(0x4c5)];if(_0x1821f2['unread_count']>0x0&&!openWhispers[_0x1cafa2(0x33e)](_0x547c91)){const _0x463545=_0x1821f2[_0x1cafa2(0x315)]||_0x1821f2[_0x1cafa2(0x4ae)]||_0x1cafa2(0x2d1);openWhisper(_0x547c91,_0x463545);}if(openWhispers[_0x1cafa2(0x33e)](_0x547c91)){const _0x3b52a2=openWhispers[_0x1cafa2(0x18c)](_0x547c91);_0x3b52a2[_0x1cafa2(0x44b)]=_0x1821f2['unread_count'],openWhispers[_0x1cafa2(0x380)](_0x547c91,_0x3b52a2);const _0x2c0f7d=$('#whisper-unread-'+_0x3b52a2[_0x1cafa2(0x3ed)]);_0x1821f2[_0x1cafa2(0x21e)]>0x0?_0x2c0f7d[_0x1cafa2(0x3e6)](_0x1821f2[_0x1cafa2(0x21e)])[_0x1cafa2(0x232)]():_0x2c0f7d[_0x1cafa2(0x2a0)]();}});}function handleYouTubeResponse(_0x4b7f9b){const _0x497695=_0x2fa9e7;if(_0x4b7f9b[_0x497695(0x33c)]===_0x497695(0x4d2)){const _0x59f11a=_0x4b7f9b[_0x497695(0x14e)];_0x59f11a[_0x497695(0x200)]&&_0x59f11a[_0x497695(0x3fd)]!==lastSyncToken&&(debugLog(_0x497695(0x4ac),_0x59f11a),lastSyncToken=_0x59f11a[_0x497695(0x3fd)],applySyncState(_0x59f11a));const _0x47ee11=_0x4b7f9b[_0x497695(0x2f2)];playerQueue=_0x47ee11[_0x497695(0x4cb)]||[],playerSuggestions=_0x47ee11[_0x497695(0x174)]||[],currentVideoData=_0x47ee11[_0x497695(0x3e2)],renderQueue(),renderSuggestions(),updateVideoInfo();}}function applySyncState(_0x529218){const _0x34593b=_0x2fa9e7;if(!youtubePlayerReady)return;if(_0x529218[_0x34593b(0x3f5)]){const _0x189c64=getCurrentVideoId();if(_0x189c64!==_0x529218['video_id'])youtubePlayer[_0x34593b(0x489)]({'videoId':_0x529218[_0x34593b(0x3f5)],'startSeconds':_0x529218[_0x34593b(0x4d1)]});else{const _0x4f43d0=youtubePlayer[_0x34593b(0x1c5)](),_0x2dcf62=Math[_0x34593b(0x34e)](_0x4f43d0-_0x529218[_0x34593b(0x4d1)]);_0x2dcf62>0x3&&youtubePlayer[_0x34593b(0x4ea)](_0x529218[_0x34593b(0x4d1)],!![]);}if(_0x529218[_0x34593b(0x192)]&&youtubePlayer[_0x34593b(0x20e)]()!==YT[_0x34593b(0x475)]['PLAYING'])youtubePlayer['playVideo']();else!_0x529218[_0x34593b(0x192)]&&youtubePlayer[_0x34593b(0x20e)]()===YT[_0x34593b(0x475)][_0x34593b(0x2d3)]&&youtubePlayer[_0x34593b(0x49f)]();}else youtubePlayer[_0x34593b(0x20e)]()!==YT['PlayerState']['CUED']&&youtubePlayer['stopVideo']();}function handleFriendsResponse(_0x3db8ac){const _0x212852=_0x2fa9e7;_0x3db8ac['status']==='success'&&(friends=_0x3db8ac[_0x212852(0x296)],$('#friendsPanel')['is'](_0x212852(0x243))&&updateFriendsPanel());}function handleConversationsResponse(_0x5a44a8){const _0x2cf726=_0x2fa9e7;_0x5a44a8[_0x2cf726(0x33c)]==='success'&&($(_0x2cf726(0x1f0))['is'](':visible')&&displayConversations(_0x5a44a8[_0x2cf726(0x196)]));}let roomUpdateInterval=null,isUpdatingRoom=![];function startRoomUpdates(){const _0x2eca76=_0x2fa9e7;roomUpdateInterval&&clearInterval(roomUpdateInterval),roomUpdateInterval=setInterval(updateAllRoomData,0xbb8),updateAllRoomData(),debugLog(_0x2eca76(0x38b));}function updateAllRoomData(){const _0x4ad95b=_0x2fa9e7;if(isUpdatingRoom){debugLog(_0x4ad95b(0x47a));return;}isUpdatingRoom=!![],fetchAllRoomData()[_0x4ad95b(0x335)](()=>{isUpdatingRoom=![];});}function stopRoomUpdates(){const _0x154b7f=_0x2fa9e7;roomUpdateInterval&&(clearInterval(roomUpdateInterval),roomUpdateInterval=null),isUpdatingRoom=![],debugLog(_0x154b7f(0x439));}window[_0x2fa9e7(0x42f)]=function(){const _0x36df50=_0x2fa9e7;console[_0x36df50(0x432)](requestManager[_0x36df50(0x2e9)]()),console[_0x36df50(0x2c5)](_0x36df50(0x4e8),requestManager[_0x36df50(0x4f3)]),console[_0x36df50(0x2c5)](_0x36df50(0x297),requestManager[_0x36df50(0x3bf)][_0x36df50(0x36d)]);};function checkIfFriend(_0x33b8fb,_0x2f10f7){const _0x5555a7=_0x2fa9e7;if(!_0x33b8fb||currentUser[_0x5555a7(0x2b5)]!==_0x5555a7(0x159)){_0x2f10f7(![]);return;}if(friendshipCache[_0x5555a7(0x33e)](_0x33b8fb)){_0x2f10f7(friendshipCache[_0x5555a7(0x18c)](_0x33b8fb));return;}$[_0x5555a7(0x1a0)]({'url':'api/friends.php','method':_0x5555a7(0x280),'data':{'action':_0x5555a7(0x18c)},'dataType':_0x5555a7(0x3e3),'success':function(_0x46d8cb){const _0x1e226e=_0x5555a7;if(_0x46d8cb[_0x1e226e(0x33c)]==='success'){const _0x28e79a=_0x46d8cb[_0x1e226e(0x296)][_0x1e226e(0x425)](_0x21aada=>_0x21aada[_0x1e226e(0x193)]==_0x33b8fb&&_0x21aada[_0x1e226e(0x33c)]===_0x1e226e(0x37e));friendshipCache[_0x1e226e(0x380)](_0x33b8fb,_0x28e79a),friendshipCacheTimeout[_0x1e226e(0x33e)](_0x33b8fb)&&clearTimeout(friendshipCacheTimeout[_0x1e226e(0x18c)](_0x33b8fb)),friendshipCacheTimeout[_0x1e226e(0x380)](_0x33b8fb,setTimeout(()=>{const _0x50637f=_0x1e226e;friendshipCache['delete'](_0x33b8fb),friendshipCacheTimeout[_0x50637f(0x2c7)](_0x33b8fb);},0x7530)),_0x2f10f7(_0x28e79a);}else _0x2f10f7(![]);},'error':function(){_0x2f10f7(![]);}});}function clearFriendshipCache(_0x52b6a4=null){const _0x5f4256=_0x2fa9e7;_0x52b6a4?(friendshipCache['delete'](_0x52b6a4),friendshipCacheTimeout[_0x5f4256(0x33e)](_0x52b6a4)&&(clearTimeout(friendshipCacheTimeout[_0x5f4256(0x18c)](_0x52b6a4)),friendshipCacheTimeout[_0x5f4256(0x2c7)](_0x52b6a4))):(friendshipCache[_0x5f4256(0x1bd)](),friendshipCacheTimeout['forEach'](_0x23c686=>clearTimeout(_0x23c686)),friendshipCacheTimeout[_0x5f4256(0x1bd)]());}function sendMessage(){const _0x39d3cf=_0x2fa9e7,_0x1497a7=$('#message'),_0x28c47a=_0x1497a7[_0x39d3cf(0x246)]()[_0x39d3cf(0x44f)]();if(!_0x28c47a)return _0x1497a7[_0x39d3cf(0x485)](),![];return debugLog(_0x39d3cf(0x34a),_0x28c47a),validateImagesInMessage(_0x28c47a)[_0x39d3cf(0x384)](_0x589675=>{const _0x14206c=_0x39d3cf;if(!_0x589675[_0x14206c(0x3aa)]){alert('Cannot\x20send\x20message:\x20'+_0x589675[_0x14206c(0x1c3)]),_0x1497a7['focus']();return;}sendValidatedMessage(_0x28c47a);})['catch'](_0x4d97d8=>{const _0x465db8=_0x39d3cf;console[_0x465db8(0x1c3)](_0x465db8(0x313),_0x4d97d8),alert(_0x465db8(0x18a)),_0x1497a7['focus']();}),![];}async function validateImagesInMessage(_0xa5c64a){const _0x2a8f69=_0x2fa9e7,_0x3906d5=/!\[([^\]]*)\]\(([^)]+)\)/g,_0x4c0dc5=[];let _0x1baec9;while((_0x1baec9=_0x3906d5[_0x2a8f69(0x39d)](_0xa5c64a))!==null){_0x4c0dc5['push']({'alt':_0x1baec9[0x1],'url':_0x1baec9[0x2][_0x2a8f69(0x44f)]()});}if(_0x4c0dc5[_0x2a8f69(0x36d)]===0x0)return{'valid':!![]};console[_0x2a8f69(0x2c5)](_0x2a8f69(0x259),_0x4c0dc5);for(let _0x43adb0=0x0;_0x43adb0<_0x4c0dc5['length'];_0x43adb0++){const _0x3928f3=_0x4c0dc5[_0x43adb0];if(!isValidImageUrl(_0x3928f3[_0x2a8f69(0x195)]))return{'valid':![],'error':'Invalid\x20image\x20URL:\x20'+_0x3928f3['url']};const _0x518bf8=await testImageAccessibility(_0x3928f3[_0x2a8f69(0x195)]);if(!_0x518bf8)return{'valid':![],'error':_0x2a8f69(0x431)+_0x3928f3[_0x2a8f69(0x195)]};}return{'valid':!![]};}function isValidImageUrl(_0x34c4a5){const _0x3c3934=_0x2fa9e7;try{const _0x560a95=new URL(_0x34c4a5);if(![_0x3c3934(0x4f0),_0x3c3934(0x433)]['includes'](_0x560a95[_0x3c3934(0x32b)]))return![];const _0x42a270=_0x560a95[_0x3c3934(0x281)]['toLowerCase'](),_0x46d9fd=/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i[_0x3c3934(0x4dc)](_0x34c4a5);return _0x46d9fd;}catch(_0x1cc32f){return![];}}function testImageAccessibility(_0x4b67a9){return new Promise(_0x5cf3e5=>{const _0x222078=_0x4a42,_0x89e371=new Image(),_0x237da2=setTimeout(()=>{const _0x46daa7=_0x4a42;_0x89e371[_0x46daa7(0x4e3)]=_0x89e371['onerror']=null,_0x5cf3e5(![]);},0x1388);_0x89e371['onload']=()=>{clearTimeout(_0x237da2),_0x5cf3e5(!![]);},_0x89e371[_0x222078(0x48e)]=()=>{clearTimeout(_0x237da2),_0x5cf3e5(![]);};const _0x25b6df=window['location'][_0x222078(0x4b9)];let _0x162e8a=_0x4b67a9;try{const _0x555e07=new URL(_0x4b67a9)[_0x222078(0x4b9)];_0x555e07!==_0x25b6df&&(_0x162e8a=_0x222078(0x422)+encodeURIComponent(_0x4b67a9));}catch(_0x2a1b69){}_0x89e371[_0x222078(0x306)]=_0x162e8a;});}function sendValidatedMessage(_0x22a080){const _0x419de4=_0x2fa9e7,_0x37682f=$(_0x419de4(0x364)),_0x5b28df=$(_0x419de4(0x2b1)),_0x22c21a=_0x5b28df[_0x419de4(0x153)]();_0x5b28df[_0x419de4(0x4e0)](_0x419de4(0x3b5),!![])[_0x419de4(0x153)](_0x419de4(0x27a));if(typeof activityTracker!=='undefined'){}const _0x5db759={'room_id':roomId,'message':_0x22a080};typeof currentReplyTo!=='undefined'&&currentReplyTo&&(_0x5db759[_0x419de4(0x269)]=currentReplyTo),$[_0x419de4(0x1a0)]({'url':'api/send_message.php','method':_0x419de4(0x257),'data':_0x5db759,'dataType':_0x419de4(0x3e3),'success':function(_0x4a296a){const _0x3ccea2=_0x419de4;if(_0x4a296a['status']===_0x3ccea2(0x2a4)){alert(_0x4a296a[_0x3ccea2(0x454)]||_0x3ccea2(0x175)),window['location']['href']='/lounge';return;}if(_0x4a296a[_0x3ccea2(0x33c)]===_0x3ccea2(0x4d2)){_0x37682f[_0x3ccea2(0x246)]('');typeof clearReplyInterface===_0x3ccea2(0x3a2)&&clearReplyInterface();if(_0x4a296a[_0x3ccea2(0x2f5)]){debugLog(_0x3ccea2(0x274));if(typeof activityTracker!==_0x3ccea2(0x391)){}typeof showToast===_0x3ccea2(0x3a2)&&showToast(_0x3ccea2(0x222),'info'),setTimeout(()=>{const _0x131fe8=_0x3ccea2;if(typeof loadUsers===_0x131fe8(0x3a2))loadUsers();},0x1f4);}typeof loadMessages===_0x3ccea2(0x3a2)&&loadMessages(),setTimeout(()=>{const _0x2ec211=_0x3ccea2;typeof checkUserStatus===_0x2ec211(0x3a2)&&checkUserStatus();},0xc8);}else alert(_0x3ccea2(0x4b6)+_0x4a296a[_0x3ccea2(0x454)]);},'error':function(_0x21e0f6,_0x193d6f,_0x39f8cd){const _0x58d88f=_0x419de4;console[_0x58d88f(0x1c3)](_0x58d88f(0x316),_0x193d6f,_0x39f8cd),alert('AJAX\x20error:\x20'+_0x39f8cd);},'complete':function(){const _0x185cf8=_0x419de4;_0x5b28df[_0x185cf8(0x4e0)](_0x185cf8(0x3b5),![])[_0x185cf8(0x153)](_0x22c21a),_0x37682f['focus']();}});}function loadMessages(_0x39e8b7=![]){const _0x364a20=_0x2fa9e7;if(isLoadingMessages)return;debugLog(_0x364a20(0x173),roomId,_0x364a20(0x472),_0x39e8b7,'offset:',messageOffset),isLoadingMessages=!![],_0x39e8b7&&$(_0x364a20(0x2d7))[_0x364a20(0x153)](_0x364a20(0x334))[_0x364a20(0x4e0)](_0x364a20(0x166),null),$[_0x364a20(0x1a0)]({'url':'api/get_messages.php','method':_0x364a20(0x280),'data':{'room_id':roomId,'limit':messageLimit,'offset':_0x39e8b7?messageOffset:0x0,'load_older':_0x39e8b7},'dataType':_0x364a20(0x3e3),'success':function(_0x5b9114){const _0x34fd67=_0x364a20;debugLog('Response\x20from\x20api/get_messages.php:',_0x5b9114);try{if(_0x5b9114[_0x34fd67(0x33c)]===_0x34fd67(0x1c3))throw new Error(_0x5b9114['message']);let _0x118ff9=_0x5b9114['messages']||[],_0x2be791=_0x5b9114[_0x34fd67(0x2ac)]||{};totalMessageCount=_0x2be791[_0x34fd67(0x458)]||0x0,hasMoreOlderMessages=_0x2be791['has_more_older']||![],debugLog(_0x34fd67(0x2da),totalMessageCount,_0x34fd67(0x438),hasMoreOlderMessages,_0x34fd67(0x48f),messageOffset);let _0x574fa7='';if(!Array[_0x34fd67(0x388)](_0x118ff9))console[_0x34fd67(0x1c3)](_0x34fd67(0x46d),_0x118ff9),_0x574fa7=_0x34fd67(0x407);else _0x118ff9[_0x34fd67(0x36d)]===0x0&&!_0x39e8b7?_0x574fa7=_0x34fd67(0x43f):_0x118ff9['forEach'](_0x357844=>{_0x574fa7+=renderMessage(_0x357844);});const _0x3e50dc=$(_0x34fd67(0x1f6));if(_0x39e8b7&&_0x118ff9[_0x34fd67(0x36d)]>0x0){const _0x1c359a=_0x3e50dc[_0x34fd67(0x3cf)](),_0x6f66ed=_0x3e50dc[0x0][_0x34fd67(0x28a)];$(_0x34fd67(0x2d7))['after'](_0x574fa7),requestAnimationFrame(()=>{const _0xb1dcbd=_0x34fd67,_0x5c47ee=_0x3e50dc[0x0][_0xb1dcbd(0x28a)],_0x384a5f=_0x5c47ee-_0x6f66ed;_0x3e50dc[_0xb1dcbd(0x3cf)](_0x1c359a+_0x384a5f);}),messageOffset+=_0x118ff9[_0x34fd67(0x36d)],debugLog(_0x34fd67(0x284),_0x118ff9[_0x34fd67(0x36d)],_0x34fd67(0x44a),messageOffset);}else{if(_0x39e8b7&&_0x118ff9[_0x34fd67(0x36d)]===0x0)$(_0x34fd67(0x2d7))[_0x34fd67(0x2e7)](),hasMoreOlderMessages=![];else{if(!_0x39e8b7){const _0x4a53d1=isInitialLoad||_0x3e50dc[_0x34fd67(0x3cf)]()+_0x3e50dc[_0x34fd67(0x31d)]()>=_0x3e50dc[0x0][_0x34fd67(0x28a)]-0x14;_0x3e50dc[_0x34fd67(0x153)](_0x574fa7),messageOffset=_0x118ff9['length'],debugLog(_0x34fd67(0x4c7),_0x118ff9[_0x34fd67(0x36d)],_0x34fd67(0x4cf),messageOffset,_0x34fd67(0x438),hasMoreOlderMessages),(_0x4a53d1||isInitialLoad)&&(setTimeout(()=>{const _0x475660=_0x34fd67;_0x3e50dc[_0x475660(0x3cf)](_0x3e50dc[0x0][_0x475660(0x28a)]);},0x32),isInitialLoad=![]),!isInitialLoad&&_0x118ff9['length']>lastMessageCount&&(playMessageNotification(),lastPlayedMessageCount=_0x118ff9['length']),lastMessageCount=_0x118ff9[_0x34fd67(0x36d)];}}}typeof applyAllAvatarFilters===_0x34fd67(0x3a2)&&setTimeout(applyAllAvatarFilters,0x64);}catch(_0x18eaed){console[_0x34fd67(0x1c3)](_0x34fd67(0x2fb),_0x18eaed,_0x5b9114),$(_0x34fd67(0x1f6))[_0x34fd67(0x153)](_0x34fd67(0x250));}},'error':function(_0x5d9c51,_0x4b499b,_0x4d9bc8){const _0x5353f1=_0x364a20;console[_0x5353f1(0x1c3)](_0x5353f1(0x15e),_0x4b499b,_0x4d9bc8,_0x5d9c51[_0x5353f1(0x348)]),_0x39e8b7?$(_0x5353f1(0x2d7))[_0x5353f1(0x153)]('<i\x20class=\x22fas\x20fa-exclamation-triangle\x22></i>\x20Error\x20-\x20Click\x20to\x20retry')['attr']('onclick',_0x5353f1(0x3df)):$(_0x5353f1(0x1f6))['html'](_0x5353f1(0x1f7));},'complete':function(){isLoadingMessages=![];}});}function loadOlderMessages(){const _0x31872a=_0x2fa9e7;debugLog('loadOlderMessages\x20called.\x20hasMoreOlderMessages:',hasMoreOlderMessages,_0x31872a(0x4a8),isLoadingMessages);if(!isLoadingMessages&&hasMoreOlderMessages)loadMessages(!![]);else{if(isLoadingMessages)debugLog('Already\x20loading\x20messages,\x20skipping...');else!hasMoreOlderMessages&&debugLog(_0x31872a(0x46c));}}$(document)['on'](_0x2fa9e7(0x349),_0x2fa9e7(0x2d7),function(_0x51f1c6){const _0x5c813b=_0x2fa9e7;_0x51f1c6['preventDefault'](),debugLog(_0x5c813b(0x48b)),loadOlderMessages();});function resetMessagePagination(){const _0xd4a6d8=_0x2fa9e7;messageOffset=0x0,totalMessageCount=0x0,isLoadingMessages=![],hasMoreOlderMessages=![],isInitialLoad=!![],$(_0xd4a6d8(0x2d7))[_0xd4a6d8(0x2e7)]();}function pollForNewMessages(){const _0x38dfd4=_0x2fa9e7;if(isLoadingMessages)return;const _0x1f1bef=$(_0x38dfd4(0x1f6)),_0x425988=_0x1f1bef['scrollTop']()+_0x1f1bef[_0x38dfd4(0x31d)]()>=_0x1f1bef[0x0][_0x38dfd4(0x28a)]-0x64;_0x425988&&$[_0x38dfd4(0x1a0)]({'url':_0x38dfd4(0x4f4),'method':'GET','data':{'room_id':roomId,'limit':0x5,'offset':0x0},'success':function(_0x5069c8){const _0x59c765=_0x38dfd4;try{let _0x521d80=JSON[_0x59c765(0x167)](_0x5069c8);if(_0x521d80[_0x59c765(0x33c)]===_0x59c765(0x4d2)&&_0x521d80[_0x59c765(0x2e6)]&&_0x521d80[_0x59c765(0x2e6)][_0x59c765(0x36d)]>0x0){const _0x3a2aef=_0x521d80[_0x59c765(0x2e6)][_0x521d80[_0x59c765(0x2e6)][_0x59c765(0x36d)]-0x1],_0x276e06=$(_0x59c765(0x4ec))[_0x59c765(0x3db)]()[_0x59c765(0x344)]('message-id');if(_0x3a2aef['id']!=_0x276e06){const _0x52d20f=_0x1f1bef[_0x59c765(0x3cf)]()+_0x1f1bef['innerHeight']()>=_0x1f1bef[0x0][_0x59c765(0x28a)]-0x32;_0x52d20f&&loadMessages();}}}catch(_0x40a3af){console[_0x59c765(0x2ff)]('Poll\x20error:',_0x40a3af);}},'error':function(){const _0x2f6749=_0x38dfd4;console[_0x2f6749(0x2ff)]('Poll\x20request\x20failed');}});}function optimizeForMobile(){const _0xe919c3=_0x2fa9e7,_0x3aa67c=window[_0xe919c3(0x2f1)]<=0x300||/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i['test'](navigator['userAgent']);_0x3aa67c&&(messageLimit=0x14);}function getUserColor(_0x11c9c3){const _0x39f6bd=_0x2fa9e7;if(_0x11c9c3&&_0x11c9c3['color'])return _0x39f6bd(0x1ae)+_0x11c9c3['color'];if(_0x11c9c3&&_0x11c9c3[_0x39f6bd(0x1b1)])return _0x39f6bd(0x1ae)+_0x11c9c3[_0x39f6bd(0x1b1)];return _0x39f6bd(0x18f);}function renderMessage(_0x17d9f9){const _0xfccfb9=_0x2fa9e7,_0x30441a=_0x17d9f9['avatar']||_0x17d9f9['guest_avatar']||_0xfccfb9(0x256),_0x3b7078=_0x17d9f9[_0xfccfb9(0x315)]||_0x17d9f9[_0xfccfb9(0x4ae)]||_0xfccfb9(0x2d1),_0x5cf6b9=_0x17d9f9[_0xfccfb9(0x3da)]||_0x17d9f9[_0xfccfb9(0x292)]||_0xfccfb9(0x43a),_0x3af59f=_0x17d9f9[_0xfccfb9(0x249)]!==undefined?_0x17d9f9[_0xfccfb9(0x249)]:_0x17d9f9[_0xfccfb9(0x46b)]||0x0,_0x491e5c=_0x17d9f9[_0xfccfb9(0x3ea)]!==undefined?_0x17d9f9[_0xfccfb9(0x3ea)]:_0x17d9f9[_0xfccfb9(0x24a)]||0x64,_0x29b806=_0x17d9f9[_0xfccfb9(0x474)]||0x0,_0x35c740=_0x17d9f9[_0xfccfb9(0x496)]||0x64;if(_0x17d9f9[_0xfccfb9(0x2b5)]==='announcement')return _0xfccfb9(0x39f)+_0x17d9f9[_0xfccfb9(0x454)]+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20';if(_0x17d9f9[_0xfccfb9(0x2b5)]===_0xfccfb9(0x2b8)||_0x17d9f9[_0xfccfb9(0x14b)]){const _0x1bddc0=_0x17d9f9[_0xfccfb9(0x46b)]||_0x17d9f9[_0xfccfb9(0x249)]||0x0,_0x28f743=_0x17d9f9[_0xfccfb9(0x24a)]||_0x17d9f9[_0xfccfb9(0x3ea)]||0x64;return _0xfccfb9(0x19c)+_0x30441a+_0xfccfb9(0x37a)+_0x1bddc0+'deg)\x20saturate('+_0x28f743+'%);\x22\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20alt=\x22System\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span>'+_0x17d9f9['message']+_0xfccfb9(0x1e9);}const _0x64d21b=getUserColor(_0x17d9f9),_0x267cd7=new Date(_0x17d9f9['timestamp'])['toLocaleTimeString']([],{'hour':_0xfccfb9(0x19b),'minute':_0xfccfb9(0x19b)}),_0x49d2b3=_0x17d9f9[_0xfccfb9(0x292)]&&_0x17d9f9[_0xfccfb9(0x292)]>0x0,_0xc2ba30=_0x17d9f9[_0xfccfb9(0x3da)]===currentUserIdString;let _0xc7fe0a='';if(_0x49d2b3)_0xc7fe0a=_0xfccfb9(0x275)+_0x17d9f9[_0xfccfb9(0x292)]+',\x20\x27'+(_0x17d9f9[_0xfccfb9(0x315)]||'')[_0xfccfb9(0x28f)](/'/g,'\x5c\x27')+'\x27)\x22\x20style=\x22cursor:\x20pointer;\x22';else _0xc2ba30&&(_0xc7fe0a=_0xfccfb9(0x237));let _0x4f4f72='';_0x17d9f9[_0xfccfb9(0x484)]&&(_0x4f4f72+=_0xfccfb9(0x378));_0x17d9f9[_0xfccfb9(0x321)]&&(_0x4f4f72+=_0xfccfb9(0x241));_0x17d9f9[_0xfccfb9(0x1b3)]&&(_0x4f4f72+=_0xfccfb9(0x1ed));if(_0x17d9f9[_0xfccfb9(0x292)]&&!_0x17d9f9[_0xfccfb9(0x484)]&&!_0x17d9f9[_0xfccfb9(0x321)])_0x4f4f72+='<span\x20class=\x22user-badge\x20badge-verified\x22><i\x20class=\x22fas\x20fa-check-circle\x22></i>\x20Verified</span>';else!_0x17d9f9[_0xfccfb9(0x292)]&&(_0x4f4f72+=_0xfccfb9(0x372));let _0x523c2b='',_0x294998='';(isAdmin||isModerator)&&_0x17d9f9[_0xfccfb9(0x3da)]!==currentUserIdString&&(_0x294998=_0xfccfb9(0x4a2)+_0x17d9f9[_0xfccfb9(0x3da)]+_0xfccfb9(0x1f5)+_0x3b7078[_0xfccfb9(0x28f)](/'/g,'\x5c\x27')+_0xfccfb9(0x1f5)+(_0x17d9f9['ip_address']||'')+'\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-ban\x22></i>\x20Site\x20Ban\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22text-danger\x22>IP:\x20'+_0x17d9f9[_0xfccfb9(0x27c)]+_0xfccfb9(0x4f1));let _0xdce737='';if(_0x17d9f9[_0xfccfb9(0x360)]&&_0x17d9f9['reply_original_message']){let _0x204338=_0xfccfb9(0x2d1);if(_0x17d9f9[_0xfccfb9(0x21f)])_0x204338=_0x17d9f9[_0xfccfb9(0x21f)];else{if(_0x17d9f9[_0xfccfb9(0x492)])_0x204338=_0x17d9f9['reply_original_chatroom_username'];else _0x17d9f9[_0xfccfb9(0x3c1)]&&(_0x204338=_0x17d9f9[_0xfccfb9(0x3c1)]);}let _0x269431=_0xfccfb9(0x256);if(_0x17d9f9[_0xfccfb9(0x2a3)])_0x269431=_0x17d9f9[_0xfccfb9(0x2a3)];else _0x17d9f9[_0xfccfb9(0x37f)]&&(_0x269431=_0x17d9f9[_0xfccfb9(0x37f)]);const _0x581b3a=_0x17d9f9['reply_original_avatar_hue']||0x0,_0xa414c3=_0x17d9f9[_0xfccfb9(0x2db)]||0x64,_0x53ac01=_0x17d9f9[_0xfccfb9(0x4da)]||0x0,_0x14f219=_0x17d9f9[_0xfccfb9(0x443)]||0x64,_0x10aa90=_0x17d9f9[_0xfccfb9(0x2c3)]||_0xfccfb9(0x4bf);_0xdce737=_0xfccfb9(0x1ef)+_0x10aa90+_0xfccfb9(0x1c0)+_0x53ac01+_0xfccfb9(0x45c)+_0x14f219+_0xfccfb9(0x1ab)+-_0x53ac01+_0xfccfb9(0x45c)+(_0x14f219>0x0?0x2710/_0x14f219:0x64)+_0xfccfb9(0x346)+_0x269431+'\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20class=\x22reply-author-avatar\x22\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20style=\x22filter:\x20hue-rotate('+_0x581b3a+_0xfccfb9(0x45c)+_0xa414c3+_0xfccfb9(0x39a)+_0x204338+_0xfccfb9(0x1e4)+_0x204338+'</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-external-link-alt\x20reply-jump-icon\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20onclick=\x22jumpToMessage('+_0x17d9f9[_0xfccfb9(0x28e)]+_0xfccfb9(0x3b2)+_0x17d9f9[_0xfccfb9(0x219)]+_0xfccfb9(0x3d7);}let _0x5e96af='';!_0x17d9f9['is_system']&&_0x17d9f9[_0xfccfb9(0x2b5)]!==_0xfccfb9(0x2b8)&&_0x17d9f9['type']!==_0xfccfb9(0x2a7)&&(_0x5e96af=_0xfccfb9(0x314)+_0x17d9f9['id']+',\x20\x27'+_0x3b7078[_0xfccfb9(0x28f)](/'/g,'\x5c\x27')+_0xfccfb9(0x1f5)+_0x17d9f9[_0xfccfb9(0x454)][_0xfccfb9(0x28f)](/<[^>]*>/g,'')[_0xfccfb9(0x28f)](/'/g,'\x5c\x27')[_0xfccfb9(0x41b)](0x0,0x32)+_0xfccfb9(0x359));let _0x553b40=processMentionsInContent(_0x17d9f9[_0xfccfb9(0x454)],_0x17d9f9[_0xfccfb9(0x3da)]);return _0xfccfb9(0x33a)+_0x64d21b+'\x20'+(_0x17d9f9[_0xfccfb9(0x360)]?_0xfccfb9(0x478):'')+_0xfccfb9(0x49e)+_0x17d9f9['id']+'\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20data-type=\x22'+(_0x17d9f9[_0xfccfb9(0x2b5)]||_0xfccfb9(0x488))+_0xfccfb9(0x3fb)+_0x5e96af+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22images/'+_0x30441a+_0xfccfb9(0x1f4)+_0x3af59f+_0xfccfb9(0x45c)+_0x491e5c+_0xfccfb9(0x212)+(_0xc7fe0a?_0xfccfb9(0x1c8):'')+_0xfccfb9(0x4c8)+_0xc7fe0a+_0xfccfb9(0x1d9)+_0x3b7078+_0xfccfb9(0x3bb)+_0x3b7078+_0xfccfb9(0x40e)+(_0x4f4f72?_0xfccfb9(0x4eb)+_0x4f4f72+'</div>':'')+_0xfccfb9(0x35b)+_0x267cd7+'</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<!--\x20Message\x20bubble\x20with\x20filters,\x20but\x20content\x20isolated\x20from\x20filters\x20-->\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22message-bubble\x20\x22\x20style=\x22filter:\x20hue-rotate('+_0x29b806+_0xfccfb9(0x45c)+_0x35c740+'%);\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+_0xdce737+_0xfccfb9(0x3ab)+-_0x29b806+'deg)\x20saturate('+(_0x35c740>0x0?0x2710/_0x35c740:0x64)+_0xfccfb9(0x412)+_0x553b40+'</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+_0x523c2b+_0xfccfb9(0x15b)+_0x294998+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20';}function processMentionsInContent(_0x56849a,_0x517612){const _0x9c8f22=_0x2fa9e7;return _0x56849a[_0x9c8f22(0x426)]('data-user=\x22'+currentUserIdString+'\x22')&&(_0x56849a=_0x56849a['replace'](new RegExp(_0x9c8f22(0x1e7)+currentUserIdString+'\x22','g'),_0x9c8f22(0x1c2)+currentUserIdString+'\x22')),_0x56849a;}function loadUsers(){const _0x1126c8=_0x2fa9e7;debugLog(_0x1126c8(0x2b2),roomId),managedAjax({'url':_0x1126c8(0x20b),'method':'GET','data':{'room_id':roomId},'dataType':_0x1126c8(0x3e3)})[_0x1126c8(0x384)](_0x527f35=>{const _0x3b6e8c=_0x1126c8;try{let _0x4d070a=typeof _0x527f35==='string'?JSON[_0x3b6e8c(0x167)](_0x527f35):_0x527f35;handleUsersResponse(_0x4d070a);}catch(_0x12c899){console[_0x3b6e8c(0x1c3)](_0x3b6e8c(0x45a),_0x12c899,_0x527f35),$(_0x3b6e8c(0x2ed))[_0x3b6e8c(0x153)](_0x3b6e8c(0x47e));}})[_0x1126c8(0x367)](_0x14c1c0=>{const _0x30d45a=_0x1126c8;console[_0x30d45a(0x1c3)]('AJAX\x20error\x20in\x20loadUsers:',_0x14c1c0),$('#userList')[_0x30d45a(0x153)](_0x30d45a(0x494));});}DEBUG_MODE&&setInterval(()=>{const _0x2bec9=_0x2fa9e7;console[_0x2bec9(0x2c5)](_0x2bec9(0x294)),window['showRequestStats']();},0x7530);function renderUser(_0x2ebdfb){const _0x2f6b1b=_0x2fa9e7,_0x2b1ec4=_0x2ebdfb[_0x2f6b1b(0x1a9)]||_0x2ebdfb['guest_avatar']||_0x2f6b1b(0x256),_0x32546c=_0x2ebdfb[_0x2f6b1b(0x23c)]||_0x2ebdfb['username']||_0x2ebdfb[_0x2f6b1b(0x4ae)]||_0x2f6b1b(0x2d1),_0x47a98f=_0x2ebdfb['user_id_string']||'unknown',_0x3d0f82=_0x2ebdfb[_0x2f6b1b(0x46b)]||0x0,_0x15b244=_0x2ebdfb[_0x2f6b1b(0x24a)]||0x64,_0x360d67=_0x2ebdfb[_0x2f6b1b(0x292)]&&_0x2ebdfb[_0x2f6b1b(0x292)]>0x0,_0x4c28fd=_0x2ebdfb[_0x2f6b1b(0x3da)]===currentUserIdString;let _0x57f85a='';if(_0x360d67)_0x57f85a=_0x2f6b1b(0x275)+_0x2ebdfb[_0x2f6b1b(0x292)]+_0x2f6b1b(0x3d4)+(_0x2ebdfb['username']||'')[_0x2f6b1b(0x28f)](/'/g,'\x5c\x27')+_0x2f6b1b(0x467);else _0x4c28fd&&(_0x57f85a=_0x2f6b1b(0x237));let _0x3ad2e1='',_0x41fa8b='';_0x4c28fd&&(_0x41fa8b=_0x2f6b1b(0x34f),currentUserAFK=_0x2ebdfb[_0x2f6b1b(0x3fa)],manualAFK=_0x2ebdfb[_0x2f6b1b(0x278)]);if(_0x2ebdfb[_0x2f6b1b(0x3fa)]){const _0x19b69c=_0x2ebdfb[_0x2f6b1b(0x278)]?_0x2f6b1b(0x39c):_0x2f6b1b(0x1fa),_0x3068ba=_0x2ebdfb[_0x2f6b1b(0x230)]>0x0?'\x20('+formatAFKDuration(_0x2ebdfb[_0x2f6b1b(0x230)])+')':'';_0x3ad2e1+=_0x2f6b1b(0x3ca)+_0x19b69c+_0x2f6b1b(0x38d)+_0x3068ba+_0x2f6b1b(0x465);}_0x2ebdfb[_0x2f6b1b(0x484)]&&(_0x3ad2e1+='<span\x20class=\x22user-badge\x20badge-admin\x22><i\x20class=\x22fas\x20fa-shield-alt\x22\x20title=\x22Admin\x22></i></span>');_0x2ebdfb[_0x2f6b1b(0x321)]&&!_0x2ebdfb[_0x2f6b1b(0x484)]&&(_0x3ad2e1+=_0x2f6b1b(0x358));_0x2ebdfb['is_host']&&(_0x3ad2e1+=_0x2f6b1b(0x240));if(_0x360d67&&!_0x2ebdfb[_0x2f6b1b(0x484)]&&!_0x2ebdfb['is_moderator'])_0x3ad2e1+=_0x2f6b1b(0x1df);else!_0x360d67&&(_0x3ad2e1+=_0x2f6b1b(0x1e1));let _0x5be642='';if(_0x2ebdfb[_0x2f6b1b(0x3da)]!==currentUserIdString){_0x5be642=_0x2f6b1b(0x180);const _0x444dd8=_0x2ebdfb[_0x2f6b1b(0x23c)]||_0x2ebdfb[_0x2f6b1b(0x315)]||_0x2ebdfb[_0x2f6b1b(0x4ae)]||_0x2f6b1b(0x2d1),_0x12c6c6=_0x2ebdfb[_0x2f6b1b(0x3fa)]?'':'';_0x5be642+=_0x2f6b1b(0x2ec)+(_0x2ebdfb[_0x2f6b1b(0x3fa)]?'afk-user':'')+_0x2f6b1b(0x15f)+_0x2ebdfb['user_id_string']+_0x2f6b1b(0x1f5)+_0x444dd8[_0x2f6b1b(0x28f)](/'/g,'\x5c\x27')+_0x2f6b1b(0x38e)+_0x12c6c6+_0x2f6b1b(0x4de);if(_0x2ebdfb['user_id']&&currentUser[_0x2f6b1b(0x2b5)]===_0x2f6b1b(0x159)){if(friendshipCache[_0x2f6b1b(0x33e)](_0x2ebdfb['user_id'])){const _0x4b6d40=friendshipCache[_0x2f6b1b(0x18c)](_0x2ebdfb[_0x2f6b1b(0x292)]);if(_0x4b6d40){const _0x231793=_0x2ebdfb[_0x2f6b1b(0x3fa)]?_0x2f6b1b(0x341):'PM';_0x5be642+=_0x2f6b1b(0x3d2)+(_0x2ebdfb[_0x2f6b1b(0x3fa)]?_0x2f6b1b(0x481):'')+'\x22\x20onclick=\x22openPrivateMessage('+_0x2ebdfb['user_id']+',\x20\x27'+(_0x2ebdfb[_0x2f6b1b(0x315)]||'')[_0x2f6b1b(0x28f)](/'/g,'\x5c\x27')+_0x2f6b1b(0x393);}else _0x5be642+=_0x2f6b1b(0x3c9)+_0x2ebdfb['user_id']+_0x2f6b1b(0x3d4)+(_0x2ebdfb['username']||'')[_0x2f6b1b(0x28f)](/'/g,'\x5c\x27')+_0x2f6b1b(0x401);}else _0x5be642+='<div\x20id=\x22friend-action-'+_0x2ebdfb[_0x2f6b1b(0x292)]+_0x2f6b1b(0x46a),setTimeout(()=>{checkIfFriend(_0x2ebdfb['user_id'],function(_0x42824b){const _0x276d42=_0x4a42,_0xefc5e0=$(_0x276d42(0x1c6)+_0x2ebdfb[_0x276d42(0x292)]);if(_0xefc5e0[_0x276d42(0x36d)]>0x0){if(_0x42824b){const _0x1007f9=_0x2ebdfb['is_afk']?_0x276d42(0x341):'PM';_0xefc5e0[_0x276d42(0x153)]('\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-primary\x20'+(_0x2ebdfb[_0x276d42(0x3fa)]?'afk-user':'')+_0x276d42(0x2a2)+_0x2ebdfb[_0x276d42(0x292)]+_0x276d42(0x3d4)+(_0x2ebdfb[_0x276d42(0x315)]||'')[_0x276d42(0x28f)](/'/g,'\x5c\x27')+'\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-envelope\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20');}else _0xefc5e0[_0x276d42(0x153)](_0x276d42(0x366)+_0x2ebdfb['user_id']+_0x276d42(0x3d4)+(_0x2ebdfb[_0x276d42(0x315)]||'')[_0x276d42(0x28f)](/'/g,'\x5c\x27')+_0x276d42(0x48c));}});},0x32);}(isHost||isAdmin||isModerator)&&!_0x2ebdfb['is_host']&&!_0x2ebdfb[_0x2f6b1b(0x484)]&&!_0x2ebdfb[_0x2f6b1b(0x321)]&&(_0x5be642+=_0x2f6b1b(0x362)+_0x2ebdfb['user_id_string']+'\x27,\x20\x27'+_0x444dd8[_0x2f6b1b(0x28f)](/'/g,'\x5c\x27')+'\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-ban\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'),isHost&&!_0x2ebdfb['is_host']&&!_0x4c28fd&&!_0x2ebdfb[_0x2f6b1b(0x484)]&&!_0x2ebdfb[_0x2f6b1b(0x321)]&&(_0x5be642+='\x0a\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-pass-host\x22\x20onclick=\x22showPassHostModal(\x27'+_0x2ebdfb[_0x2f6b1b(0x3da)]+_0x2f6b1b(0x1f5)+_0x444dd8['replace'](/'/g,'\x5c\x27')+_0x2f6b1b(0x406)),(isAdmin||isModerator)&&!_0x2ebdfb['is_admin']&&!(_0x2ebdfb[_0x2f6b1b(0x321)]&&!isAdmin)&&(_0x5be642+=_0x2f6b1b(0x2a5)+_0x2ebdfb[_0x2f6b1b(0x3da)]+_0x2f6b1b(0x1f5)+_0x444dd8['replace'](/'/g,'\x5c\x27')+_0x2f6b1b(0x295)),_0x5be642+=_0x2f6b1b(0x2e0);}else{if(_0x4c28fd){}}const _0x17c5fc=(_0x2ebdfb['is_afk']?_0x2f6b1b(0x3ac):_0x2f6b1b(0x162))+_0x41fa8b;return'\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22'+_0x17c5fc+_0x2f6b1b(0x217)+_0x2b1ec4+_0x2f6b1b(0x2f9)+(_0x2ebdfb[_0x2f6b1b(0x3fa)]?'afk-avatar':'')+_0x2f6b1b(0x37a)+_0x3d0f82+_0x2f6b1b(0x45c)+_0x15b244+'%);\x20'+(_0x57f85a?'cursor:\x20pointer;':'')+_0x2f6b1b(0x234)+_0x57f85a+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20alt=\x22'+_0x32546c+'\x27s\x20avatar\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22user-details\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22user-name\x20'+(_0x2ebdfb['is_afk']?_0x2f6b1b(0x447):'')+'\x22>'+_0x32546c+_0x2f6b1b(0x38a)+_0x3ad2e1+_0x2f6b1b(0x487)+_0x5be642+_0x2f6b1b(0x31a);}function initializeYouTubePlayer(){const _0x1c0d49=_0x2fa9e7;if(!youtubeAPIReady||!youtubeEnabled){debugLog(_0x1c0d49(0x44d),youtubeAPIReady,',\x20enabled\x20=',youtubeEnabled);return;}debugLog(_0x1c0d49(0x47f)),youtubePlayer=new YT[(_0x1c0d49(0x1e8))](_0x1c0d49(0x3c8),{'height':'280','width':_0x1c0d49(0x309),'playerVars':{'playsinline':0x1,'controls':isHost?0x1:0x0,'disablekb':isHost?0x0:0x1,'fs':0x1,'rel':0x0,'showinfo':0x0,'modestbranding':0x1},'events':{'onReady':onYouTubePlayerReady,'onStateChange':onYouTubePlayerStateChange}});}function onYouTubePlayerReady(_0x2b2c05){const _0x4e4a02=_0x2fa9e7;debugLog(_0x4e4a02(0x4d9)),youtubePlayerReady=!![],syncPlayerState(),startYouTubeUpdates();}function onYouTubePlayerStateChange(_0x250d89){const _0x6912cf=_0x2fa9e7;debugLog(_0x6912cf(0x37d),_0x250d89['data']);if(youtubePlayerReady){const _0x559b63=youtubePlayer[_0x6912cf(0x1c5)](),_0x368cbc=getCurrentVideoId();if(isHost)switch(_0x250d89['data']){case YT['PlayerState'][_0x6912cf(0x2d3)]:updatePlayerSync(_0x368cbc,_0x559b63,!![]);break;case YT['PlayerState'][_0x6912cf(0x2c6)]:updatePlayerSync(_0x368cbc,_0x559b63,![]);break;case YT['PlayerState'][_0x6912cf(0x152)]:setTimeout(()=>skipToNextVideo(),0x3e8);break;}}}function startPlayerSync(){playerSyncInterval&&clearInterval(playerSyncInterval),playerSyncInterval=setInterval(syncPlayerState,0x7d0),debugLog('🔄\x20Started\x20player\x20sync');}function syncPlayerState(){if(!youtubeEnabled||!youtubePlayerReady)return;updateYouTubeData();}function updatePlayerSync(_0x44d6c4,_0x37fe6c,_0x210c99){const _0x247124=_0x2fa9e7;if(!isHost||!youtubeEnabled)return;$[_0x247124(0x1a0)]({'url':_0x247124(0x42b),'method':_0x247124(0x257),'data':{'action':'update_time','video_id':_0x44d6c4,'current_time':_0x37fe6c,'is_playing':_0x210c99?0x1:0x0},'dataType':_0x247124(0x3e3),'success':function(_0x3b0afd){const _0x24feb0=_0x247124;_0x3b0afd[_0x24feb0(0x33c)]===_0x24feb0(0x4d2)&&(lastSyncToken=_0x3b0afd[_0x24feb0(0x3fd)],debugLog(_0x24feb0(0x3f3)));},'error':function(_0x3c2e32,_0x282159,_0x1cff71){const _0x2c33d2=_0x247124;debugLog(_0x2c33d2(0x4a0),_0x1cff71);}});}function startQueueUpdates(){queueUpdateInterval&&clearInterval(queueUpdateInterval),queueUpdateInterval=setInterval(updateQueue,0xbb8),updateQueue(),debugLog('📋\x20Started\x20queue\x20updates');}function updateQueue(){const _0x27ba23=_0x2fa9e7;if(!youtubeEnabled)return;$[_0x27ba23(0x1a0)]({'url':_0x27ba23(0x4ee),'method':_0x27ba23(0x280),'data':{'action':_0x27ba23(0x18c)},'dataType':'json','timeout':0x1388,'success':function(_0x35c01d){const _0x4102fb=_0x27ba23;_0x35c01d['status']==='success'&&(playerQueue=_0x35c01d[_0x4102fb(0x344)]['queue']||[],playerSuggestions=_0x35c01d[_0x4102fb(0x344)][_0x4102fb(0x174)]||[],currentVideoData=_0x35c01d[_0x4102fb(0x344)][_0x4102fb(0x3e2)],renderQueue(),renderSuggestions(),updateVideoInfo());},'error':function(_0x25ca15,_0x1ffeb2,_0x325357){const _0xd716b=_0x27ba23;debugLog(_0xd716b(0x2ee),_0x325357);}});}function renderQueue(){const _0x4080ee=_0x2fa9e7,_0x1a07bd=$(_0x4080ee(0x351));let _0x4a217f='';playerQueue[_0x4080ee(0x36d)]===0x0?_0x4a217f=_0x4080ee(0x25d):playerQueue['forEach']((_0x298852,_0x8d7ca1)=>{const _0xa2530=_0x4080ee,_0x2f0264=currentVideoData&&currentVideoData['id']===_0x298852['id'],_0x52f792=isHost?_0xa2530(0x342)+_0x298852['id']+_0xa2530(0x408):'';_0x4a217f+=_0xa2530(0x414)+(_0x2f0264?_0xa2530(0x25c):'')+'\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22youtube-queue-item-content\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22'+_0x298852['video_thumbnail']+_0xa2530(0x457)+_0x298852[_0xa2530(0x3f5)]+_0xa2530(0x3d0)+_0x298852[_0xa2530(0x1a8)]+'</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22youtube-queue-item-meta\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20Added\x20by\x20'+_0x298852[_0xa2530(0x483)]+_0xa2530(0x194)+(_0x8d7ca1+0x1)+_0xa2530(0x430)+_0x52f792+_0xa2530(0x49b);}),_0x1a07bd['html'](_0x4a217f);}function renderSuggestions(){const _0x6530b1=_0x2fa9e7,_0x17adcb=$(_0x6530b1(0x21a));let _0x3dd671='';playerSuggestions[_0x6530b1(0x36d)]===0x0?_0x3dd671='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22youtube-empty-state\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-lightbulb\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h6>No\x20suggestions</h6>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p>Video\x20suggestions\x20from\x20users\x20will\x20appear\x20here</p>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20':playerSuggestions[_0x6530b1(0x4b5)](_0x41e050=>{const _0x2e676c=_0x6530b1,_0xb10376=isHost?_0x2e676c(0x326)+_0x41e050['id']+_0x2e676c(0x233)+_0x41e050['id']+_0x2e676c(0x3f7):'';_0x3dd671+=_0x2e676c(0x263)+_0x41e050[_0x2e676c(0x4a1)]+'\x22\x20class=\x22youtube-queue-item-thumb\x22\x20alt=\x22Thumbnail\x22\x20onerror=\x22this.src=\x27https://img.youtube.com/vi/'+_0x41e050[_0x2e676c(0x3f5)]+_0x2e676c(0x3d0)+_0x41e050['video_title']+_0x2e676c(0x216)+_0x41e050['suggested_by_name']+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+_0xb10376+_0x2e676c(0x49b);}),_0x17adcb[_0x6530b1(0x153)](_0x3dd671);}function updateVideoInfo(){const _0x534a13=_0x2fa9e7,_0x3be7d5=$('#youtube-video-info');currentVideoData?_0x3be7d5[_0x534a13(0x153)](_0x534a13(0x3ee)+currentVideoData[_0x534a13(0x1a8)]+'</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22youtube-video-meta\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span>Added\x20by\x20'+currentVideoData[_0x534a13(0x483)]+_0x534a13(0x171)):_0x3be7d5[_0x534a13(0x153)]('\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22youtube-video-title\x22>No\x20video\x20playing</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22youtube-video-meta\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span>Select\x20a\x20video\x20or\x20add\x20one\x20to\x20the\x20queue</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20');}function suggestVideo(){const _0x7cf66=_0x2fa9e7,_0x5cf744=$('#youtube-suggest-input'),_0x44e89e=_0x5cf744[_0x7cf66(0x246)]()[_0x7cf66(0x44f)]();if(!_0x44e89e){alert(_0x7cf66(0x330));return;}const _0x6540bc=$(_0x7cf66(0x2c4)),_0x1b8e5c=_0x6540bc[_0x7cf66(0x153)]();_0x6540bc[_0x7cf66(0x4e0)](_0x7cf66(0x3b5),!![])['html'](_0x7cf66(0x248)),$[_0x7cf66(0x1a0)]({'url':_0x7cf66(0x4ee),'method':_0x7cf66(0x257),'data':{'action':_0x7cf66(0x1d8),'video_url':_0x44e89e},'dataType':_0x7cf66(0x3e3),'success':function(_0x112909){const _0x5bf546=_0x7cf66;_0x112909[_0x5bf546(0x33c)]===_0x5bf546(0x4d2)?(_0x5cf744[_0x5bf546(0x246)](''),updateQueue(),showToast(_0x5bf546(0x3b4),_0x5bf546(0x4d2))):alert(_0x5bf546(0x4b6)+_0x112909[_0x5bf546(0x454)]);},'error':function(_0x4b957d,_0x3a4013,_0x1e8737){const _0x838620=_0x7cf66;console[_0x838620(0x1c3)](_0x838620(0x1fe),_0x1e8737),alert(_0x838620(0x4d5)+_0x1e8737);},'complete':function(){const _0x248f64=_0x7cf66;_0x6540bc['prop'](_0x248f64(0x3b5),![])[_0x248f64(0x153)](_0x1b8e5c);}});}function approveVideo(_0x5bece4){const _0x146c99=_0x2fa9e7;$[_0x146c99(0x1a0)]({'url':_0x146c99(0x4ee),'method':'POST','data':{'action':_0x146c99(0x379),'suggestion_id':_0x5bece4},'dataType':_0x146c99(0x3e3),'success':function(_0x4dbe55){const _0x5870f8=_0x146c99;_0x4dbe55[_0x5870f8(0x33c)]===_0x5870f8(0x4d2)?(updateQueue(),showToast(_0x5870f8(0x2c8),_0x5870f8(0x4d2))):alert('Error:\x20'+_0x4dbe55[_0x5870f8(0x454)]);},'error':function(_0x2660ee,_0x322238,_0x449ee6){const _0x22b31b=_0x146c99;console['error'](_0x22b31b(0x2e1),_0x449ee6),alert('Error\x20approving\x20video:\x20'+_0x449ee6);}});}function denyVideo(_0x360e2a){const _0x40a05c=_0x2fa9e7;$['ajax']({'url':'api/youtube_queue.php','method':_0x40a05c(0x257),'data':{'action':_0x40a05c(0x268),'suggestion_id':_0x360e2a},'dataType':_0x40a05c(0x3e3),'success':function(_0x306990){const _0x3f6d25=_0x40a05c;_0x306990['status']===_0x3f6d25(0x4d2)?(updateQueue(),showToast(_0x3f6d25(0x477),_0x3f6d25(0x4cc))):alert(_0x3f6d25(0x4b6)+_0x306990[_0x3f6d25(0x454)]);},'error':function(_0x5a4e31,_0x183c7f,_0x34a046){const _0x194402=_0x40a05c;console['error'](_0x194402(0x2c0),_0x34a046),alert(_0x194402(0x4ef)+_0x34a046);}});}function removeFromQueue(_0x56b497){const _0xbeb6ef=_0x2fa9e7;if(!confirm('Remove\x20this\x20video\x20from\x20the\x20queue?'))return;$['ajax']({'url':_0xbeb6ef(0x4ee),'method':'POST','data':{'action':'remove','queue_id':_0x56b497},'dataType':_0xbeb6ef(0x3e3),'success':function(_0x49989b){const _0x4c0019=_0xbeb6ef;_0x49989b[_0x4c0019(0x33c)]===_0x4c0019(0x4d2)?(updateQueue(),showToast('Video\x20removed\x20from\x20queue',_0x4c0019(0x4cc))):alert(_0x4c0019(0x4b6)+_0x49989b[_0x4c0019(0x454)]);},'error':function(_0x3ceb09,_0x2de49d,_0x19ce25){const _0x2c2d6a=_0xbeb6ef;console[_0x2c2d6a(0x1c3)](_0x2c2d6a(0x445),_0x19ce25),alert('Error\x20removing\x20video:\x20'+_0x19ce25);}});}function playVideo(){const _0x502297=_0x2fa9e7;if(!isHost||!youtubePlayerReady)return;const _0x35ba8a=youtubePlayer[_0x502297(0x1c5)]();$[_0x502297(0x1a0)]({'url':_0x502297(0x26c),'method':_0x502297(0x257),'data':{'action':'resume','current_time':_0x35ba8a},'dataType':_0x502297(0x3e3),'success':function(_0x1cee89){const _0x2a0f2f=_0x502297;_0x1cee89[_0x2a0f2f(0x33c)]==='success'&&debugLog(_0x2a0f2f(0x179));}});}function pauseVideo(){const _0x5ba6f0=_0x2fa9e7;if(!isHost||!youtubePlayerReady)return;const _0x1a7aed=youtubePlayer['getCurrentTime']();$[_0x5ba6f0(0x1a0)]({'url':_0x5ba6f0(0x26c),'method':_0x5ba6f0(0x257),'data':{'action':_0x5ba6f0(0x41a),'current_time':_0x1a7aed},'dataType':_0x5ba6f0(0x3e3),'success':function(_0x5eed77){const _0x5a70cd=_0x5ba6f0;_0x5eed77[_0x5a70cd(0x33c)]==='success'&&debugLog(_0x5a70cd(0x23d));}});}function skipToNextVideo(){const _0x466f2e=_0x2fa9e7;if(!isHost)return;$['ajax']({'url':_0x466f2e(0x26c),'method':_0x466f2e(0x257),'data':{'action':'skip'},'dataType':'json','success':function(_0x5befdf){const _0x53c793=_0x466f2e;_0x5befdf[_0x53c793(0x33c)]===_0x53c793(0x4d2)?(debugLog('🎬\x20Skipped\x20to\x20next\x20video'),updateQueue()):showToast(_0x5befdf[_0x53c793(0x454)]||'No\x20more\x20videos\x20in\x20queue',_0x53c793(0x4cc));}});}function stopVideo(){const _0x2813b2=_0x2fa9e7;if(!isHost)return;$[_0x2813b2(0x1a0)]({'url':_0x2813b2(0x26c),'method':'POST','data':{'action':_0x2813b2(0x208)},'dataType':'json','success':function(_0x5e0e28){const _0x44804b=_0x2813b2;_0x5e0e28['status']===_0x44804b(0x4d2)&&debugLog(_0x44804b(0x402));}});}function togglePlayerVisibility(){const _0x13d574=_0x2fa9e7,_0x5c28d2=$('.youtube-player-container'),_0x2755cf=$('.youtube-player-toggle');_0x5c28d2[_0x13d574(0x1c4)]('user-hidden')?(_0x5c28d2[_0x13d574(0x203)]('user-hidden')[_0x13d574(0x232)](),_0x2755cf['removeClass'](_0x13d574(0x427))['html'](_0x13d574(0x3f6))[_0x13d574(0x201)](_0x13d574(0x450),_0x13d574(0x35c)),playerHidden=![],youtubePlayerReady&&setTimeout(()=>syncPlayerState(),0x1f4)):(_0x5c28d2[_0x13d574(0x252)]('user-hidden')[_0x13d574(0x2a0)](),_0x2755cf['addClass']('hidden-player')[_0x13d574(0x153)](_0x13d574(0x20d))[_0x13d574(0x201)](_0x13d574(0x450),'Show\x20Player'),playerHidden=!![]),localStorage['setItem'](_0x13d574(0x227)+roomId,playerHidden[_0x13d574(0x21b)]());}function getCurrentVideoId(){const _0x30e0cd=_0x2fa9e7;if(!youtubePlayer||!youtubePlayerReady)return null;try{const _0x3346bf=youtubePlayer[_0x30e0cd(0x3c5)](),_0x4e105c=_0x3346bf[_0x30e0cd(0x1cc)](/[?&]v=([^&]+)/);return _0x4e105c?_0x4e105c[0x1]:null;}catch(_0x1424d6){return null;}}function showToast(_0x41f26e,_0x5d0b5d=_0x2fa9e7(0x4cc)){const _0x42c312=_0x2fa9e7,_0x56940e=$(_0x42c312(0x1be)+_0x5d0b5d+_0x42c312(0x3d6)+_0x41f26e+_0x42c312(0x4ab));$(_0x42c312(0x491))[_0x42c312(0x396)](_0x56940e),setTimeout(()=>{const _0x4762a3=_0x42c312;_0x56940e[_0x4762a3(0x3f4)]('close');},0xfa0);}function stopYouTubePlayer(){const _0x182e79=_0x2fa9e7;debugLog('🛑\x20Stopping\x20YouTube\x20player\x20system');youtubeUpdateInterval&&(clearInterval(youtubeUpdateInterval),youtubeUpdateInterval=null);if(youtubePlayer&&youtubePlayerReady)try{youtubePlayer[_0x182e79(0x261)]();}catch(_0x3cac60){debugLog('Error\x20stopping\x20YouTube\x20player:',_0x3cac60);}youtubeEnabled=![],youtubePlayerReady=![],isYoutubeUpdating=![];}function checkUserStatus(){}function handleUserBanned(_0x4372dd){const _0x82d62c=_0x2fa9e7;debugLog(_0x82d62c(0x2c1),_0x4372dd),stopKickDetection();let _0x34db9d=_0x4372dd[_0x82d62c(0x454)]||_0x82d62c(0x1dc),_0x59f2aa='';if(_0x4372dd[_0x82d62c(0x1c7)]){if(_0x4372dd[_0x82d62c(0x1c7)][_0x82d62c(0x1b2)])_0x59f2aa+='<div\x20class=\x22alert\x20alert-danger\x22><strong>This\x20is\x20a\x20PERMANENT\x20ban.</strong></div>';else _0x4372dd[_0x82d62c(0x1c7)]['expires_in_minutes']&&(_0x59f2aa+='<div\x20class=\x22alert\x20alert-warning\x22><strong>Ban\x20expires\x20in\x20'+_0x4372dd['ban_info']['expires_in_minutes']+_0x82d62c(0x27f)+(_0x4372dd['ban_info'][_0x82d62c(0x3ba)]!==0x1?'s':'')+_0x82d62c(0x34c));_0x4372dd['ban_info'][_0x82d62c(0x1d1)]&&(_0x59f2aa+=_0x82d62c(0x31b)+_0x4372dd[_0x82d62c(0x1c7)][_0x82d62c(0x1d1)]+_0x82d62c(0x270));}showKickModal(_0x82d62c(0x1f9),_0x34db9d,_0x59f2aa,_0x82d62c(0x3fe));}function handleUserKicked(_0x1a8e30){const _0x265b41=_0x2fa9e7;debugLog(_0x265b41(0x374),_0x1a8e30),stopKickDetection();const _0x1b7e19=_0x1a8e30[_0x265b41(0x454)]||_0x265b41(0x41c),_0x55cf9a='<div\x20class=\x22alert\x20alert-info\x22>You\x20can\x20try\x20to\x20rejoin\x20the\x20room\x20if\x20it\x27s\x20still\x20available.</div>';showKickModal(_0x265b41(0x371),_0x1b7e19,_0x55cf9a,_0x265b41(0x1a1));}function handleRoomDeleted(_0x2ec9ad){const _0x26747e=_0x2fa9e7;debugLog(_0x26747e(0x2f6),_0x2ec9ad),stopKickDetection();const _0x48adf5=_0x2ec9ad['message']||_0x26747e(0x47b),_0x5ac3e1=_0x26747e(0x49d);showKickModal(_0x26747e(0x1b4),_0x48adf5,_0x5ac3e1,_0x26747e(0x4cc));}function handleStatusCheckError(){const _0x2ba6ab=_0x2fa9e7;consecutiveErrors++,consecutiveErrors>=0x3&&(console[_0x2ba6ab(0x387)](_0x2ba6ab(0x15a)),consecutiveErrors>=0x5&&(console['error'](_0x2ba6ab(0x418)),stopKickDetection(),alert(_0x2ba6ab(0x178)),window[_0x2ba6ab(0x235)][_0x2ba6ab(0x245)]=_0x2ba6ab(0x3b9)));}function showKickModal(_0x290fef,_0x208cbb,_0x512763,_0x160f78){const _0xfe5488=_0x2fa9e7;userKickedModalShown=!![];const _0x402e83={'danger':{'bg':_0xfe5488(0x331),'icon':_0xfe5488(0x207)},'warning':{'bg':'bg-warning','icon':_0xfe5488(0x38f)},'info':{'bg':_0xfe5488(0x405),'icon':_0xfe5488(0x45b)}},_0x500242=_0x402e83[_0x160f78]||_0x402e83['info'],_0x200cb5=_0xfe5488(0x470)+_0x160f78+_0xfe5488(0x239)+_0x500242['bg']+_0xfe5488(0x198)+_0x500242[_0xfe5488(0x323)]+_0xfe5488(0x4b4)+_0x290fef+_0xfe5488(0x354)+_0x500242['icon']+_0xfe5488(0x2ab)+_0x160f78+_0xfe5488(0x301)+_0x160f78+_0xfe5488(0x324)+_0x208cbb+_0xfe5488(0x262)+_0x512763+_0xfe5488(0x436);$('#kickNotificationModal')[_0xfe5488(0x2e7)](),$(_0xfe5488(0x491))['append'](_0x200cb5);const _0x59cabf=new bootstrap[(_0xfe5488(0x22e))](document[_0xfe5488(0x260)]('kickNotificationModal'));_0x59cabf[_0xfe5488(0x232)]();let _0x363bc4=0x8;const _0x41f921=setInterval(()=>{const _0x3d8608=_0xfe5488;_0x363bc4--,$(_0x3d8608(0x486))[_0x3d8608(0x3e6)](_0x363bc4),_0x363bc4<=0x0&&(clearInterval(_0x41f921),handleKickModalClose());},0x3e8);}function handleKickModalClose(){const _0x8fa0c2=_0x2fa9e7;debugLog(_0x8fa0c2(0x317)),stopKickDetection(),$[_0x8fa0c2(0x1a0)]({'url':_0x8fa0c2(0x18d),'method':_0x8fa0c2(0x257),'data':{'room_id':roomId,'action':'kicked_user_cleanup'},'complete':function(){const _0x3a6001=_0x8fa0c2;window['location'][_0x3a6001(0x245)]=_0x3a6001(0x3b9);}});}function stopKickDetection(){const _0x4d4497=_0x2fa9e7;debugLog(_0x4d4497(0x2df)),kickDetectionEnabled=![],kickDetectionInterval&&(clearInterval(kickDetectionInterval),kickDetectionInterval=null);}function initializeActivityTracking(){const _0x5ddacb=_0x2fa9e7;debugLog(_0x5ddacb(0x31e));if(roomId){}$(document)['on'](_0x5ddacb(0x304),_0x5ddacb(0x429),function(){}),$(document)['on']('submit',_0x5ddacb(0x17f),function(){}),$(document)['on'](_0x5ddacb(0x349),'.btn-toggle-afk',function(){}),debugLog(_0x5ddacb(0x2f3));}function updateUserActivity(_0x254867=_0x2fa9e7(0x1cf)){}function triggerDisconnectCheck(){}function stopActivityTracking(){const _0x23d029=_0x2fa9e7;debugLog(_0x23d029(0x283));}function showRoomSettings(){const _0x17829e=_0x2fa9e7;debugLog(_0x17829e(0x202),roomId),$[_0x17829e(0x1a0)]({'url':_0x17829e(0x3a7),'method':_0x17829e(0x280),'data':{'room_id':roomId},'success':function(_0x5d1559){const _0x42e477=_0x17829e;try{let _0x3a5692=JSON[_0x42e477(0x167)](_0x5d1559);_0x3a5692['status']===_0x42e477(0x4d2)?displayRoomSettingsModal(_0x3a5692[_0x42e477(0x31f)]):alert('Error\x20loading\x20room\x20settings:\x20'+_0x3a5692[_0x42e477(0x454)]);}catch(_0x261627){console[_0x42e477(0x1c3)](_0x42e477(0x45a),_0x261627,_0x5d1559),alert(_0x42e477(0x4e7));}},'error':function(_0x50b476,_0x2c158b,_0x14788b){const _0x4bc053=_0x17829e;console[_0x4bc053(0x1c3)]('AJAX\x20error\x20in\x20showRoomSettings:',_0x2c158b,_0x14788b,_0x50b476[_0x4bc053(0x348)]),alert(_0x4bc053(0x469)+_0x14788b);}});}function displayRoomSettingsModal(_0x1cf29d){const _0x24a5b2=_0x2fa9e7;debugLog(_0x24a5b2(0x1a6),_0x1cf29d);const _0x282696=_0x24a5b2(0x16c)+(isAdmin||isModerator?_0x24a5b2(0x36b):'')+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</ul>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22tab-content\x22\x20id=\x22settingsTabsContent\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<!--\x20General\x20Settings\x20-->\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22tab-pane\x20fade\x20show\x20active\x22\x20id=\x22general\x22\x20role=\x22tabpanel\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<form\x20id=\x22roomSettingsForm\x22\x20class=\x22mt-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22row\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22col-md-6\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22settingsRoomName\x22\x20class=\x22form-label\x22>Room\x20Name</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22text\x22\x20class=\x22form-control\x22\x20id=\x22settingsRoomName\x22\x20value=\x22'+_0x1cf29d['name']+_0x24a5b2(0x264)+(_0x1cf29d[_0x24a5b2(0x3fc)]==0x5?_0x24a5b2(0x22b):'')+'>5\x20users</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x2210\x22'+(_0x1cf29d[_0x24a5b2(0x3fc)]==0xa?_0x24a5b2(0x22b):'')+_0x24a5b2(0x2ea)+(_0x1cf29d[_0x24a5b2(0x3fc)]==0x14?_0x24a5b2(0x22b):'')+_0x24a5b2(0x2fc)+(_0x1cf29d['capacity']==0x32?'\x20selected':'')+'>50\x20users</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</select>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22settingsTheme\x22\x20class=\x22form-label\x22>Theme</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<select\x20class=\x22form-select\x22\x20id=\x22settingsTheme\x22\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22default\x22'+(_0x1cf29d[_0x24a5b2(0x4c2)]===_0x24a5b2(0x2a9)?_0x24a5b2(0x22b):'')+_0x24a5b2(0x1ca)+(_0x1cf29d[_0x24a5b2(0x4c2)]===_0x24a5b2(0x169)?'\x20selected':'')+_0x24a5b2(0x4d0)+(_0x1cf29d[_0x24a5b2(0x4c2)]===_0x24a5b2(0x1bf)?_0x24a5b2(0x22b):'')+_0x24a5b2(0x45e)+(_0x1cf29d[_0x24a5b2(0x4c2)]===_0x24a5b2(0x353)?_0x24a5b2(0x22b):'')+_0x24a5b2(0x29d)+(_0x1cf29d[_0x24a5b2(0x4c2)]===_0x24a5b2(0x23b)?_0x24a5b2(0x22b):'')+_0x24a5b2(0x411)+(_0x1cf29d['description']||'')+_0x24a5b2(0x404)+(_0x1cf29d[_0x24a5b2(0x2aa)]?_0x24a5b2(0x4d7):'')+_0x24a5b2(0x343)+(_0x1cf29d['has_password']?_0x24a5b2(0x4d7):'')+'>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-check-label\x22\x20for=\x22settingsHasPassword\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-lock\x22></i>\x20Password\x20Protected\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22\x20id=\x22passwordFieldSettings\x22\x20style=\x22display:\x20'+(_0x1cf29d[_0x24a5b2(0x44e)]?'block':'none')+_0x24a5b2(0x480)+(_0x1cf29d[_0x24a5b2(0x44e)]?'block':_0x24a5b2(0x1cb))+_0x24a5b2(0x466)+(_0x1cf29d[_0x24a5b2(0x19a)]?_0x24a5b2(0x4d7):'')+_0x24a5b2(0x350)+(currentUser[_0x24a5b2(0x2b5)]==='user'?_0x24a5b2(0x43d)+(_0x1cf29d[_0x24a5b2(0x17b)]?_0x24a5b2(0x4d7):'')+_0x24a5b2(0x497)+(_0x1cf29d[_0x24a5b2(0x377)]?'\x20checked':'')+'>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-check-label\x22\x20for=\x22settingsFriendsOnly\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-user-friends\x22></i>\x20Friends\x20Only\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22form-text\x20text-muted\x22>Only\x20your\x20friends\x20can\x20join</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20':'')+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-4\x22>\x0a\x20\x20\x20\x20<div\x20class=\x22form-check\x20form-switch\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<input\x20class=\x22form-check-input\x22\x20type=\x22checkbox\x22\x20id=\x22settingsInviteOnly\x22'+(_0x1cf29d[_0x24a5b2(0x24e)]?'\x20checked':'')+_0x24a5b2(0x4b2)+(_0x1cf29d[_0x24a5b2(0x3b6)]?_0x24a5b2(0x417)+(_0x1cf29d[_0x24a5b2(0x24e)]?_0x24a5b2(0x4d2):_0x24a5b2(0x4cc))+_0x24a5b2(0x3f8)+(_0x1cf29d[_0x24a5b2(0x24e)]?_0x24a5b2(0x158):_0x24a5b2(0x224))+_0x24a5b2(0x2ae)+window[_0x24a5b2(0x235)]['origin']+_0x24a5b2(0x1e6)+_0x1cf29d[_0x24a5b2(0x3b6)]+_0x24a5b2(0x2b3)+_0x1cf29d[_0x24a5b2(0x3b6)]+_0x24a5b2(0x2b0):'')+_0x24a5b2(0x1ea)+(_0x1cf29d[_0x24a5b2(0x2ca)]?_0x24a5b2(0x4d7):'')+'>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-check-label\x22\x20for=\x22settingsYouTubeEnabled\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fab\x20fa-youtube\x20text-danger\x22></i>\x20<strong>Enable\x20YouTube\x20Player</strong>\x20<span\x20class=\x22betatext\x22\x20/>\x20<span\x20class=\x22betatext2\x22\x20/>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22form-text\x20text-muted\x22>Allow\x20synchronized\x20video\x20playback\x20for\x20all\x20users\x20in\x20the\x20room</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20id=\x22youtubePlayerInfo\x22\x20style=\x22display:\x20'+(_0x1cf29d['youtube_enabled']?_0x24a5b2(0x332):_0x24a5b2(0x1cb))+_0x24a5b2(0x1a4)+(_0x1cf29d[_0x24a5b2(0x2cd)]?'\x20checked':'')+'>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-check-label\x22\x20for=\x22settingsDisappearingMessages\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-clock\x22></i>\x20<strong>Disappearing\x20Messages</strong>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22form-text\x20text-muted\x22>Messages\x20automatically\x20delete\x20after\x20a\x20set\x20time</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22\x20id=\x22messageLifetimeFieldSettings\x22\x20style=\x22display:\x20'+(_0x1cf29d[_0x24a5b2(0x2cd)]?'block':_0x24a5b2(0x1cb))+';\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22settingsMessageLifetime\x22\x20class=\x22form-label\x22>Message\x20Lifetime</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<select\x20class=\x22form-select\x22\x20id=\x22settingsMessageLifetime\x22\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x225\x22'+(_0x1cf29d['message_lifetime_minutes']==0x5?_0x24a5b2(0x22b):'')+'>5\x20minutes</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x2215\x22'+(_0x1cf29d[_0x24a5b2(0x400)]==0xf?_0x24a5b2(0x22b):'')+'>15\x20minutes</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x2230\x22'+(_0x1cf29d['message_lifetime_minutes']==0x1e?_0x24a5b2(0x22b):'')+_0x24a5b2(0x2cb)+(_0x1cf29d[_0x24a5b2(0x400)]==0x3c?_0x24a5b2(0x22b):'')+_0x24a5b2(0x4dd)+(_0x1cf29d[_0x24a5b2(0x400)]==0x78?_0x24a5b2(0x22b):'')+_0x24a5b2(0x2d0)+(_0x1cf29d[_0x24a5b2(0x400)]==0x168?_0x24a5b2(0x22b):'')+_0x24a5b2(0x16b)+(_0x1cf29d['message_lifetime_minutes']==0x2d0?_0x24a5b2(0x22b):'')+_0x24a5b2(0x319)+(_0x1cf29d[_0x24a5b2(0x400)]==0x5a0?_0x24a5b2(0x22b):'')+_0x24a5b2(0x1ec)+(isAdmin||isModerator?_0x24a5b2(0x242)+(_0x1cf29d[_0x24a5b2(0x1b2)]?_0x24a5b2(0x4d7):'')+_0x24a5b2(0x1d2)+(_0x1cf29d[_0x24a5b2(0x1b2)]?_0x24a5b2(0x2e2):'')+_0x24a5b2(0x1e0):'')+_0x24a5b2(0x446);$(_0x24a5b2(0x205))['remove'](),$(_0x24a5b2(0x491))[_0x24a5b2(0x396)](_0x282696),setupRoomSettingsHandlers(),$(_0x24a5b2(0x267))['on'](_0x24a5b2(0x349),function(){loadBannedUsers();}),$(_0x24a5b2(0x205))[_0x24a5b2(0x4be)](_0x24a5b2(0x232));}function setupRoomSettingsHandlers(){const _0x3bfe1b=_0x2fa9e7;$(_0x3bfe1b(0x462))['on'](_0x3bfe1b(0x4a4),function(){const _0xdf80e3=_0x3bfe1b;this['checked']?($('#passwordFieldSettings')[_0xdf80e3(0x232)](),$(_0xdf80e3(0x14d))[_0xdf80e3(0x232)]()):($(_0xdf80e3(0x1a5))[_0xdf80e3(0x2a0)](),$('#knockingFieldSettings')[_0xdf80e3(0x2a0)](),$(_0xdf80e3(0x19f))[_0xdf80e3(0x246)](''),$('#settingsAllowKnocking')['prop'](_0xdf80e3(0x191),!![]));}),$(_0x3bfe1b(0x356))['on']('change',function(){const _0x4e9dd3=_0x3bfe1b;this[_0x4e9dd3(0x191)]?$('#youtubePlayerInfo')[_0x4e9dd3(0x232)]():$('#youtubePlayerInfo')[_0x4e9dd3(0x2a0)]();}),$(_0x3bfe1b(0x453))['on'](_0x3bfe1b(0x4a4),function(){const _0x5c2ed1=_0x3bfe1b;this[_0x5c2ed1(0x191)]?$(_0x5c2ed1(0x1ad))['show']():$(_0x5c2ed1(0x1ad))['hide']();});}function loadBannedUsers(){const _0x8aae20=_0x2fa9e7;debugLog(_0x8aae20(0x1e3),roomId),$[_0x8aae20(0x1a0)]({'url':_0x8aae20(0x3a4),'method':'GET','dataType':_0x8aae20(0x3e3),'data':{'room_id':roomId},'success':function(_0xfd3332){const _0x228d6d=_0x8aae20;debugLog(_0x228d6d(0x397),_0xfd3332);let _0x53644e='';!Array['isArray'](_0xfd3332)?_0x53644e=_0x228d6d(0x2d4):_0xfd3332[_0x228d6d(0x36d)]===0x0?_0x53644e='<p\x20class=\x22text-muted\x22>No\x20banned\x20users.</p>':_0xfd3332['forEach'](_0x2b86a2=>{const _0x2a21e1=_0x228d6d,_0x5794f9=_0x2b86a2[_0x2a21e1(0x315)]||_0x2b86a2['guest_name']||_0x2a21e1(0x2dd),_0x4a2153=_0x2b86a2[_0x2a21e1(0x25b)]?'Permanent':'Temporary',_0x151582=_0x2b86a2[_0x2a21e1(0x29c)]?new Date(_0x2b86a2['ban_until'])[_0x2a21e1(0x448)]():_0x2a21e1(0x290),_0x2f7f18=_0x2b86a2[_0x2a21e1(0x1d1)]||_0x2a21e1(0x42d);_0x53644e+=_0x2a21e1(0x3f2)+_0x5794f9+'</strong>\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20class=\x22badge\x20'+(_0x4a2153==='Permanent'?_0x2a21e1(0x331):'bg-warning')+'\x22>'+_0x4a2153+'</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<br>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22text-muted\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20Expires:\x20'+_0x151582+_0x2a21e1(0x3c3)+_0x2f7f18+_0x2a21e1(0x2fa)+_0x2b86a2[_0x2a21e1(0x3da)]+_0x2a21e1(0x1f5)+_0x5794f9[_0x2a21e1(0x28f)](/'/g,'\x5c\x27')+'\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-unlock\x22></i>\x20Unban\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20';}),$(_0x228d6d(0x1c1))[_0x228d6d(0x153)](_0x53644e);},'error':function(_0x127a84,_0x150459,_0x21b452){const _0x8dac4f=_0x8aae20;console[_0x8dac4f(0x1c3)]('AJAX\x20error\x20in\x20loadBannedUsers:',_0x150459,_0x21b452),$('#bannedUsersList')[_0x8dac4f(0x153)](_0x8dac4f(0x2d4));}});}function unbanUser(_0x424948,_0x1a72d8){const _0xcfe028=_0x2fa9e7;if(!confirm('Are\x20you\x20sure\x20you\x20want\x20to\x20unban\x20'+_0x1a72d8+'?'))return;$[_0xcfe028(0x1a0)]({'url':_0xcfe028(0x42c),'method':'POST','dataType':_0xcfe028(0x3e3),'data':{'room_id':roomId,'user_id_string':_0x424948},'success':function(_0x6f0fa){const _0x2b2376=_0xcfe028;_0x6f0fa[_0x2b2376(0x33c)]===_0x2b2376(0x4d2)?(alert(_0x1a72d8+_0x2b2376(0x186)),loadBannedUsers()):alert(_0x2b2376(0x4b6)+_0x6f0fa[_0x2b2376(0x454)]);},'error':function(_0x5ec4cf,_0x2c50e2,_0x5d0098){const _0x11ff93=_0xcfe028;console[_0x11ff93(0x1c3)](_0x11ff93(0x286),_0x2c50e2,_0x5d0098),alert(_0x11ff93(0x469)+_0x5d0098);}});}function saveRoomSettings(){const _0x4751bb=_0x2fa9e7,_0x43f7da={'room_id':roomId,'name':$('#settingsRoomName')[_0x4751bb(0x246)]()[_0x4751bb(0x44f)](),'description':$(_0x4751bb(0x495))[_0x4751bb(0x246)]()[_0x4751bb(0x44f)](),'capacity':$(_0x4751bb(0x231))['val'](),'theme':$(_0x4751bb(0x1d4))[_0x4751bb(0x246)](),'has_password':$(_0x4751bb(0x462))['is'](_0x4751bb(0x2cf))?0x1:0x0,'password':$('#settingsPassword')[_0x4751bb(0x246)](),'allow_knocking':$(_0x4751bb(0x305))['is'](':checked')?0x1:0x0,'youtube_enabled':$(_0x4751bb(0x356))['is'](':checked')?0x1:0x0,'is_rp':$(_0x4751bb(0x30f))['is'](_0x4751bb(0x2cf))?0x1:0x0,'friends_only':$(_0x4751bb(0x336))['is'](_0x4751bb(0x2cf))?0x1:0x0,'invite_only':$('#settingsInviteOnly')['is'](_0x4751bb(0x2cf))?0x1:0x0,'members_only':$(_0x4751bb(0x29a))['is'](_0x4751bb(0x2cf))?0x1:0x0,'disappearing_messages':$(_0x4751bb(0x453))['is'](_0x4751bb(0x2cf))?0x1:0x0,'message_lifetime_minutes':$('#settingsDisappearingMessages')['is'](_0x4751bb(0x2cf))?$(_0x4751bb(0x394))[_0x4751bb(0x246)]():0x0,'permanent':$(_0x4751bb(0x499))['is'](':checked')?0x1:0x0};debugLog(_0x4751bb(0x16e),_0x43f7da);if(!_0x43f7da['name']){alert(_0x4751bb(0x32a)),$(_0x4751bb(0x150))[_0x4751bb(0x485)]();return;}if(_0x43f7da[_0x4751bb(0x44e)]&&!_0x43f7da[_0x4751bb(0x45f)]){if(!confirm(_0x4751bb(0x3b3))){$(_0x4751bb(0x19f))[_0x4751bb(0x485)]();return;}}const _0x54e05e=$(_0x4751bb(0x1a7)),_0xc3144f=_0x54e05e[_0x4751bb(0x153)]();_0x54e05e['prop'](_0x4751bb(0x3b5),!![])[_0x4751bb(0x153)](_0x4751bb(0x1d6)),$[_0x4751bb(0x1a0)]({'url':_0x4751bb(0x322),'method':_0x4751bb(0x257),'data':_0x43f7da,'dataType':_0x4751bb(0x3e3),'success':function(_0x579c37){const _0x47f412=_0x4751bb;debugLog(_0x47f412(0x18e),_0x579c37);if(_0x579c37[_0x47f412(0x33c)]===_0x47f412(0x4d2)){let _0x19c00c=_0x47f412(0x4bd);_0x43f7da['permanent']&&(_0x19c00c+=_0x47f412(0x176));if(_0x579c37[_0x47f412(0x3b6)]){const _0x363bd7=window['location'][_0x47f412(0x345)]+'/'+_0x579c37['invite_link'];_0x19c00c+=_0x47f412(0x4b0)+_0x363bd7,navigator[_0x47f412(0x318)]?navigator[_0x47f412(0x318)][_0x47f412(0x1b6)](_0x363bd7)[_0x47f412(0x384)](()=>{_0x19c00c+='\x5cn\x5cn(Invite\x20link\x20copied\x20to\x20clipboard!)',alert(_0x19c00c);})[_0x47f412(0x367)](()=>{alert(_0x19c00c);}):alert(_0x19c00c);}else alert(_0x19c00c);$(_0x47f412(0x205))[_0x47f412(0x4be)]('hide');const _0x49ec6c=_0x43f7da['youtube_enabled']!==youtubeEnabled||_0x43f7da[_0x47f412(0x4c2)]!==(roomTheme||_0x47f412(0x2a9))||_0x43f7da[_0x47f412(0x2cd)]!==(typeof disappearingMessages!=='undefined'?disappearingMessages:![]);_0x49ec6c?(showToast('Settings\x20changed.\x20Refreshing\x20room...',_0x47f412(0x4cc)),setTimeout(()=>{const _0x97b5f=_0x47f412;location[_0x97b5f(0x2b7)]();},0x7d0)):(loadMessages(),loadUsers());}else alert(_0x47f412(0x4b6)+_0x579c37[_0x47f412(0x454)]);},'error':function(_0xd04a8b,_0x23cff2,_0x230d82){const _0x4ab83b=_0x4751bb;console[_0x4ab83b(0x1c3)]('AJAX\x20error\x20in\x20saveRoomSettings:',_0x23cff2,_0x230d82),alert(_0x4ab83b(0x469)+_0x230d82);},'complete':function(){const _0x22e19b=_0x4751bb;_0x54e05e[_0x22e19b(0x4e0)](_0x22e19b(0x3b5),![])[_0x22e19b(0x153)](_0xc3144f);}});}function leaveRoom(){const _0x3681ec=_0x2fa9e7;debugLog(_0x3681ec(0x26b),roomId),$[_0x3681ec(0x1a0)]({'url':_0x3681ec(0x18d),'method':_0x3681ec(0x257),'data':{'room_id':roomId,'action':'check_options'},'success':function(_0x29f19b){const _0x505b46=_0x3681ec;debugLog(_0x505b46(0x299),_0x29f19b);try{let _0x3ebb09=JSON[_0x505b46(0x167)](_0x29f19b);if(_0x3ebb09[_0x505b46(0x33c)]===_0x505b46(0x3dd))confirm(_0x3ebb09[_0x505b46(0x454)]+_0x505b46(0x279))&&$[_0x505b46(0x1a0)]({'url':'api/leave_room.php','method':_0x505b46(0x257),'data':{'room_id':roomId,'action':'permanent_room_leave'},'success':function(_0x3d8184){const _0x24762a=_0x505b46;try{let _0x402640=JSON[_0x24762a(0x167)](_0x3d8184);_0x402640[_0x24762a(0x33c)]===_0x24762a(0x4d2)?(alert(_0x402640[_0x24762a(0x454)]||_0x24762a(0x161)),window['location'][_0x24762a(0x245)]='/lounge'):alert(_0x24762a(0x4b6)+_0x402640[_0x24762a(0x454)]);}catch(_0x1a95ed){console[_0x24762a(0x1c3)]('JSON\x20parse\x20error:',_0x1a95ed,_0x3d8184),alert('Error\x20leaving\x20room');}},'error':function(_0x34cb44,_0x17cb0f,_0x362319){const _0x155557=_0x505b46;console[_0x155557(0x1c3)](_0x155557(0x2be),_0x362319),alert(_0x155557(0x276)+_0x362319);}});else{if(_0x3ebb09['status']===_0x505b46(0x32e))showHostLeavingModal(_0x3ebb09[_0x505b46(0x3c0)]||[],_0x3ebb09[_0x505b46(0x455)]!==![],_0x3ebb09['last_user']===!![]);else _0x3ebb09[_0x505b46(0x33c)]==='success'?window[_0x505b46(0x235)][_0x505b46(0x245)]=_0x505b46(0x3b9):alert(_0x505b46(0x4b6)+_0x3ebb09[_0x505b46(0x454)]);}}catch(_0x156f1a){console['error'](_0x505b46(0x45a),_0x156f1a,'Raw\x20response:',_0x29f19b),_0x29f19b[_0x505b46(0x426)]('success')?window['location'][_0x505b46(0x245)]='/lounge':alert(_0x505b46(0x4b8)+_0x29f19b);}},'error':function(_0x2f98c8,_0x19a9cc,_0x1f70a6){const _0x129c57=_0x3681ec;console[_0x129c57(0x1c3)]('AJAX\x20error\x20in\x20leaveRoom:',_0x19a9cc,_0x1f70a6),alert(_0x129c57(0x469)+_0x1f70a6);}});}function showHostLeavingModal(_0xd616c,_0x5ecaee,_0x413525){const _0x3f96c9=_0x2fa9e7;let _0x144a45='',_0x290f58='';_0x5ecaee&&_0xd616c[_0x3f96c9(0x36d)]>0x0&&(_0xd616c[_0x3f96c9(0x4b5)](_0x500fd7=>{const _0x45fc47=_0x3f96c9;let _0x486f51=_0x500fd7[_0x45fc47(0x315)]||_0x500fd7[_0x45fc47(0x4ae)];_0x144a45+=_0x45fc47(0x3b1)+_0x500fd7['user_id_string']+'\x22>'+_0x486f51+_0x45fc47(0x307);}),_0x290f58=_0x3f96c9(0x2a1)+_0x144a45+_0x3f96c9(0x4bb));let _0x3ec421='\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal\x20fade\x22\x20id=\x22hostLeavingModal\x22\x20tabindex=\x22-1\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-dialog\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-content\x22\x20style=\x22background:\x20#2a2a2a;\x20border:\x201px\x20solid\x20#444;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-header\x22\x20style=\x22border-bottom:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h5\x20class=\x22modal-title\x22>'+(_0x413525?'Last\x20User\x20in\x20Room':'You\x20are\x20the\x20Host')+_0x3f96c9(0x1ac)+(_0x413525?'You\x20are\x20the\x20last\x20user\x20in\x20this\x20room.\x20When\x20you\x20leave,\x20the\x20room\x20will\x20be\x20deleted.':_0x3f96c9(0x437))+_0x3f96c9(0x311)+(_0x413525?_0x3f96c9(0x4d8):'Delete\x20Room')+_0x3f96c9(0x361)+_0x290f58+_0x3f96c9(0x33d);$(_0x3f96c9(0x17e))['remove'](),$(_0x3f96c9(0x491))[_0x3f96c9(0x396)](_0x3ec421),$(_0x3f96c9(0x17e))[_0x3f96c9(0x4be)]('show');}function deleteRoom(){const _0x25586a=_0x2fa9e7;confirm('Are\x20you\x20sure\x20you\x20want\x20to\x20delete\x20this\x20room?\x20This\x20action\x20cannot\x20be\x20undone.')&&$[_0x25586a(0x1a0)]({'url':_0x25586a(0x18d),'method':_0x25586a(0x257),'data':{'room_id':roomId,'action':_0x25586a(0x2a8)},'success':function(_0x1620f7){const _0x5d6c4a=_0x25586a;try{let _0xd6d4c2=JSON[_0x5d6c4a(0x167)](_0x1620f7);_0xd6d4c2[_0x5d6c4a(0x33c)]==='success'?(stopKickDetection(),alert(_0x5d6c4a(0x3be)),window[_0x5d6c4a(0x235)]['href']=_0x5d6c4a(0x3b9)):alert(_0x5d6c4a(0x4b6)+_0xd6d4c2[_0x5d6c4a(0x454)]);}catch(_0x32a17d){console[_0x5d6c4a(0x1c3)](_0x5d6c4a(0x45a),_0x32a17d,_0x1620f7),alert(_0x5d6c4a(0x4e7));}},'error':function(_0x349ada,_0x42dcfe,_0x1b1dc3){const _0x5e4396=_0x25586a;console['error'](_0x5e4396(0x3a1),_0x42dcfe,_0x1b1dc3),alert(_0x5e4396(0x469)+_0x1b1dc3);}});}function transferHost(){const _0x223223=_0x2fa9e7;let _0x4bbcb0=$(_0x223223(0x40c))[_0x223223(0x246)]();if(!_0x4bbcb0){alert(_0x223223(0x189));return;}confirm('Are\x20you\x20sure\x20you\x20want\x20to\x20transfer\x20host\x20privileges\x20and\x20leave\x20the\x20room?')&&$[_0x223223(0x1a0)]({'url':_0x223223(0x18d),'method':_0x223223(0x257),'data':{'room_id':roomId,'action':_0x223223(0x302),'new_host_user_id':_0x4bbcb0},'success':function(_0x355951){const _0x49cd77=_0x223223;try{let _0x1aa040=JSON['parse'](_0x355951);_0x1aa040['status']===_0x49cd77(0x4d2)?(stopKickDetection(),alert(_0x49cd77(0x16d)),window[_0x49cd77(0x235)]['href']='/lounge'):alert(_0x49cd77(0x4b6)+_0x1aa040[_0x49cd77(0x454)]);}catch(_0x5aa8af){console[_0x49cd77(0x1c3)](_0x49cd77(0x45a),_0x5aa8af,_0x355951),alert(_0x49cd77(0x4e7));}},'error':function(_0x3b30b1,_0x5760a5,_0x59e88e){const _0x3035c1=_0x223223;console[_0x3035c1(0x1c3)](_0x3035c1(0x4c6),_0x5760a5,_0x59e88e),alert(_0x3035c1(0x469)+_0x59e88e);}});}function showBanModal(_0x5db9ef,_0x36aa4d){const _0x34fcaa=_0x2fa9e7,_0x58d5b0=_0x34fcaa(0x204)+_0x36aa4d+_0x34fcaa(0x3ef)+_0x5db9ef+'\x27,\x20\x27'+_0x36aa4d[_0x34fcaa(0x28f)](/'/g,'\x5c\x27')+'\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-ban\x22></i>\x20Ban\x20User\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20';$(_0x34fcaa(0x308))[_0x34fcaa(0x2e7)](),$('body')[_0x34fcaa(0x396)](_0x58d5b0),$(_0x34fcaa(0x308))[_0x34fcaa(0x4be)](_0x34fcaa(0x232));}function confirmBanUser(_0x848e17,_0x4a9797){const _0x493f6a=_0x2fa9e7,_0x3eb694=$(_0x493f6a(0x27e))[_0x493f6a(0x246)](),_0x3d4696=$('#banReason')[_0x493f6a(0x246)]()[_0x493f6a(0x44f)](),_0x2c29d2=_0x3eb694===_0x493f6a(0x1b2)?_0x493f6a(0x291):_0x3eb694==0x12c?_0x493f6a(0x463):_0x3eb694==0x708?_0x493f6a(0x339):_0x493f6a(0x4e4)+_0x3eb694+_0x493f6a(0x1d5);if(!confirm(_0x493f6a(0x473)+_0x4a9797+'\x20'+_0x2c29d2+'?'))return;const _0x57a75f=$('#banUserModal\x20.btn-danger'),_0x2f63f1=_0x57a75f['html']();_0x57a75f[_0x493f6a(0x4e0)](_0x493f6a(0x3b5),!![])['html']('<span\x20class=\x22spinner-border\x20spinner-border-sm\x22\x20role=\x22status\x22></span>\x20Banning...'),$[_0x493f6a(0x1a0)]({'url':_0x493f6a(0x460),'method':_0x493f6a(0x257),'dataType':'json','data':{'room_id':roomId,'user_id_string':_0x848e17,'duration':_0x3eb694,'reason':_0x3d4696},'success':function(_0x5818df){const _0x61a85e=_0x493f6a;_0x5818df[_0x61a85e(0x33c)]===_0x61a85e(0x4d2)?(alert(_0x61a85e(0x312)+_0x2c29d2+'!'),$(_0x61a85e(0x308))['modal'](_0x61a85e(0x2a0)),loadUsers(),loadMessages(),setTimeout(()=>{checkUserStatus();},0x1f4)):alert(_0x61a85e(0x4b6)+_0x5818df['message']);},'error':function(_0x1f6cbb,_0x18f561,_0x407163){const _0x24f7dd=_0x493f6a;console[_0x24f7dd(0x1c3)](_0x24f7dd(0x17c),_0x18f561,_0x407163),alert(_0x24f7dd(0x469)+_0x407163);},'complete':function(){const _0x1a6218=_0x493f6a;_0x57a75f[_0x1a6218(0x4e0)](_0x1a6218(0x3b5),![])[_0x1a6218(0x153)](_0x2f63f1);}});}function checkForKnocks(){const _0x19bcd0=_0x2fa9e7;if(!isHost)return;$[_0x19bcd0(0x1a0)]({'url':_0x19bcd0(0x33b),'method':_0x19bcd0(0x280),'dataType':_0x19bcd0(0x3e3),'success':function(_0x5a231d){const _0x40e4f9=_0x19bcd0;Array[_0x40e4f9(0x388)](_0x5a231d)&&_0x5a231d[_0x40e4f9(0x36d)]>0x0&&displayKnockNotifications(_0x5a231d);},'error':function(_0x32a34b,_0x2f4674,_0x4fb544){}});}function displayKnockNotifications(_0x55ec09){const _0x396aa3=_0x2fa9e7;_0x55ec09[_0x396aa3(0x4b5)]((_0x2be60a,_0x5c209c)=>{const _0x5b2eb9=_0x396aa3;if($(_0x5b2eb9(0x2fd)+_0x2be60a['id'])['length']>0x0)return;const _0x2cc9c1=_0x2be60a[_0x5b2eb9(0x315)]||_0x2be60a[_0x5b2eb9(0x4ae)]||_0x5b2eb9(0x2dd),_0x53ef47=_0x2be60a[_0x5b2eb9(0x1a9)]||'default_avatar.jpg',_0x50fdba=0x14+_0x5c209c*0x8c,_0x595524=_0x5b2eb9(0x389)+_0x2be60a['id']+'\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20role=\x22alert\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20style=\x22position:\x20fixed;\x20top:\x20'+_0x50fdba+_0x5b2eb9(0x3a3)+_0x53ef47+_0x5b2eb9(0x464)+_0x2cc9c1+_0x5b2eb9(0x461)+_0x2cc9c1+'</strong>\x20wants\x20to\x20join\x20this\x20room</p>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-success\x20btn-sm\x20me-2\x22\x20onclick=\x22respondToKnock('+_0x2be60a['id']+',\x20\x27accepted\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-check\x22></i>\x20Accept\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-danger\x20btn-sm\x22\x20onclick=\x22respondToKnock('+_0x2be60a['id']+_0x5b2eb9(0x24d)+_0x2be60a['id']+_0x5b2eb9(0x157);$(_0x5b2eb9(0x491))[_0x5b2eb9(0x396)](_0x595524),$(_0x5b2eb9(0x2fd)+_0x2be60a['id'])['hide']()[_0x5b2eb9(0x223)](0x12c),setTimeout(()=>{dismissKnock(_0x2be60a['id']);},0xafc8);});}function respondToKnock(_0x2af78d,_0x213b80){const _0x4b1e05=_0x2fa9e7;$[_0x4b1e05(0x1a0)]({'url':_0x4b1e05(0x34d),'method':'POST','data':{'knock_id':_0x2af78d,'response':_0x213b80},'dataType':'json','success':function(_0x2db70e){const _0x1bd826=_0x4b1e05;if(_0x2db70e[_0x1bd826(0x33c)]===_0x1bd826(0x4d2)){dismissKnock(_0x2af78d),loadMessages();const _0x40b90f=_0x213b80===_0x1bd826(0x37e)?_0x1bd826(0x1bb):_0x1bd826(0x226);alert(_0x40b90f);}else alert(_0x1bd826(0x4b6)+_0x2db70e[_0x1bd826(0x454)]);},'error':function(_0x5d8fc0,_0x2f7128,_0x547a36){const _0x574145=_0x4b1e05;console['error'](_0x574145(0x255),_0x547a36),alert('Error\x20responding\x20to\x20knock:\x20'+_0x547a36);}});}function dismissKnock(_0x261b95){const _0x4b5a70=_0x2fa9e7;$('#knock-'+_0x261b95)[_0x4b5a70(0x1db)](0x12c,function(){const _0xdc032f=_0x4b5a70;$(this)[_0xdc032f(0x2e7)]();});}function createTestUser(){const _0xda4e9a=_0x2fa9e7;$['ajax']({'url':'api/create_test_user.php','method':_0xda4e9a(0x257),'dataType':_0xda4e9a(0x3e3),'success':function(_0x55170d){const _0x36580d=_0xda4e9a;_0x55170d[_0x36580d(0x33c)]===_0x36580d(0x4d2)?(alert(_0x36580d(0x2ce)+_0x55170d[_0x36580d(0x159)][_0x36580d(0x19e)]),loadUsers(),loadMessages()):alert(_0x36580d(0x4b6)+_0x55170d[_0x36580d(0x454)]);},'error':function(_0xa50804,_0x40b588,_0x1bec6d){const _0x5198ec=_0xda4e9a;console['error'](_0x5198ec(0x3ce),_0x40b588,_0x1bec6d),alert(_0x5198ec(0x469)+_0x1bec6d);}});}let openWhispers=new Map(),whisperTabs=[];function escapeSelector(_0x109555){const _0xd07af6=_0x2fa9e7;return _0x109555[_0xd07af6(0x28f)](/([ #;&,.+*~':"!^$[\]()=>|\/])/g,_0xd07af6(0x182));}function createSafeId(_0x4a164a){const _0x129029=_0x2fa9e7;return _0x4a164a[_0x129029(0x28f)](/[^a-zA-Z0-9_-]/g,'_');}function openWhisper(_0x3e3859,_0x52ac43){const _0x26202d=_0x2fa9e7;debugLog('Opening\x20whisper\x20for\x20user:',_0x3e3859,_0x52ac43);if(openWhispers[_0x26202d(0x33e)](_0x3e3859)){showWhisperTab(_0x3e3859);return;}const _0x49d704=createSafeId(_0x3e3859),_0xd23d06='whisper-tab-'+_0x49d704,_0x20fc76=_0x26202d(0x2c2)+_0x49d704,_0x10ea64=_0x26202d(0x172)+_0xd23d06+_0x26202d(0x434)+_0x3e3859['replace'](/'/g,'\x5c\x27')+_0x26202d(0x2e5)+_0x52ac43+_0x26202d(0x164)+_0x49d704+_0x26202d(0x18b)+_0x3e3859[_0x26202d(0x28f)](/'/g,'\x5c\x27')+'\x27);\x22\x20title=\x22Close\x22>&times;</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20',_0x187c12=_0x26202d(0x45d)+_0x20fc76+_0x26202d(0x22d)+_0x49d704+_0x26202d(0x3e4)+_0x3e3859[_0x26202d(0x28f)](/'/g,'\x5c\x27')+'\x27);\x20return\x20false;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22text\x22\x20id=\x22whisper-input-'+_0x49d704+'\x22\x20placeholder=\x22Type\x20a\x20whisper...\x22\x20required>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22submit\x22>Send</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</form>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20';$('#whisper-tabs')['length']===0x0&&$(_0x26202d(0x491))[_0x26202d(0x396)](_0x26202d(0x49a)),$(_0x26202d(0x1d3))[_0x26202d(0x396)](_0x10ea64),$(_0x26202d(0x491))['append'](_0x187c12),openWhispers[_0x26202d(0x380)](_0x3e3859,{'username':_0x52ac43,'unreadCount':0x0,'safeId':_0x49d704}),whisperTabs[_0x26202d(0x452)](_0x3e3859),loadWhisperMessages(_0x3e3859),showWhisperTab(_0x3e3859);}function toggleWhisperTab(_0x49b57e){const _0x139a16=_0x2fa9e7;debugLog('Toggling\x20whisper\x20tab\x20for:',_0x49b57e);const _0x5f1a85=openWhispers['get'](_0x49b57e);if(!_0x5f1a85)return;const _0xe5abdb=_0x5f1a85[_0x139a16(0x3ed)],_0x167ef5=$(_0x139a16(0x285)+_0xe5abdb),_0xe65c71=$(_0x139a16(0x298)+_0xe5abdb),_0x449b80=_0x167ef5['hasClass'](_0x139a16(0x39e));$(_0x139a16(0x2f7))['addClass'](_0x139a16(0x39e)),$(_0x139a16(0x36e))[_0x139a16(0x203)]('active'),_0x449b80?(_0x167ef5['removeClass'](_0x139a16(0x39e)),_0xe65c71[_0x139a16(0x252)]('active'),markWhisperAsRead(_0x49b57e),setTimeout(()=>{const _0x2bb0a4=_0x139a16;$(_0x2bb0a4(0x381)+_0xe5abdb)[_0x2bb0a4(0x485)]();},0x12c)):(_0x167ef5[_0x139a16(0x252)]('collapsed'),_0xe65c71[_0x139a16(0x203)](_0x139a16(0x1b8)));}function showWhisperTab(_0x3bc545){const _0x471d5a=_0x2fa9e7;debugLog('Showing\x20whisper\x20tab\x20for:',_0x3bc545);const _0x4bc7d9=openWhispers[_0x471d5a(0x18c)](_0x3bc545);if(!_0x4bc7d9)return;const _0x18fb7e=_0x4bc7d9[_0x471d5a(0x3ed)];$('.whisper-window')[_0x471d5a(0x252)](_0x471d5a(0x39e)),$(_0x471d5a(0x36e))[_0x471d5a(0x203)](_0x471d5a(0x1b8));const _0x17c142=$('#whisper-'+_0x18fb7e),_0x1e68aa=$(_0x471d5a(0x298)+_0x18fb7e);_0x17c142['removeClass'](_0x471d5a(0x39e)),_0x1e68aa[_0x471d5a(0x252)]('active'),markWhisperAsRead(_0x3bc545),setTimeout(()=>{const _0x118e20=_0x471d5a;$('#whisper-input-'+_0x18fb7e)[_0x118e20(0x485)]();},0x12c);}function closeWhisper(_0x2828e0){const _0x2bdf10=_0x2fa9e7,_0x5d5759=openWhispers[_0x2bdf10(0x18c)](_0x2828e0);if(!_0x5d5759)return;const _0x32b596=_0x5d5759[_0x2bdf10(0x3ed)];$('#whisper-tab-'+_0x32b596)[_0x2bdf10(0x2e7)](),$(_0x2bdf10(0x285)+_0x32b596)[_0x2bdf10(0x2e7)](),openWhispers[_0x2bdf10(0x2c7)](_0x2828e0),whisperTabs=whisperTabs[_0x2bdf10(0x395)](_0x87aa6=>_0x87aa6!==_0x2828e0),whisperTabs[_0x2bdf10(0x36d)]===0x0&&$(_0x2bdf10(0x1d3))['remove']();}function sendWhisper(_0xeae99){const _0x249919=_0x2fa9e7,_0x1b48d1=openWhispers[_0x249919(0x18c)](_0xeae99);if(!_0x1b48d1)return![];const _0x3ddba1=_0x1b48d1[_0x249919(0x3ed)],_0x45d942=$('#whisper-input-'+_0x3ddba1),_0x4cca2d=_0x45d942[_0x249919(0x246)]()[_0x249919(0x44f)]();if(!_0x4cca2d)return![];return managedAjax({'url':'api/room_whispers.php','method':_0x249919(0x257),'data':{'action':'send','recipient_user_id_string':_0xeae99,'message':_0x4cca2d},'dataType':_0x249919(0x3e3),'success':function(_0x576c3a){const _0x297748=_0x249919;_0x576c3a[_0x297748(0x33c)]===_0x297748(0x4d2)?(_0x45d942[_0x297748(0x246)](''),loadWhisperMessages(_0xeae99)):alert(_0x297748(0x4b6)+_0x576c3a[_0x297748(0x454)]);},'error':function(_0x7e1122,_0x57d123,_0x55aa35){const _0x12cf46=_0x249919;console[_0x12cf46(0x1c3)](_0x12cf46(0x30a),_0x55aa35),alert(_0x12cf46(0x1f8)+_0x55aa35);}}),![];}function loadWhisperMessages(_0x382378){const _0x20922d=_0x2fa9e7;debugLog(_0x20922d(0x352),_0x382378),managedAjax({'url':_0x20922d(0x3d3),'method':_0x20922d(0x280),'data':{'action':_0x20922d(0x18c),'other_user_id_string':_0x382378},'dataType':_0x20922d(0x3e3)})[_0x20922d(0x384)](_0x224eff=>{const _0x17e3a9=_0x20922d;debugLog('Whisper\x20messages\x20response:',_0x224eff);if(_0x224eff[_0x17e3a9(0x33c)]===_0x17e3a9(0x4d2))displayWhisperMessages(_0x382378,_0x224eff['messages']);else{console[_0x17e3a9(0x1c3)](_0x17e3a9(0x376),_0x224eff['message']);const _0x7f9089=openWhispers[_0x17e3a9(0x18c)](_0x382378);_0x7f9089&&$(_0x17e3a9(0x3b0)+_0x7f9089[_0x17e3a9(0x3ed)])[_0x17e3a9(0x153)](_0x17e3a9(0x3a6)+_0x224eff[_0x17e3a9(0x454)]+_0x17e3a9(0x2e0));}})['catch'](_0x500c88=>{const _0x5681aa=_0x20922d;console[_0x5681aa(0x1c3)](_0x5681aa(0x1a3),_0x500c88);const _0x335af2=openWhispers[_0x5681aa(0x18c)](_0x382378);_0x335af2&&$(_0x5681aa(0x3b0)+_0x335af2['safeId'])[_0x5681aa(0x153)](_0x5681aa(0x220));});}function displayWhisperMessages(_0x2c99d0,_0x598e98){const _0x104d4b=_0x2fa9e7,_0x1eee3d=openWhispers['get'](_0x2c99d0);if(!_0x1eee3d){console[_0x104d4b(0x1c3)](_0x104d4b(0x14c),_0x2c99d0);return;}const _0x2b4f7e=_0x1eee3d['safeId'],_0x78d966=$(_0x104d4b(0x3b0)+_0x2b4f7e);if(_0x78d966[_0x104d4b(0x36d)]===0x0){console[_0x104d4b(0x1c3)](_0x104d4b(0x2fe),_0x104d4b(0x3b0)+_0x2b4f7e);return;}const _0x39919e=_0x78d966[0x0][_0x104d4b(0x28a)]>0x0?_0x78d966[_0x104d4b(0x3cf)]()+_0x78d966[_0x104d4b(0x31d)]()>=_0x78d966[0x0][_0x104d4b(0x28a)]-0x14:!![];let _0x58b370='';_0x598e98['length']===0x0?_0x58b370=_0x104d4b(0x4ca):_0x598e98['forEach'](_0x1adb4b=>{const _0x373884=_0x104d4b,_0x1e46b2=_0x1adb4b[_0x373884(0x24f)]===currentUserIdString,_0x50371d=new Date(_0x1adb4b[_0x373884(0x3ad)])['toLocaleTimeString']([],{'hour':'2-digit','minute':_0x373884(0x19b)}),_0x244534=_0x1e46b2?currentUser[_0x373884(0x19e)]||currentUser[_0x373884(0x315)]||'You':_0x1adb4b[_0x373884(0x3cb)]||_0x1adb4b['sender_guest_name']||_0x373884(0x2d1),_0x3a253a=_0x1e46b2?currentUser['avatar']||_0x373884(0x256):_0x1adb4b[_0x373884(0x2f4)]||'default_avatar.jpg',_0x171e9b=_0x1e46b2?currentUser['color']||'blue':_0x1adb4b[_0x373884(0x24b)]||_0x373884(0x4bf),_0x4bf6bc=_0x1e46b2?currentUser[_0x373884(0x46b)]||0x0:_0x1adb4b[_0x373884(0x3c6)]||0x0,_0x4ffb33=_0x1e46b2?currentUser[_0x373884(0x24a)]||0x64:_0x1adb4b['sender_avatar_saturation']||0x64,_0x1f7b25=_0x1e46b2?currentUser[_0x373884(0x474)]||0x0:_0x1adb4b['bubble_hue']||0x0,_0x321990=_0x1e46b2?currentUser[_0x373884(0x496)]||0x64:_0x1adb4b['bubble_saturation']||0x64;_0x58b370+=_0x373884(0x187)+(_0x1e46b2?_0x373884(0x3d5):_0x373884(0x14f))+'\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22images/'+_0x3a253a+_0x373884(0x390)+_0x4bf6bc+_0x373884(0x45c)+_0x4ffb33+_0x373884(0x4df)+_0x244534+'\x27s\x20avatar\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-bubble\x20'+(_0x1e46b2?'sent':_0x373884(0x14f))+_0x373884(0x254)+_0x171e9b+_0x373884(0x1c0)+_0x1f7b25+'deg)\x20saturate('+_0x321990+_0x373884(0x2bc)+_0x244534+_0x373884(0x210)+_0x50371d+_0x373884(0x435)+_0x1adb4b[_0x373884(0x454)]+_0x373884(0x383);}),_0x78d966[_0x104d4b(0x153)](_0x58b370),_0x39919e&&_0x78d966[0x0][_0x104d4b(0x28a)]>0x0&&_0x78d966[_0x104d4b(0x3cf)](_0x78d966[0x0][_0x104d4b(0x28a)]);}function markWhisperAsRead(_0x5ba883){const _0x413c9d=_0x2fa9e7,_0x51a9e3=openWhispers[_0x413c9d(0x18c)](_0x5ba883);_0x51a9e3&&_0x51a9e3['unreadCount']>0x0&&(_0x51a9e3['unreadCount']=0x0,openWhispers[_0x413c9d(0x380)](_0x5ba883,_0x51a9e3),$('#whisper-unread-'+_0x51a9e3[_0x413c9d(0x3ed)])[_0x413c9d(0x2a0)]()['text']('0'));}function checkForNewWhispers(){const _0x3dd425=_0x2fa9e7;managedAjax({'url':_0x3dd425(0x3d3),'method':_0x3dd425(0x280),'data':{'action':_0x3dd425(0x4b3)},'dataType':_0x3dd425(0x3e3),'success':function(_0x5bcee3){const _0x282783=_0x3dd425;_0x5bcee3[_0x282783(0x33c)]==='success'&&_0x5bcee3['conversations'][_0x282783(0x4b5)](_0x8a18fb=>{const _0x2f2f82=_0x282783,_0x297ebd=_0x8a18fb[_0x2f2f82(0x4c5)];if(_0x8a18fb[_0x2f2f82(0x21e)]>0x0&&!openWhispers['has'](_0x297ebd)){const _0x4ddfc1=_0x8a18fb['username']||_0x8a18fb[_0x2f2f82(0x4ae)]||_0x2f2f82(0x2d1);openWhisper(_0x297ebd,_0x4ddfc1);}if(openWhispers[_0x2f2f82(0x33e)](_0x297ebd)){const _0x2737c0=openWhispers[_0x2f2f82(0x18c)](_0x297ebd);_0x2737c0['unreadCount']=_0x8a18fb[_0x2f2f82(0x21e)],openWhispers['set'](_0x297ebd,_0x2737c0);const _0x250acd=$('#whisper-unread-'+_0x2737c0['safeId']);_0x8a18fb[_0x2f2f82(0x21e)]>0x0?_0x250acd[_0x2f2f82(0x3e6)](_0x8a18fb[_0x2f2f82(0x21e)])[_0x2f2f82(0x232)]():_0x250acd[_0x2f2f82(0x2a0)]();}});},'error':function(){}}),openWhispers['forEach']((_0x7b63a1,_0x1baf97)=>{const _0x4c3a35=_0x3dd425,_0x4dc8a2=_0x7b63a1[_0x4c3a35(0x3ed)],_0x4343bd=$(_0x4c3a35(0x381)+_0x4dc8a2);if(!_0x4343bd['is'](_0x4c3a35(0x1aa))||_0x4343bd[_0x4c3a35(0x246)]()['length']===0x0){}});if($('#friendsPanel')['is'](_0x3dd425(0x243))){}}function sendFriendRequest(_0x577f67,_0x50694d){const _0x4b0278=_0x2fa9e7;if(!_0x577f67||!_0x50694d){alert(_0x4b0278(0x340));return;}confirm(_0x4b0278(0x3eb)+_0x50694d+'?')&&managedAjax({'url':_0x4b0278(0x416),'method':_0x4b0278(0x257),'data':{'action':_0x4b0278(0x2e8),'friend_username':_0x50694d},'dataType':_0x4b0278(0x3e3),'success':function(_0x1479e4){const _0x571e7f=_0x4b0278;_0x1479e4[_0x571e7f(0x33c)]===_0x571e7f(0x4d2)?(alert(_0x571e7f(0x4e6)+_0x50694d+'!'),clearFriendshipCache(_0x577f67),loadUsers()):alert(_0x571e7f(0x4b6)+_0x1479e4['message']);},'error':function(_0x44246d,_0x421022,_0x4c1f9a){const _0x8f394e=_0x4b0278;console[_0x8f394e(0x1c3)](_0x8f394e(0x303),_0x4c1f9a),alert(_0x8f394e(0x1d0)+_0x4c1f9a);}});}window[_0x2fa9e7(0x26d)]=function(){const _0x11a9b6=_0x2fa9e7;console[_0x11a9b6(0x2c5)](_0x11a9b6(0x3b7)),console[_0x11a9b6(0x2c5)](_0x11a9b6(0x271),messageOffset),console[_0x11a9b6(0x2c5)](_0x11a9b6(0x22a),messageLimit),console[_0x11a9b6(0x2c5)](_0x11a9b6(0x272),hasMoreOlderMessages),console['log'](_0x11a9b6(0x4a8),isLoadingMessages),console[_0x11a9b6(0x2c5)](_0x11a9b6(0x1f2),totalMessageCount),console[_0x11a9b6(0x2c5)]('Load\x20more\x20button\x20exists:',$(_0x11a9b6(0x2d7))[_0x11a9b6(0x36d)]>0x0),console[_0x11a9b6(0x2c5)](_0x11a9b6(0x185),$(_0x11a9b6(0x4ec))[_0x11a9b6(0x36d)]);},$(document)['ready'](function(){const _0x481828=_0x2fa9e7;debugLog('🏠\x20Room\x20loaded,\x20roomId:',roomId);typeof roomId!==_0x481828(0x391)&&roomId&&initializeActivityTracking();if(!roomId){console[_0x481828(0x1c3)](_0x481828(0x392)),window['location']['href']=_0x481828(0x3b9);return;}$(document)['on'](_0x481828(0x304),_0x481828(0x4b1),function(_0x3622ce){const _0x6559ae=_0x481828;return _0x3622ce[_0x6559ae(0x22c)](),sendMessage(),![];}),$(document)['on'](_0x481828(0x16f),_0x481828(0x364),function(_0x2e2b7f){const _0x5b7070=_0x481828;if(_0x2e2b7f[_0x5b7070(0x41e)]===0xd)return _0x2e2b7f[_0x5b7070(0x22c)](),sendMessage(),![];}),$(document)['on']('submit',_0x481828(0x337),function(_0x5d62a0){return _0x5d62a0['preventDefault'](),suggestVideo(),![];}),$(document)['on'](_0x481828(0x16f),_0x481828(0x3ec),function(_0x60142c){const _0x2f9bdf=_0x481828;if(_0x60142c[_0x2f9bdf(0x41e)]===0xd)return _0x60142c[_0x2f9bdf(0x22c)](),suggestVideo(),![];}),addAFKStyles(),setTimeout(updateAFKButton,0x3e8),$(document)['on'](_0x481828(0x1ce),'#chatbox',function(){userIsScrolling=!![],setTimeout(function(){userIsScrolling=![];},0x3e8);}),document[_0x481828(0x277)]('visibilitychange',function(){const _0x5bd49e=_0x481828;!document[_0x5bd49e(0x329)]&&(updateUserActivity(_0x5bd49e(0x1b0)),setTimeout(checkUserStatus,0x64));}),$(window)['on'](_0x481828(0x485),function(){setTimeout(checkUserStatus,0x64);});if(typeof youtubeEnabledGlobal!=='undefined'&&youtubeEnabledGlobal){debugLog('🎬\x20YouTube\x20enabled\x20for\x20this\x20room'),youtubeEnabled=!![],isYoutubeHost=isHost;const _0x147230=localStorage['getItem'](_0x481828(0x227)+roomId);_0x147230===_0x481828(0x4b7)&&($(_0x481828(0x3ff))[_0x481828(0x252)](_0x481828(0x29b))[_0x481828(0x2a0)](),$('.youtube-player-toggle')[_0x481828(0x252)](_0x481828(0x427))['html'](_0x481828(0x20d))[_0x481828(0x201)](_0x481828(0x450),_0x481828(0x47d)),playerHidden=!![]),window[_0x481828(0x413)]=function(){youtubeAPIReady=!![],initializeYouTubePlayer();},loadYouTubeAPI(),$(_0x481828(0x3ff))[_0x481828(0x252)](_0x481828(0x200)),$(_0x481828(0x3e5))[_0x481828(0x232)]();}else debugLog(_0x481828(0x1ff)),youtubeEnabled=![];isHost&&(debugLog(_0x481828(0x4aa)),setInterval(checkForKnocks,0x1388),setTimeout(checkForKnocks,0x3e8)),setTimeout(()=>{initializeMentionsAndReplies(),addMentionHighlightCSS();},0x3e8),currentUser[_0x481828(0x2b5)]==='user'&&setTimeout(initializePrivateMessaging,0x3e8),startRoomUpdates(),setTimeout(checkUserStatus,0x3e8),kickDetectionInterval=setInterval(checkUserStatus,0x2710),$(_0x481828(0x364))['focus'](),debugLog(_0x481828(0x4c9));}),$(window)['on'](_0x2fa9e7(0x3f9),function(){stopRoomUpdates(),mentionCheckInterval&&(clearInterval(mentionCheckInterval),mentionCheckInterval=null),stopYouTubePlayer(),stopActivityTracking(),stopKickDetection();});function toggleMobileUsers(){const _0x4ff8e8=_0x2fa9e7,_0x508721=$(_0x4ff8e8(0x2ed))[_0x4ff8e8(0x153)]();$(_0x4ff8e8(0x4c3))[_0x4ff8e8(0x153)](_0x508721);const _0x4e5305=new bootstrap[(_0x4ff8e8(0x22e))](document[_0x4ff8e8(0x260)]('mobileUsersModal'));_0x4e5305[_0x4ff8e8(0x232)]();}function toggleMobileQueue(_0x1e1ff8){const _0x3204dd=_0x2fa9e7,_0x359d19=$(_0x3204dd(0x43c)),_0x481eaa=$(_0x3204dd(0x33f))['eq'](0x0),_0x4a16a0=$(_0x3204dd(0x33f))['eq'](0x1);$(_0x3204dd(0x33f))['removeClass'](_0x3204dd(0x3e8)),_0x1e1ff8===_0x3204dd(0x4cb)?(_0x481eaa[_0x3204dd(0x252)](_0x3204dd(0x1b8)),$('#queue-tab')[_0x3204dd(0x4e5)](_0x3204dd(0x232))):(_0x4a16a0[_0x3204dd(0x252)](_0x3204dd(0x1b8)),$(_0x3204dd(0x17d))['tab'](_0x3204dd(0x232))),_0x359d19[_0x3204dd(0x1c4)](_0x3204dd(0x363))?_0x359d19['removeClass']('expanded'):(_0x359d19[_0x3204dd(0x252)](_0x3204dd(0x363)),_0x1e1ff8==='queue'?_0x481eaa[_0x3204dd(0x252)]('expanded'):_0x4a16a0[_0x3204dd(0x252)](_0x3204dd(0x363)));}let openPrivateChats=new Map(),friends=[];function initializePrivateMessaging(){const _0x1c6fb=_0x2fa9e7;if(currentUser[_0x1c6fb(0x2b5)]!=='user')return;debugLog(_0x1c6fb(0x3ae)),loadFriends(),debugLog('✅\x20Private\x20messaging\x20initialized\x20(using\x20managed\x20updates)');}function showFriendsPanel(){const _0x3eafc5=_0x2fa9e7;$(_0x3eafc5(0x1f0))[_0x3eafc5(0x232)](),loadFriends(),loadConversations();}function closeFriendsPanel(){const _0x19f2a8=_0x2fa9e7;$(_0x19f2a8(0x1f0))[_0x19f2a8(0x2a0)]();}function loadFriends(){const _0x401d08=_0x2fa9e7;debugLog(_0x401d08(0x2ba)),managedAjax({'url':_0x401d08(0x416),'method':_0x401d08(0x280),'data':{'action':_0x401d08(0x18c)},'dataType':_0x401d08(0x3e3)})['then'](_0x1a7d1a=>{const _0x5db3b1=_0x401d08;debugLog(_0x5db3b1(0x197),_0x1a7d1a),_0x1a7d1a[_0x5db3b1(0x33c)]===_0x5db3b1(0x4d2)?(friends=_0x1a7d1a[_0x5db3b1(0x296)],updateFriendsPanel()):$(_0x5db3b1(0x1de))[_0x5db3b1(0x153)](_0x5db3b1(0x1eb)+_0x1a7d1a[_0x5db3b1(0x454)]+_0x5db3b1(0x270));})[_0x401d08(0x367)](_0x4f0961=>{const _0x3b9908=_0x401d08;console[_0x3b9908(0x1c3)](_0x3b9908(0x2b9),_0x4f0961),$('#friendsList')[_0x3b9908(0x153)]('<p\x20class=\x22text-danger\x22>Failed\x20to\x20load\x20friends.\x20Check\x20console\x20for\x20details.</p>');});}function updateFriendsPanel(){const _0x4740a5=_0x2fa9e7;debugLog(_0x4740a5(0x2d6),friends);let _0x2140fe='\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22input-group\x20input-group-sm\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22text\x22\x20class=\x22form-control\x22\x20id=\x22addFriendInput\x22\x20placeholder=\x22Username\x20to\x20add\x22\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-primary\x22\x20onclick=\x22addFriend()\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-user-plus\x22></i>\x20Add\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h6\x20style=\x22color:\x20#e0e0e0;\x22>Recent\x20Conversations</h6>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20id=\x22conversationsList\x22>Loading\x20conversations...</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h6\x20style=\x22color:\x20#e0e0e0;\x22>Friends</h6>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20id=\x22friendsListContent\x22>\x0a\x20\x20\x20\x20';!friends||friends[_0x4740a5(0x36d)]===0x0?_0x2140fe+='<p\x20class=\x22text-muted\x20small\x22>No\x20friends\x20yet.\x20Add\x20someone\x20using\x20the\x20form\x20above!</p>':friends[_0x4740a5(0x4b5)](_0x4b931b=>{const _0x4a7278=_0x4740a5;if(_0x4b931b[_0x4a7278(0x33c)]===_0x4a7278(0x37e))_0x2140fe+=_0x4a7278(0x265)+(_0x4b931b['avatar']||'default_avatar.jpg')+'\x22\x20width=\x2224\x22\x20height=\x2224\x22\x20class=\x22me-2\x22\x20style=\x22border-radius:\x202px;\x20filter:\x20hue-rotate('+(_0x4b931b['avatar_hue']||0x0)+_0x4a7278(0x45c)+(_0x4b931b[_0x4a7278(0x24a)]||0x64)+_0x4a7278(0x444)+_0x4b931b['username']+'</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-sm\x20btn-primary\x22\x20onclick=\x22openPrivateMessage('+_0x4b931b[_0x4a7278(0x193)]+',\x20\x27'+_0x4b931b[_0x4a7278(0x315)]+_0x4a7278(0x385);else _0x4b931b[_0x4a7278(0x33c)]===_0x4a7278(0x338)&&_0x4b931b['request_type']===_0x4a7278(0x14f)&&(_0x2140fe+='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22d-flex\x20align-items-center\x20mb-2\x20p-2\x22\x20style=\x22background:\x20#4a4a2a;\x20border-radius:\x204px;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22images/'+(_0x4b931b[_0x4a7278(0x1a9)]||_0x4a7278(0x256))+_0x4a7278(0x26a)+_0x4b931b[_0x4a7278(0x315)]+'</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<br><small\x20class=\x22text-warning\x22>Pending\x20request</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-sm\x20btn-success\x22\x20onclick=\x22acceptFriend('+_0x4b931b['id']+_0x4a7278(0x3bd));}),_0x2140fe+=_0x4740a5(0x37b),$('#friendsList')[_0x4740a5(0x153)](_0x2140fe),loadConversations();}function addFriend(){const _0x195d08=_0x2fa9e7,_0x1d4396=$(_0x195d08(0x4d4))[_0x195d08(0x246)]()[_0x195d08(0x44f)]();if(!_0x1d4396)return;managedAjax({'url':_0x195d08(0x416),'method':_0x195d08(0x257),'data':{'action':_0x195d08(0x2e8),'friend_username':_0x1d4396},'dataType':'json','success':function(_0x485bb8){const _0x126cfe=_0x195d08;_0x485bb8[_0x126cfe(0x33c)]===_0x126cfe(0x4d2)?($(_0x126cfe(0x4d4))['val'](''),alert(_0x126cfe(0x1f3)),loadFriends()):alert(_0x126cfe(0x4b6)+_0x485bb8['message']);}});}function acceptFriend(_0x49b598){const _0x1f8dfe=_0x2fa9e7,_0x5f2268=$(_0x1f8dfe(0x4c0)+_0x49b598+_0x1f8dfe(0x3c7)),_0x479bb7=_0x5f2268['html']();_0x5f2268['prop'](_0x1f8dfe(0x3b5),!![])[_0x1f8dfe(0x153)](_0x1f8dfe(0x2dc)),managedAjax({'url':'api/friends.php','method':_0x1f8dfe(0x257),'data':{'action':_0x1f8dfe(0x2d5),'friend_id':_0x49b598},'dataType':'json','timeout':0x2710,'success':function(_0x2fe042){const _0x292d32=_0x1f8dfe;_0x2fe042['status']===_0x292d32(0x4d2)?(showNotification(_0x292d32(0x23e),_0x292d32(0x4d2)),loadFriends(),typeof clearFriendshipCache==='function'&&clearFriendshipCache(),typeof loadUsers===_0x292d32(0x3a2)&&loadUsers()):showNotification('Error:\x20'+(_0x2fe042[_0x292d32(0x454)]||_0x292d32(0x327)),_0x292d32(0x1c3));},'error':function(_0x1ac051,_0x4b5ab2,_0x40d231){const _0x5d7dff=_0x1f8dfe;console[_0x5d7dff(0x1c3)]('Accept\x20friend\x20error:',{'xhr':_0x1ac051,'status':_0x4b5ab2,'error':_0x40d231});let _0x2ace84=_0x5d7dff(0x1dd);if(_0x4b5ab2===_0x5d7dff(0x165))_0x2ace84=_0x5d7dff(0x2f0);else _0x1ac051[_0x5d7dff(0x1da)]&&_0x1ac051[_0x5d7dff(0x1da)][_0x5d7dff(0x454)]&&(_0x2ace84=_0x1ac051[_0x5d7dff(0x1da)][_0x5d7dff(0x454)]);showNotification(_0x5d7dff(0x320)+_0x2ace84,'error');},'complete':function(){const _0x3ca9cd=_0x1f8dfe;_0x5f2268['prop'](_0x3ca9cd(0x3b5),![])['html'](_0x479bb7);}});}function loadConversations(){const _0x5d62ad=_0x2fa9e7;debugLog(_0x5d62ad(0x3cc)),managedAjax({'url':_0x5d62ad(0x22f),'method':_0x5d62ad(0x280),'data':{'action':_0x5d62ad(0x4b3)},'dataType':'json'})[_0x5d62ad(0x384)](_0x175654=>{const _0x4581e5=_0x5d62ad;debugLog(_0x4581e5(0x40b),_0x175654),_0x175654['status']===_0x4581e5(0x4d2)?displayConversations(_0x175654['conversations']):$('#conversationsList')[_0x4581e5(0x153)](_0x4581e5(0x24c));})[_0x5d62ad(0x367)](_0x28e470=>{const _0x228831=_0x5d62ad;console[_0x228831(0x1c3)](_0x228831(0x151),_0x28e470),$('#conversationsList')[_0x228831(0x153)](_0x228831(0x48d));});}function displayConversations(_0x5ee0c0){const _0x42e8f0=_0x2fa9e7;let _0x3b96a0='';_0x5ee0c0['length']===0x0?_0x3b96a0=_0x42e8f0(0x2f8):_0x5ee0c0[_0x42e8f0(0x4b5)](_0x15c7f9=>{const _0x544725=_0x42e8f0,_0x553edc=_0x15c7f9['unread_count']>0x0?_0x544725(0x3d9)+_0x15c7f9[_0x544725(0x21e)]+'</span>':'';_0x3b96a0+=_0x544725(0x2b4)+_0x15c7f9['other_user_id']+_0x544725(0x3d4)+_0x15c7f9[_0x544725(0x315)]+'\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22images/'+_0x15c7f9[_0x544725(0x1a9)]+_0x544725(0x498)+(_0x15c7f9[_0x544725(0x46b)]||0x0)+_0x544725(0x45c)+(_0x15c7f9[_0x544725(0x24a)]||0x64)+_0x544725(0x370)+_0x15c7f9[_0x544725(0x315)]+'</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<br><small\x20class=\x22text-muted\x22>'+(_0x15c7f9[_0x544725(0x35e)]?_0x15c7f9[_0x544725(0x35e)][_0x544725(0x41b)](0x0,0x1e)+_0x544725(0x1bc):_0x544725(0x2eb))+'</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+_0x553edc+_0x544725(0x34b);}),$('#conversationsList')[_0x42e8f0(0x153)](_0x3b96a0);}function openPrivateMessage(_0x408be0,_0x34fe13){const _0x1ed438=_0x2fa9e7;debugLog('===\x20DEBUG\x20openPrivateMessage\x20==='),debugLog(_0x1ed438(0x3cd),_0x408be0,_0x1ed438(0x168),typeof _0x408be0),debugLog(_0x1ed438(0x4e9),_0x34fe13,_0x1ed438(0x168),typeof _0x34fe13),debugLog(_0x1ed438(0x2ad),currentUser);if(openPrivateChats[_0x1ed438(0x33e)](_0x408be0)){$('#pm-'+_0x408be0)['show']();return;}const _0x2f8748=_0x1ed438(0x17a)+_0x408be0+_0x1ed438(0x32f)+_0x34fe13+'</h6>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22private-message-close\x22\x20onclick=\x22closePrivateMessage('+_0x408be0+_0x1ed438(0x39b)+_0x408be0+_0x1ed438(0x4ce)+_0x408be0+');\x20return\x20false;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22text\x22\x20id=\x22pm-input-'+_0x408be0+_0x1ed438(0x228);$(_0x1ed438(0x491))['append'](_0x2f8748),openPrivateChats[_0x1ed438(0x380)](_0x408be0,{'username':_0x34fe13,'color':_0x1ed438(0x4bf)}),debugLog(_0x1ed438(0x421),_0x408be0),managedAjax({'url':_0x1ed438(0x37c),'method':_0x1ed438(0x280),'data':{'user_id':_0x408be0},'dataType':_0x1ed438(0x3e3)})[_0x1ed438(0x384)](_0x33d368=>{const _0x12de1c=_0x1ed438;debugLog('User\x20info\x20response:',_0x33d368);if(_0x33d368[_0x12de1c(0x33c)]===_0x12de1c(0x4d2)){const _0x531cc9=openPrivateChats[_0x12de1c(0x18c)](_0x408be0);_0x531cc9['color']=_0x33d368[_0x12de1c(0x159)][_0x12de1c(0x442)]||_0x12de1c(0x4bf),_0x531cc9['avatar']=_0x33d368[_0x12de1c(0x159)]['avatar']||_0x12de1c(0x256),openPrivateChats['set'](_0x408be0,_0x531cc9),debugLog(_0x12de1c(0x490),_0x33d368[_0x12de1c(0x159)][_0x12de1c(0x442)]),loadPrivateMessages(_0x408be0);}})['catch'](_0x34000e=>{const _0x42c766=_0x1ed438;console['error'](_0x42c766(0x410),_0x34000e),debugLog(_0x42c766(0x1ba)),loadPrivateMessages(_0x408be0);});}function closePrivateMessage(_0x2dc446){const _0x1b065c=_0x2fa9e7;$(_0x1b065c(0x251)+_0x2dc446)[_0x1b065c(0x2e7)](),openPrivateChats[_0x1b065c(0x2c7)](_0x2dc446);}function sendPrivateMessage(_0x377571){const _0x1df73d=_0x2fa9e7;debugLog(_0x1df73d(0x3a9)),debugLog(_0x1df73d(0x3d8),_0x377571,_0x1df73d(0x168),typeof _0x377571);const _0x4a938d=$(_0x1df73d(0x369)+_0x377571),_0x28b229=_0x4a938d[_0x1df73d(0x246)]()['trim']();debugLog(_0x1df73d(0x20c),_0x28b229);if(!_0x28b229)return![];const _0x3bad29={'action':_0x1df73d(0x238),'recipient_id':_0x377571,'message':_0x28b229};return debugLog(_0x1df73d(0x1fd),_0x3bad29),managedAjax({'url':_0x1df73d(0x22f),'method':'POST','data':_0x3bad29,'dataType':'json','success':function(_0x499d09){const _0x4b26a7=_0x1df73d;debugLog(_0x4b26a7(0x3e7),_0x499d09),_0x499d09[_0x4b26a7(0x33c)]===_0x4b26a7(0x4d2)?(_0x4a938d[_0x4b26a7(0x246)](''),loadPrivateMessages(_0x377571)):(console[_0x4b26a7(0x1c3)](_0x4b26a7(0x3dc),_0x499d09[_0x4b26a7(0x454)]),alert(_0x4b26a7(0x4b6)+_0x499d09[_0x4b26a7(0x454)]));},'error':function(_0x59242f,_0x9174b5,_0x1bf518){const _0x35d5f1=_0x1df73d;console[_0x35d5f1(0x1c3)](_0x35d5f1(0x300),{'status':_0x9174b5,'error':_0x1bf518,'responseText':_0x59242f[_0x35d5f1(0x348)],'recipientId':_0x377571,'requestData':_0x3bad29}),alert(_0x35d5f1(0x1fc)+_0x1bf518);}}),![];}function loadPrivateMessages(_0x185e07){const _0x32f6ba=_0x2fa9e7;debugLog('Loading\x20private\x20messages\x20with\x20user:',_0x185e07),managedAjax({'url':_0x32f6ba(0x22f),'method':_0x32f6ba(0x280),'data':{'action':_0x32f6ba(0x18c),'other_user_id':_0x185e07},'dataType':_0x32f6ba(0x3e3)})[_0x32f6ba(0x384)](_0x16b474=>{const _0x430586=_0x32f6ba;debugLog(_0x430586(0x163),_0x16b474),_0x16b474[_0x430586(0x33c)]===_0x430586(0x4d2)?displayPrivateMessages(_0x185e07,_0x16b474[_0x430586(0x2e6)]):$(_0x430586(0x28b)+_0x185e07)[_0x430586(0x153)]('<div\x20style=\x22color:\x20#f44336;\x20padding:\x2010px;\x22>Error:\x20'+_0x16b474[_0x430586(0x454)]+_0x430586(0x2e0));})[_0x32f6ba(0x367)](_0x586fce=>{const _0x44b33d=_0x32f6ba;console[_0x44b33d(0x1c3)](_0x44b33d(0x206),_0x586fce),$(_0x44b33d(0x28b)+_0x185e07)[_0x44b33d(0x153)](_0x44b33d(0x23f));});}function displayPrivateMessages(_0x44ee2a,_0x106dd7){const _0x508ba0=_0x2fa9e7,_0x58cdef=$(_0x508ba0(0x28b)+_0x44ee2a),_0x19c046=_0x58cdef[0x0]?_0x58cdef[_0x508ba0(0x3cf)]()+_0x58cdef[_0x508ba0(0x31d)]()>=_0x58cdef[0x0][_0x508ba0(0x28a)]-0x14:!![];let _0x12b374='';_0x106dd7[_0x508ba0(0x36d)]===0x0?_0x12b374=_0x508ba0(0x31c):_0x106dd7['forEach'](_0x1ba448=>{const _0x32060f=_0x508ba0,_0x340d70=_0x1ba448[_0x32060f(0x30d)]==currentUser['id'],_0x2febbc=new Date(_0x1ba448[_0x32060f(0x3ad)])[_0x32060f(0x42e)]([],{'hour':_0x32060f(0x19b),'minute':_0x32060f(0x19b)}),_0x2fa8cc=_0x340d70?currentUser['username']||currentUser[_0x32060f(0x19e)]:_0x1ba448[_0x32060f(0x3cb)],_0x1a9866=_0x340d70?currentUser[_0x32060f(0x1a9)]||_0x32060f(0x256):_0x1ba448['sender_avatar']||_0x32060f(0x256),_0x22e596=_0x340d70?currentUser['color']||_0x32060f(0x4bf):_0x1ba448[_0x32060f(0x24b)]||'blue',_0x1c15b1=_0x340d70?currentUser[_0x32060f(0x46b)]||0x0:_0x1ba448[_0x32060f(0x3c6)]||0x0,_0xbd9b64=_0x340d70?currentUser[_0x32060f(0x24a)]||0x64:_0x1ba448['sender_avatar_saturation']||0x64;debugLog(_0x32060f(0x493),{'isOwn':_0x340d70,'avatarHue':_0x1c15b1,'avatarSat':_0xbd9b64,'msg_sender_avatar_hue':_0x1ba448['sender_avatar_hue'],'currentUser_avatar_hue':currentUser[_0x32060f(0x46b)]}),_0x12b374+=_0x32060f(0x187)+(_0x340d70?'sent':_0x32060f(0x14f))+_0x32060f(0x229)+_0x1a9866+_0x32060f(0x390)+_0x1c15b1+_0x32060f(0x45c)+_0xbd9b64+_0x32060f(0x4df)+_0x2fa8cc+_0x32060f(0x20f)+(_0x340d70?_0x32060f(0x3d5):_0x32060f(0x14f))+_0x32060f(0x254)+_0x22e596+'\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-header-info\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-author\x22>'+_0x2fa8cc+_0x32060f(0x210)+_0x2febbc+_0x32060f(0x4d6)+_0x1ba448[_0x32060f(0x454)]+_0x32060f(0x383);}),_0x58cdef['html'](_0x12b374),_0x19c046&&_0x58cdef[_0x508ba0(0x3cf)](_0x58cdef[0x0][_0x508ba0(0x28a)]);}function syncAvatarCustomization(){const _0x210fbf=_0x2fa9e7;$[_0x210fbf(0x1a0)]({'url':_0x210fbf(0x2c9),'method':'POST','dataType':_0x210fbf(0x3e3),'success':function(_0x4a35c5){const _0x30b8c5=_0x210fbf;_0x4a35c5[_0x30b8c5(0x33c)]===_0x30b8c5(0x4d2)?(debugLog(_0x30b8c5(0x156),_0x4a35c5),setTimeout(()=>{loadUsers(),loadMessages();},0xc8)):debugLog('Avatar\x20sync\x20failed:',_0x4a35c5['message']);},'error':function(_0x55b0a2,_0x253d6c,_0x55e385){const _0x59f2a6=_0x210fbf;debugLog(_0x59f2a6(0x188),_0x55e385);}});}function applyAvatarFilter(_0x9158b6,_0x5a233d,_0x38929a){const _0x56d941=_0x2fa9e7;if(_0x5a233d!==undefined&&_0x38929a!==undefined){const _0x256c74=parseInt(_0x5a233d)||0x0,_0x7823ec=parseInt(_0x38929a)||0x64,_0x55fb08='hue-rotate('+_0x256c74+_0x56d941(0x45c)+_0x7823ec+'%)',_0x587651=_0x256c74+'-'+_0x7823ec;_0x9158b6['data'](_0x56d941(0x247))!==_0x587651&&(_0x9158b6[_0x56d941(0x1e5)](_0x56d941(0x395),_0x55fb08),_0x9158b6['data'](_0x56d941(0x247),_0x587651),_0x9158b6[_0x56d941(0x252)](_0x56d941(0x4a6)));}}function _0x85d2(){const _0x9757a8=['<i\x20class=\x22fas\x20fa-video-slash\x22></i>',')\x22\x20title=\x22Deny\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-times\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','beforeunload','is_afk','\x22\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20style=\x22position:\x20relative;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','capacity','sync_token','danger','.youtube-player-container','message_lifetime_minutes','\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-user-plus\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','🎬\x20Video\x20stopped','Conversations\x20error:','</textarea>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22form-check\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20class=\x22form-check-input\x22\x20type=\x22checkbox\x22\x20id=\x22settingsIsRP\x22','bg-info','\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-crown\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20','<div\x20class=\x22empty-chat\x22><i\x20class=\x22fas\x20fa-exclamation-triangle\x22></i><h5>Error\x20loading\x20messages</h5><p>Please\x20try\x20refreshing\x20the\x20page</p></div>',')\x22\x20title=\x22Remove\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-trash\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','api/toggle_afk.php','value','Conversations\x20response:','#newHostSelect','ms\x20(avg:\x20','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','#quickBanModal\x20.btn-danger','Failed\x20to\x20fetch\x20user\x20info:','>Sunset</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</select>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22col-md-6\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22settingsDescription\x22\x20class=\x22form-label\x22>Description</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<textarea\x20class=\x22form-control\x22\x20id=\x22settingsDescription\x22\x20rows=\x224\x22\x20maxlength=\x22200\x22\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22>','%);\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22message-content\x22>','onYouTubeIframeAPIReady','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22youtube-queue-item\x20','createElement','api/friends.php','\x0a\x20\x20\x20\x20<div\x20class=\x22mt-2\x20p-2\x22\x20style=\x22background:\x20#333;\x20border-radius:\x204px;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22text-','🔥\x20Too\x20many\x20errors,\x20redirecting\x20to\x20lounge','Failed\x20to\x20pass\x20host:\x20','pause','substring','You\x20have\x20been\x20removed\x20from\x20this\x20room','target','which','6vecbwf','Invite\x20link\x20copied\x20to\x20clipboard!','Fetching\x20user\x20info\x20for\x20userId:','api/image_proxy.php?url=','makeRequest','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal\x20fade\x22\x20id=\x22announcementModal\x22\x20tabindex=\x22-1\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-dialog\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-content\x22\x20style=\x22background:\x20#2a2a2a;\x20border:\x201px\x20solid\x20#444;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-header\x22\x20style=\x22border-bottom:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h5\x20class=\x22modal-title\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-bullhorn\x22></i>\x20Send\x20Site\x20Announcement\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</h5>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn-close\x22\x20data-bs-dismiss=\x22modal\x22\x20style=\x22filter:\x20invert(1);\x22></button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-body\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22announcementMessage\x22\x20class=\x22form-label\x22>Announcement\x20Message</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<textarea\x20class=\x22form-control\x22\x20id=\x22announcementMessage\x22\x20rows=\x224\x22\x20maxlength=\x22500\x22\x20placeholder=\x22Enter\x20your\x20announcement\x20message...\x22\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22></textarea>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22form-text\x20text-muted\x22>Maximum\x20500\x20characters.\x20This\x20will\x20be\x20sent\x20to\x20all\x20active\x20rooms.</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-footer\x22\x20style=\x22border-top:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-secondary\x22\x20data-bs-dismiss=\x22modal\x22>Cancel</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-warning\x22\x20onclick=\x22sendAnnouncement()\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-bullhorn\x22></i>\x20Send\x20Announcement\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20','some','includes','hidden-player','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mention-notification-content\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','.private-message-form','<i\x20class=\x22fas\x20fa-plane-departure\x22></i>','api/youtube_sync.php','api/unban_user_simple.php','No\x20reason\x20provided','toLocaleTimeString','showRequestStats','\x20in\x20queue\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','Image\x20not\x20accessible:\x20','table','https:','\x22\x20onclick=\x22toggleWhisperTab(\x27','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-content\x22>','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22alert\x20alert-light\x20mt-3\x22\x20style=\x22background:\x20#333;\x20border-color:\x20#555;\x20color:\x20#e0e0e0;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-home\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<strong>You\x20will\x20be\x20redirected\x20to\x20the\x20lounge\x20in\x20<span\x20id=\x22redirectCountdown\x22>8</span>\x20seconds</strong>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-footer\x20justify-content-center\x22\x20style=\x22border-top:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-primary\x22\x20onclick=\x22handleKickModalClose()\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-home\x22></i>\x20Go\x20to\x20Lounge\x20Now\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20','You\x20are\x20the\x20host\x20of\x20this\x20room.\x20What\x20would\x20you\x20like\x20to\x20do?','Has\x20more\x20older:','🛑\x20Stopped\x20room\x20updates','unknown','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mentions-counter\x22\x20onclick=\x22toggleMentionsPanel()\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-at\x22></i>\x20<span\x20class=\x22mention-count\x22>','#youtube-queue-content','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22form-check\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20class=\x22form-check-input\x22\x20type=\x22checkbox\x22\x20id=\x22settingsMembersOnly\x22','[ROOM]','<div\x20class=\x22empty-chat\x22><i\x20class=\x22fas\x20fa-comments\x22></i><h5>No\x20messages\x20yet</h5><p>Start\x20the\x20conversation!</p></div>','hue','Whispers\x20error:','color','reply_original_bubble_saturation','%);\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22flex-grow-1\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20style=\x22color:\x20#e0e0e0;\x22>','Remove\x20video\x20error:','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-footer\x22\x20style=\x22border-top:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-secondary\x22\x20data-bs-dismiss=\x22modal\x22>Cancel</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-primary\x22\x20onclick=\x22saveRoomSettings()\x22><i\x20class=\x22fas\x20fa-save\x22></i>\x20Save\x20Settings</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20','afk-name','toLocaleString','play','New\x20offset:','unreadCount','each','🎬\x20Cannot\x20initialize\x20player:\x20API\x20ready\x20=','has_password','trim','title','fa-at','push','#settingsDisappearingMessages','message','show_transfer','now','\x22\x20class=\x22youtube-queue-item-thumb\x22\x20alt=\x22Thumbnail\x22\x20onerror=\x22this.src=\x27https://img.youtube.com/vi/','total_count','getScript','JSON\x20parse\x20error:','fas\x20fa-info-circle','deg)\x20saturate(','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22whisper-window\x22\x20id=\x22','>Forest</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22ocean\x22','password','api/ban_user_simple.php','\x22\x20style=\x22border:\x202px\x20solid\x20#007bff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22flex-grow-1\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h6\x20class=\x22mb-1\x22\x20style=\x22color:\x20#e0e0e0;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-hand-paper\x20text-primary\x22></i>\x20Knock\x20Request\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</h6>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p\x20class=\x22mb-2\x22\x20style=\x22color:\x20#ccc;\x22><strong>','#settingsHasPassword','for\x205\x20minutes','\x22\x20width=\x2240\x22\x20height=\x2240\x22\x20class=\x22rounded-circle\x20me-3\x22\x20alt=\x22','\x22><i\x20class=\x22fas\x20fa-bed\x22\x20title=\x22AFK\x22></i></span>',';\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22form-check\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20class=\x22form-check-input\x22\x20type=\x22checkbox\x22\x20id=\x22settingsAllowKnocking\x22','\x27)\x22\x20style=\x22cursor:\x20pointer;\x22','#announcementModal','AJAX\x20error:\x20','\x22\x20class=\x22d-inline\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-secondary\x20btn-sm\x22\x20disabled>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-spinner\x20fa-spin\x22></i>\x20Loading...\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>','avatar_hue','No\x20more\x20older\x20messages\x20available','Expected\x20array\x20from\x20get_messages,\x20got:','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<style\x20id=\x22mentionHighlightCSS\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20@keyframes\x20mentionHighlight\x20{\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x200%\x20{\x20background-color:\x20rgba(250,\x20166,\x2026,\x200.4);\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20100%\x20{\x20background-color:\x20transparent;\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20}\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20@keyframes\x20mentionHighlightBorder\x20{\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x200%\x20{--user-border-color:\x20#faa61a\x20!important;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20--user-tail-color:\x20#faa61a\x20!important;}\x0a\x20\x20\x20\x20\x20\x20\x20\x20100%\x20{--user-border-color:\x20transparent\x20!important;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20--user-tail-color:\x20transparent\x20!important;}\x0a\x20\x20\x20\x20\x20\x20\x20\x20}\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20@keyframes\x20mentionHighlightBorder\x20{\x0a\x20\x20\x20\x20\x20\x20\x20\x200%\x20{--user-border-color:\x20#faa61a\x20!important;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20--user-tail-color:\x20#faa61a\x20!important;}\x0a\x20\x20\x20\x20\x20\x20\x20\x20100%\x20{--user-border-color:\x20transparent\x20!important;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20--user-tail-color:\x20transparent\x20!important;}\x0a\x20\x20\x20\x20\x20\x20\x20\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20.mentioned-highlight\x20{\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20animation:\x20mentionHighlight\x205s\x20ease-out;\x0a\x20\x20\x20\x20\x20\x20\x20\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20.mentioned-highlight\x20.message-bubble\x20{\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20--user-border-color:\x20#faa61a\x20!important;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20--user-tail-color:\x20#faa61a\x20!important;\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20</style>\x0a\x20\x20\x20\x20','script','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal\x20fade\x22\x20id=\x22kickNotificationModal\x22\x20tabindex=\x22-1\x22\x20data-bs-backdrop=\x22static\x22\x20data-bs-keyboard=\x22false\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-dialog\x20modal-dialog-centered\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-content\x20border-','api/site_ban_user.php','loadOlder:','Are\x20you\x20sure\x20you\x20want\x20to\x20ban\x20','bubble_hue','PlayerState','Mention','Video\x20suggestion\x20denied','has-reply','\x20minutes.','⏸️\x20Skipping\x20update\x20-\x20already\x20in\x20progress','This\x20room\x20has\x20been\x20deleted','YouTube\x20error:','Show\x20Player','<div\x20class=\x22empty-users\x22><i\x20class=\x22fas\x20fa-exclamation-triangle\x22></i><p>Error\x20loading\x20users</p></div>','🎬\x20Initializing\x20YouTube\x20player...',';\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22settingsPassword\x22\x20class=\x22form-label\x22>Room\x20Password</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22password\x22\x20class=\x22form-control\x22\x20id=\x22settingsPassword\x22\x20placeholder=\x22Leave\x20empty\x20to\x20keep\x20current\x20password\x22\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22form-text\x20text-muted\x22>Leave\x20empty\x20to\x20keep\x20current\x20password,\x20or\x20enter\x20new\x20password\x20to\x20change\x20it.</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22\x20id=\x22knockingFieldSettings\x22\x20style=\x22display:\x20','afk-user','localeCompare','suggested_by_name','is_admin','focus','#redirectCountdown','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','chat','loadVideoById','You\x20are\x20now\x20the\x20host!','Load\x20more\x20button\x20clicked\x20via\x20event\x20handler','\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-user-plus\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','<p\x20class=\x22text-danger\x20small\x22>Failed\x20to\x20load\x20conversations</p>','onerror','Current\x20offset:','Fetched\x20user\x20color:','body','reply_original_chatroom_username','Avatar\x20customization\x20debug:','<div\x20class=\x22empty-users\x22><i\x20class=\x22fas\x20fa-wifi\x22></i><p>Connection\x20error</p></div>','#settingsDescription','bubble_saturation','>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-check-label\x22\x20for=\x22settingsMembersOnly\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-user-check\x22></i>\x20Members\x20Only\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22form-text\x20text-muted\x22>Only\x20registered\x20users\x20can\x20join</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22form-check\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20class=\x22form-check-input\x22\x20type=\x22checkbox\x22\x20id=\x22settingsFriendsOnly\x22','\x22\x20width=\x2224\x22\x20height=\x2224\x22\x20class=\x22me-2\x22\x20style=\x22border-radius:\x202px;\x20filter:\x20hue-rotate(','#settingsPermanentRoom','<div\x20id=\x22whisper-tabs\x22></div>','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','shift','<div\x20class=\x22alert\x20alert-info\x22>The\x20room\x20no\x20longer\x20exists.\x20You\x20will\x20be\x20redirected\x20to\x20the\x20lounge.</div>','\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20data-message-id=\x22','pauseVideo','⚠️\x20Sync\x20update\x20error:','video_thumbnail','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22moderator-actions\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-sm\x20btn-outline-danger\x22\x20onclick=\x22showQuickBanModal(\x27','setItem','change','\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20','avatar-filtered','ms)','isLoadingMessages:','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<span\x20class=\x22badge\x20bg-warning\x20ms-2\x22\x20title=\x22Messages\x20disappear\x20after\x20','🚪\x20User\x20is\x20host,\x20starting\x20knock\x20checking...','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn-close\x22\x20data-bs-dismiss=\x22alert\x22></button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20','🔄\x20Syncing\x20player\x20state:','7018891vlUJao','guest_name','</span>\x20mention','\x5cn\x5cnInvite\x20link:\x20','#messageForm','>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-check-label\x22\x20for=\x22settingsInviteOnly\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-link\x22></i>\x20Invite\x20Only\x0a\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20<small\x20class=\x22form-text\x20text-muted\x22>Require\x20invite\x20link\x20to\x20join</small>\x0a\x20\x20\x20\x20','get_conversations','\x22></i>\x20','forEach','Error:\x20','true','Invalid\x20response\x20from\x20server:\x20','hostname','818601zFhwUV','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</select>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-primary\x20w-100\x22\x20onclick=\x22transferHost()\x22>Transfer\x20Host\x20&\x20Leave</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20','Failed\x20to\x20send\x20announcement:\x20','Room\x20settings\x20updated\x20successfully!','modal','blue','button[onclick=\x22acceptFriend(','hue-rotate(','theme','#mobileUserListContent','parentNode','other_user_id_string','AJAX\x20error\x20in\x20transferHost:','Initial\x20load\x20complete.\x20Messages:','\x22\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','✅\x20Room\x20initialization\x20complete\x20with\x20managed\x20updates','<div\x20style=\x22text-align:\x20center;\x20color:\x20#999;\x20padding:\x2020px;\x22>No\x20whispers\x20yet</div>','queue','info','d\x20ago','\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20Loading\x20messages...\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-input\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<form\x20class=\x22private-message-form\x22\x20onsubmit=\x22sendPrivateMessage(','Initial\x20offset:','>Cyberpunk</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22forest\x22','current_time','success','.mentions-panel','#addFriendInput','Error\x20suggesting\x20video:\x20','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-content\x22>','\x20checked','Leave\x20&\x20Delete\x20Room','🎬\x20YouTube\x20player\x20ready','reply_original_bubble_hue','keydown','test','>1\x20hour</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22120\x22','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20','%);\x22\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20alt=\x22','prop','min</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div>Last\x20Activity:\x20','settings_event_','onload','for\x20','tab','Friend\x20request\x20sent\x20to\x20','Invalid\x20response\x20from\x20server','Active\x20requests:','Received\x20username:','seekTo','<div\x20class=\x22message-badges\x22>','.chat-message','Room\x20settings\x20have\x20been\x20updated.\x20Refreshing...','api/youtube_queue.php','Error\x20denying\x20video:\x20','http:','</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal\x20fade\x22\x20id=\x22quickBanModal\x22\x20tabindex=\x22-1\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-dialog\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-content\x22\x20style=\x22background:\x20#2a2a2a;\x20border:\x201px\x20solid\x20#444;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-header\x22\x20style=\x22border-bottom:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h5\x20class=\x22modal-title\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-ban\x22></i>\x20Site\x20Ban\x20User\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</h5>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn-close\x22\x20data-bs-dismiss=\x22modal\x22\x20style=\x22filter:\x20invert(1);\x22></button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-body\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22alert\x20alert-warning\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-exclamation-triangle\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<strong>Warning:</strong>\x20This\x20will\x20ban\x20the\x20user\x20from\x20the\x20entire\x20site,\x20not\x20just\x20this\x20room.\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-label\x22>User\x20to\x20Ban</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22text\x22\x20class=\x22form-control\x22\x20value=\x22','activeRequests','api/get_messages.php','is_system','No\x20whisper\x20data\x20found\x20for\x20user:','#knockingFieldSettings','sync_data','received','#settingsRoomName','Conversations\x20API\x20error:','ENDED','html','Failed\x20to\x20ban\x20user:\x20','username:','Avatar\x20customization\x20synced:',')\x22\x20style=\x22filter:\x20invert(1);\x22></button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20','Required\x20invite\x20link:','user','⚠️\x20Multiple\x20consecutive\x20errors,\x20may\x20have\x20connection\x20issues','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','Avatar\x20clicked\x20-\x20userId:','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22reply-interface-close\x22\x20onclick=\x22clearReplyInterface()\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-times\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22reply-interface-preview\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22reply-preview-author\x22>','AJAX\x20error\x20in\x20loadMessages:','\x22\x20onclick=\x22openWhisper(\x27','847971Xnoyha','Left\x20room\x20successfully','user-item','Load\x20messages\x20response:','</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20class=\x22whisper-tab-unread\x22\x20id=\x22whisper-unread-','timeout','onclick','parse','Type:','cyberpunk','fixed','>6\x20hours</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22720\x22','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal\x20fade\x22\x20id=\x22roomSettingsModal\x22\x20tabindex=\x22-1\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-dialog\x20modal-lg\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-content\x22\x20style=\x22background:\x20#2a2a2a;\x20border:\x201px\x20solid\x20#444;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-header\x22\x20style=\x22background:\x20#333;\x20border-bottom:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h5\x20class=\x22modal-title\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-cog\x22></i>\x20Room\x20Settings\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</h5>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn-close\x22\x20data-bs-dismiss=\x22modal\x22\x20style=\x22filter:\x20invert(1);\x22></button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-body\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<ul\x20class=\x22nav\x20nav-tabs\x22\x20id=\x22settingsTabs\x22\x20role=\x22tablist\x22\x20style=\x22border-bottom:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<li\x20class=\x22nav-item\x22\x20role=\x22presentation\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22nav-link\x20active\x22\x20id=\x22general-tab\x22\x20data-bs-toggle=\x22tab\x22\x20data-bs-target=\x22#general\x22\x20type=\x22button\x22\x20role=\x22tab\x22\x20style=\x22color:\x20#fff;\x20background:\x20transparent;\x20border:\x20none;\x22>General</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</li>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<li\x20class=\x22nav-item\x22\x20role=\x22presentation\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22nav-link\x22\x20id=\x22security-tab\x22\x20data-bs-toggle=\x22tab\x22\x20data-bs-target=\x22#security\x22\x20type=\x22button\x22\x20role=\x22tab\x22\x20style=\x22color:\x20#fff;\x20background:\x20transparent;\x20border:\x20none;\x22>Access\x20Control</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</li>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<li\x20class=\x22nav-item\x22\x20role=\x22presentation\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22nav-link\x22\x20id=\x22features-tab\x22\x20data-bs-toggle=\x22tab\x22\x20data-bs-target=\x22#features\x22\x20type=\x22button\x22\x20role=\x22tab\x22\x20style=\x22color:\x20#fff;\x20background:\x20transparent;\x20border:\x20none;\x22>Features</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</li>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<li\x20class=\x22nav-item\x22\x20role=\x22presentation\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22nav-link\x22\x20id=\x22banlist-tab\x22\x20data-bs-toggle=\x22tab\x22\x20data-bs-target=\x22#banlist\x22\x20type=\x22button\x22\x20role=\x22tab\x22\x20style=\x22color:\x20#fff;\x20background:\x20transparent;\x20border:\x20none;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-ban\x22></i>\x20Banlist\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</li>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','Host\x20privileges\x20transferred\x20successfully','Saving\x20room\x20settings:','keypress','head','</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span>•</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span>Now\x20Playing</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22whisper-tab\x22\x20id=\x22','Loading\x20messages\x20for\x20roomId:','suggestions','You\x20have\x20been\x20disconnected\x20from\x20the\x20room','\x20This\x20room\x20is\x20now\x20permanent.','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal\x20fade\x22\x20id=\x22passHostModal\x22\x20tabindex=\x22-1\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-dialog\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-content\x22\x20style=\x22background:\x20#2a2a2a;\x20border:\x201px\x20solid\x20#444;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-header\x22\x20style=\x22border-bottom:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h5\x20class=\x22modal-title\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-crown\x22></i>\x20Pass\x20Host\x20Privileges\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</h5>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn-close\x20btn-close-white\x22\x20data-bs-dismiss=\x22modal\x22></button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-body\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p>Pass\x20host\x20privileges\x20to\x20<strong>','Connection\x20lost.\x20Redirecting\x20to\x20lounge.','🎬\x20Video\x20resumed','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-window\x22\x20id=\x22pm-','members_only','AJAX\x20error\x20in\x20confirmBanUser:','#suggestions-tab','#hostLeavingModal','.whisper-form','<div\x20class=\x22user-actions\x22>','round','\x5c$1','requestStats','debugLog','Current\x20messages\x20in\x20DOM:','\x20has\x20been\x20unbanned\x20successfully!','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-chat-message\x20','Avatar\x20sync\x20error\x20(non-critical):','Please\x20select\x20a\x20user\x20to\x20transfer\x20host\x20privileges\x20to','Cannot\x20send\x20message:\x20Failed\x20to\x20validate\x20images','\x22\x20style=\x22display:\x20none;\x22>0</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22whisper-tab-close\x22\x20onclick=\x22event.stopPropagation();\x20closeWhisper(\x27','get','api/leave_room.php','Update\x20room\x20response:','user-color-blue','\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20onclick=\x22jumpToMessage(','checked','is_playing','friend_user_id','\x20•\x20#','url','conversations','Friends\x20response:','\x20text-white\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h5\x20class=\x22modal-title\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22','key','allow_knocking','2-digit','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22system-message\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22images/','sort','name','#settingsPassword','ajax','warning','1126612dEtCqX','AJAX\x20error\x20details:',';\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22alert\x22\x20style=\x22background:\x20rgba(13,\x20110,\x20253,\x200.1);\x20border:\x201px\x20solid\x20rgba(13,\x20110,\x20253,\x200.3);\x20color:\x20#b3d4fc;\x20border-radius:\x208px;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h6><i\x20class=\x22fas\x20fa-info-circle\x22></i>\x20YouTube\x20Player\x20Features:</h6>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<ul\x20class=\x22mb-0\x22\x20style=\x22padding-left:\x201.2rem;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<li><strong>Host\x20Controls:</strong>\x20Only\x20hosts\x20can\x20control\x20playback</li>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<li><strong>Video\x20Suggestions:</strong>\x20Users\x20can\x20suggest\x20videos\x20for\x20approval</li>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<li><strong>Queue\x20System:</strong>\x20Approved\x20videos\x20are\x20queued\x20for\x20playback</li>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<li><strong>Real-time\x20Sync:</strong>\x20All\x20users\x20see\x20the\x20same\x20video</li>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</ul>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22col-md-6\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-4\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22form-check\x20form-switch\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20class=\x22form-check-input\x22\x20type=\x22checkbox\x22\x20id=\x22settingsDisappearingMessages\x22','#passwordFieldSettings','Displaying\x20room\x20settings\x20modal\x20with:','#roomSettingsModal\x20.btn-primary','video_title','avatar',':focus','%);\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22reply-header\x22\x20style=\x22filter:\x20hue-rotate(','</h5>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-body\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p>','#messageLifetimeFieldSettings','user-color-','🎬\x20Loading\x20YouTube\x20API...','page_focus','user_color','permanent','is_host','🏗️\x20Room\x20Deleted','\x22\x20class=\x22mention-notification-avatar\x22\x20alt=\x22Avatar\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20class=\x22mention-notification-author\x22>','writeText','m\x20ago','active','.btn-toggle-afk','Failed\x20to\x20fetch\x20user\x20info,\x20using\x20default\x20color','Knock\x20accepted!\x20The\x20user\x20can\x20now\x20join\x20the\x20room.','...','clear','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22alert\x20alert-','forest','\x22\x20style=\x22filter:\x20hue-rotate(','#bannedUsersList','<span\x20class=\x22mention\x20mention-self\x22\x20data-user=\x22','error','hasClass','getCurrentTime','#friend-action-','ban_info','cursor:\x20pointer;','\x20minutes\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-clock\x22></i>\x20','>Default</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22cyberpunk\x22','none','match','CUED','scroll','general','Error\x20sending\x20friend\x20request:\x20','reason','>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-check-label\x22\x20for=\x22settingsPermanentRoom\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-star\x20text-warning\x22></i>\x20<strong>Permanent\x20Room</strong>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22form-text\x20text-muted\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20This\x20room\x20will\x20never\x20be\x20automatically\x20deleted,\x20even\x20when\x20empty.\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20It\x20will\x20be\x20displayed\x20at\x20the\x20top\x20of\x20the\x20room\x20list\x20with\x20a\x20special\x20indicator.\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mt-2\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22text-info\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-info-circle\x22></i>\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20When\x20the\x20host\x20of\x20a\x20permanent\x20room\x20leaves,\x20they\x20retain\x20host\x20privileges\x20even\x20while\x20offline.\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','#whisper-tabs','#settingsTheme','\x20seconds','<span\x20class=\x22spinner-border\x20spinner-border-sm\x20me-2\x22></span>Saving...','.mention-count','suggest','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20alt=\x22','responseJSON','fadeOut','You\x20have\x20been\x20banned\x20from\x20this\x20room','Network\x20error\x20occurred','#friendsList','<span\x20class=\x22user-badge\x20badge-verified\x22><i\x20class=\x22fas\x20fa-check-circle\x22\x20title=\x22Member\x22></i></span>','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','<span\x20class=\x22user-badge\x20badge-guest\x22><i\x20class=\x22fas\x20fa-user\x22\x20title=\x22Guest\x22></i></span>','.mentions-counter','Loading\x20banned\x20users\x20for\x20room:','\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20class=\x22reply-author-name\x22>','css','/lounge.php?invite=','<span\x20class=\x22mention\x22\x20data-user=\x22','Player','</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20','\x0a</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<!--\x20Features\x20Tab\x20-->\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22tab-pane\x20fade\x22\x20id=\x22features\x22\x20role=\x22tabpanel\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mt-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22row\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22col-md-12\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-4\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22form-check\x20form-switch\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20class=\x22form-check-input\x22\x20type=\x22checkbox\x22\x20id=\x22settingsYouTubeEnabled\x22','<p\x20class=\x22text-danger\x22>Error:\x20','>24\x20hours</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</select>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<!--\x20Banlist\x20-->\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22tab-pane\x20fade\x22\x20id=\x22banlist\x22\x20role=\x22tabpanel\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mt-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h6><i\x20class=\x22fas\x20fa-ban\x22></i>\x20Banned\x20Users</h6>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20id=\x22bannedUsersList\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p\x20class=\x22text-muted\x22>Loading\x20banned\x20users...</p>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<!--\x20Admin\x20Settings\x20Tab\x20(only\x20for\x20moderators/admins)\x20-->\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','<span\x20class=\x22user-badge\x20badge-host\x22><i\x20class=\x22fas\x20fa-crown\x22></i>\x20Host</span>','.reply-interface','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22message-reply\x20user-color-','#friendsPanel','copy','totalMessageCount:','Friend\x20request\x20sent!','\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20class=\x22message-avatar\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20style=\x22filter:\x20hue-rotate(','\x27,\x20\x27','#chatbox','<div\x20class=\x22empty-chat\x22><i\x20class=\x22fas\x20fa-wifi\x22></i><h5>Connection\x20Error</h5><p>Failed\x20to\x20load\x20messages.\x20Check\x20your\x20connection.</p></div>','Error\x20sending\x20whisper:\x20','🚫\x20You\x20Have\x20Been\x20Banned','Auto','getElementsByTagName','Error\x20sending\x20message:\x20','Request\x20data\x20being\x20sent:','Suggest\x20video\x20error:','🎬\x20YouTube\x20not\x20enabled\x20for\x20this\x20room','enabled','attr','Loading\x20room\x20settings\x20for\x20roomId:','removeClass','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal\x20fade\x22\x20id=\x22banUserModal\x22\x20tabindex=\x22-1\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-dialog\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-content\x22\x20style=\x22background:\x20#2a2a2a;\x20border:\x201px\x20solid\x20#444;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-header\x22\x20style=\x22border-bottom:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h5\x20class=\x22modal-title\x22><i\x20class=\x22fas\x20fa-ban\x22></i>\x20Ban\x20User</h5>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn-close\x22\x20data-bs-dismiss=\x22modal\x22\x20style=\x22filter:\x20invert(1);\x22></button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-body\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p>You\x20are\x20about\x20to\x20ban\x20<strong>','#roomSettingsModal','Load\x20messages\x20error:','fas\x20fa-ban','stop','.chat-message[data-message-id=\x22','before','api/get_room_users.php','Message\x20content:','<i\x20class=\x22fas\x20fa-video\x22></i>','getPlayerState','\x27s\x20avatar\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-bubble\x20','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-time\x22>','isProcessingQueue','%);\x20','api/pass_host.php','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20','</strong>?</p>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p\x20class=\x22text-warning\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-exclamation-triangle\x22></i>\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20You\x20will\x20become\x20a\x20regular\x20user\x20and\x20<strong>','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22youtube-queue-item-meta\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20Suggested\x20by\x20','\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22user-info-row\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22images/','80325oNtlse','reply_original_message','#youtube-suggestions-list','toString','querySelector','Friends\x20error:','unread_count','reply_original_registered_username','<div\x20style=\x22color:\x20#f44336;\x20padding:\x2010px;\x22>Failed\x20to\x20load\x20messages.\x20Check\x20console\x20for\x20details.</div>','#quickBanModal','You\x20are\x20no\x20longer\x20AFK','fadeIn','Optional\x20invite\x20link\x20(can\x20bypass\x20access\x20controls):','find','Knock\x20request\x20denied.','youtube_hidden_','\x22\x20placeholder=\x22Type\x20a\x20message...\x22\x20required>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22submit\x22>Send</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</form>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20','\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22images/','messageLimit:','\x20selected','preventDefault','\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22whisper-body\x22\x20id=\x22whisper-body-','Modal','api/private_messages.php','afk_duration_minutes','#settingsCapacity','show',')\x22\x20title=\x22Add\x20to\x20Queue\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-check\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-queue-deny\x22\x20onclick=\x22denyVideo(','\x22\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','location','mentioned-highlight','onclick=\x22showProfileEditor()\x22\x20style=\x22cursor:\x20pointer;\x22','send','\x22\x20style=\x22background:\x20#2a2a2a;\x20color:\x20#e0e0e0;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-header\x20','animate','sunset','display_name','🎬\x20Video\x20paused','Friend\x20request\x20accepted!','<div\x20style=\x22color:\x20#f44336;\x20padding:\x2010px;\x22>Failed\x20to\x20load\x20messages</div>','<span\x20class=\x22user-badge\x20badge-host\x22><i\x20class=\x22fas\x20fa-crown\x22\x20title=\x22Host\x22></i></span>','<span\x20class=\x22user-badge\x20badge-moderator\x22><i\x20class=\x22fas\x20fa-gavel\x22></i>\x20Moderator</span>','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22tab-pane\x20fade\x22\x20id=\x22admin-settings\x22\x20role=\x22tabpanel\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mt-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22alert\x20alert-warning\x22\x20style=\x22background:\x20rgba(255,\x20193,\x207,\x200.1);\x20border:\x201px\x20solid\x20rgba(255,\x20193,\x207,\x200.3);\x20color:\x20#ffc107;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-shield-alt\x22></i>\x20<strong>Administrator\x20Settings</strong><br>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20These\x20options\x20are\x20only\x20available\x20to\x20moderators\x20and\x20administrators.\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22row\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22col-12\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-4\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22form-check\x20form-switch\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20class=\x22form-check-input\x22\x20type=\x22checkbox\x22\x20id=\x22settingsPermanentRoom\x22',':visible','\x22\x20readonly\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22quickBanDuration\x22\x20class=\x22form-label\x22>Ban\x20Duration</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<select\x20class=\x22form-select\x22\x20id=\x22quickBanDuration\x22\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x223600\x22>1\x20Hour</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x2221600\x22>6\x20Hours</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x2286400\x22>24\x20Hours</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22604800\x22>7\x20Days</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22permanent\x22>Permanent</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</select>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22quickBanReason\x22\x20class=\x22form-label\x22>Reason</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<textarea\x20class=\x22form-control\x22\x20id=\x22quickBanReason\x22\x20rows=\x223\x22\x20placeholder=\x22Enter\x20reason\x20for\x20ban...\x22\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22></textarea>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-footer\x22\x20style=\x22border-top:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-secondary\x22\x20data-bs-dismiss=\x22modal\x22>Cancel</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-danger\x22\x20onclick=\x22executeQuickBan(\x27','href','val','filter-applied','<i\x20class=\x22fas\x20fa-spinner\x20fa-spin\x22></i>\x20Suggesting...','user_avatar_hue','avatar_saturation','sender_color','<p\x20class=\x22text-danger\x20small\x22>Error\x20loading\x20conversations</p>',',\x20\x27denied\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-times\x22></i>\x20Deny\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn-close\x22\x20onclick=\x22dismissKnock(','invite_only','sender_user_id_string','<div\x20class=\x22empty-chat\x22><i\x20class=\x22fas\x20fa-exclamation-triangle\x22></i><h5>Error\x20loading\x20messages</h5><p>Failed\x20to\x20process\x20server\x20response</p></div>','#pm-','addClass','#quickBanDuration','\x20user-color-','Error\x20responding\x20to\x20knock:','default_avatar.jpg','POST','594382fBsqvR','Found\x20images\x20to\x20validate:','executeRequest','is_permanent','playing','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22youtube-empty-state\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-list\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h6>Queue\x20is\x20empty</h6>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p>Videos\x20will\x20appear\x20here\x20when\x20added\x20to\x20the\x20queue</p>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20','api/youtube_combined.php','#passHostModal','getElementById','stopVideo','</h6>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22youtube-queue-item\x20suggestion\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22youtube-queue-item-content\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22','\x22\x20required\x20maxlength=\x2250\x22\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22settingsCapacity\x22\x20class=\x22form-label\x22>Capacity</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<select\x20class=\x22form-select\x22\x20id=\x22settingsCapacity\x22\x20required\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x225\x22','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22d-flex\x20align-items-center\x20mb-2\x20p-2\x22\x20style=\x22background:\x20#333;\x20border-radius:\x204px;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22images/','settings_changed','#banlist-tab','deny','reply_to','\x22\x20width=\x2224\x22\x20height=\x2224\x22\x20class=\x22me-2\x22\x20style=\x22border-radius:\x202px;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22flex-grow-1\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20style=\x22color:\x20#e0e0e0;\x22>','Leave\x20room\x20clicked\x20for\x20roomId:','api/youtube_player.php','debugPagination','This\x20room\x20has\x20disappearing\x20messages\x20enabled.\x20Messages\x20will\x20be\x20deleted\x20after\x20','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mentions-empty\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-bell\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p>No\x20mentions\x20yet</p>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small>You\x27ll\x20see\x20@mentions\x20and\x20replies\x20here</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20','</p>','messageOffset:','hasMoreOlderMessages:','Messages\x20error:','🔄\x20AFK\x20status\x20was\x20cleared\x20due\x20to\x20sending\x20message','onclick=\x22handleAvatarClick(event,\x20','Error\x20leaving\x20room:\x20','addEventListener','manual_afk','\x20Are\x20you\x20sure\x20you\x20want\x20to\x20leave?','<i\x20class=\x22fas\x20fa-spinner\x20fa-spin\x22></i>\x20Sending...','message_id','ip_address','🏷️\x20Initializing\x20mentions\x20and\x20replies\x20system...','#banDuration','\x20minute','GET','pathname','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mention-notification-time\x22>','🛑\x20Stopping\x20activity\x20tracking\x20system','Loaded\x20older\x20messages:','#whisper-','AJAX\x20error\x20in\x20unbanUser:','top','h\x20ago','🔄\x20Started\x20combined\x20YouTube\x20updates\x20(every\x205s)','scrollHeight','#pm-body-','totalTime','Unable\x20to\x20copy\x20link\x20automatically.\x20Please\x20copy\x20manually.','reply_original_id','replace','Never','permanently','user_id','.navbar-nav','📊\x20Request\x20Stats:','\x27,\x20\x27\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-ban\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','friends','Queued\x20requests:','#whisper-tab-','Response\x20from\x20api/leave_room.php\x20(check):','#settingsMembersOnly','user-hidden','ban_until','>Ocean</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22sunset\x22','Reply','floor','hide','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22newHostSelect\x22\x20class=\x22form-label\x22>Or\x20transfer\x20host\x20privileges\x20to:</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<select\x20class=\x22form-select\x20mb-2\x22\x20id=\x22newHostSelect\x22\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22\x22>Select\x20new\x20host...</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','\x22\x20onclick=\x22openPrivateMessage(','reply_original_registered_avatar','not_in_room','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-site-ban-user\x22\x20onclick=\x22showQuickBanModal(\x27','toLocaleDateString','announcement','delete_room','default','is_rp','\x20fa-4x\x20text-','pagination','Current\x20user:','\x0a\x20\x20\x20\x20\x20\x20\x20\x20</small><br>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<small\x20style=\x22word-break:\x20break-all;\x22>','</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20class=\x22mention-notification-type\x20','\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-copy\x22></i>\x20Copy\x0a\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20','.btn-send-message','Loading\x20users\x20for\x20roomId:','</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-sm\x20btn-outline-primary\x20ms-2\x22\x20onclick=\x22copyInviteLink(\x27','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22d-flex\x20align-items-center\x20mb-2\x20p-2\x22\x20style=\x22background:\x20#333;\x20border-radius:\x204px;\x20cursor:\x20pointer;\x22\x20onclick=\x22openPrivateMessage(','type','Failed\x20to\x20toggle\x20AFK\x20status:\x20','reload','system','Friends\x20API\x20error:','Loading\x20friends...','AFK_TIMEOUT_MINUTES','%);\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-header-info\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-author\x22>','Host\x20privileges\x20passed\x20successfully!','AJAX\x20error\x20leaving\x20permanent\x20room:','style','Deny\x20video\x20error:','🚫\x20User\x20has\x20been\x20BANNED:','whisper-','reply_original_color','#youtube-suggest-btn','log','PAUSED','delete','Video\x20approved\x20and\x20added\x20to\x20queue!','api/update_room_avatar_customization.php','youtube_enabled','>30\x20minutes</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x2260\x22','.chat-input-container','disappearing_messages','Test\x20user\x20created:\x20',':checked','>2\x20hours</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22360\x22','Unknown','1125985naxaGg','PLAYING','<p\x20class=\x22text-danger\x22>Error\x20loading\x20banned\x20users.</p>','accept','Updating\x20friends\x20panel\x20with:','.load-more-messages','.dropdown-menu','<i\x20class=\x22fas\x20fa-plane-arrival\x22></i>','Pagination\x20info\x20-\x20Total:','reply_original_avatar_saturation','<i\x20class=\x22fas\x20fa-spinner\x20fa-spin\x22></i>','Unknown\x20User','count','🛑\x20Stopping\x20kick\x20detection\x20system','</div>','Approve\x20video\x20error:','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mt-2\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22alert\x20alert-info\x22\x20style=\x22background:\x20rgba(13,\x20110,\x20253,\x200.1);\x20border:\x201px\x20solid\x20rgba(13,\x20110,\x20253,\x200.3);\x20color:\x20#b3d4fc;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-star\x22></i>\x20This\x20room\x20is\x20currently\x20marked\x20as\x20permanent.\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','textarea','#mentionHighlightCSS','\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20class=\x22whisper-tab-title\x22>💬\x20','messages','remove','add','getStats','>10\x20users</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x2220\x22','No\x20messages','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20whisper-btn\x20','#userList','⚠️\x20Queue\x20update\x20error:','10Dxjhfs','Request\x20timed\x20out.\x20Please\x20try\x20again.','innerWidth','queue_data','✅\x20Activity\x20tracking\x20initialization\x20complete','sender_avatar','afk_cleared','🏗️\x20Room\x20has\x20been\x20DELETED:','.whisper-window','<p\x20class=\x22text-muted\x20small\x22>No\x20conversations\x20yet</p>','\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20class=\x22user-avatar\x20','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-sm\x20btn-outline-success\x22\x20onclick=\x22unbanUser(\x27','Error\x20processing\x20messages:','>20\x20users</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x2250\x22','#knock-','Whisper\x20container\x20not\x20found:','debug','Send\x20message\x20AJAX\x20error:','\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h6\x20class=\x22text-','transfer_host','Send\x20friend\x20request\x20error:','submit','#settingsAllowKnocking','src','</option>','#banUserModal','100%','Send\x20whisper\x20error:','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22reply-interface\x22\x20id=\x22replyInterface\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22reply-interface-header\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22reply-interface-label\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-reply\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20Replying\x20to\x20','closest','sender_id','position','#settingsIsRP','null','</p>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-danger\x20w-100\x20mb-2\x22\x20onclick=\x22deleteRoom()\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','User\x20banned\x20successfully\x20','Image\x20validation\x20error:','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22message-actions\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22message-action-btn\x22\x20onclick=\x22showReplyInterface(','username','AJAX\x20error\x20in\x20sendMessage:','🏠\x20Redirecting\x20to\x20lounge...','clipboard','>12\x20hours</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x221440\x22','\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20','<p><strong>Reason:</strong>\x20','<div\x20style=\x22text-align:\x20center;\x20color:\x20#999;\x20padding:\x2020px;\x22>No\x20messages\x20yet</div>','innerHeight','🚀\x20Initializing\x20room\x20activity\x20tracking...','settings','Error\x20accepting\x20friend\x20request:\x20','is_moderator','api/update_room.php','icon','\x20mb-3\x22>','\x20new\x20mention','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22youtube-queue-item-actions\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-queue-approve\x22\x20onclick=\x22approveVideo(','Unknown\x20error','Private\x20messages\x20error\x20for\x20user\x20','hidden','Room\x20name\x20is\x20required','protocol','</strong>\x20will\x20become\x20the\x20host.\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</p>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-footer\x22\x20style=\x22border-top:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-secondary\x22\x20data-bs-dismiss=\x22modal\x22>Cancel</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-primary\x22\x20onclick=\x22executePassHost(\x27','stopPropagation','host_leaving','\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-header\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h6\x20class=\x22private-message-title\x22>Chat\x20with\x20','Please\x20enter\x20a\x20YouTube\x20URL\x20or\x20video\x20ID','bg-danger','block','AFK\x20toggle\x20error:','<i\x20class=\x22fas\x20fa-spinner\x20fa-spin\x22></i>\x20Loading...','finally','#settingsFriendsOnly','#youtube-suggest-form','pending','for\x2030\x20minutes','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22chat-message\x20','api/check_knocks.php','status','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-footer\x22\x20style=\x22border-top:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-secondary\x22\x20data-bs-dismiss=\x22modal\x22>Cancel</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20','has','.mobile-queue-btn','Invalid\x20user\x20data','PM\x20(AFK)','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22youtube-queue-item-actions\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-queue-remove\x22\x20onclick=\x22removeFromQueue(','>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-check-label\x22\x20for=\x22settingsIsRP\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-theater-masks\x22></i>\x20Roleplay\x20Room\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22form-text\x20text-muted\x22>Mark\x20this\x20room\x20as\x20suitable\x20for\x20roleplay</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</form>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<!--\x20Access\x20Control\x20Settings\x20-->\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22tab-pane\x20fade\x22\x20id=\x22security\x22\x20role=\x22tabpanel\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mt-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22row\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22col-md-6\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22form-check\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20class=\x22form-check-input\x22\x20type=\x22checkbox\x22\x20id=\x22settingsHasPassword\x22','data','origin','%);\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22images/','reply','responseText','click','💬\x20Preparing\x20to\x20send\x20message:','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','.</strong></div>','api/respond_knocks.php','abs','\x20you-identifier','>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-check-label\x22\x20for=\x22settingsAllowKnocking\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-hand-paper\x22></i>\x20Allow\x20Knocking\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22form-text\x20text-muted\x22>Let\x20users\x20request\x20access\x20when\x20they\x20don\x27t\x20know\x20the\x20password</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22col-md-6\x22>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','#youtube-queue-list','Loading\x20whisper\x20messages\x20for:','ocean','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</h5>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-body\x20text-center\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22reply-preview-content\x22>','#settingsYouTubeEnabled','getItem','<span\x20class=\x22user-badge\x20badge-moderator\x22><i\x20class=\x22fas\x20fa-gavel\x22\x20title=\x22Moderator\x22></i></span>','...\x27)\x22\x20title=\x22Reply\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-reply\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20','script[src*=\x22youtube\x22]','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22message-time\x22>','Hide\x20Player','maxConcurrentRequests','last_message','min\x0a\x20\x20\x20\x20\x20\x20\x20\x20</span>\x0a\x20\x20\x20\x20','reply_to_message_id','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-ban-user\x22\x20onclick=\x22showBanModal(\x27','expanded','#message','playVideo','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20friend-btn\x22\x20onclick=\x22sendFriendRequest(','catch','#announcementModal\x20.btn-warning','#pm-input-','saturation','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<li\x20class=\x22nav-item\x22\x20role=\x22presentation\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22nav-link\x22\x20id=\x22admin-settings-tab\x22\x20data-bs-toggle=\x22tab\x22\x20data-bs-target=\x22#admin-settings\x22\x20type=\x22button\x22\x20role=\x22tab\x22\x20style=\x22color:\x20#fff;\x20background:\x20transparent;\x20border:\x20none;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-shield-alt\x22></i>\x20Admin\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</li>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','execCommand','length','.whisper-tab','\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-crown\x22></i>\x20Pass\x20Host\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20','%);\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22flex-grow-1\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20style=\x22color:\x20#e0e0e0;\x22>','👢\x20Removed\x20from\x20Room','<span\x20class=\x22user-badge\x20badge-guest\x22><i\x20class=\x22fas\x20fa-user\x22></i>\x20Guest</span>','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22activity-status-debug\x22\x20style=\x22position:\x20fixed;\x20bottom:\x2010px;\x20right:\x2010px;\x20background:\x20rgba(0,0,0,0.8);\x20color:\x20white;\x20padding:\x2010px;\x20border-radius:\x205px;\x20font-size:\x2012px;\x20z-index:\x209999;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div><strong>Activity\x20Status</strong></div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div>Tracker\x20Enabled:\x20','👢\x20User\x20has\x20been\x20KICKED:','api/mark_mentions_read.php','API\x20error:','friends_only','<span\x20class=\x22user-badge\x20badge-admin\x22><i\x20class=\x22fas\x20fa-shield-alt\x22></i>\x20Admin</span>','approve','\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20style=\x22filter:\x20hue-rotate(','</div></div>','api/get_user_info.php','🎬\x20Player\x20state\x20changed:','accepted','reply_original_avatar','set','#whisper-input-','Settings\x20check\x20error:','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20','then','\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-comment\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','min</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div>Disconnect\x20Timeout:\x20','warn','isArray','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22alert\x20alert-info\x20knock-notification\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20id=\x22knock-','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22user-badges-row\x22>','🔄\x20Started\x20managed\x20room\x20updates\x20(every\x203s)','Escape','\x20AFK','\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-comment\x22></i>\x20','fas\x20fa-exclamation-triangle','\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20class=\x22private-message-avatar\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20style=\x22filter:\x20hue-rotate(','undefined','❌\x20Invalid\x20room\x20ID,\x20redirecting\x20to\x20lounge','\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-envelope\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','#settingsMessageLifetime','filter','append','Banned\x20users\x20response:','<i\x20class=\x22fas\x20fa-spinner\x20fa-spin\x22></i>\x20Banning...','[onclick=\x22showRoomSettings()\x22]','%);\x22\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20alt=\x22',')\x22>&times;</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22private-message-body\x22\x20id=\x22pm-body-','Manual','exec','collapsed','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22system-message\x20announcement-message\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22announcement-header\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-bullhorn\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20class=\x22announcement-label\x22>SITE\x20ANNOUNCEMENT</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22announcement-content\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','#passHostModal\x20.btn-primary','AJAX\x20error\x20in\x20deleteRoom:','function','px;\x20right:\x2020px;\x20z-index:\x201070;\x20max-width:\x20400px;\x20background:\x20#2a2a2a;\x20border:\x201px\x20solid\x20#404040;\x20color:\x20#e0e0e0;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22d-flex\x20align-items-center\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22images/','api/get_banned_users_simple.php','#mentionsContent','<div\x20style=\x22color:\x20#f44336;\x20padding:\x2010px;\x22>Error:\x20','api/get_room_settings.php','\x27)\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-ban\x22></i>\x20Site\x20Ban\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20','===\x20DEBUG\x20sendPrivateMessage\x20===','valid','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<!--\x20Message\x20content\x20wrapper\x20that\x20resets\x20filters\x20-->\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22message-content-wrapper\x22\x20style=\x22filter:\x20hue-rotate(','user-item\x20afk-user','created_at','💬\x20Initializing\x20private\x20messaging...','.room-title','#whisper-body-','<option\x20value=\x22',')\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20title=\x22Jump\x20to\x20original\x20message\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22reply-content\x22>','Password\x20protection\x20is\x20enabled\x20but\x20no\x20password\x20was\x20entered.\x20Do\x20you\x20want\x20to\x20keep\x20the\x20existing\x20password?','Video\x20suggested\x20successfully!','disabled','invite_code','===\x20PAGINATION\x20DEBUG\x20===','<div\x20class=\x22empty-users\x22><i\x20class=\x22fas\x20fa-users\x22></i><p>No\x20users\x20in\x20room</p></div>','/lounge','expires_in_minutes','\x27s\x20avatar\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<!--\x20Message\x20header\x20moved\x20outside\x20the\x20bubble\x20-->\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22message-header-external\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22message-header-left\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22message-author\x22>','size',')\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-check\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','Room\x20deleted\x20successfully','requestQueue','other_users','reply_original_guest_name','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mention-notification-toast\x22\x20style=\x22\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20position:\x20fixed;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20top:\x2020px;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20right:\x2020px;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20background:\x20#faa61a;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20color:\x20#000;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20padding:\x2012px\x2016px;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20border-radius:\x208px;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20font-weight:\x20600;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20z-index:\x201060;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20animation:\x20slideInFromRight\x200.3s\x20ease-out;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-at\x22></i>\x20','<br>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20Reason:\x20','<i\x20class=\x22fas\x20fa-spinner\x20fa-spin\x22></i>\x20Passing...','getVideoUrl','sender_avatar_hue',')\x22]','youtube-player','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20friend-btn\x22\x20onclick=\x22sendFriendRequest(','<span\x20class=\x22user-badge\x20badge-afk\x22\x20title=\x22','sender_username','Loading\x20conversations...','Received\x20userId:','AJAX\x20error\x20in\x20createTestUser:','scrollTop','/default.jpg\x27\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22youtube-queue-item-details\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22youtube-queue-item-title\x22>','3YznUUK','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-primary\x20','api/room_whispers.php',',\x20\x27','sent','\x20alert-dismissible\x20fade\x20show\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20style=\x22position:\x20fixed;\x20top:\x2070px;\x20right:\x2020px;\x20z-index:\x201060;\x20min-width:\x20300px;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20','Sending\x20message\x20to\x20recipientId:','<span\x20class=\x22badge\x20bg-danger\x22>','user_id_string','last','API\x20Error:','permanent_room_leave','avgTime','loadOlderMessages()','16snNcAK','event_id','current_playing','json','\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20Loading\x20messages...\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22whisper-input\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<form\x20class=\x22whisper-form\x22\x20onsubmit=\x22sendWhisper(\x27','.youtube-player-toggle','text','Send\x20message\x20response:','active\x20expanded','mentions','user_avatar_saturation','Send\x20friend\x20request\x20to\x20','#youtube-suggest-input','safeId','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22youtube-video-title\x22>','</strong>\x20from\x20this\x20room.</p>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22banDuration\x22\x20class=\x22form-label\x22>Ban\x20Duration</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<select\x20class=\x22form-select\x22\x20id=\x22banDuration\x22\x20required\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22300\x22>5\x20minutes</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x221800\x22>30\x20minutes</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22permanent\x22>Permanent</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</select>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22banReason\x22\x20class=\x22form-label\x22>Reason\x20(optional)</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22text\x22\x20class=\x22form-control\x22\x20id=\x22banReason\x22\x20placeholder=\x22Enter\x20reason\x20for\x20ban\x22\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x20color:\x20#fff;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-footer\x22\x20style=\x22border-top:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-secondary\x22\x20data-bs-dismiss=\x22modal\x22>Cancel</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-danger\x22\x20onclick=\x22confirmBanUser(\x27','processQueue','Announcement\x20sent\x20successfully\x20to\x20all\x20rooms!','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22card\x20mb-2\x22\x20style=\x22background:\x20#333;\x20border:\x201px\x20solid\x20#555;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22card-body\x20p-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22d-flex\x20justify-content-between\x20align-items-center\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<strong\x20style=\x22color:\x20#fff;\x22>','🔄\x20Updated\x20player\x20sync','alert','video_id'];_0x85d2=function(){return _0x9757a8;};return _0x85d2();}function applyAllAvatarFilters(){const _0x4d1d66=_0x2fa9e7;$('.avatar-filtered,\x20.message-avatar,\x20.user-avatar,\x20.private-message-avatar')[_0x4d1d66(0x44c)](function(){const _0x41b7f0=_0x4d1d66,_0x9ba9a0=$(this),_0x7954be=_0x9ba9a0[_0x41b7f0(0x344)](_0x41b7f0(0x440)),_0x17d047=_0x9ba9a0[_0x41b7f0(0x344)](_0x41b7f0(0x36a));if(_0x7954be===undefined||_0x17d047===undefined)return;const _0x539d25=_0x7954be+'-'+_0x17d047,_0x4646f7=_0x9ba9a0['data'](_0x41b7f0(0x247));if(_0x4646f7!==_0x539d25){const _0xb1c835=_0x41b7f0(0x4c1)+_0x7954be+_0x41b7f0(0x45c)+_0x17d047+'%)';_0x9ba9a0[_0x41b7f0(0x1e5)](_0x41b7f0(0x395),_0xb1c835),_0x9ba9a0[_0x41b7f0(0x344)](_0x41b7f0(0x247),_0x539d25);}});}function handleAvatarClick(_0x383d69,_0x3dc59c,_0x1e7497){const _0x4ba2c6=_0x2fa9e7;_0x383d69['preventDefault'](),_0x383d69[_0x4ba2c6(0x32d)](),debugLog(_0x4ba2c6(0x15c),_0x3dc59c,_0x4ba2c6(0x155),_0x1e7497),_0x3dc59c&&_0x3dc59c!==_0x4ba2c6(0x310)&&_0x3dc59c!==null&&_0x3dc59c>0x0&&(_0x3dc59c==currentUser['id']?showUserProfile(_0x3dc59c,_0x383d69[_0x4ba2c6(0x41d)]):showUserProfile(_0x3dc59c,_0x383d69[_0x4ba2c6(0x41d)]));}typeof disappearingMessages!==_0x2fa9e7(0x391)&&disappearingMessages&&messageLifetimeMinutes>0x0&&($(_0x2fa9e7(0x3af))[_0x2fa9e7(0x396)](_0x2fa9e7(0x4a9)+messageLifetimeMinutes+_0x2fa9e7(0x1c9)+messageLifetimeMinutes+_0x2fa9e7(0x35f)),setTimeout(()=>{const _0x4b9690=_0x2fa9e7;showToast(_0x4b9690(0x26e)+messageLifetimeMinutes+_0x4b9690(0x479),_0x4b9690(0x1a1));},0x7d0));function copyInviteLink(_0x6cb826){const _0x5ad0c7=_0x2fa9e7,_0x39ff91=window[_0x5ad0c7(0x235)][_0x5ad0c7(0x345)]+_0x5ad0c7(0x1e6)+_0x6cb826;navigator['clipboard']?navigator[_0x5ad0c7(0x318)]['writeText'](_0x39ff91)[_0x5ad0c7(0x384)](()=>{const _0x40c641=_0x5ad0c7;showToast(_0x40c641(0x420),'success');})[_0x5ad0c7(0x367)](()=>{fallbackCopyTextToClipboard(_0x39ff91);}):fallbackCopyTextToClipboard(_0x39ff91);}function fallbackCopyTextToClipboard(_0x5a2efc){const _0xada1d9=_0x2fa9e7,_0x499b7b=document['createElement'](_0xada1d9(0x2e3));_0x499b7b[_0xada1d9(0x40a)]=_0x5a2efc,_0x499b7b['style'][_0xada1d9(0x287)]='0',_0x499b7b[_0xada1d9(0x2bf)]['left']='0',_0x499b7b[_0xada1d9(0x2bf)][_0xada1d9(0x30e)]=_0xada1d9(0x16a),document[_0xada1d9(0x491)]['appendChild'](_0x499b7b),_0x499b7b[_0xada1d9(0x485)](),_0x499b7b['select']();try{document[_0xada1d9(0x36c)](_0xada1d9(0x1f1)),showToast(_0xada1d9(0x420),_0xada1d9(0x4d2));}catch(_0x1a1166){console[_0xada1d9(0x1c3)]('Fallback:\x20Oops,\x20unable\x20to\x20copy',_0x1a1166),showToast(_0xada1d9(0x28d),_0xada1d9(0x1a1));}document[_0xada1d9(0x491)]['removeChild'](_0x499b7b);}function showAnnouncementModal(){const _0x2c4204=_0x2fa9e7,_0xfb1fd8=_0x2c4204(0x424);$(_0x2c4204(0x468))['remove'](),$(_0x2c4204(0x491))[_0x2c4204(0x396)](_0xfb1fd8),$('#announcementModal')[_0x2c4204(0x4be)](_0x2c4204(0x232));}function sendAnnouncement(){const _0x1d56d5=_0x2fa9e7,_0x58e0ca=$('#announcementMessage')[_0x1d56d5(0x246)]()[_0x1d56d5(0x44f)]();if(!_0x58e0ca){alert('Please\x20enter\x20an\x20announcement\x20message');return;}const _0x4cac1a=$(_0x1d56d5(0x368)),_0x240504=_0x4cac1a['html']();_0x4cac1a[_0x1d56d5(0x4e0)](_0x1d56d5(0x3b5),!![])['html'](_0x1d56d5(0x27a)),$['ajax']({'url':'api/send_announcement.php','method':_0x1d56d5(0x257),'data':{'message':_0x58e0ca},'dataType':_0x1d56d5(0x3e3),'success':function(_0x2e76b7){const _0x21ae16=_0x1d56d5;_0x2e76b7[_0x21ae16(0x33c)]==='success'?(alert(_0x21ae16(0x3f1)),$('#announcementModal')[_0x21ae16(0x4be)]('hide'),typeof loadMessages==='function'&&setTimeout(loadMessages,0x3e8)):alert(_0x21ae16(0x4b6)+_0x2e76b7[_0x21ae16(0x454)]);},'error':function(_0x48f17b,_0x453a52,_0x1d9c52){const _0x2a609c=_0x1d56d5;alert(_0x2a609c(0x4bc)+_0x1d9c52);},'complete':function(){const _0x338477=_0x1d56d5;_0x4cac1a[_0x338477(0x4e0)](_0x338477(0x3b5),![])[_0x338477(0x153)](_0x240504);}});}function showQuickBanModal(_0xc29678,_0x268bf7,_0x448e53){const _0x8188a5=_0x2fa9e7,_0xa8863d=_0x8188a5(0x4f2)+_0x268bf7+_0x8188a5(0x244)+_0xc29678+_0x8188a5(0x1f5)+_0x268bf7[_0x8188a5(0x28f)](/'/g,'\x5c\x27')+_0x8188a5(0x1f5)+_0x448e53+_0x8188a5(0x3a8);$(_0x8188a5(0x221))[_0x8188a5(0x2e7)](),$('body')[_0x8188a5(0x396)](_0xa8863d),$(_0x8188a5(0x221))['modal'](_0x8188a5(0x232));}function executeQuickBan(_0x5ec4e4,_0x28d05c,_0x23aab1){const _0x1cbfd9=_0x2fa9e7,_0x59b1fb=$(_0x1cbfd9(0x253))[_0x1cbfd9(0x246)](),_0x4da39d=$('#quickBanReason')[_0x1cbfd9(0x246)]()[_0x1cbfd9(0x44f)](),_0x317c16=$(_0x1cbfd9(0x40f)),_0x1b122b=_0x317c16['html']();_0x317c16[_0x1cbfd9(0x4e0)]('disabled',!![])[_0x1cbfd9(0x153)](_0x1cbfd9(0x398));const _0x4656df={'user_id_string':_0x5ec4e4,'duration':_0x59b1fb,'reason':_0x4da39d};if(_0x28d05c)_0x4656df[_0x1cbfd9(0x315)]=_0x28d05c;if(_0x23aab1)_0x4656df[_0x1cbfd9(0x27c)]=_0x23aab1;$[_0x1cbfd9(0x1a0)]({'url':_0x1cbfd9(0x471),'method':_0x1cbfd9(0x257),'data':_0x4656df,'dataType':'json','success':function(_0x5ac8ac){const _0xe8102d=_0x1cbfd9;_0x5ac8ac['status']===_0xe8102d(0x4d2)?(alert(_0x5ac8ac[_0xe8102d(0x454)]),$(_0xe8102d(0x221))[_0xe8102d(0x4be)]('hide'),setTimeout(()=>{loadUsers(),loadMessages();},0x3e8)):alert(_0xe8102d(0x4b6)+_0x5ac8ac[_0xe8102d(0x454)]);},'error':function(_0x434ff7,_0x5a7be8,_0x51fc72){const _0x29eb32=_0x1cbfd9;alert(_0x29eb32(0x154)+_0x51fc72);},'complete':function(){const _0x5cb460=_0x1cbfd9;_0x317c16['prop'](_0x5cb460(0x3b5),![])['html'](_0x1b122b);}});}function initializeMentionsAndReplies(){const _0x3248ad=_0x2fa9e7;debugLog(_0x3248ad(0x27d)),setupMentionsEventHandlers(),debugLog('✅\x20Mentions\x20and\x20replies\x20system\x20initialized\x20(using\x20managed\x20updates)');}function setupMentionsEventHandlers(){const _0x1f2ba6=_0x2fa9e7;$(document)['on'](_0x1f2ba6(0x349),function(_0xccba40){const _0x16ab9c=_0x1f2ba6;!$(_0xccba40[_0x16ab9c(0x41d)])[_0x16ab9c(0x30c)]('.mentions-panel,\x20.mentions-counter')[_0x16ab9c(0x36d)]&&closeMentionsPanel();}),$(document)['on'](_0x1f2ba6(0x4db),function(_0x2d6343){const _0x4bb91d=_0x1f2ba6;_0x2d6343[_0x4bb91d(0x199)]===_0x4bb91d(0x38c)&&clearReplyInterface();});}function checkForMentions(){const _0x4b3915=_0x2fa9e7;if(!mentionCheckInterval)return;$[_0x4b3915(0x1a0)]({'url':'api/get_mentions.php','method':'GET','dataType':_0x4b3915(0x3e3),'timeout':0x1388,'success':function(_0x38a858){const _0x125f89=_0x4b3915;_0x38a858[_0x125f89(0x33c)]===_0x125f89(0x4d2)&&(mentionNotifications=_0x38a858[_0x125f89(0x3e9)],updateMentionCounter(_0x38a858[_0x125f89(0x21e)]),_0x38a858[_0x125f89(0x21e)]>0x0&&!mentionPanelOpen&&showNewMentionNotification(_0x38a858[_0x125f89(0x21e)]));},'error':function(){}});}function updateMentionCounter(_0x397369){const _0x5907a8=_0x2fa9e7,_0x1797de=$(_0x5907a8(0x1e2));if(_0x397369>0x0){if(_0x1797de[_0x5907a8(0x36d)]===0x0){const _0x20a612=_0x5907a8(0x43b)+_0x397369+_0x5907a8(0x4af)+(_0x397369!==0x1?'s':'')+_0x5907a8(0x34b);$('body')[_0x5907a8(0x396)](_0x20a612),setTimeout(()=>$(_0x5907a8(0x1e2))[_0x5907a8(0x252)](_0x5907a8(0x232)),0x64);}else _0x1797de[_0x5907a8(0x225)](_0x5907a8(0x1d7))[_0x5907a8(0x3e6)](_0x397369),_0x1797de[_0x5907a8(0x252)](_0x5907a8(0x232));}else _0x1797de[_0x5907a8(0x203)]('show'),setTimeout(()=>_0x1797de['remove'](),0xc8);}function showNewMentionNotification(_0x1ad470){const _0x183f21=_0x2fa9e7,_0x56f900=$(_0x183f21(0x3c2)+_0x1ad470+_0x183f21(0x325)+(_0x1ad470!==0x1?'s':'')+'!\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20');$(_0x183f21(0x491))[_0x183f21(0x396)](_0x56f900),setTimeout(()=>{const _0xa08c7c=_0x183f21;_0x56f900[_0xa08c7c(0x1db)](0x12c,function(){const _0x46d938=_0xa08c7c;$(this)[_0x46d938(0x2e7)]();});},0xbb8);}function toggleMentionsPanel(){mentionPanelOpen?closeMentionsPanel():openMentionsPanel();}function openMentionsPanel(){const _0x860af2=_0x2fa9e7;if($(_0x860af2(0x4d3))[_0x860af2(0x36d)]>0x0){$(_0x860af2(0x4d3))[_0x860af2(0x252)](_0x860af2(0x232)),mentionPanelOpen=!![];return;}const _0x3df8ed='\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mentions-panel\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mentions-panel-header\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h6\x20class=\x22mentions-panel-title\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-at\x22></i>\x20Mentions\x20&\x20Replies\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</h6>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22mentions-panel-close\x22\x20onclick=\x22closeMentionsPanel()\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-times\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mentions-panel-content\x22\x20id=\x22mentionsContent\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20Loading\x20mentions...\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20';$(_0x860af2(0x491))[_0x860af2(0x396)](_0x3df8ed),setTimeout(()=>{const _0x8fc70d=_0x860af2;$('.mentions-panel')[_0x8fc70d(0x252)]('show'),mentionPanelOpen=!![],displayMentions();},0x32);}function closeMentionsPanel(){const _0x44e39b=_0x2fa9e7,_0x3d5f93=$(_0x44e39b(0x4d3));_0x3d5f93['length']>0x0&&(_0x3d5f93[_0x44e39b(0x203)](_0x44e39b(0x232)),mentionPanelOpen=![],setTimeout(()=>_0x3d5f93[_0x44e39b(0x2e7)](),0x12c));}function displayMentions(){const _0x29bfdd=_0x2fa9e7,_0x2dc6f7=$(_0x29bfdd(0x3a5));if(mentionNotifications[_0x29bfdd(0x36d)]===0x0){_0x2dc6f7[_0x29bfdd(0x153)](_0x29bfdd(0x26f));return;}let _0x20ddbf='';mentionNotifications[_0x29bfdd(0x4b5)](_0x1e524c=>{const _0xc6d1ce=_0x29bfdd,_0x1c2c59=getTimeAgo(new Date(_0x1e524c['created_at'])),_0x2a7f7c=_0x1e524c['type']===_0xc6d1ce(0x347)?'fa-reply':_0xc6d1ce(0x451),_0x6be787=_0x1e524c['type']==='reply'?_0xc6d1ce(0x29e):_0xc6d1ce(0x476);_0x20ddbf+='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mention-notification\x20unread\x20'+_0x1e524c[_0xc6d1ce(0x2b5)]+_0xc6d1ce(0x190)+_0x1e524c[_0xc6d1ce(0x27b)]+',\x20'+_0x1e524c['id']+')\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mention-notification-header\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22images/'+_0x1e524c[_0xc6d1ce(0x2f4)]+_0xc6d1ce(0x1b5)+_0x1e524c['sender_name']+_0xc6d1ce(0x2af)+_0x1e524c[_0xc6d1ce(0x2b5)]+_0xc6d1ce(0x4a5)+_0x2a7f7c+'\x22></i>\x20'+_0x6be787+_0xc6d1ce(0x428)+_0x1e524c['message']+_0xc6d1ce(0x282)+_0x1c2c59+_0xc6d1ce(0x214);}),_0x2dc6f7[_0x29bfdd(0x153)](_0x20ddbf);}function jumpToMessage(_0x3228c1,_0x5ae4bb){const _0x3223a7=_0x2fa9e7;markMentionAsRead(_0x5ae4bb);const _0x2dc93a=$(_0x3223a7(0x209)+_0x3228c1+'\x22]');if(_0x2dc93a[_0x3223a7(0x36d)]>0x0){const _0x1cc126=$(_0x3223a7(0x1f6)),_0x235957=_0x2dc93a['position']()[_0x3223a7(0x287)]+_0x1cc126[_0x3223a7(0x3cf)]();_0x1cc126[_0x3223a7(0x23a)]({'scrollTop':_0x235957-0x64},0x12c),_0x2dc93a[_0x3223a7(0x252)](_0x3223a7(0x236)),setTimeout(()=>{const _0x4f93b6=_0x3223a7;_0x2dc93a[_0x4f93b6(0x203)]('mentioned-highlight');},0xbb8);}closeMentionsPanel();}function markMentionAsRead(_0x3d02e7){const _0x266f1f=_0x2fa9e7;$[_0x266f1f(0x1a0)]({'url':'api/mark_mentions_read.php','method':_0x266f1f(0x257),'data':{'mention_id':_0x3d02e7},'dataType':_0x266f1f(0x3e3),'success':function(_0x2e6861){const _0x49b253=_0x266f1f;_0x2e6861[_0x49b253(0x33c)]==='success'&&(mentionNotifications=mentionNotifications[_0x49b253(0x395)](_0x51453e=>_0x51453e['id']!==_0x3d02e7),updateMentionCounter(mentionNotifications[_0x49b253(0x36d)]));}});}function markAllMentionsAsRead(){const _0x1c8ed4=_0x2fa9e7;$[_0x1c8ed4(0x1a0)]({'url':_0x1c8ed4(0x375),'method':'POST','data':{'mark_all':!![]},'dataType':_0x1c8ed4(0x3e3),'success':function(_0x8d9314){const _0x3bcae7=_0x1c8ed4;_0x8d9314[_0x3bcae7(0x33c)]===_0x3bcae7(0x4d2)&&(mentionNotifications=[],updateMentionCounter(0x0),displayMentions());}});}function showReplyInterface(_0x1fa0a6,_0x1d599c,_0xb1c940){const _0x44a55d=_0x2fa9e7;clearReplyInterface();const _0x460dcb=_0x44a55d(0x30b)+_0x1d599c+_0x44a55d(0x15d)+_0x1d599c+_0x44a55d(0x355)+_0xb1c940+_0x44a55d(0x383);$(_0x44a55d(0x2cc))[_0x44a55d(0x20a)](_0x460dcb),currentReplyTo=_0x1fa0a6,$(_0x44a55d(0x364))[_0x44a55d(0x485)]();}function clearReplyInterface(){const _0x1ebca7=_0x2fa9e7;$(_0x1ebca7(0x1ee))[_0x1ebca7(0x2e7)](),currentReplyTo=null;}function getTimeAgo(_0x28c840){const _0x3b5b61=_0x2fa9e7,_0x11d11e=new Date(),_0x1c85a3=Math[_0x3b5b61(0x29f)]((_0x11d11e-_0x28c840)/0x3e8);if(_0x1c85a3<0x3c)return'Just\x20now';if(_0x1c85a3<0xe10)return Math[_0x3b5b61(0x29f)](_0x1c85a3/0x3c)+_0x3b5b61(0x1b7);if(_0x1c85a3<0x15180)return Math[_0x3b5b61(0x29f)](_0x1c85a3/0xe10)+_0x3b5b61(0x288);if(_0x1c85a3<0x93a80)return Math[_0x3b5b61(0x29f)](_0x1c85a3/0x15180)+_0x3b5b61(0x4cd);return _0x28c840[_0x3b5b61(0x2a6)]();}function addMentionHighlightCSS(){const _0x5ea1e8=_0x2fa9e7;if($(_0x5ea1e8(0x2e4))[_0x5ea1e8(0x36d)]>0x0)return;const _0x1ec7a7=_0x5ea1e8(0x46e);$('head')['append'](_0x1ec7a7);}function toggleAFK(){const _0xa3a9b6=_0x2fa9e7,_0x4eaa81=$(_0xa3a9b6(0x1b9)),_0x449745=_0x4eaa81[_0xa3a9b6(0x153)]();_0x4eaa81[_0xa3a9b6(0x4e0)](_0xa3a9b6(0x3b5),!![])[_0xa3a9b6(0x153)](_0xa3a9b6(0x2dc)),$[_0xa3a9b6(0x1a0)]({'url':_0xa3a9b6(0x409),'method':'POST','data':{'action':'toggle'},'dataType':_0xa3a9b6(0x3e3),'success':function(_0x3a4672){const _0x203ca0=_0xa3a9b6;_0x3a4672['status']===_0x203ca0(0x4d2)?(currentUserAFK=_0x3a4672[_0x203ca0(0x3fa)],manualAFK=_0x3a4672[_0x203ca0(0x278)],updateAFKButton(),setTimeout(()=>{loadUsers(),loadMessages();},0x1f4),showToast(_0x3a4672[_0x203ca0(0x454)],_0x203ca0(0x4d2))):alert(_0x203ca0(0x4b6)+_0x3a4672[_0x203ca0(0x454)]);},'error':function(_0x251290,_0x967d6b,_0x5b0bed){const _0x3a4103=_0xa3a9b6;console[_0x3a4103(0x1c3)](_0x3a4103(0x333),_0x5b0bed),alert(_0x3a4103(0x2b6)+_0x5b0bed);},'complete':function(){const _0x4e3b04=_0xa3a9b6;_0x4eaa81[_0x4e3b04(0x4e0)](_0x4e3b04(0x3b5),![]),updateAFKButton();}});}function updateAFKButton(){const _0x5bad15=_0x2fa9e7,_0x17bd66=$('.btn-toggle-afk');currentUserAFK?_0x17bd66[_0x5bad15(0x153)](_0x5bad15(0x2d9)):_0x17bd66[_0x5bad15(0x153)](_0x5bad15(0x42a));}function formatAFKDuration(_0x817027){const _0x3b3489=_0x2fa9e7;if(_0x817027<0x3c)return _0x817027+'m';else{const _0x1a10ed=Math[_0x3b3489(0x29f)](_0x817027/0x3c),_0xc0fe8e=_0x817027%0x3c;return _0xc0fe8e>0x0?_0x1a10ed+'h\x20'+_0xc0fe8e+'m':_0x1a10ed+'h';}}function addAFKStyles(){const _0x402ad8=_0x2fa9e7;if($('#afkStylesCSS')[_0x402ad8(0x36d)]>0x0)return;const _0x5aee47='\x0a\x20\x20\x20\x20\x20\x20\x20\x20<style\x20id=\x22afkStylesCSS\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20.user-item.afk-user\x20{\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20opacity:\x200.7;\x0a\x20\x20\x20\x20\x20\x20\x20\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20.user-item.afk-user\x20.user-avatar\x20{\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20opacity:\x200.6;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20filter:\x20grayscale(30%)\x20!important;\x0a\x20\x20\x20\x20\x20\x20\x20\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20.user-item.afk-user\x20.user-name\x20{\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20color:\x20#888\x20!important;\x0a\x20\x20\x20\x20\x20\x20\x20\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20.badge-afk\x20{\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20background-color:\x20#6c757d\x20!important;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20color:\x20white\x20!important;\x0a\x20\x20\x20\x20\x20\x20\x20\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20.btn.afk-user\x20{\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20opacity:\x200.8;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20border-color:\x20#6c757d\x20!important;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20color:\x20#6c757d\x20!important;\x0a\x20\x20\x20\x20\x20\x20\x20\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20.btn.afk-user:hover\x20{\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20background-color:\x20rgba(108,\x20117,\x20125,\x200.1)\x20!important;\x0a\x20\x20\x20\x20\x20\x20\x20\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20.system-message\x20img[src*=\x22afk.png\x22],\x0a\x20\x20\x20\x20\x20\x20\x20\x20.system-message\x20img[src*=\x22active.png\x22]\x20{\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20width:\x2016px;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20height:\x2016px;\x0a\x20\x20\x20\x20\x20\x20\x20\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20</style>\x0a\x20\x20\x20\x20';$(_0x402ad8(0x170))[_0x402ad8(0x396)](_0x5aee47);}function showActivityStatus(){const _0x58b52a=_0x2fa9e7,_0x1dec28=_0x58b52a(0x373)+activityTracker[_0x58b52a(0x200)]+'</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div>AFK\x20Timeout:\x20'+ACTIVITY_CONFIG[_0x58b52a(0x2bb)]+_0x58b52a(0x386)+ACTIVITY_CONFIG['DISCONNECT_TIMEOUT_MINUTES']+_0x58b52a(0x4e1)+new Date(activityTracker['lastActivityUpdate'])[_0x58b52a(0x42e)]()+'</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div>Current\x20AFK:\x20'+currentUserAFK+_0x58b52a(0x3d7);$('.activity-status-debug')[_0x58b52a(0x2e7)](),$('body')['append'](_0x1dec28),setTimeout(()=>$('.activity-status-debug')[_0x58b52a(0x2e7)](),0x2710);}DEBUG_MODE&&setInterval(showActivityStatus,0x7530);function startYouTubeUpdates(){const _0xf936fc=_0x2fa9e7;youtubeUpdateInterval&&clearInterval(youtubeUpdateInterval),youtubeUpdateInterval=setInterval(updateYouTubeData,0x1388),updateYouTubeData(),debugLog(_0xf936fc(0x289));}function updateYouTubeData(){const _0x4d045c=_0x2fa9e7;if(!youtubeEnabled||isYoutubeUpdating)return;isYoutubeUpdating=!![],$[_0x4d045c(0x1a0)]({'url':_0x4d045c(0x25e),'method':_0x4d045c(0x280),'dataType':'json','timeout':0x1f40,'success':function(_0x14bcee){const _0x4ac37d=_0x4d045c;if(_0x14bcee[_0x4ac37d(0x33c)]===_0x4ac37d(0x4d2)){const _0x37474c=_0x14bcee[_0x4ac37d(0x14e)];_0x37474c['enabled']&&_0x37474c[_0x4ac37d(0x3fd)]!==lastSyncToken&&(debugLog(_0x4ac37d(0x4ac),_0x37474c),lastSyncToken=_0x37474c['sync_token'],applySyncState(_0x37474c));const _0x1ed74a=_0x14bcee['queue_data'];playerQueue=_0x1ed74a['queue']||[],playerSuggestions=_0x1ed74a[_0x4ac37d(0x174)]||[],currentVideoData=_0x1ed74a[_0x4ac37d(0x3e2)],renderQueue(),renderSuggestions(),updateVideoInfo();}},'error':function(_0x55dd7b,_0x17827f,_0x5b7e83){debugLog('⚠️\x20YouTube\x20update\x20error:',_0x5b7e83);},'complete':function(){isYoutubeUpdating=![];}});}function applySyncState(_0x54ee44){const _0x5f052c=_0x2fa9e7;if(!youtubePlayerReady)return;if(_0x54ee44[_0x5f052c(0x3f5)]){const _0x1d27ee=getCurrentVideoId();if(_0x1d27ee!==_0x54ee44['video_id'])youtubePlayer['loadVideoById']({'videoId':_0x54ee44['video_id'],'startSeconds':_0x54ee44['current_time']});else{const _0x44049c=youtubePlayer['getCurrentTime'](),_0x414e89=Math[_0x5f052c(0x34e)](_0x44049c-_0x54ee44['current_time']);_0x414e89>0x3&&youtubePlayer['seekTo'](_0x54ee44[_0x5f052c(0x4d1)],!![]);}if(_0x54ee44['is_playing']&&youtubePlayer[_0x5f052c(0x20e)]()!==YT['PlayerState'][_0x5f052c(0x2d3)])youtubePlayer[_0x5f052c(0x365)]();else!_0x54ee44['is_playing']&&youtubePlayer[_0x5f052c(0x20e)]()===YT[_0x5f052c(0x475)][_0x5f052c(0x2d3)]&&youtubePlayer[_0x5f052c(0x49f)]();}else youtubePlayer[_0x5f052c(0x20e)]()!==YT[_0x5f052c(0x475)][_0x5f052c(0x1cd)]&&youtubePlayer[_0x5f052c(0x261)]();}function showPassHostModal(_0x6eb76e,_0x5c4477){const _0x2d4699=_0x2fa9e7,_0x2e720d=_0x2d4699(0x177)+_0x5c4477+_0x2d4699(0x215)+_0x5c4477+_0x2d4699(0x32c)+_0x6eb76e+_0x2d4699(0x36f);$(_0x2d4699(0x25f))[_0x2d4699(0x2e7)](),$('body')[_0x2d4699(0x396)](_0x2e720d),$(_0x2d4699(0x25f))[_0x2d4699(0x4be)](_0x2d4699(0x232));}function executePassHost(_0xd7eaff){const _0x2cbffa=_0x2fa9e7,_0x5ef090=$(_0x2cbffa(0x3a0)),_0x4ca83b=_0x5ef090['html']();_0x5ef090[_0x2cbffa(0x4e0)]('disabled',!![])[_0x2cbffa(0x153)](_0x2cbffa(0x3c4)),$[_0x2cbffa(0x1a0)]({'url':_0x2cbffa(0x213),'method':_0x2cbffa(0x257),'data':{'room_id':roomId,'target_user_id_string':_0xd7eaff},'dataType':_0x2cbffa(0x3e3),'success':function(_0x5d2f5a){const _0x16e7e4=_0x2cbffa;_0x5d2f5a[_0x16e7e4(0x33c)]===_0x16e7e4(0x4d2)?($(_0x16e7e4(0x25f))[_0x16e7e4(0x4be)](_0x16e7e4(0x2a0)),alert(_0x16e7e4(0x2bd)),window['isHost']=![],updateNavigationForHostChange(![]),setTimeout(()=>{loadUsers(),loadMessages();},0x1f4)):alert('Error:\x20'+_0x5d2f5a[_0x16e7e4(0x454)]);},'error':function(_0x448f17,_0x16e58d,_0x3fdfba){const _0x1a8833=_0x2cbffa;alert(_0x1a8833(0x419)+_0x3fdfba);},'complete':function(){const _0x550a56=_0x2cbffa;_0x5ef090[_0x550a56(0x4e0)](_0x550a56(0x3b5),![])['html'](_0x4ca83b);}});}function updateNavigationForHostChange(_0x2ac5f4){const _0xaef9b2=_0x2fa9e7,_0xad8f61=$(_0xaef9b2(0x2d8)),_0x4734c3=$(_0xaef9b2(0x293));if(_0x2ac5f4){if($(_0xaef9b2(0x399))['length']===0x0){const _0x46a06e='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<li>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<a\x20class=\x22dropdown-item\x22\x20href=\x22#\x22\x20onclick=\x22showRoomSettings()\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-tools\x20me-2\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20Room\x20Settings\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</a>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</li>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20';_0xad8f61[_0xaef9b2(0x225)]('li:has([onclick=\x22leaveRoom()\x22])')[_0xaef9b2(0x20a)](_0x46a06e);}}else $('[onclick=\x22showRoomSettings()\x22]')['closest']('li')['remove']();}function checkHostStatusChange(_0x3a0ae9){const _0x4dea62=_0x2fa9e7,_0x195869=_0x3a0ae9[_0x4dea62(0x225)](_0x1e8ce3=>_0x1e8ce3[_0x4dea62(0x3da)]===currentUserIdString);if(_0x195869){const _0x4c068d=window['isHost'],_0x412596=_0x195869[_0x4dea62(0x1b3)]===0x1||_0x195869[_0x4dea62(0x1b3)]===!![];_0x4c068d!==_0x412596&&(window['isHost']=_0x412596,updateNavigationForHostChange(_0x412596),_0x412596&&console[_0x4dea62(0x2c5)](_0x4dea62(0x48a)));}}$[_0x2fa9e7(0x459)]('js/inactivity_warning.js');
+const DEBUG_MODE = false;
+const SHOW_SENSITIVE_DATA = false;
+
+function debugLog(message, data = null) {
+    if (DEBUG_MODE) {
+        if (data !== null) {
+            debugLog('[ROOM]', message, data);
+        } else {
+            debugLog('[ROOM]', message);
+        }
+    }
+}
+
+function debugError(message, error = null) {
+    if (DEBUG_MODE) {
+        if (error !== null) {
+            console.error('[ROOM]', message, error);
+        } else {
+            console.error('[ROOM]', message);
+        }
+    }
+}
+
+function criticalError(message, error = null) {
+    if (error !== null) {
+        console.error('[CRITICAL]', message, error);
+    } else {
+        console.error('[CRITICAL]', message);
+    }
+}
+
+
+let youtubeUpdateInterval = null;
+let isYoutubeUpdating = false;
+
+let messageOffset = 0;
+let messageLimit = 50;
+let totalMessageCount = 0;
+let isLoadingMessages = false;
+let hasMoreOlderMessages = false;
+let isInitialLoad = true;
+
+let lastSeenMessageId = null;
+let initializedMessages = false;
+
+let friendshipCache = new Map();
+let friendshipCacheTimeout = new Map();
+
+let kickDetectionInterval;
+let userKickedModalShown = false;
+let kickDetectionEnabled = true;
+let lastStatusCheck = 0;
+let consecutiveErrors = 0;
+
+/*const ACTIVITY_CONFIG = {
+    HEARTBEAT_INTERVAL: 15000,        // 30 seconds
+    ACTIVITY_UPDATE_INTERVAL: 120000,   // 5 seconds for interaction tracking
+    DISCONNECT_CHECK_INTERVAL: 150000, // 60 seconds
+    STATUS_CHECK_INTERVAL: 20000,      // 5 seconds
+    MIN_ACTIVITY_INTERVAL: 30000,      // Minimum 3 seconds between activity updates
+    
+    AFK_TIMEOUT_MINUTES: 20,          // 20 minutes to AFK
+    DISCONNECT_TIMEOUT_MINUTES: 80,   // 80 minutes total to disconnect
+    SESSION_TIMEOUT_MINUTES: 60,       // 60 minutes for session timeout
+    ACTIVITY_CHECK_INTERVAL: 2
+};
+
+let activityInterval = null;
+let disconnectCheckInterval = null;
+let lastActivityUpdate = 0;
+let userIsActive = true;
+let activityTrackingEnabled = false;*/
+
+
+
+let lastScrollTop = 0;
+let lastMessageCount = 0;
+let userIsScrolling = false;
+let lastPlayedMessageCount = 0;
+
+function playMessageNotification() {
+    const audio = new Audio('/sounds/message_notification.mp3');
+    audio.play();
+}
+
+let youtubePlayer = null;
+let youtubePlayerReady = false;
+let youtubeEnabled = false;
+let isYoutubeHost = false;
+let playerHidden = false;
+let lastSyncToken = null;
+let playerSyncInterval = null;
+let queueUpdateInterval = null;
+let currentVideoData = null;
+let playerQueue = [];
+let playerSuggestions = [];
+let youtubeAPIReady = false;
+
+
+let mentionNotifications = [];
+let currentReplyTo = null;
+let mentionCheckInterval = null;
+let mentionPanelOpen = false;
+
+let currentUserAFK = false;
+let manualAFK = false;
+
+let lastProcessedSettingsEvent = null;
+let isReloadingSettings = false;
+
+
+
+
+
+if (typeof debugLog === 'undefined') {
+    window.debugLog = function(...args) {
+        console.log('[DEBUG]', ...args);
+    };
+}
+
+
+// Add this to the top of room.js, after the global variables
+
+// Request Management System
+class RequestManager {
+    constructor() {
+        this.activeRequests = 0;
+        this.maxConcurrentRequests = 2;
+        this.requestQueue = [];
+        this.isProcessingQueue = false;
+        this.requestStats = new Map();
+    }
+    
+    async makeRequest(options) {
+        return new Promise((resolve, reject) => {
+            this.requestQueue.push({ options, resolve, reject });
+            this.processQueue();
+        });
+    }
+    
+    async processQueue() {
+        if (this.isProcessingQueue || this.requestQueue.length === 0) {
+            return;
+        }
+        
+        this.isProcessingQueue = true;
+        
+        while (this.requestQueue.length > 0 && this.activeRequests < this.maxConcurrentRequests) {
+            const { options, resolve, reject } = this.requestQueue.shift();
+            this.executeRequest(options, resolve, reject);
+        }
+        
+        this.isProcessingQueue = false;
+        
+        // Continue processing if queue still has items
+        if (this.requestQueue.length > 0) {
+            setTimeout(() => this.processQueue(), 100);
+        }
+    }
+    
+    executeRequest(options, resolve, reject) {
+        this.activeRequests++;
+        const startTime = Date.now();
+        const url = options.url;
+        
+        // Track request stats
+        if (!this.requestStats.has(url)) {
+            this.requestStats.set(url, { count: 0, totalTime: 0, avgTime: 0 });
+        }
+        
+        const originalSuccess = options.success || (() => {});
+        const originalError = options.error || (() => {});
+        
+        options.success = (data) => {
+            this.activeRequests--;
+            const duration = Date.now() - startTime;
+            
+            // Update stats
+            const stats = this.requestStats.get(url);
+            stats.count++;
+            stats.totalTime += duration;
+            stats.avgTime = stats.totalTime / stats.count;
+            
+            if (DEBUG_MODE) {
+                console.log(`✅ ${url}: ${duration}ms (avg: ${Math.round(stats.avgTime)}ms)`);
+            }
+            
+            originalSuccess(data);
+            resolve(data);
+            this.processQueue();
+        };
+        
+        options.error = (xhr, status, error) => {
+            this.activeRequests--;
+            if (DEBUG_MODE) {
+                console.error(`❌ ${url}: ${error}`);
+            }
+            originalError(xhr, status, error);
+            reject(error);
+            this.processQueue();
+        };
+        
+        $.ajax(options);
+    }
+    
+    getStats() {
+        const stats = {};
+        this.requestStats.forEach((value, key) => {
+            stats[key] = {
+                count: value.count,
+                avgTime: Math.round(value.avgTime)
+            };
+        });
+        return stats;
+    }
+}
+
+// Initialize request manager
+const requestManager = new RequestManager();
+
+// Wrapper function for managed requests
+function managedAjax(options) {
+    return requestManager.makeRequest(options);
+}
+
+// Add missing loadYouTubeAPI function
+function loadYouTubeAPI() {
+    if (window.YT && window.YT.Player) {
+        youtubeAPIReady = true;
+        initializeYouTubePlayer();
+        return;
+    }
+    
+    if (document.querySelector('script[src*="youtube"]')) {
+        // Already loading
+        return;
+    }
+    
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    
+    debugLog('🎬 Loading YouTube API...');
+}
+
+// Combined data fetcher for all room data
+function fetchAllRoomData() {
+    const promises = [];
+    
+    // 1. Messages
+    promises.push(
+        managedAjax({
+            url: 'api/get_messages.php',
+            method: 'GET',
+            data: { 
+                room_id: roomId,
+                limit: messageLimit,
+                offset: 0
+            },
+            dataType: 'json'
+        }).then(response => {
+            handleMessagesResponse(response);
+        }).catch(error => {
+            console.error('Messages error:', error);
+        })
+    );
+    
+    // 2. Users
+    promises.push(
+        managedAjax({
+            url: 'api/get_room_users.php',
+            method: 'GET',
+            data: { room_id: roomId },
+            dataType: 'json'
+        }).then(response => {
+            handleUsersResponse(response);
+        }).catch(error => {
+            console.error('Users error:', error);
+        })
+    );
+    
+    // 3. Mentions
+    promises.push(
+        managedAjax({
+            url: 'api/get_mentions.php',
+            method: 'GET',
+            dataType: 'json'
+        }).then(response => {
+            handleMentionsResponse(response);
+        }).catch(error => {
+            console.error('Mentions error:', error);
+        })
+    );
+    
+    // 4. Whispers
+    promises.push(
+        managedAjax({
+            url: 'api/room_whispers.php',
+            method: 'GET',
+            data: { action: 'get_conversations' },
+            dataType: 'json'
+        }).then(response => {
+            handleWhispersResponse(response);
+        }).catch(error => {
+            console.error('Whispers error:', error);
+        })
+    );
+
+    // 5. Friends - NEW!
+    if (currentUser.type === 'user') {
+        promises.push(
+            managedAjax({
+                url: 'api/friends.php',
+                method: 'GET',
+                data: { action: 'get' },
+                dataType: 'json'
+            }).then(response => {
+                handleFriendsResponse(response);
+            }).catch(error => {
+                console.error('Friends error:', error);
+            })
+        );
+    }
+    
+    // 6. Private Message Conversations - NEW!
+    if (currentUser.type === 'user') {
+        promises.push(
+            managedAjax({
+                url: 'api/private_messages.php',
+                method: 'GET',
+                data: { action: 'get_conversations' },
+                dataType: 'json'
+            }).then(response => {
+                handleConversationsResponse(response);
+            }).catch(error => {
+                console.error('Conversations error:', error);
+            })
+        );
+    }
+
+    promises.push(
+    managedAjax({
+        url: 'api/check_room_settings.php',
+        method: 'GET',
+        data: { room_id: roomId },
+        dataType: 'json'
+    }).then(response => {
+        if (response.status === 'success' && response.settings_changed && response.event_id) {
+            // Use sessionStorage to track processed events (clears on page reload)
+            const processedKey = `settings_event_${roomId}_${response.event_id}`;
+            
+            if (!sessionStorage.getItem(processedKey)) {
+                // Mark as processed immediately
+                sessionStorage.setItem(processedKey, 'true');
+                
+                showToast('Room settings have been updated. Refreshing...', 'info');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            }
+        }
+    }).catch(error => {
+        console.error('Settings check error:', error);
+    })
+);
+
+    if (currentUser.type === 'user' && openPrivateChats.size > 0) {
+        openPrivateChats.forEach((data, userId) => {
+            const input = $(`#pm-input-${userId}`);
+            const isTyping = input.is(':focus') && input.val().length > 0;
+            
+            // Only update if user is not actively typing
+            if (!isTyping) {
+                promises.push(
+                    managedAjax({
+                        url: 'api/private_messages.php',
+                        method: 'GET',
+                        data: {
+                            action: 'get',
+                            other_user_id: userId
+                        },
+                        dataType: 'json'
+                    }).then(response => {
+                        if (response.status === 'success') {
+                            displayPrivateMessages(userId, response.messages);
+                        }
+                    }).catch(error => {
+                        console.error(`Private messages error for user ${userId}:`, error);
+                    })
+                );
+            }
+        });
+    }
+    
+    // 7. YouTube data (if enabled)
+    if (youtubeEnabled) {
+        promises.push(
+            managedAjax({
+                url: 'api/youtube_combined.php',
+                method: 'GET',
+                dataType: 'json'
+            }).then(response => {
+                handleYouTubeResponse(response);
+            }).catch(error => {
+                console.error('YouTube error:', error);
+            })
+        );
+    }
+    
+    return Promise.allSettled(promises);
+}
+
+
+
+// Response handlers
+function handleMessagesResponse(data) {
+    if (data.status === 'success') {
+        const messages = data.messages || [];
+        let html = '';
+        
+        if (messages.length === 0) {
+            html = '<div class="empty-chat"><i class="fas fa-comments"></i><h5>No messages yet</h5><p>Start the conversation!</p></div>';
+        } else {
+            messages.forEach(msg => {
+                html += renderMessage(msg);
+            });
+        }
+        
+        const chatbox = $('#chatbox');
+        const wasAtBottom = isInitialLoad || (chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20);
+        
+        chatbox.html(html);
+        
+        if (wasAtBottom || isInitialLoad) {
+            setTimeout(() => {
+                chatbox.scrollTop(chatbox[0].scrollHeight);
+            }, 50);
+            isInitialLoad = false;
+        }
+        
+        if (typeof applyAllAvatarFilters === 'function') {
+            setTimeout(applyAllAvatarFilters, 100);
+        }
+    }
+}
+
+function handleUsersResponse(users) {
+    checkHostStatusChange(users);
+    if (Array.isArray(users)) {
+        let html = '';
+        
+        if (users.length === 0) {
+            html = '<div class="empty-users"><i class="fas fa-users"></i><p>No users in room</p></div>';
+        } else {
+            users.sort((a, b) => {
+                if (a.is_host && !b.is_host) return -1;
+                if (!a.is_host && b.is_host) return 1;
+                const nameA = a.display_name || a.username || a.guest_name || 'Unknown';
+                const nameB = b.display_name || b.username || b.guest_name || 'Unknown';
+                return nameA.localeCompare(nameB);
+            });
+            
+            users.forEach(user => {
+                html += renderUser(user);
+            });
+        }
+        
+        $('#userList').html(html);
+    }
+}
+
+function handleMentionsResponse(response) {
+    if (response.status === 'success') {
+        mentionNotifications = response.mentions;
+        updateMentionCounter(response.unread_count);
+        
+        if (response.unread_count > 0 && !mentionPanelOpen) {
+            showNewMentionNotification(response.unread_count);
+        }
+    }
+}
+
+function handleWhispersResponse(response) {
+    if (response.status === 'success') {
+        response.conversations.forEach(conv => {
+            const userIdString = conv.other_user_id_string;
+            
+            if (conv.unread_count > 0 && !openWhispers.has(userIdString)) {
+                const displayName = conv.username || conv.guest_name || 'Unknown';
+                openWhisper(userIdString, displayName);
+            }
+            
+            if (openWhispers.has(userIdString)) {
+                const data = openWhispers.get(userIdString);
+                data.unreadCount = conv.unread_count;
+                openWhispers.set(userIdString, data);
+                
+                const unreadElement = $(`#whisper-unread-${data.safeId}`);
+                if (conv.unread_count > 0) {
+                    unreadElement.text(conv.unread_count).show();
+                } else {
+                    unreadElement.hide();
+                }
+            }
+        });
+    }
+}
+
+function handleYouTubeResponse(response) {
+    if (response.status === 'success') {
+        // Update sync data
+        const sync = response.sync_data;
+        if (sync.enabled && sync.sync_token !== lastSyncToken) {
+            debugLog('🔄 Syncing player state:', sync);
+            lastSyncToken = sync.sync_token;
+            applySyncState(sync);
+        }
+        
+        // Update queue data  
+        const queueData = response.queue_data;
+        playerQueue = queueData.queue || [];
+        playerSuggestions = queueData.suggestions || [];
+        currentVideoData = queueData.current_playing;
+        
+        renderQueue();
+        renderSuggestions();
+        updateVideoInfo();
+    }
+}
+
+function applySyncState(sync) {
+    if (!youtubePlayerReady) return;
+    
+    if (sync.video_id) {
+        const currentVideoId = getCurrentVideoId();
+        
+        if (currentVideoId !== sync.video_id) {
+            youtubePlayer.loadVideoById({
+                videoId: sync.video_id,
+                startSeconds: sync.current_time
+            });
+        } else {
+            const currentTime = youtubePlayer.getCurrentTime();
+            const timeDiff = Math.abs(currentTime - sync.current_time);
+            
+            if (timeDiff > 3) {
+                youtubePlayer.seekTo(sync.current_time, true);
+            }
+        }
+        
+        if (sync.is_playing && youtubePlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
+            youtubePlayer.playVideo();
+        } else if (!sync.is_playing && youtubePlayer.getPlayerState() === YT.PlayerState.PLAYING) {
+            youtubePlayer.pauseVideo();
+        }
+    } else {
+        if (youtubePlayer.getPlayerState() !== YT.PlayerState.CUED) {
+            youtubePlayer.stopVideo();
+        }
+    }
+}
+
+function handleFriendsResponse(response) {
+    if (response.status === 'success') {
+        friends = response.friends;
+        
+        // Only update the panel if it's visible
+        if ($('#friendsPanel').is(':visible')) {
+            updateFriendsPanel();
+        }
+    }
+}
+
+function handleConversationsResponse(response) {
+    if (response.status === 'success') {
+        // Only update the display if the friends panel is visible
+        if ($('#friendsPanel').is(':visible')) {
+            displayConversations(response.conversations);
+        }
+    }
+}
+
+// Replace all the individual intervals with one managed update cycle
+let roomUpdateInterval = null;
+let isUpdatingRoom = false;
+
+function startRoomUpdates() {
+    if (roomUpdateInterval) {
+        clearInterval(roomUpdateInterval);
+    }
+    
+    // Single update cycle every 3 seconds instead of multiple 1-second intervals
+    roomUpdateInterval = setInterval(updateAllRoomData, 3000);
+    updateAllRoomData(); // Initial load
+    
+    debugLog('🔄 Started managed room updates (every 3s)');
+}
+
+function updateAllRoomData() {
+    if (isUpdatingRoom) {
+        debugLog('⏸️ Skipping update - already in progress');
+        return;
+    }
+    
+    isUpdatingRoom = true;
+    
+    fetchAllRoomData().finally(() => {
+        isUpdatingRoom = false;
+    });
+}
+
+function stopRoomUpdates() {
+    if (roomUpdateInterval) {
+        clearInterval(roomUpdateInterval);
+        roomUpdateInterval = null;
+    }
+    isUpdatingRoom = false;
+    debugLog('🛑 Stopped room updates');
+}
+
+// Debug function to show request stats
+window.showRequestStats = function() {
+    console.table(requestManager.getStats());
+    console.log('Active requests:', requestManager.activeRequests);
+    console.log('Queued requests:', requestManager.requestQueue.length);
+};
+
+
+
+function checkIfFriend(userId, callback) {
+    if (!userId || currentUser.type !== 'user') {
+        callback(false);
+        return;
+    }
+    
+    if (friendshipCache.has(userId)) {
+        callback(friendshipCache.get(userId));
+        return;
+    }
+    
+    $.ajax({
+        url: 'api/friends.php',
+        method: 'GET',
+        data: { action: 'get' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                const isFriend = response.friends.some(friend => 
+                    friend.friend_user_id == userId && friend.status === 'accepted'
+                );
+                
+                friendshipCache.set(userId, isFriend);
+                
+                if (friendshipCacheTimeout.has(userId)) {
+                    clearTimeout(friendshipCacheTimeout.get(userId));
+                }
+                friendshipCacheTimeout.set(userId, setTimeout(() => {
+                    friendshipCache.delete(userId);
+                    friendshipCacheTimeout.delete(userId);
+                }, 30000));
+                
+                callback(isFriend);
+            } else {
+                callback(false);
+            }
+        },
+        error: function() {
+            callback(false);
+        }
+    });
+}
+
+function clearFriendshipCache(userId = null) {
+    if (userId) {
+        friendshipCache.delete(userId);
+        if (friendshipCacheTimeout.has(userId)) {
+            clearTimeout(friendshipCacheTimeout.get(userId));
+            friendshipCacheTimeout.delete(userId);
+        }
+    } else {
+        friendshipCache.clear();
+        friendshipCacheTimeout.forEach(timeout => clearTimeout(timeout));
+        friendshipCacheTimeout.clear();
+    }
+}
+
+function sendMessage() {
+    const messageInput = $('#message');
+    const message = messageInput.val().trim();
+
+    
+    
+    if (!message) {
+        messageInput.focus();
+        return false;
+    }
+    
+    debugLog('💬 Preparing to send message:', message);
+    
+    validateImagesInMessage(message).then(validation => {
+        if (!validation.valid) {
+            alert(`Cannot send message: ${validation.error}`);
+            messageInput.focus();
+            return;
+        }
+        
+        sendValidatedMessage(message);
+    }).catch(error => {
+        console.error('Image validation error:', error);
+        alert('Cannot send message: Failed to validate images');
+        messageInput.focus();
+    });
+    
+    return false;
+}
+
+async function validateImagesInMessage(message) {
+    const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+    const images = [];
+    let match;
+    
+    while ((match = imageRegex.exec(message)) !== null) {
+        images.push({
+            alt: match[1],
+            url: match[2].trim()
+        });
+    }
+    
+    if (images.length === 0) {
+        return { valid: true };
+    }
+    
+    console.log('Found images to validate:', images);
+    
+    for (let i = 0; i < images.length; i++) {
+        const image = images[i];
+        
+        if (!isValidImageUrl(image.url)) {
+            return {
+                valid: false,
+                error: `Invalid image URL: ${image.url}`
+            };
+        }
+        
+        const isAccessible = await testImageAccessibility(image.url);
+        if (!isAccessible) {
+            return {
+                valid: false,
+                error: `Image not accessible: ${image.url}`
+            };
+        }
+    }
+    
+    return { valid: true };
+}
+
+function isValidImageUrl(url) {
+    try {
+        const urlObj = new URL(url);
+        
+        if (!['http:', 'https:'].includes(urlObj.protocol)) {
+            return false;
+        }
+        
+        const pathname = urlObj.pathname.toLowerCase();
+        const hasValidExtension = /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url);
+        
+        return hasValidExtension;
+    } catch (e) {
+        return false;
+    }
+}
+
+function testImageAccessibility(url) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const timeout = setTimeout(() => {
+            img.onload = img.onerror = null;
+            resolve(false);
+        }, 5000); // 5 second timeout
+        
+        img.onload = () => {
+            clearTimeout(timeout);
+            resolve(true);
+        };
+        
+        img.onerror = () => {
+            clearTimeout(timeout);
+            resolve(false);
+        };
+        
+        const currentDomain = window.location.hostname;
+        let imageUrl = url;
+        
+        try {
+            const urlHost = new URL(url).hostname;
+            if (urlHost !== currentDomain) {
+                imageUrl = `api/image_proxy.php?url=${encodeURIComponent(url)}`;
+            }
+        } catch (e) {
+        }
+        
+        img.src = imageUrl;
+    });
+}
+
+function sendValidatedMessage(message) {
+    const messageInput = $('#message');
+    const sendBtn = $('.btn-send-message');
+    const originalText = sendBtn.html();
+    
+    sendBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+    
+    if (typeof activityTracker !== 'undefined') {
+       // activityTracker.recordActivity('message_send');
+    }
+    
+    const sendData = {
+        room_id: roomId,
+        message: message
+    };
+    
+    if (typeof currentReplyTo !== 'undefined' && currentReplyTo) {
+        sendData.reply_to = currentReplyTo;
+    }
+    
+    $.ajax({
+        url: 'api/send_message.php',
+        method: 'POST',
+        data: sendData,
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'not_in_room') {
+    alert(response.message || 'You have been disconnected from the room');
+    window.location.href = '/lounge';
+    return;
+}
+
+            if (response.status === 'success') {
+                messageInput.val('');
+                if (typeof clearReplyInterface === 'function') {
+                    clearReplyInterface();
+                }
+                
+                if (response.afk_cleared) {
+                    debugLog('🔄 AFK status was cleared due to sending message');
+                    if (typeof activityTracker !== 'undefined') {
+                       // activityTracker.handleAFKStatusChange(false);
+                    }
+                    
+                    if (typeof showToast === 'function') {
+                        showToast('You are no longer AFK', 'info');
+                    }
+                    
+                    setTimeout(() => {
+                        if (typeof loadUsers === 'function') loadUsers();
+                    }, 500);
+                }
+                
+                if (typeof loadMessages === 'function') {
+                    loadMessages();
+                }
+                
+                setTimeout(() => {
+                    if (typeof checkUserStatus === 'function') {
+                        checkUserStatus();
+                    }
+                }, 200);
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error in sendMessage:', status, error);
+            alert('AJAX error: ' + error);
+        },
+        complete: function() {
+            sendBtn.prop('disabled', false).html(originalText);
+            messageInput.focus();
+        }
+    });
+}
+
+function loadMessages(loadOlder = false) {
+    if (isLoadingMessages) return;
+    
+    debugLog('Loading messages for roomId:', roomId, 'loadOlder:', loadOlder, 'offset:', messageOffset);
+    
+    isLoadingMessages = true;
+    
+    if (loadOlder) {
+        $('.load-more-messages').html('<i class="fas fa-spinner fa-spin"></i> Loading...').prop('onclick', null);
+    }
+    
+    $.ajax({
+        url: 'api/get_messages.php',
+        method: 'GET',
+        data: { 
+            room_id: roomId,
+            limit: messageLimit,
+            offset: loadOlder ? messageOffset : 0,
+            load_older: loadOlder
+        },
+        dataType: 'json', // This ensures automatic JSON parsing
+        success: function(data) { // Use 'data' directly instead of 'response'
+            debugLog('Response from api/get_messages.php:', data);
+            try {
+                // Remove the JSON.parse since dataType: 'json' handles it
+                if (data.status === 'error') {
+                    throw new Error(data.message);
+                }
+                
+                let messages = data.messages || [];
+                let pagination = data.pagination || {};
+                
+                totalMessageCount = pagination.total_count || 0;
+                hasMoreOlderMessages = pagination.has_more_older || false;
+                
+                debugLog('Pagination info - Total:', totalMessageCount, 'Has more older:', hasMoreOlderMessages, 'Current offset:', messageOffset);
+                
+                let html = '';
+                
+                if (!Array.isArray(messages)) {
+                    console.error('Expected array from get_messages, got:', messages);
+                    html = '<div class="empty-chat"><i class="fas fa-exclamation-triangle"></i><h5>Error loading messages</h5><p>Please try refreshing the page</p></div>';
+                } else if (messages.length === 0 && !loadOlder) {
+                    html = '<div class="empty-chat"><i class="fas fa-comments"></i><h5>No messages yet</h5><p>Start the conversation!</p></div>';
+                } else {
+                    messages.forEach(msg => {
+                        html += renderMessage(msg);
+                    });
+                }
+                
+                const chatbox = $('#chatbox');
+                
+                if (loadOlder && messages.length > 0) {
+                    const currentScrollTop = chatbox.scrollTop();
+                    const currentScrollHeight = chatbox[0].scrollHeight;
+                    
+                    $('.load-more-messages').after(html);
+                    
+                    requestAnimationFrame(() => {
+                        const newScrollHeight = chatbox[0].scrollHeight;
+                        const heightDiff = newScrollHeight - currentScrollHeight;
+                        chatbox.scrollTop(currentScrollTop + heightDiff);
+                    });
+                    
+                    messageOffset += messages.length;
+                    
+                    debugLog('Loaded older messages:', messages.length, 'New offset:', messageOffset);
+                    
+                } else if (loadOlder && messages.length === 0) {
+                    $('.load-more-messages').remove();
+                    hasMoreOlderMessages = false;
+                    
+                } else if (!loadOlder) {
+                    const wasAtBottom = isInitialLoad || (chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20);
+                    
+                    chatbox.html(html);
+                    
+                    // Set initial offset to the number of messages loaded
+                    messageOffset = messages.length;
+                    
+                    debugLog('Initial load complete. Messages:', messages.length, 'Initial offset:', messageOffset, 'Has more older:', hasMoreOlderMessages);
+                    
+                    if (wasAtBottom || isInitialLoad) {
+                        setTimeout(() => {
+                            chatbox.scrollTop(chatbox[0].scrollHeight);
+                        }, 50);
+                        isInitialLoad = false;
+                    }
+                    
+                    if (!isInitialLoad && messages.length > lastMessageCount) {
+                        playMessageNotification();
+                        lastPlayedMessageCount = messages.length;
+                    }
+                    lastMessageCount = messages.length;
+                }
+                
+                if (typeof applyAllAvatarFilters === 'function') {
+                    setTimeout(applyAllAvatarFilters, 100);
+                }
+                
+            } catch (e) {
+                console.error('Error processing messages:', e, data);
+                $('#chatbox').html('<div class="empty-chat"><i class="fas fa-exclamation-triangle"></i><h5>Error loading messages</h5><p>Failed to process server response</p></div>');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error in loadMessages:', status, error, xhr.responseText);
+            if (loadOlder) {
+                $('.load-more-messages').html('<i class="fas fa-exclamation-triangle"></i> Error - Click to retry').attr('onclick', 'loadOlderMessages()');
+            } else {
+                $('#chatbox').html('<div class="empty-chat"><i class="fas fa-wifi"></i><h5>Connection Error</h5><p>Failed to load messages. Check your connection.</p></div>');
+            }
+        },
+        complete: function() {
+            isLoadingMessages = false;
+        }
+    });
+}
+
+function loadOlderMessages() {
+    debugLog('loadOlderMessages called. hasMoreOlderMessages:', hasMoreOlderMessages, 'isLoadingMessages:', isLoadingMessages);
+    
+    if (!isLoadingMessages && hasMoreOlderMessages) {
+        loadMessages(true);
+    } else if (isLoadingMessages) {
+        debugLog('Already loading messages, skipping...');
+    } else if (!hasMoreOlderMessages) {
+        debugLog('No more older messages available');
+    }
+}
+
+$(document).on('click', '.load-more-messages', function(e) {
+    e.preventDefault();
+    debugLog('Load more button clicked via event handler');
+    loadOlderMessages();
+});
+
+function resetMessagePagination() {
+    messageOffset = 0;
+    totalMessageCount = 0;
+    isLoadingMessages = false;
+    hasMoreOlderMessages = false;
+    isInitialLoad = true;
+    $('.load-more-messages').remove();
+}
+
+function pollForNewMessages() {
+    if (isLoadingMessages) return;
+    
+    const chatbox = $('#chatbox');
+    const isAtBottom = chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 100;
+    
+    if (isAtBottom) {
+        $.ajax({
+            url: 'api/get_messages.php',
+            method: 'GET',
+            data: { 
+                room_id: roomId,
+                limit: 5, // Just check last 5 messages
+                offset: 0
+            },
+            success: function(response) {
+                try {
+                    let data = JSON.parse(response);
+                    if (data.status === 'success' && data.messages && data.messages.length > 0) {
+                        const latestMessage = data.messages[data.messages.length - 1];
+                        const currentLatest = $('.chat-message').last().data('message-id');
+                        
+                        if (latestMessage.id != currentLatest) {
+                            const wasAtBottom = chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 50;
+                            if (wasAtBottom) {
+                                loadMessages(); // This will maintain bottom position
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.debug('Poll error:', e);
+                }
+            },
+            error: function() {
+                console.debug('Poll request failed');
+            }
+        });
+    }
+}
+
+function optimizeForMobile() {
+    const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+        messageLimit = 20; // Smaller batches for mobile
+    }
+}
+
+function getUserColor(msg) {
+    if (msg && msg.color) {
+        return `user-color-${msg.color}`;
+    }
+    
+    if (msg && msg.user_color) {
+        return `user-color-${msg.user_color}`;
+    }
+    
+    return 'user-color-blue';
+}
+
+function renderMessage(msg) {
+    const avatar = msg.avatar || msg.guest_avatar || 'default_avatar.jpg';
+    const name = msg.username || msg.guest_name || 'Unknown';
+    const userIdString = msg.user_id_string || msg.user_id || 'unknown';
+    const hue = msg.user_avatar_hue !== undefined ? msg.user_avatar_hue : (msg.avatar_hue || 0);
+    const saturation = msg.user_avatar_saturation !== undefined ? msg.user_avatar_saturation : (msg.avatar_saturation || 100);
+    const bubbleHue = msg.bubble_hue || 0;
+    const bubbleSat = msg.bubble_saturation || 100;
+    
+    if (msg.type === 'announcement') {
+        return `
+            <div class="system-message announcement-message">
+                <div class="announcement-header">
+                    <i class="fas fa-bullhorn"></i>
+                    <span class="announcement-label">SITE ANNOUNCEMENT</span>
+                </div>
+                <div class="announcement-content">
+                    ${msg.message}
+                </div>
+            </div>
+        `;
+    }
+    
+    if (msg.type === 'system' || msg.is_system) {
+        const systemHue = msg.avatar_hue || msg.user_avatar_hue || 0;
+        const systemSat = msg.avatar_saturation || msg.user_avatar_saturation || 100;
+        
+        return `
+            <div class="system-message">
+                <img src="images/${avatar}" 
+                     style="filter: hue-rotate(${systemHue}deg) saturate(${systemSat}%);"
+                     alt="System">
+                <span>${msg.message}</span>
+            </div>
+        `;
+    }
+    
+    const userColorClass = getUserColor(msg);
+    const timestamp = new Date(msg.timestamp).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    const isRegisteredUser = msg.user_id && msg.user_id > 0;
+    const isCurrentUser = msg.user_id_string === currentUserIdString;
+
+    let avatarClickHandler = '';
+    if (isRegisteredUser) {
+        avatarClickHandler = `onclick="handleAvatarClick(event, ${msg.user_id}, '${(msg.username || '').replace(/'/g, "\\'")}')" style="cursor: pointer;"`;
+    } else if (isCurrentUser) {
+        avatarClickHandler = `onclick="showProfileEditor()" style="cursor: pointer;"`;
+    }
+    
+    let badges = '';
+    if (msg.is_admin) {
+        badges += '<span class="user-badge badge-admin"><i class="fas fa-shield-alt"></i> Admin</span>';
+    }
+    if (msg.is_moderator) {
+        badges += '<span class="user-badge badge-moderator"><i class="fas fa-gavel"></i> Moderator</span>';
+    }
+    if (msg.is_host) {
+        badges += '<span class="user-badge badge-host"><i class="fas fa-crown"></i> Host</span>';
+    }
+    if (msg.user_id && !msg.is_admin && !msg.is_moderator) {
+        badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle"></i> Verified</span>';
+    } else if (!msg.user_id) {
+        badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
+    }
+    
+    let adminInfo = '';
+    let moderatorActions = '';
+    
+    if ((isAdmin || isModerator) && msg.user_id_string !== currentUserIdString) {
+        moderatorActions = `
+            <div class="moderator-actions">
+                <button class="btn btn-sm btn-outline-danger" onclick="showQuickBanModal('${msg.user_id_string}', '${name.replace(/'/g, "\\'")}', '${msg.ip_address || ''}')">
+                    <i class="fas fa-ban"></i> Site Ban
+                </button>
+                <small class="text-danger">IP: ${msg.ip_address}</small>
+            </div>
+        `;
+    }
+    
+    let replyContent = '';
+if (msg.reply_to_message_id && msg.reply_original_message) {
+    // Build reply author name
+    let replyAuthor = 'Unknown';
+    if (msg.reply_original_registered_username) {
+        replyAuthor = msg.reply_original_registered_username;
+    } else if (msg.reply_original_chatroom_username) {
+        replyAuthor = msg.reply_original_chatroom_username;
+    } else if (msg.reply_original_guest_name) {
+        replyAuthor = msg.reply_original_guest_name;
+    }
+    
+    // Build reply avatar
+    let replyAvatar = 'default_avatar.jpg';
+    if (msg.reply_original_registered_avatar) {
+        replyAvatar = msg.reply_original_registered_avatar;
+    } else if (msg.reply_original_avatar) {
+        replyAvatar = msg.reply_original_avatar;
+    }
+    
+    // Reply styling values
+    const replyAvatarHue = msg.reply_original_avatar_hue || 0;
+    const replyAvatarSat = msg.reply_original_avatar_saturation || 100;
+    const replyBubbleHue = msg.reply_original_bubble_hue || 0;
+    const replyBubbleSat = msg.reply_original_bubble_saturation || 100;
+    const replyColor = msg.reply_original_color || 'blue';
+    
+    replyContent = `
+        <div class="message-reply user-color-${replyColor}" style="filter: hue-rotate(${replyBubbleHue}deg) saturate(${replyBubbleSat}%);">
+            <div class="reply-header" style="filter: hue-rotate(${-replyBubbleHue}deg) saturate(${replyBubbleSat > 0 ? (10000/replyBubbleSat) : 100}%);">
+                <img src="images/${replyAvatar}" 
+                     class="reply-author-avatar"
+                     style="filter: hue-rotate(${replyAvatarHue}deg) saturate(${replyAvatarSat}%);"
+                     alt="${replyAuthor}">
+                <span class="reply-author-name">${replyAuthor}</span>
+                <i class="fas fa-external-link-alt reply-jump-icon" 
+                   onclick="jumpToMessage(${msg.reply_original_id})" 
+                   title="Jump to original message"></i>
+            </div>
+            <div class="reply-content">${msg.reply_original_message}</div>
+        </div>
+    `;
+}
+    
+    let messageActions = '';
+    if (!msg.is_system && msg.type !== 'system' && msg.type !== 'announcement') {
+        messageActions = `
+            <div class="message-actions">
+                <button class="message-action-btn" onclick="showReplyInterface(${msg.id}, '${name.replace(/'/g, "\\'")}', '${msg.message.replace(/<[^>]*>/g, '').replace(/'/g, "\\'").substring(0, 50)}...')" title="Reply">
+                    <i class="fas fa-reply"></i>
+                </button>
+            </div>
+        `;
+    }
+    
+    let processedMessage = processMentionsInContent(msg.message, msg.user_id_string);
+    
+    return `
+        <div class="chat-message ${userColorClass} ${msg.reply_to_message_id ? 'has-reply' : ''}" 
+             data-message-id="${msg.id}" 
+             data-type="${msg.type || 'chat'}"
+             style="position: relative;">
+            ${messageActions}
+            <img src="images/${avatar}" 
+                 class="message-avatar" 
+                 style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); ${avatarClickHandler ? 'cursor: pointer;' : ''}"
+                 ${avatarClickHandler}
+                 alt="${name}'s avatar">
+            
+            <!-- Message header moved outside the bubble -->
+            <div class="message-header-external">
+                <div class="message-header-left">
+                    <div class="message-author">${name}</div>
+                    ${badges ? `<div class="message-badges">${badges}</div>` : ''}
+                </div>
+                <div class="message-time">${timestamp}</div>
+            </div>
+            
+            <!-- Message bubble with filters, but content isolated from filters -->
+            <div class="message-bubble " style="filter: hue-rotate(${bubbleHue}deg) saturate(${bubbleSat}%);">
+                ${replyContent}
+                <!-- Message content wrapper that resets filters -->
+                <div class="message-content-wrapper" style="filter: hue-rotate(${-bubbleHue}deg) saturate(${bubbleSat > 0 ? (10000/bubbleSat) : 100}%);">
+                    <div class="message-content">${processedMessage}</div>
+                    ${adminInfo}
+                    ${moderatorActions}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function processMentionsInContent(content, senderUserId) {
+    if (content.includes(`data-user="${currentUserIdString}"`)) {
+        content = content.replace(
+            new RegExp(`<span class="mention" data-user="${currentUserIdString}"`, 'g'),
+            '<span class="mention mention-self" data-user="' + currentUserIdString + '"'
+        );
+    }
+    
+    return content;
+}
+
+function loadUsers() {
+    debugLog('Loading users for roomId:', roomId);
+    
+    managedAjax({
+        url: 'api/get_room_users.php',
+        method: 'GET',
+        data: { room_id: roomId },
+        dataType: 'json'
+    }).then(response => {
+        try {
+            let users = typeof response === 'string' ? JSON.parse(response) : response;
+            handleUsersResponse(users);
+        } catch (e) {
+            console.error('JSON parse error:', e, response);
+            $('#userList').html('<div class="empty-users"><i class="fas fa-exclamation-triangle"></i><p>Error loading users</p></div>');
+        }
+    }).catch(error => {
+        console.error('AJAX error in loadUsers:', error);
+        $('#userList').html('<div class="empty-users"><i class="fas fa-wifi"></i><p>Connection error</p></div>');
+    });
+}
+
+if (DEBUG_MODE) {
+    setInterval(() => {
+        console.log('📊 Request Stats:');
+        window.showRequestStats();
+    }, 30000);
+}
+
+function renderUser(user) {
+    const avatar = user.avatar || user.guest_avatar || 'default_avatar.jpg';
+    const name = user.display_name || user.username || user.guest_name || 'Unknown';
+    const userIdString = user.user_id_string || 'unknown';
+    const hue = user.avatar_hue || 0;
+    const saturation = user.avatar_saturation || 100;
+
+    const isRegisteredUser = user.user_id && user.user_id > 0;
+    const isCurrentUser = user.user_id_string === currentUserIdString;
+
+    let avatarClickHandler = '';
+    if (isRegisteredUser) {
+        avatarClickHandler = `onclick="handleAvatarClick(event, ${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')" style="cursor: pointer;"`;
+    } else if (isCurrentUser) {
+        avatarClickHandler = `onclick="showProfileEditor()" style="cursor: pointer;"`;
+    }
+    
+    let badges = '';
+
+    let userItemExtraClass = '';
+    if (isCurrentUser) {
+        userItemExtraClass = ' you-identifier';
+        currentUserAFK = user.is_afk;
+        manualAFK = user.manual_afk;
+    }
+
+    if (user.is_afk) {
+        const afkType = user.manual_afk ? 'Manual' : 'Auto';
+        const afkDuration = user.afk_duration_minutes > 0 ? ` (${formatAFKDuration(user.afk_duration_minutes)})` : '';
+        badges += `<span class="user-badge badge-afk" title="${afkType} AFK${afkDuration}"><i class="fas fa-bed" title="AFK"></i></span>`;
+    }
+
+    if (user.is_admin) {
+        badges += '<span class="user-badge badge-admin"><i class="fas fa-shield-alt" title="Admin"></i></span>';
+    }
+
+    if (user.is_moderator && !user.is_admin) {
+        badges += '<span class="user-badge badge-moderator"><i class="fas fa-gavel" title="Moderator"></i></span>';
+    }
+
+    if (user.is_host) {
+        badges += '<span class="user-badge badge-host"><i class="fas fa-crown" title="Host"></i></span>';
+    }
+
+    if (isRegisteredUser && !user.is_admin && !user.is_moderator) {
+        badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle" title="Member"></i></span>';
+    } else if (!isRegisteredUser) {
+        badges += '<span class="user-badge badge-guest"><i class="fas fa-user" title="Guest"></i></span>';
+    }
+    
+    let actions = '';
+    if (user.user_id_string !== currentUserIdString) {
+        actions = `<div class="user-actions">`;
+        
+        const displayName = user.display_name || user.username || user.guest_name || 'Unknown';
+        const whisperText = user.is_afk ? '' : '';
+        actions += `
+            <button class="btn whisper-btn ${user.is_afk ? 'afk-user' : ''}" onclick="openWhisper('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
+                <i class="fas fa-comment"></i> ${whisperText}
+            </button>
+        `;
+        
+        if (user.user_id && currentUser.type === 'user') {
+            if (friendshipCache.has(user.user_id)) {
+                const isFriend = friendshipCache.get(user.user_id);
+                if (isFriend) {
+                    const pmText = user.is_afk ? 'PM (AFK)' : 'PM';
+                    actions += `
+                        <button class="btn btn-primary ${user.is_afk ? 'afk-user' : ''}" onclick="openPrivateMessage(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
+                            <i class="fas fa-envelope"></i>
+                        </button>
+                    `;
+                } else {
+                    actions += `
+                        <button class="btn friend-btn" onclick="sendFriendRequest(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
+                            <i class="fas fa-user-plus"></i>
+                        </button>
+                    `;
+                }
+            } else {
+                actions += `<div id="friend-action-${user.user_id}" class="d-inline">
+                    <button class="btn btn-secondary btn-sm" disabled>
+                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                    </button>
+                </div>`;
+                
+                setTimeout(() => {
+                    checkIfFriend(user.user_id, function(isFriend) {
+                        const container = $(`#friend-action-${user.user_id}`);
+                        if (container.length > 0) {
+                            if (isFriend) {
+                                const pmText = user.is_afk ? 'PM (AFK)' : 'PM';
+                                container.html(`
+                                    <button class="btn btn-primary ${user.is_afk ? 'afk-user' : ''}" onclick="openPrivateMessage(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
+                                        <i class="fas fa-envelope"></i>
+                                    </button>
+                                `);
+                            } else {
+                                container.html(`
+                                    <button class="btn friend-btn" onclick="sendFriendRequest(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
+                                        <i class="fas fa-user-plus"></i>
+                                    </button>
+                                `);
+                            }
+                        }
+                    });
+                }, 50);
+            }
+        }
+        
+        if ((isHost || isAdmin || isModerator) && !user.is_host && !user.is_admin && !user.is_moderator) {
+            actions += `
+                <button class="btn btn-ban-user" onclick="showBanModal('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
+                    <i class="fas fa-ban"></i>
+                </button>
+            `;
+        }
+
+        if (isHost && !user.is_host && !isCurrentUser && !user.is_admin && !user.is_moderator) {
+    actions += `
+        <button class="btn btn-pass-host" onclick="showPassHostModal('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
+            <i class="fas fa-crown"></i>
+        </button>
+    `;
+}
+
+        if ((isAdmin || isModerator) && !user.is_admin && !(user.is_moderator && !isAdmin)) {
+            actions += `
+                <button class="btn btn-site-ban-user" onclick="showQuickBanModal('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}', '')">
+                    <i class="fas fa-ban"></i>
+                </button>
+            `;
+        }
+        
+        actions += `</div>`;
+    } else if (isCurrentUser) {
+        // AFK toggle for current user
+       /* actions = `
+            <div class="user-actions">
+                <button class="btn btn-toggle-afk ${currentUserAFK ? 'btn-warning' : 'btn-outline-warning'}" onclick="toggleAFK()">
+                    ${currentUserAFK ? '<i class="fas fa-eye"></i> Back from AFK' : '<i class="fas fa-bed"></i> Go AFK'}
+                </button>
+            </div>
+        `;*/
+    }
+    
+    const userItemClass = (user.is_afk ? 'user-item afk-user' : 'user-item') + userItemExtraClass;
+
+    return `
+        <div class="${userItemClass}">
+            <div class="user-info-row">
+                <img src="images/${avatar}" 
+                     class="user-avatar ${user.is_afk ? 'afk-avatar' : ''}" 
+                     style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); ${avatarClickHandler ? 'cursor: pointer;' : ''}"
+                     ${avatarClickHandler}
+                     alt="${name}'s avatar">
+                <div class="user-details">
+                    <div class="user-name ${user.is_afk ? 'afk-name' : ''}">${name}</div>
+                    <div class="user-badges-row">${badges}</div>
+                </div>
+            </div>
+            ${actions}
+        </div>
+    `;
+}
+
+
+function initializeYouTubePlayer() {
+    if (!youtubeAPIReady || !youtubeEnabled) {
+        debugLog('🎬 Cannot initialize player: API ready =', youtubeAPIReady, ', enabled =', youtubeEnabled);
+        return;
+    }
+    
+    debugLog('🎬 Initializing YouTube player...');
+    
+    youtubePlayer = new YT.Player('youtube-player', {
+        height: '280',
+        width: '100%',
+        playerVars: {
+            'playsinline': 1,
+            'controls': isHost ? 1 : 0,
+            'disablekb': isHost ? 0 : 1,
+            'fs': 1,
+            'rel': 0,
+            'showinfo': 0,
+            'modestbranding': 1
+        },
+        events: {
+            'onReady': onYouTubePlayerReady,
+            'onStateChange': onYouTubePlayerStateChange
+        }
+    });
+}
+
+function onYouTubePlayerReady(event) {
+    debugLog('🎬 YouTube player ready');
+    youtubePlayerReady = true;
+    
+    //startPlayerSync();
+    //startQueueUpdates();
+    syncPlayerState();
+    startYouTubeUpdates();
+}
+
+function onYouTubePlayerStateChange(event) {
+    debugLog('🎬 Player state changed:', event.data);
+    
+    if (youtubePlayerReady) {
+        const currentTime = youtubePlayer.getCurrentTime();
+        const videoId = getCurrentVideoId();
+        
+        if (isHost) {
+            switch (event.data) {
+                case YT.PlayerState.PLAYING:
+                    updatePlayerSync(videoId, currentTime, true);
+                    break;
+                case YT.PlayerState.PAUSED:
+                    updatePlayerSync(videoId, currentTime, false);
+                    break;
+                case YT.PlayerState.ENDED:
+                    setTimeout(() => skipToNextVideo(), 1000);
+                    break;
+            }
+        }
+    }
+}
+
+function startPlayerSync() {
+    if (playerSyncInterval) {
+        clearInterval(playerSyncInterval);
+    }
+    
+    playerSyncInterval = setInterval(syncPlayerState, 2000);
+    debugLog('🔄 Started player sync');
+}
+
+function syncPlayerState() {
+    if (!youtubeEnabled || !youtubePlayerReady) {
+        return;
+    }
+    updateYouTubeData();
+   /* $.ajax({
+        url: 'api/youtube_sync.php',
+        method: 'GET',
+        data: { action: 'get_sync' },
+        dataType: 'json',
+        timeout: 5000,
+        success: function(response) {
+            if (response.status === 'success') {
+                const sync = response.sync_data;
+                
+                if (!sync.enabled) {
+                    return;
+                }
+                
+                if (sync.sync_token !== lastSyncToken) {
+                    debugLog('🔄 Syncing player state:', sync);
+                    lastSyncToken = sync.sync_token;
+                    
+                    if (sync.video_id) {
+                        const currentVideoId = getCurrentVideoId();
+                        
+                        if (currentVideoId !== sync.video_id) {
+                            youtubePlayer.loadVideoById({
+                                videoId: sync.video_id,
+                                startSeconds: sync.current_time
+                            });
+                        } else {
+                            const currentTime = youtubePlayer.getCurrentTime();
+                            const timeDiff = Math.abs(currentTime - sync.current_time);
+                            
+                            if (timeDiff > 3) {
+                                youtubePlayer.seekTo(sync.current_time, true);
+                            }
+                        }
+                        
+                        if (sync.is_playing && youtubePlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
+                            youtubePlayer.playVideo();
+                        } else if (!sync.is_playing && youtubePlayer.getPlayerState() === YT.PlayerState.PLAYING) {
+                            youtubePlayer.pauseVideo();
+                        }
+                    } else {
+                        if (youtubePlayer.getPlayerState() !== YT.PlayerState.CUED) {
+                            youtubePlayer.stopVideo();
+                        }
+                    }
+                }
+            }
+        },
+        error: function(xhr, status, error) {
+            debugLog('⚠️ Sync error:', error);
+        }
+    });*/
+}
+
+function updatePlayerSync(videoId, currentTime, isPlaying) {
+    if (!isHost || !youtubeEnabled) {
+        return;
+    }
+    
+    $.ajax({
+        url: 'api/youtube_sync.php',
+        method: 'POST',
+        data: {
+            action: 'update_time',
+            video_id: videoId,
+            current_time: currentTime,
+            is_playing: isPlaying ? 1 : 0
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                lastSyncToken = response.sync_token;
+                debugLog('🔄 Updated player sync');
+            }
+        },
+        error: function(xhr, status, error) {
+            debugLog('⚠️ Sync update error:', error);
+        }
+    });
+}
+
+function startQueueUpdates() {
+    if (queueUpdateInterval) {
+        clearInterval(queueUpdateInterval);
+    }
+    
+    queueUpdateInterval = setInterval(updateQueue, 3000);
+    updateQueue();
+    debugLog('📋 Started queue updates');
+}
+
+function updateQueue() {
+    if (!youtubeEnabled) {
+        return;
+    }
+    
+    $.ajax({
+        url: 'api/youtube_queue.php',
+        method: 'GET',
+        data: { action: 'get' },
+        dataType: 'json',
+        timeout: 5000,
+        success: function(response) {
+            if (response.status === 'success') {
+                playerQueue = response.data.queue || [];
+                playerSuggestions = response.data.suggestions || [];
+                currentVideoData = response.data.current_playing;
+                
+                renderQueue();
+                renderSuggestions();
+                updateVideoInfo();
+            }
+        },
+        error: function(xhr, status, error) {
+            debugLog('⚠️ Queue update error:', error);
+        }
+    });
+}
+
+function renderQueue() {
+    const container = $('#youtube-queue-list');
+    let html = '';
+    
+    if (playerQueue.length === 0) {
+        html = `
+            <div class="youtube-empty-state">
+                <i class="fas fa-list"></i>
+                <h6>Queue is empty</h6>
+                <p>Videos will appear here when added to the queue</p>
+            </div>
+        `;
+    } else {
+        playerQueue.forEach((video, index) => {
+            const isPlaying = currentVideoData && currentVideoData.id === video.id;
+            const actions = isHost ? `
+                <div class="youtube-queue-item-actions">
+                    <button class="btn btn-queue-remove" onclick="removeFromQueue(${video.id})" title="Remove">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            ` : '';
+            
+            html += `
+                <div class="youtube-queue-item ${isPlaying ? 'playing' : ''}">
+                    <div class="youtube-queue-item-content">
+                        <img src="${video.video_thumbnail}" class="youtube-queue-item-thumb" alt="Thumbnail" onerror="this.src='https://img.youtube.com/vi/${video.video_id}/default.jpg'">
+                        <div class="youtube-queue-item-details">
+                            <div class="youtube-queue-item-title">${video.video_title}</div>
+                            <div class="youtube-queue-item-meta">
+                                Added by ${video.suggested_by_name} • #${index + 1} in queue
+                            </div>
+                            ${actions}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    container.html(html);
+}
+
+function renderSuggestions() {
+    const container = $('#youtube-suggestions-list');
+    let html = '';
+    
+    if (playerSuggestions.length === 0) {
+        html = `
+            <div class="youtube-empty-state">
+                <i class="fas fa-lightbulb"></i>
+                <h6>No suggestions</h6>
+                <p>Video suggestions from users will appear here</p>
+            </div>
+        `;
+    } else {
+        playerSuggestions.forEach(video => {
+            const actions = isHost ? `
+                <div class="youtube-queue-item-actions">
+                    <button class="btn btn-queue-approve" onclick="approveVideo(${video.id})" title="Add to Queue">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="btn btn-queue-deny" onclick="denyVideo(${video.id})" title="Deny">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            ` : '';
+            
+            html += `
+                <div class="youtube-queue-item suggestion">
+                    <div class="youtube-queue-item-content">
+                        <img src="${video.video_thumbnail}" class="youtube-queue-item-thumb" alt="Thumbnail" onerror="this.src='https://img.youtube.com/vi/${video.video_id}/default.jpg'">
+                        <div class="youtube-queue-item-details">
+                            <div class="youtube-queue-item-title">${video.video_title}</div>
+                            <div class="youtube-queue-item-meta">
+                                Suggested by ${video.suggested_by_name}
+                            </div>
+                            ${actions}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    container.html(html);
+}
+
+function updateVideoInfo() {
+    const infoContainer = $('#youtube-video-info');
+    
+    if (currentVideoData) {
+        infoContainer.html(`
+            <div class="youtube-video-title">${currentVideoData.video_title}</div>
+            <div class="youtube-video-meta">
+                <span>Added by ${currentVideoData.suggested_by_name}</span>
+                <span>•</span>
+                <span>Now Playing</span>
+            </div>
+        `);
+    } else {
+        infoContainer.html(`
+            <div class="youtube-video-title">No video playing</div>
+            <div class="youtube-video-meta">
+                <span>Select a video or add one to the queue</span>
+            </div>
+        `);
+    }
+}
+
+function suggestVideo() {
+    const input = $('#youtube-suggest-input');
+    const url = input.val().trim();
+    
+    if (!url) {
+        alert('Please enter a YouTube URL or video ID');
+        return;
+    }
+    
+    const button = $('#youtube-suggest-btn');
+    const originalText = button.html();
+    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Suggesting...');
+    
+    $.ajax({
+        url: 'api/youtube_queue.php',
+        method: 'POST',
+        data: {
+            action: 'suggest',
+            video_url: url
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                input.val('');
+                updateQueue();
+                showToast('Video suggested successfully!', 'success');
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Suggest video error:', error);
+            alert('Error suggesting video: ' + error);
+        },
+        complete: function() {
+            button.prop('disabled', false).html(originalText);
+        }
+    });
+}
+
+function approveVideo(suggestionId) {
+    $.ajax({
+        url: 'api/youtube_queue.php',
+        method: 'POST',
+        data: {
+            action: 'approve',
+            suggestion_id: suggestionId
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                updateQueue();
+                showToast('Video approved and added to queue!', 'success');
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Approve video error:', error);
+            alert('Error approving video: ' + error);
+        }
+    });
+}
+
+function denyVideo(suggestionId) {
+    $.ajax({
+        url: 'api/youtube_queue.php',
+        method: 'POST',
+        data: {
+            action: 'deny',
+            suggestion_id: suggestionId
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                updateQueue();
+                showToast('Video suggestion denied', 'info');
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Deny video error:', error);
+            alert('Error denying video: ' + error);
+        }
+    });
+}
+
+function removeFromQueue(queueId) {
+    if (!confirm('Remove this video from the queue?')) {
+        return;
+    }
+    
+    $.ajax({
+        url: 'api/youtube_queue.php',
+        method: 'POST',
+        data: {
+            action: 'remove',
+            queue_id: queueId
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                updateQueue();
+                showToast('Video removed from queue', 'info');
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Remove video error:', error);
+            alert('Error removing video: ' + error);
+        }
+    });
+}
+
+function playVideo() {
+    if (!isHost || !youtubePlayerReady) return;
+    
+    const currentTime = youtubePlayer.getCurrentTime();
+    
+    $.ajax({
+        url: 'api/youtube_player.php',
+        method: 'POST',
+        data: {
+            action: 'resume',
+            current_time: currentTime
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                debugLog('🎬 Video resumed');
+            }
+        }
+    });
+}
+
+function pauseVideo() {
+    if (!isHost || !youtubePlayerReady) return;
+    
+    const currentTime = youtubePlayer.getCurrentTime();
+    
+    $.ajax({
+        url: 'api/youtube_player.php',
+        method: 'POST',
+        data: {
+            action: 'pause',
+            current_time: currentTime
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                debugLog('🎬 Video paused');
+            }
+        }
+    });
+}
+
+function skipToNextVideo() {
+    if (!isHost) return;
+    
+    $.ajax({
+        url: 'api/youtube_player.php',
+        method: 'POST',
+        data: { action: 'skip' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                debugLog('🎬 Skipped to next video');
+                updateQueue();
+            } else {
+                showToast(response.message || 'No more videos in queue', 'info');
+            }
+        }
+    });
+}
+
+function stopVideo() {
+    if (!isHost) return;
+    
+    $.ajax({
+        url: 'api/youtube_player.php',
+        method: 'POST',
+        data: { action: 'stop' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                debugLog('🎬 Video stopped');
+            }
+        }
+    });
+}
+
+function togglePlayerVisibility() {
+    const container = $('.youtube-player-container');
+    const toggle = $('.youtube-player-toggle');
+    
+    if (container.hasClass('user-hidden')) {
+        container.removeClass('user-hidden').show();
+        toggle.removeClass('hidden-player').html('<i class="fas fa-video-slash"></i>').attr('title', 'Hide Player');
+        playerHidden = false;
+        
+        if (youtubePlayerReady) {
+            setTimeout(() => syncPlayerState(), 500);
+        }
+    } else {
+        container.addClass('user-hidden').hide();
+        toggle.addClass('hidden-player').html('<i class="fas fa-video"></i>').attr('title', 'Show Player');
+        playerHidden = true;
+    }
+    
+    localStorage.setItem(`youtube_hidden_${roomId}`, playerHidden.toString());
+}
+
+function getCurrentVideoId() {
+    if (!youtubePlayer || !youtubePlayerReady) {
+        return null;
+    }
+    
+    try {
+        const url = youtubePlayer.getVideoUrl();
+        const match = url.match(/[?&]v=([^&]+)/);
+        return match ? match[1] : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function showToast(message, type = 'info') {
+    const toast = $(`
+        <div class="alert alert-${type} alert-dismissible fade show" 
+             style="position: fixed; top: 70px; right: 20px; z-index: 1060; min-width: 300px;">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('body').append(toast);
+    
+    setTimeout(() => {
+        toast.alert('close');
+    }, 4000);
+}
+
+function stopYouTubePlayer() {
+    debugLog('🛑 Stopping YouTube player system');
+    
+    if (youtubeUpdateInterval) {
+        clearInterval(youtubeUpdateInterval);
+        youtubeUpdateInterval = null;
+    }
+    
+    if (youtubePlayer && youtubePlayerReady) {
+        try {
+            youtubePlayer.stopVideo();
+        } catch (e) {
+            debugLog('Error stopping YouTube player:', e);
+        }
+    }
+    
+    youtubeEnabled = false;
+    youtubePlayerReady = false;
+    isYoutubeUpdating = false;
+}
+
+function checkUserStatus() {
+   // activityTracker.checkUserStatus();
+}
+
+function handleUserBanned(response) {
+    debugLog('🚫 User has been BANNED:', response);
+    stopKickDetection();
+    
+    let banMessage = response.message || 'You have been banned from this room';
+    let banDetails = '';
+    
+    if (response.ban_info) {
+        if (response.ban_info.permanent) {
+            banDetails += '<div class="alert alert-danger"><strong>This is a PERMANENT ban.</strong></div>';
+        } else if (response.ban_info.expires_in_minutes) {
+            banDetails += `<div class="alert alert-warning"><strong>Ban expires in ${response.ban_info.expires_in_minutes} minute${response.ban_info.expires_in_minutes !== 1 ? 's' : ''}.</strong></div>`;
+        }
+        
+        if (response.ban_info.reason) {
+            banDetails += `<p><strong>Reason:</strong> ${response.ban_info.reason}</p>`;
+        }
+    }
+    
+    showKickModal('🚫 You Have Been Banned', banMessage, banDetails, 'danger');
+}
+
+function handleUserKicked(response) {
+    debugLog('👢 User has been KICKED:', response);
+    stopKickDetection();
+    
+    const message = response.message || 'You have been removed from this room';
+    const details = '<div class="alert alert-info">You can try to rejoin the room if it\'s still available.</div>';
+    
+    showKickModal('👢 Removed from Room', message, details, 'warning');
+}
+
+function handleRoomDeleted(response) {
+    debugLog('🏗️ Room has been DELETED:', response);
+    stopKickDetection();
+    
+    const message = response.message || 'This room has been deleted';
+    const details = '<div class="alert alert-info">The room no longer exists. You will be redirected to the lounge.</div>';
+    
+    showKickModal('🏗️ Room Deleted', message, details, 'info');
+}
+
+function handleStatusCheckError() {
+    consecutiveErrors++;
+    
+    if (consecutiveErrors >= 3) {
+        console.warn('⚠️ Multiple consecutive errors, may have connection issues');
+        
+        if (consecutiveErrors >= 5) {
+            console.error('🔥 Too many errors, redirecting to lounge');
+            stopKickDetection();
+            alert('Connection lost. Redirecting to lounge.');
+            window.location.href = '/lounge';
+
+        }
+    }
+}
+
+function showKickModal(title, message, details, type) {
+    userKickedModalShown = true;
+    
+    const typeColors = {
+        'danger': { bg: 'bg-danger', icon: 'fas fa-ban' },
+        'warning': { bg: 'bg-warning', icon: 'fas fa-exclamation-triangle' },
+        'info': { bg: 'bg-info', icon: 'fas fa-info-circle' }
+    };
+    
+    const typeConfig = typeColors[type] || typeColors['info'];
+    
+    const modalHtml = `
+        <div class="modal fade" id="kickNotificationModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-${type}" style="background: #2a2a2a; color: #e0e0e0;">
+                    <div class="modal-header ${typeConfig.bg} text-white">
+                        <h5 class="modal-title">
+                            <i class="${typeConfig.icon}"></i> ${title}
+                        </h5>
+                    </div>
+                    <div class="modal-body text-center">
+                        <div class="mb-3">
+                            <i class="${typeConfig.icon} fa-4x text-${type}"></i>
+                        </div>
+                        <h6 class="text-${type} mb-3">${message}</h6>
+                        ${details}
+                        <div class="alert alert-light mt-3" style="background: #333; border-color: #555; color: #e0e0e0;">
+                            <i class="fas fa-home"></i>
+                            <strong>You will be redirected to the lounge in <span id="redirectCountdown">8</span> seconds</strong>
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-center" style="border-top: 1px solid #444;">
+                        <button type="button" class="btn btn-primary" onclick="handleKickModalClose()">
+                            <i class="fas fa-home"></i> Go to Lounge Now
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#kickNotificationModal').remove();
+    $('body').append(modalHtml);
+    
+    const modal = new bootstrap.Modal(document.getElementById('kickNotificationModal'));
+    modal.show();
+    
+    let countdown = 8;
+    const countdownInterval = setInterval(() => {
+        countdown--;
+        $('#redirectCountdown').text(countdown);
+        
+        if (countdown <= 0) {
+            clearInterval(countdownInterval);
+            handleKickModalClose();
+        }
+    }, 1000);
+}
+
+function handleKickModalClose() {
+    debugLog('🏠 Redirecting to lounge...');
+    stopKickDetection();
+    
+    $.ajax({
+        url: 'api/leave_room.php',
+        method: 'POST',
+        data: { room_id: roomId, action: 'kicked_user_cleanup' },
+        complete: function() {
+            window.location.href = '/lounge';
+
+        }
+    });
+}
+
+function stopKickDetection() {
+    debugLog('🛑 Stopping kick detection system');
+    kickDetectionEnabled = false;
+    
+    if (kickDetectionInterval) {
+        clearInterval(kickDetectionInterval);
+        kickDetectionInterval = null;
+    }
+}
+
+function initializeActivityTracking() {
+    debugLog('🚀 Initializing room activity tracking...');
+    
+   // activityTracker.init();
+    
+    
+    if (roomId) {
+       // activityTracker.recordActivity('room_join');
+    }
+    
+    $(document).on('submit', '.private-message-form', function() {
+       // activityTracker.recordActivity('private_message');
+    });
+    
+    $(document).on('submit', '.whisper-form', function() {
+       // activityTracker.recordActivity('whisper');
+    });
+    
+    $(document).on('click', '.btn-toggle-afk', function() {
+       // activityTracker.recordActivity('manual_activity');
+    });
+    
+    debugLog('✅ Activity tracking initialization complete');
+}
+
+/*function setupActivityListeners() {
+    debugLog('🎯 Setting up activity listeners...');
+    
+    $(document).off('mousemove.activity keypress.activity scroll.activity click.activity');
+    $(window).off('focus.activity');
+    
+    let activityTimeout;
+    function markUserActive() {
+        userIsActive = true;
+        
+        clearTimeout(activityTimeout);
+        activityTimeout = setTimeout(() => {
+            if (activityTrackingEnabled) {
+                updateUserActivity('interaction');
+            }
+        }, 5000);
+    }
+    
+    $(document).on('mousemove.activity keypress.activity scroll.activity click.activity', markUserActive);
+    
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden && activityTrackingEnabled) {
+            updateUserActivity('page_focus');
+        }
+    });
+    
+    $(window).on('focus.activity', function() {
+        if (activityTrackingEnabled) {
+            updateUserActivity('window_focus');
+        }
+    });
+    
+    debugLog('✅ Activity listeners set up successfully');
+}*/
+
+function updateUserActivity(activityType = 'general') {
+   // activityTracker.recordActivity(activityType);
+}
+
+function triggerDisconnectCheck() {
+   // activityTracker.triggerDisconnectCheck();
+}
+
+function stopActivityTracking() {
+    debugLog('🛑 Stopping activity tracking system');
+   // activityTracker.cleanup();
+}
+
+function showRoomSettings() {
+    debugLog('Loading room settings for roomId:', roomId);
+    
+    $.ajax({
+        url: 'api/get_room_settings.php',
+        method: 'GET',
+        data: { room_id: roomId },
+        success: function(response) {
+            try {
+                let res = JSON.parse(response);
+                if (res.status === 'success') {
+                    displayRoomSettingsModal(res.settings);
+                } else {
+                    alert('Error loading room settings: ' + res.message);
+                }
+            } catch (e) {
+                console.error('JSON parse error:', e, response);
+                alert('Invalid response from server');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error in showRoomSettings:', status, error, xhr.responseText);
+            alert('AJAX error: ' + error);
+        }
+    });
+}
+
+function displayRoomSettingsModal(settings) {
+    debugLog('Displaying room settings modal with:', settings); // Debug log
+    
+    const modalHtml = `
+        <div class="modal fade" id="roomSettingsModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
+                    <div class="modal-header" style="background: #333; border-bottom: 1px solid #444;">
+                        <h5 class="modal-title">
+                            <i class="fas fa-cog"></i> Room Settings
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                    </div>
+                    <div class="modal-body">
+                        <ul class="nav nav-tabs" id="settingsTabs" role="tablist" style="border-bottom: 1px solid #444;">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab" style="color: #fff; background: transparent; border: none;">General</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab" style="color: #fff; background: transparent; border: none;">Access Control</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="features-tab" data-bs-toggle="tab" data-bs-target="#features" type="button" role="tab" style="color: #fff; background: transparent; border: none;">Features</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="banlist-tab" data-bs-toggle="tab" data-bs-target="#banlist" type="button" role="tab" style="color: #fff; background: transparent; border: none;">
+                                    <i class="fas fa-ban"></i> Banlist
+                                </button>
+                            </li>
+                            ${(isAdmin || isModerator) ? `
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="admin-settings-tab" data-bs-toggle="tab" data-bs-target="#admin-settings" type="button" role="tab" style="color: #fff; background: transparent; border: none;">
+                                    <i class="fas fa-shield-alt"></i> Admin
+                                </button>
+                            </li>
+                            ` : ''}
+                        </ul>
+                        
+                        <div class="tab-content" id="settingsTabsContent">
+                            <!-- General Settings -->
+                            <div class="tab-pane fade show active" id="general" role="tabpanel">
+                                <form id="roomSettingsForm" class="mt-3">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="settingsRoomName" class="form-label">Room Name</label>
+                                                <input type="text" class="form-control" id="settingsRoomName" value="${settings.name}" required maxlength="50" style="background: #333; border: 1px solid #555; color: #fff;">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="settingsCapacity" class="form-label">Capacity</label>
+                                                <select class="form-select" id="settingsCapacity" required style="background: #333; border: 1px solid #555; color: #fff;">
+                                                    <option value="5"${settings.capacity == 5 ? ' selected' : ''}>5 users</option>
+                                                    <option value="10"${settings.capacity == 10 ? ' selected' : ''}>10 users</option>
+                                                    <option value="20"${settings.capacity == 20 ? ' selected' : ''}>20 users</option>
+                                                    <option value="50"${settings.capacity == 50 ? ' selected' : ''}>50 users</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="settingsTheme" class="form-label">Theme</label>
+                                                <select class="form-select" id="settingsTheme" style="background: #333; border: 1px solid #555; color: #fff;">
+                                                    <option value="default"${settings.theme === 'default' ? ' selected' : ''}>Default</option>
+                                                    <option value="cyberpunk"${settings.theme === 'cyberpunk' ? ' selected' : ''}>Cyberpunk</option>
+                                                    <option value="forest"${settings.theme === 'forest' ? ' selected' : ''}>Forest</option>
+                                                    <option value="ocean"${settings.theme === 'ocean' ? ' selected' : ''}>Ocean</option>
+                                                    <option value="sunset"${settings.theme === 'sunset' ? ' selected' : ''}>Sunset</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="settingsDescription" class="form-label">Description</label>
+                                                <textarea class="form-control" id="settingsDescription" rows="4" maxlength="200" style="background: #333; border: 1px solid #555; color: #fff;">${settings.description || ''}</textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="settingsIsRP"${settings.is_rp ? ' checked' : ''}>
+                                                    <label class="form-check-label" for="settingsIsRP">
+                                                        <i class="fas fa-theater-masks"></i> Roleplay Room
+                                                    </label>
+                                                </div>
+                                                <small class="form-text text-muted">Mark this room as suitable for roleplay</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Access Control Settings -->
+                            <div class="tab-pane fade" id="security" role="tabpanel">
+                                <div class="mt-3">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="settingsHasPassword"${settings.has_password ? ' checked' : ''}>
+                                                    <label class="form-check-label" for="settingsHasPassword">
+                                                        <i class="fas fa-lock"></i> Password Protected
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3" id="passwordFieldSettings" style="display: ${settings.has_password ? 'block' : 'none'};">
+                                                <label for="settingsPassword" class="form-label">Room Password</label>
+                                                <input type="password" class="form-control" id="settingsPassword" placeholder="Leave empty to keep current password" style="background: #333; border: 1px solid #555; color: #fff;">
+                                                <div class="form-text text-muted">Leave empty to keep current password, or enter new password to change it.</div>
+                                            </div>
+                                            <div class="mb-3" id="knockingFieldSettings" style="display: ${settings.has_password ? 'block' : 'none'};">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="settingsAllowKnocking"${settings.allow_knocking ? ' checked' : ''}>
+                                                    <label class="form-check-label" for="settingsAllowKnocking">
+                                                        <i class="fas fa-hand-paper"></i> Allow Knocking
+                                                    </label>
+                                                </div>
+                                                <small class="form-text text-muted">Let users request access when they don't know the password</small>
+                                            </div>
+                                        </div>
+
+                                        
+                                        <div class="col-md-6">
+
+                                        ${currentUser.type === 'user' ? `
+                                            <div class="mb-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="settingsMembersOnly"${settings.members_only ? ' checked' : ''}>
+                                                    <label class="form-check-label" for="settingsMembersOnly">
+                                                        <i class="fas fa-user-check"></i> Members Only
+                                                    </label>
+                                                </div>
+                                                <small class="form-text text-muted">Only registered users can join</small>
+                                            </div>
+                                            
+                                            
+                                            <div class="mb-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="settingsFriendsOnly"${settings.friends_only ? ' checked' : ''}>
+                                                    <label class="form-check-label" for="settingsFriendsOnly">
+                                                        <i class="fas fa-user-friends"></i> Friends Only
+                                                    </label>
+                                                </div>
+                                                <small class="form-text text-muted">Only your friends can join</small>
+                                            </div>
+                                            ` : ''}
+                                            
+                                            <div class="mb-4">
+    <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" id="settingsInviteOnly"${settings.invite_only ? ' checked' : ''}>
+        <label class="form-check-label" for="settingsInviteOnly">
+            <i class="fas fa-link"></i> Invite Only
+        </label>
+    </div>
+    <small class="form-text text-muted">Require invite link to join</small>
+    ${settings.invite_code ? `
+    <div class="mt-2 p-2" style="background: #333; border-radius: 4px;">
+        <small class="text-${settings.invite_only ? 'success' : 'info'}">
+            ${settings.invite_only ? 'Required invite link:' : 'Optional invite link (can bypass access controls):'}
+        </small><br>
+        <small style="word-break: break-all;">${window.location.origin}/lounge.php?invite=${settings.invite_code}</small>
+        <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="copyInviteLink('${settings.invite_code}')">
+            <i class="fas fa-copy"></i> Copy
+        </button>
+    </div>
+    ` : ''}
+</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Features Tab -->
+                            <div class="tab-pane fade" id="features" role="tabpanel">
+                                <div class="mt-3">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="mb-4">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="settingsYouTubeEnabled"${settings.youtube_enabled ? ' checked' : ''}>
+                                                    <label class="form-check-label" for="settingsYouTubeEnabled">
+                                                        <i class="fab fa-youtube text-danger"></i> <strong>Enable YouTube Player</strong> <span class="betatext" /> <span class="betatext2" />
+                                                    </label>
+                                                </div>
+                                                <small class="form-text text-muted">Allow synchronized video playback for all users in the room</small>
+                                            </div>
+                                            
+                                            <div id="youtubePlayerInfo" style="display: ${settings.youtube_enabled ? 'block' : 'none'};">
+                                                <div class="alert" style="background: rgba(13, 110, 253, 0.1); border: 1px solid rgba(13, 110, 253, 0.3); color: #b3d4fc; border-radius: 8px;">
+                                                    <h6><i class="fas fa-info-circle"></i> YouTube Player Features:</h6>
+                                                    <ul class="mb-0" style="padding-left: 1.2rem;">
+                                                        <li><strong>Host Controls:</strong> Only hosts can control playback</li>
+                                                        <li><strong>Video Suggestions:</strong> Users can suggest videos for approval</li>
+                                                        <li><strong>Queue System:</strong> Approved videos are queued for playback</li>
+                                                        <li><strong>Real-time Sync:</strong> All users see the same video</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-4">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="settingsDisappearingMessages"${settings.disappearing_messages ? ' checked' : ''}>
+                                                    <label class="form-check-label" for="settingsDisappearingMessages">
+                                                        <i class="fas fa-clock"></i> <strong>Disappearing Messages</strong>
+                                                    </label>
+                                                </div>
+                                                <small class="form-text text-muted">Messages automatically delete after a set time</small>
+                                            </div>
+                                            
+                                            <div class="mb-3" id="messageLifetimeFieldSettings" style="display: ${settings.disappearing_messages ? 'block' : 'none'};">
+                                                <label for="settingsMessageLifetime" class="form-label">Message Lifetime</label>
+                                                <select class="form-select" id="settingsMessageLifetime" style="background: #333; border: 1px solid #555; color: #fff;">
+                                                    <option value="5"${settings.message_lifetime_minutes == 5 ? ' selected' : ''}>5 minutes</option>
+                                                    <option value="15"${settings.message_lifetime_minutes == 15 ? ' selected' : ''}>15 minutes</option>
+                                                    <option value="30"${settings.message_lifetime_minutes == 30 ? ' selected' : ''}>30 minutes</option>
+                                                    <option value="60"${settings.message_lifetime_minutes == 60 ? ' selected' : ''}>1 hour</option>
+                                                    <option value="120"${settings.message_lifetime_minutes == 120 ? ' selected' : ''}>2 hours</option>
+                                                    <option value="360"${settings.message_lifetime_minutes == 360 ? ' selected' : ''}>6 hours</option>
+                                                    <option value="720"${settings.message_lifetime_minutes == 720 ? ' selected' : ''}>12 hours</option>
+                                                    <option value="1440"${settings.message_lifetime_minutes == 1440 ? ' selected' : ''}>24 hours</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Banlist -->
+                            <div class="tab-pane fade" id="banlist" role="tabpanel">
+                                <div class="mt-3">
+                                    <h6><i class="fas fa-ban"></i> Banned Users</h6>
+                                    <div id="bannedUsersList">
+                                        <p class="text-muted">Loading banned users...</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Admin Settings Tab (only for moderators/admins) -->
+                            ${(isAdmin || isModerator) ? `
+                            <div class="tab-pane fade" id="admin-settings" role="tabpanel">
+                                <div class="mt-3">
+                                    <div class="alert alert-warning" style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); color: #ffc107;">
+                                        <i class="fas fa-shield-alt"></i> <strong>Administrator Settings</strong><br>
+                                        These options are only available to moderators and administrators.
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="mb-4">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="settingsPermanentRoom"${settings.permanent ? ' checked' : ''}>
+                                                    <label class="form-check-label" for="settingsPermanentRoom">
+                                                        <i class="fas fa-star text-warning"></i> <strong>Permanent Room</strong>
+                                                    </label>
+                                                </div>
+                                                <small class="form-text text-muted">
+                                                    This room will never be automatically deleted, even when empty. 
+                                                    It will be displayed at the top of the room list with a special indicator.
+                                                </small>
+                                                <div class="mt-2">
+                                                    <small class="text-info">
+                                                        <i class="fas fa-info-circle"></i> 
+                                                        When the host of a permanent room leaves, they retain host privileges even while offline.
+                                                    </small>
+                                                </div>
+                                                ${settings.permanent ? `
+                                                <div class="mt-2">
+                                                    <div class="alert alert-info" style="background: rgba(13, 110, 253, 0.1); border: 1px solid rgba(13, 110, 253, 0.3); color: #b3d4fc;">
+                                                        <i class="fas fa-star"></i> This room is currently marked as permanent.
+                                                    </div>
+                                                </div>
+                                                ` : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid #444;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="saveRoomSettings()"><i class="fas fa-save"></i> Save Settings</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#roomSettingsModal').remove();
+    $('body').append(modalHtml);
+    
+    setupRoomSettingsHandlers();
+    
+    $('#banlist-tab').on('click', function() {
+        loadBannedUsers();
+    });
+    
+    $('#roomSettingsModal').modal('show');
+}
+
+function setupRoomSettingsHandlers() {
+    $('#settingsHasPassword').on('change', function() {
+        if (this.checked) {
+            $('#passwordFieldSettings').show();
+            $('#knockingFieldSettings').show();
+        } else {
+            $('#passwordFieldSettings').hide();
+            $('#knockingFieldSettings').hide();
+            $('#settingsPassword').val('');
+            $('#settingsAllowKnocking').prop('checked', true);
+        }
+    });
+    
+    $('#settingsYouTubeEnabled').on('change', function() {
+        if (this.checked) {
+            $('#youtubePlayerInfo').show();
+        } else {
+            $('#youtubePlayerInfo').hide();
+        }
+    });
+    
+    $('#settingsDisappearingMessages').on('change', function() {
+        if (this.checked) {
+            $('#messageLifetimeFieldSettings').show();
+        } else {
+            $('#messageLifetimeFieldSettings').hide();
+        }
+    });
+}
+
+function loadBannedUsers() {
+    debugLog('Loading banned users for room:', roomId);
+    
+    $.ajax({
+        url: 'api/get_banned_users_simple.php',
+        method: 'GET',
+        dataType: 'json',
+        data: { room_id: roomId },
+        success: function(response) {
+            debugLog('Banned users response:', response);
+            
+            let html = '';
+            
+            if (!Array.isArray(response)) {
+                html = '<p class="text-danger">Error loading banned users.</p>';
+            } else {
+                if (response.length === 0) {
+                    html = '<p class="text-muted">No banned users.</p>';
+                } else {
+                    response.forEach((ban) => {
+                        const name = ban.username || ban.guest_name || 'Unknown User';
+                        const banType = ban.is_permanent ? 'Permanent' : 'Temporary';
+                        const expiry = ban.ban_until ? new Date(ban.ban_until).toLocaleString() : 'Never';
+                        const reason = ban.reason || 'No reason provided';
+                        
+                        html += `
+                            <div class="card mb-2" style="background: #333; border: 1px solid #555;">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong style="color: #fff;">${name}</strong> 
+                                            <span class="badge ${banType === 'Permanent' ? 'bg-danger' : 'bg-warning'}">${banType}</span>
+                                            <br>
+                                            <small class="text-muted">
+                                                Expires: ${expiry}<br>
+                                                Reason: ${reason}
+                                            </small>
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-success" onclick="unbanUser('${ban.user_id_string}', '${name.replace(/'/g, "\\'")}')">
+                                            <i class="fas fa-unlock"></i> Unban
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+            }
+            
+            $('#bannedUsersList').html(html);
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error in loadBannedUsers:', status, error);
+            $('#bannedUsersList').html('<p class="text-danger">Error loading banned users.</p>');
+        }
+    });
+}
+
+function unbanUser(userIdString, userName) {
+    if (!confirm('Are you sure you want to unban ' + userName + '?')) {
+        return;
+    }
+    
+    $.ajax({
+        url: 'api/unban_user_simple.php',
+        method: 'POST',
+        dataType: 'json',
+        data: {
+            room_id: roomId,
+            user_id_string: userIdString
+        },
+        success: function(response) {
+            if (response.status === 'success') {
+                alert(userName + ' has been unbanned successfully!');
+                loadBannedUsers(); // Reload the list
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error in unbanUser:', status, error);
+            alert('AJAX error: ' + error);
+        }
+    });
+}
+
+function saveRoomSettings() {
+    const formData = {
+        room_id: roomId,
+        name: $('#settingsRoomName').val().trim(),
+        description: $('#settingsDescription').val().trim(),
+        capacity: $('#settingsCapacity').val(),
+        theme: $('#settingsTheme').val(),
+        has_password: $('#settingsHasPassword').is(':checked') ? 1 : 0,
+        password: $('#settingsPassword').val(),
+        allow_knocking: $('#settingsAllowKnocking').is(':checked') ? 1 : 0,
+        youtube_enabled: $('#settingsYouTubeEnabled').is(':checked') ? 1 : 0,
+        is_rp: $('#settingsIsRP').is(':checked') ? 1 : 0,
+        friends_only: $('#settingsFriendsOnly').is(':checked') ? 1 : 0,
+        invite_only: $('#settingsInviteOnly').is(':checked') ? 1 : 0,
+        members_only: $('#settingsMembersOnly').is(':checked') ? 1 : 0,
+        disappearing_messages: $('#settingsDisappearingMessages').is(':checked') ? 1 : 0,
+        message_lifetime_minutes: $('#settingsDisappearingMessages').is(':checked') ? $('#settingsMessageLifetime').val() : 0,
+        permanent: $('#settingsPermanentRoom').is(':checked') ? 1 : 0  
+    };
+    
+    debugLog('Saving room settings:', formData);
+    
+    if (!formData.name) {
+        alert('Room name is required');
+        $('#settingsRoomName').focus();
+        return;
+    }
+    
+    if (formData.has_password && !formData.password) {
+        if (!confirm('Password protection is enabled but no password was entered. Do you want to keep the existing password?')) {
+            $('#settingsPassword').focus();
+            return;
+        }
+    }
+    
+    const saveButton = $('#roomSettingsModal .btn-primary');
+    const originalText = saveButton.html();
+    saveButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Saving...');
+    
+    $.ajax({
+        url: 'api/update_room.php',
+        method: 'POST',
+        data: formData,
+        dataType: 'json',
+        success: function(response) {
+            debugLog('Update room response:', response);
+            if (response.status === 'success') {
+                let message = 'Room settings updated successfully!';
+                
+                if (formData.permanent) {
+                    message += ' This room is now permanent.';
+                }
+                
+                if (response.invite_code) {
+                    const inviteLink = window.location.origin + '/' + response.invite_link;
+                    message += '\\n\\nInvite link: ' + inviteLink;
+                    
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(inviteLink).then(() => {
+                            message += '\\n\\n(Invite link copied to clipboard!)';
+                            alert(message);
+                        }).catch(() => {
+                            alert(message);
+                        });
+                    } else {
+                        alert(message);
+                    }
+                } else {
+                    alert(message);
+                }
+                
+                $('#roomSettingsModal').modal('hide');
+                
+                const needsReload = 
+                    formData.youtube_enabled !== youtubeEnabled ||
+                    formData.theme !== (roomTheme || 'default') ||
+                    formData.disappearing_messages !== (typeof disappearingMessages !== 'undefined' ? disappearingMessages : false);
+                
+                if (needsReload) {
+                    showToast('Settings changed. Refreshing room...', 'info');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    loadMessages();
+                    loadUsers();
+                }
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error in saveRoomSettings:', status, error);
+            alert('AJAX error: ' + error);
+        },
+        complete: function() {
+            saveButton.prop('disabled', false).html(originalText);
+        }
+    });
+}
+
+function leaveRoom() {
+    debugLog('Leave room clicked for roomId:', roomId);
+    
+    $.ajax({
+        url: 'api/leave_room.php',
+        method: 'POST',
+        data: { 
+            room_id: roomId,
+            action: 'check_options'
+        },
+        success: function(response) {
+            debugLog('Response from api/leave_room.php (check):', response);
+            try {
+                let res = JSON.parse(response);
+                
+                if (res.status === 'permanent_room_leave') {
+                    if (confirm(res.message + ' Are you sure you want to leave?')) {
+                        $.ajax({
+                            url: 'api/leave_room.php',
+                            method: 'POST',
+                            data: { 
+                                room_id: roomId,
+                                action: 'permanent_room_leave'
+                            },
+                            success: function(leaveResponse) {
+                                try {
+                                    let leaveRes = JSON.parse(leaveResponse);
+                                    if (leaveRes.status === 'success') {
+                                        alert(leaveRes.message || 'Left room successfully');
+                                        window.location.href = '/lounge';
+
+                                    } else {
+                                        alert('Error: ' + leaveRes.message);
+                                    }
+                                } catch (e) {
+                                    console.error('JSON parse error:', e, leaveResponse);
+                                    alert('Error leaving room');
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                console.error('AJAX error leaving permanent room:', error);
+                                alert('Error leaving room: ' + error);
+                            }
+                        });
+                    }
+                } else if (res.status === 'host_leaving') {
+                    showHostLeavingModal(
+                        res.other_users || [], 
+                        res.show_transfer !== false, 
+                        res.last_user === true
+                    );
+                } else if (res.status === 'success') {
+                    window.location.href = '/lounge';
+
+                } else {
+                    alert('Error: ' + res.message);
+                }
+            } catch (e) {
+                console.error('JSON parse error:', e, 'Raw response:', response);
+                if (response.includes('success')) {
+                    window.location.href = '/lounge';
+
+                } else {
+                    alert('Invalid response from server: ' + response);
+                }
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error in leaveRoom:', status, error);
+            alert('AJAX error: ' + error);
+        }
+    });
+}
+
+function showHostLeavingModal(otherUsers, showTransfer, isLastUser) {
+    let userOptions = '';
+    let transferSection = '';
+    
+    if (showTransfer && otherUsers.length > 0) {
+        otherUsers.forEach(user => {
+            let displayName = user.username || user.guest_name;
+            userOptions += '<option value="' + user.user_id_string + '">' + displayName + '</option>';
+        });
+        
+        transferSection = `
+            <div class="mb-3">
+                <label for="newHostSelect" class="form-label">Or transfer host privileges to:</label>
+                <select class="form-select mb-2" id="newHostSelect" style="background: #333; border: 1px solid #555; color: #fff;">
+                    <option value="">Select new host...</option>
+                    ${userOptions}
+                </select>
+                <button type="button" class="btn btn-primary w-100" onclick="transferHost()">Transfer Host & Leave</button>
+            </div>
+        `;
+    }
+
+    let modalHtml = `
+        <div class="modal fade" id="hostLeavingModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
+                    <div class="modal-header" style="border-bottom: 1px solid #444;">
+                        <h5 class="modal-title">${isLastUser ? 'Last User in Room' : 'You are the Host'}</h5>
+                    </div>
+                    <div class="modal-body">
+                        <p>${isLastUser ? 
+                            'You are the last user in this room. When you leave, the room will be deleted.' : 
+                            'You are the host of this room. What would you like to do?'}</p>
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-danger w-100 mb-2" onclick="deleteRoom()">
+                                ${isLastUser ? 'Leave & Delete Room' : 'Delete Room'}
+                            </button>
+                            ${transferSection}
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid #444;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#hostLeavingModal').remove();
+    $('body').append(modalHtml);
+    $('#hostLeavingModal').modal('show');
+}
+
+function deleteRoom() {
+    if (confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
+        $.ajax({
+            url: 'api/leave_room.php',
+            method: 'POST',
+            data: { 
+                room_id: roomId,
+                action: 'delete_room'
+            },
+            success: function(response) {
+                try {
+                    let res = JSON.parse(response);
+                    if (res.status === 'success') {
+                        stopKickDetection();
+                        alert('Room deleted successfully');
+                        window.location.href = '/lounge';
+
+                    } else {
+                        alert('Error: ' + res.message);
+                    }
+                } catch (e) {
+                    console.error('JSON parse error:', e, response);
+                    alert('Invalid response from server');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX error in deleteRoom:', status, error);
+                alert('AJAX error: ' + error);
+            }
+        });
+    }
+}
+
+function transferHost() {
+    let newHostId = $('#newHostSelect').val();
+    if (!newHostId) {
+        alert('Please select a user to transfer host privileges to');
+        return;
+    }
+    
+    if (confirm('Are you sure you want to transfer host privileges and leave the room?')) {
+        $.ajax({
+            url: 'api/leave_room.php',
+            method: 'POST',
+            data: { 
+                room_id: roomId,
+                action: 'transfer_host',
+                new_host_user_id: newHostId
+            },
+            success: function(response) {
+                try {
+                    let res = JSON.parse(response);
+                    if (res.status === 'success') {
+                        stopKickDetection();
+                        alert('Host privileges transferred successfully');
+                        window.location.href = '/lounge';
+
+                    } else {
+                        alert('Error: ' + res.message);
+                    }
+                } catch (e) {
+                    console.error('JSON parse error:', e, response);
+                    alert('Invalid response from server');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX error in transferHost:', status, error);
+                alert('AJAX error: ' + error);
+            }
+        });
+    }
+}
+
+function showBanModal(userIdString, userName) {
+    const modalHtml = `
+        <div class="modal fade" id="banUserModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
+                    <div class="modal-header" style="border-bottom: 1px solid #444;">
+                        <h5 class="modal-title"><i class="fas fa-ban"></i> Ban User</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>You are about to ban <strong>${userName}</strong> from this room.</p>
+                        <div class="mb-3">
+                            <label for="banDuration" class="form-label">Ban Duration</label>
+                            <select class="form-select" id="banDuration" required style="background: #333; border: 1px solid #555; color: #fff;">
+                                <option value="300">5 minutes</option>
+                                <option value="1800">30 minutes</option>
+                                <option value="permanent">Permanent</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="banReason" class="form-label">Reason (optional)</label>
+                            <input type="text" class="form-control" id="banReason" placeholder="Enter reason for ban" style="background: #333; border: 1px solid #555; color: #fff;">
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid #444;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" onclick="confirmBanUser('${userIdString}', '${userName.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-ban"></i> Ban User
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#banUserModal').remove();
+    $('body').append(modalHtml);
+    $('#banUserModal').modal('show');
+}
+
+function confirmBanUser(userIdString, userName) {
+    const duration = $('#banDuration').val();
+    const reason = $('#banReason').val().trim();
+    
+    const durationText = duration === 'permanent' ? 'permanently' : 
+                       duration == 300 ? 'for 5 minutes' :
+                       duration == 1800 ? 'for 30 minutes' : 'for ' + duration + ' seconds';
+    
+    if (!confirm('Are you sure you want to ban ' + userName + ' ' + durationText + '?')) {
+        return;
+    }
+    
+    const banButton = $('#banUserModal .btn-danger');
+    const originalText = banButton.html();
+    banButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status"></span> Banning...');
+    
+    $.ajax({
+        url: 'api/ban_user_simple.php',
+        method: 'POST',
+        dataType: 'json',
+        data: {
+            room_id: roomId,
+            user_id_string: userIdString,
+            duration: duration,
+            reason: reason
+        },
+        success: function(response) {
+            if (response.status === 'success') {
+                alert('User banned successfully ' + durationText + '!');
+                $('#banUserModal').modal('hide');
+                
+                loadUsers();
+                loadMessages();
+                
+                setTimeout(() => {
+                    checkUserStatus();
+                }, 500);
+                
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error in confirmBanUser:', status, error);
+            alert('AJAX error: ' + error);
+        },
+        complete: function() {
+            banButton.prop('disabled', false).html(originalText);
+        }
+    });
+}
+
+function checkForKnocks() {
+    if (!isHost) {
+        return;
+    }
+    
+    $.ajax({
+        url: 'api/check_knocks.php',
+        method: 'GET',
+        dataType: 'json',
+        success: function(knocks) {
+            if (Array.isArray(knocks) && knocks.length > 0) {
+                displayKnockNotifications(knocks);
+            }
+        },
+        error: function(xhr, status, error) {
+            // Silently fail for knock checks
+        }
+    });
+}
+
+function displayKnockNotifications(knocks) {
+    knocks.forEach((knock, index) => {
+        if ($(`#knock-${knock.id}`).length > 0) {
+            return; // Already displayed
+        }
+        
+        const userName = knock.username || knock.guest_name || 'Unknown User';
+        const avatar = knock.avatar || 'default_avatar.jpg';
+        const topPosition = 20 + (index * 140);
+        
+        const notificationHtml = `
+            <div class="alert alert-info knock-notification" 
+                 id="knock-${knock.id}" 
+                 role="alert" 
+                 style="position: fixed; top: ${topPosition}px; right: 20px; z-index: 1070; max-width: 400px; background: #2a2a2a; border: 1px solid #404040; color: #e0e0e0;">
+                <div class="d-flex align-items-center">
+                    <img src="images/${avatar}" width="40" height="40" class="rounded-circle me-3" alt="${userName}" style="border: 2px solid #007bff;">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1" style="color: #e0e0e0;">
+                            <i class="fas fa-hand-paper text-primary"></i> Knock Request
+                        </h6>
+                        <p class="mb-2" style="color: #ccc;"><strong>${userName}</strong> wants to join this room</p>
+                        <div>
+                            <button class="btn btn-success btn-sm me-2" onclick="respondToKnock(${knock.id}, 'accepted')">
+                                <i class="fas fa-check"></i> Accept
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="respondToKnock(${knock.id}, 'denied')">
+                                <i class="fas fa-times"></i> Deny
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" onclick="dismissKnock(${knock.id})" style="filter: invert(1);"></button>
+                </div>
+            </div>
+        `;
+        
+        $('body').append(notificationHtml);
+        $(`#knock-${knock.id}`).hide().fadeIn(300);
+        
+        // Auto-dismiss after 45 seconds
+        setTimeout(() => {
+            dismissKnock(knock.id);
+        }, 45000);
+    });
+}
+
+function respondToKnock(knockId, response) {
+    $.ajax({
+        url: 'api/respond_knocks.php',
+        method: 'POST',
+        data: {
+            knock_id: knockId,
+            response: response
+        },
+        dataType: 'json',
+        success: function(result) {
+            if (result.status === 'success') {
+                dismissKnock(knockId);
+                loadMessages();
+                
+                const message = response === 'accepted' ? 
+                    'Knock accepted! The user can now join the room.' : 
+                    'Knock request denied.';
+                alert(message);
+            } else {
+                alert('Error: ' + result.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error responding to knock:', error);
+            alert('Error responding to knock: ' + error);
+        }
+    });
+}
+
+function dismissKnock(knockId) {
+    $(`#knock-${knockId}`).fadeOut(300, function() {
+        $(this).remove();
+    });
+}
+
+function createTestUser() {
+    $.ajax({
+        url: 'api/create_test_user.php',
+        method: 'POST',
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                alert('Test user created: ' + response.user.name);
+                loadUsers();
+                loadMessages();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error in createTestUser:', status, error);
+            alert('AJAX error: ' + error);
+        }
+    });
+}
+
+
+
+
+
+
+
+let openWhispers = new Map();
+let whisperTabs = [];
+
+function escapeSelector(str) {
+    return str.replace(/([ #;&,.+*~':"!^$[\]()=>|\/])/g, '\\$1');
+}
+
+function createSafeId(str) {
+    return str.replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+function openWhisper(userIdString, username) {
+    debugLog('Opening whisper for user:', userIdString, username);
+    
+    if (openWhispers.has(userIdString)) {
+        showWhisperTab(userIdString);
+        return;
+    }
+    
+    const safeId = createSafeId(userIdString);
+    const tabId = `whisper-tab-${safeId}`;
+    const windowId = `whisper-${safeId}`;
+    
+    const tabHtml = `
+        <div class="whisper-tab" id="${tabId}" onclick="toggleWhisperTab('${userIdString.replace(/'/g, "\\'")}')">
+            <span class="whisper-tab-title">💬 ${username}</span>
+            <span class="whisper-tab-unread" id="whisper-unread-${safeId}" style="display: none;">0</span>
+            <button class="whisper-tab-close" onclick="event.stopPropagation(); closeWhisper('${userIdString.replace(/'/g, "\\'")}');" title="Close">&times;</button>
+        </div>
+    `;
+    
+    const windowHtml = `
+        <div class="whisper-window" id="${windowId}">
+            <div class="whisper-body" id="whisper-body-${safeId}">
+                Loading messages...
+            </div>
+            <div class="whisper-input">
+                <form class="whisper-form" onsubmit="sendWhisper('${userIdString.replace(/'/g, "\\'")}'); return false;">
+                    <input type="text" id="whisper-input-${safeId}" placeholder="Type a whisper..." required>
+                    <button type="submit">Send</button>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    if ($('#whisper-tabs').length === 0) {
+        $('body').append('<div id="whisper-tabs"></div>');
+    }
+    $('#whisper-tabs').append(tabHtml);
+    $('body').append(windowHtml);
+    
+    openWhispers.set(userIdString, { username: username, unreadCount: 0, safeId: safeId });
+    whisperTabs.push(userIdString);
+    
+    loadWhisperMessages(userIdString);
+    showWhisperTab(userIdString);
+}
+
+function toggleWhisperTab(userIdString) {
+    debugLog('Toggling whisper tab for:', userIdString);
+    const data = openWhispers.get(userIdString);
+    if (!data) return;
+    
+    const safeId = data.safeId;
+    const window = $(`#whisper-${safeId}`);
+    const tab = $(`#whisper-tab-${safeId}`);
+    const isCollapsed = window.hasClass('collapsed');
+    
+    $('.whisper-window').addClass('collapsed');
+    $('.whisper-tab').removeClass('active');
+    
+    if (isCollapsed) {
+        window.removeClass('collapsed');
+        tab.addClass('active');
+        markWhisperAsRead(userIdString);
+        setTimeout(() => {
+            $(`#whisper-input-${safeId}`).focus();
+        }, 300);
+    } else {
+        window.addClass('collapsed');
+        tab.removeClass('active');
+    }
+}
+
+function showWhisperTab(userIdString) {
+    debugLog('Showing whisper tab for:', userIdString);
+    const data = openWhispers.get(userIdString);
+    if (!data) return;
+    
+    const safeId = data.safeId;
+    $('.whisper-window').addClass('collapsed');
+    $('.whisper-tab').removeClass('active');
+    
+    const window = $(`#whisper-${safeId}`);
+    const tab = $(`#whisper-tab-${safeId}`);
+    
+    window.removeClass('collapsed');
+    tab.addClass('active');
+    markWhisperAsRead(userIdString);
+    
+    setTimeout(() => {
+        $(`#whisper-input-${safeId}`).focus();
+    }, 300);
+}
+
+function closeWhisper(userIdString) {
+    const data = openWhispers.get(userIdString);
+    if (!data) return;
+    
+    const safeId = data.safeId;
+    $(`#whisper-tab-${safeId}`).remove();
+    $(`#whisper-${safeId}`).remove();
+    openWhispers.delete(userIdString);
+    whisperTabs = whisperTabs.filter(id => id !== userIdString);
+    
+    if (whisperTabs.length === 0) {
+        $('#whisper-tabs').remove();
+    }
+}
+
+function sendWhisper(recipientUserIdString) {
+    const data = openWhispers.get(recipientUserIdString);
+    if (!data) return false;
+    
+    const safeId = data.safeId;
+    const input = $(`#whisper-input-${safeId}`);
+    const message = input.val().trim();
+    
+    if (!message) return false;
+    
+    managedAjax({
+        url: 'api/room_whispers.php',
+        method: 'POST',
+        data: {
+            action: 'send',
+            recipient_user_id_string: recipientUserIdString,
+            message: message
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                input.val('');
+                loadWhisperMessages(recipientUserIdString);
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Send whisper error:', error);
+            alert('Error sending whisper: ' + error);
+        }
+    });
+    
+    return false;
+}
+
+function loadWhisperMessages(otherUserIdString) {
+    debugLog('Loading whisper messages for:', otherUserIdString);
+    
+    managedAjax({
+        url: 'api/room_whispers.php',
+        method: 'GET',
+        data: {
+            action: 'get',
+            other_user_id_string: otherUserIdString
+        },
+        dataType: 'json'
+    }).then(response => {
+        debugLog('Whisper messages response:', response);
+        if (response.status === 'success') {
+            displayWhisperMessages(otherUserIdString, response.messages);
+        } else {
+            console.error('API error:', response.message);
+            const data = openWhispers.get(otherUserIdString);
+            if (data) {
+                $(`#whisper-body-${data.safeId}`).html('<div style="color: #f44336; padding: 10px;">Error: ' + response.message + '</div>');
+            }
+        }
+    }).catch(error => {
+        console.error('AJAX error details:', error);
+        const data = openWhispers.get(otherUserIdString);
+        if (data) {
+            $(`#whisper-body-${data.safeId}`).html('<div style="color: #f44336; padding: 10px;">Failed to load messages. Check console for details.</div>');
+        }
+    });
+}
+
+function displayWhisperMessages(otherUserIdString, messages) {
+    const data = openWhispers.get(otherUserIdString);
+    if (!data) {
+        console.error('No whisper data found for user:', otherUserIdString);
+        return;
+    }
+    
+    const safeId = data.safeId;
+    const container = $(`#whisper-body-${safeId}`);
+    
+    if (container.length === 0) {
+        console.error('Whisper container not found:', `#whisper-body-${safeId}`);
+        return;
+    }
+    
+    const wasAtBottom = container[0].scrollHeight > 0 ? 
+        (container.scrollTop() + container.innerHeight() >= container[0].scrollHeight - 20) : true;
+    
+    let html = '';
+    
+    if (messages.length === 0) {
+        html = '<div style="text-align: center; color: #999; padding: 20px;">No whispers yet</div>';
+    } else {
+        messages.forEach(msg => {
+    const isOwn = msg.sender_user_id_string === currentUserIdString;
+    const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    
+    const author = isOwn ? 
+        (currentUser.name || currentUser.username || 'You') : 
+        (msg.sender_username || msg.sender_guest_name || 'Unknown');
+    const avatar = isOwn ? 
+        (currentUser.avatar || 'default_avatar.jpg') : 
+        (msg.sender_avatar || 'default_avatar.jpg');
+    const userColor = isOwn ? 
+        (currentUser.color || 'blue') : 
+        (msg.sender_color || 'blue');
+    
+    const avatarHue = isOwn ? (currentUser.avatar_hue || 0) : (msg.sender_avatar_hue || 0);
+    const avatarSat = isOwn ? (currentUser.avatar_saturation || 100) : (msg.sender_avatar_saturation || 100);
+    const bubbleHue = isOwn ? (currentUser.bubble_hue || 0) : (msg.bubble_hue || 0);
+const bubbleSat = isOwn ? (currentUser.bubble_saturation || 100) : (msg.bubble_saturation || 100);
+    
+    html += `
+        <div class="private-chat-message ${isOwn ? 'sent' : 'received'}">
+            <img src="images/${avatar}" 
+                 class="private-message-avatar" 
+                 style="filter: hue-rotate(${avatarHue}deg) saturate(${avatarSat}%);"
+                 alt="${author}'s avatar">
+            <div class="private-message-bubble ${isOwn ? 'sent' : 'received'} user-color-${userColor}" style="filter: hue-rotate(${bubbleHue}deg) saturate(${bubbleSat}%);">
+                <div class="private-message-header-info">
+                    <div class="private-message-author">${author}</div>
+                    <div class="private-message-time">${time}</div>
+                </div>
+                
+                <div class="private-message-content">${msg.message}</div>
+            </div>
+        </div>
+    `;
+});
+    }
+    
+    container.html(html);
+    
+    if (wasAtBottom && container[0].scrollHeight > 0) {
+        container.scrollTop(container[0].scrollHeight);
+    }
+}
+
+function markWhisperAsRead(userIdString) {
+    const data = openWhispers.get(userIdString);
+    if (data && data.unreadCount > 0) {
+        data.unreadCount = 0;
+        openWhispers.set(userIdString, data);
+        $(`#whisper-unread-${data.safeId}`).hide().text('0');
+    }
+}
+
+function checkForNewWhispers() {
+    managedAjax({
+        url: 'api/room_whispers.php',
+        method: 'GET',
+        data: { action: 'get_conversations' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                response.conversations.forEach(conv => {
+                    const userIdString = conv.other_user_id_string;
+                    
+                    if (conv.unread_count > 0 && !openWhispers.has(userIdString)) {
+                        const displayName = conv.username || conv.guest_name || 'Unknown';
+                        openWhisper(userIdString, displayName);
+                    }
+                    
+                    if (openWhispers.has(userIdString)) {
+                        const data = openWhispers.get(userIdString);
+                        data.unreadCount = conv.unread_count;
+                        openWhispers.set(userIdString, data);
+                        
+                        const unreadElement = $(`#whisper-unread-${data.safeId}`);
+                        if (conv.unread_count > 0) {
+                            unreadElement.text(conv.unread_count).show();
+                        } else {
+                            unreadElement.hide();
+                        }
+                    }
+                });
+            }
+        },
+        error: function() {
+            // Silently fail
+        }
+    });
+    
+    openWhispers.forEach((data, userIdString) => {
+    const safeId = data.safeId;
+    const input = $(`#whisper-input-${safeId}`);
+    
+    // Only update if user is not actively typing in this specific whisper
+    if (!input.is(':focus') || input.val().length === 0) {
+        // This will be handled by fetchAllRoomData, no need for individual calls
+    }
+});
+if ($('#friendsPanel').is(':visible')) {
+    // This will be handled by fetchAllRoomData
+}
+}
+
+
+
+
+
+
+
+
+function sendFriendRequest(userId, username) {
+    if (!userId || !username) {
+        alert('Invalid user data');
+        return;
+    }
+    
+    if (confirm('Send friend request to ' + username + '?')) {
+       managedAjax({
+            url: 'api/friends.php',
+            method: 'POST',
+            data: {
+                action: 'add',
+                friend_username: username
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    alert('Friend request sent to ' + username + '!');
+                    clearFriendshipCache(userId);
+                    loadUsers(); // Refresh user list
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Send friend request error:', error);
+                alert('Error sending friend request: ' + error);
+            }
+        });
+    }
+}
+
+
+
+window.debugPagination = function() {
+    console.log('=== PAGINATION DEBUG ===');
+    console.log('messageOffset:', messageOffset);
+    console.log('messageLimit:', messageLimit);
+    console.log('hasMoreOlderMessages:', hasMoreOlderMessages);
+    console.log('isLoadingMessages:', isLoadingMessages);
+    console.log('totalMessageCount:', totalMessageCount);
+    console.log('Load more button exists:', $('.load-more-messages').length > 0);
+    console.log('Current messages in DOM:', $('.chat-message').length);
+};
+
+
+$(document).ready(function() {
+    debugLog('🏠 Room loaded, roomId:', roomId);
+
+    if (typeof roomId !== 'undefined' && roomId) {
+        initializeActivityTracking();
+    }
+
+    if (!roomId) {
+        console.error('❌ Invalid room ID, redirecting to lounge');
+        window.location.href = '/lounge';
+
+        return;
+    }
+
+    // Form handlers
+    $(document).on('submit', '#messageForm', function(e) {
+        e.preventDefault();
+        sendMessage();
+        return false;
+    });
+
+    $(document).on('keypress', '#message', function(e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            sendMessage();
+            return false;
+        }
+    });
+
+    $(document).on('submit', '#youtube-suggest-form', function(e) {
+        e.preventDefault();
+        suggestVideo();
+        return false;
+    });
+
+    $(document).on('keypress', '#youtube-suggest-input', function(e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            suggestVideo();
+            return false;
+        }
+    });
+
+    // Initialize features
+    addAFKStyles();
+    setTimeout(updateAFKButton, 1000);
+
+    // Scroll handler
+    $(document).on('scroll', '#chatbox', function() {
+        userIsScrolling = true;
+        setTimeout(function() {
+            userIsScrolling = false;
+        }, 1000);
+    });
+
+    // Visibility handlers
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            updateUserActivity('page_focus');
+            setTimeout(checkUserStatus, 100);
+        }
+    });
+
+    $(window).on('focus', function() {
+        setTimeout(checkUserStatus, 100);
+    });
+
+    // YouTube setup
+    if (typeof youtubeEnabledGlobal !== 'undefined' && youtubeEnabledGlobal) {
+        debugLog('🎬 YouTube enabled for this room');
+        youtubeEnabled = true;
+        isYoutubeHost = isHost;
+        
+        // Restore hidden state
+        const savedHidden = localStorage.getItem(`youtube_hidden_${roomId}`);
+        if (savedHidden === 'true') {
+            $('.youtube-player-container').addClass('user-hidden').hide();
+            $('.youtube-player-toggle').addClass('hidden-player').html('<i class="fas fa-video"></i>').attr('title', 'Show Player');
+            playerHidden = true;
+        }
+        
+        // YouTube API callback
+        window.onYouTubeIframeAPIReady = function() {
+            youtubeAPIReady = true;
+            initializeYouTubePlayer();
+        };
+        
+        loadYouTubeAPI();
+        $('.youtube-player-container').addClass('enabled');
+        $('.youtube-player-toggle').show();
+    } else {
+        debugLog('🎬 YouTube not enabled for this room');
+        youtubeEnabled = false;
+    }
+
+    // Initialize activity tracking
+    //initializeActivityTracking();
+
+    // Host-specific features
+    if (isHost) {
+        debugLog('🚪 User is host, starting knock checking...');
+        setInterval(checkForKnocks, 5000); // Reduced frequency
+        setTimeout(checkForKnocks, 1000);
+    }
+
+    // Initialize mentions and replies
+    setTimeout(() => {
+        initializeMentionsAndReplies();
+        addMentionHighlightCSS();
+    }, 1000);
+
+    // Initialize private messaging for registered users
+    if (currentUser.type === 'user') {
+        setTimeout(initializePrivateMessaging, 1000);
+    }
+
+    // CRITICAL: Replace all the individual intervals with managed updates
+    
+    // Remove these old intervals - they're causing the request storm:
+    // setInterval(loadMessages, 1000);
+    // setInterval(loadUsers, 1000);
+    // setInterval(checkForNewWhispers, 1000);
+    // setInterval(checkForMentions, 1000);
+    
+    // Use the new managed update system instead:
+    startRoomUpdates();
+
+    // Keep only essential intervals at lower frequencies
+    setTimeout(checkUserStatus, 1000);
+    kickDetectionInterval = setInterval(checkUserStatus, 10000); // Reduced from 5s to 10s
+    
+    // Focus message input
+    $('#message').focus();
+    
+    debugLog('✅ Room initialization complete with managed updates');
+});
+
+$(window).on('beforeunload', function() {
+    stopRoomUpdates(); // Stop managed updates
+    
+    if (mentionCheckInterval) {
+        clearInterval(mentionCheckInterval);
+        mentionCheckInterval = null;
+    }
+    
+    stopYouTubePlayer();
+    stopActivityTracking();
+    stopKickDetection();
+});
+
+function toggleMobileUsers() {
+    const userListContent = $('#userList').html();
+    $('#mobileUserListContent').html(userListContent);
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('mobileUsersModal'));
+    modal.show();
+}
+
+function toggleMobileQueue(section) {
+    const tabContent = $('#youtube-queue-content');
+    const queueBtn = $('.mobile-queue-btn').eq(0);
+    const suggestionsBtn = $('.mobile-queue-btn').eq(1);
+    
+    $('.mobile-queue-btn').removeClass('active expanded');
+    
+    if (section === 'queue') {
+        queueBtn.addClass('active');
+        $('#queue-tab').tab('show');
+    } else {
+        suggestionsBtn.addClass('active');
+        $('#suggestions-tab').tab('show');
+    }
+    
+    if (tabContent.hasClass('expanded')) {
+        tabContent.removeClass('expanded');
+    } else {
+        tabContent.addClass('expanded');
+        if (section === 'queue') {
+            queueBtn.addClass('expanded');
+        } else {
+            suggestionsBtn.addClass('expanded');
+        }
+    }
+}
+
+let openPrivateChats = new Map();
+let friends = [];
+
+function initializePrivateMessaging() {
+    if (currentUser.type !== 'user') return;
+    
+    debugLog('💬 Initializing private messaging...');
+    loadFriends();
+    
+    // Remove the old interval - whispers are now handled by fetchAllRoomData
+    // setInterval(checkForNewPrivateMessages, 3000);
+    
+    debugLog('✅ Private messaging initialized (using managed updates)');
+}
+
+function showFriendsPanel() {
+    $('#friendsPanel').show();
+    loadFriends();
+    loadConversations();
+}
+
+function closeFriendsPanel() {
+    $('#friendsPanel').hide();
+}
+
+function loadFriends() {
+    debugLog('Loading friends...');
+    managedAjax({
+        url: 'api/friends.php',
+        method: 'GET',
+        data: { action: 'get' },
+        dataType: 'json'
+    }).then(response => {
+        debugLog('Friends response:', response);
+        if (response.status === 'success') {
+            friends = response.friends;
+            updateFriendsPanel();
+        } else {
+            $('#friendsList').html('<p class="text-danger">Error: ' + response.message + '</p>');
+        }
+    }).catch(error => {
+        console.error('Friends API error:', error);
+        $('#friendsList').html('<p class="text-danger">Failed to load friends. Check console for details.</p>');
+    });
+}
+
+function updateFriendsPanel() {
+    debugLog('Updating friends panel with:', friends);
+    
+    let html = `
+        <div class="mb-3">
+            <div class="input-group input-group-sm">
+                <input type="text" class="form-control" id="addFriendInput" placeholder="Username to add" style="background: #333; border: 1px solid #555; color: #fff;">
+                <button class="btn btn-primary" onclick="addFriend()">
+                    <i class="fas fa-user-plus"></i> Add
+                </button>
+            </div>
+        </div>
+        <div class="mb-3">
+            <h6 style="color: #e0e0e0;">Recent Conversations</h6>
+            <div id="conversationsList">Loading conversations...</div>
+        </div>
+        <div>
+            <h6 style="color: #e0e0e0;">Friends</h6>
+            <div id="friendsListContent">
+    `;
+    
+    if (!friends || friends.length === 0) {
+        html += '<p class="text-muted small">No friends yet. Add someone using the form above!</p>';
+    } else {
+        friends.forEach(friend => {
+            if (friend.status === 'accepted') {
+                html += `
+                    <div class="d-flex align-items-center mb-2 p-2" style="background: #333; border-radius: 4px;">
+                        <img src="images/${friend.avatar || 'default_avatar.jpg'}" width="24" height="24" class="me-2" style="border-radius: 2px; filter: hue-rotate(${friend.avatar_hue || 0}deg) saturate(${friend.avatar_saturation || 100}%);">
+                        <div class="flex-grow-1">
+                            <small style="color: #e0e0e0;">${friend.username}</small>
+                        </div>
+                        <button class="btn btn-sm btn-primary" onclick="openPrivateMessage(${friend.friend_user_id}, '${friend.username}')">
+                            <i class="fas fa-comment"></i>
+                        </button>
+                    </div>
+                `;
+            } else if (friend.status === 'pending' && friend.request_type === 'received') {
+                html += `
+                    <div class="d-flex align-items-center mb-2 p-2" style="background: #4a4a2a; border-radius: 4px;">
+                        <img src="images/${friend.avatar || 'default_avatar.jpg'}" width="24" height="24" class="me-2" style="border-radius: 2px;">
+                        <div class="flex-grow-1">
+                            <small style="color: #e0e0e0;">${friend.username}</small>
+                            <br><small class="text-warning">Pending request</small>
+                        </div>
+                        <button class="btn btn-sm btn-success" onclick="acceptFriend(${friend.id})">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    </div>
+                `;
+            }
+        });
+    }
+    
+    html += '</div></div>';
+    $('#friendsList').html(html);
+    
+    loadConversations();
+}
+
+function addFriend() {
+    const username = $('#addFriendInput').val().trim();
+    if (!username) return;
+    
+    managedAjax({
+        url: 'api/friends.php',
+        method: 'POST',
+        data: {
+            action: 'add',
+            friend_username: username
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                $('#addFriendInput').val('');
+                alert('Friend request sent!');
+                loadFriends();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        }
+    });
+}
+
+function acceptFriend(friendId) {
+    // Disable button to prevent double-clicks
+    const acceptBtn = $(`button[onclick="acceptFriend(${friendId})"]`);
+    const originalHtml = acceptBtn.html();
+    acceptBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+    
+    managedAjax({
+        url: 'api/friends.php',
+        method: 'POST',
+        data: {
+            action: 'accept',
+            friend_id: friendId
+        },
+        dataType: 'json',
+        timeout: 10000, // 10 second timeout
+        success: function(response) {
+            if (response.status === 'success') {
+                // Success - show brief feedback then reload
+                showNotification('Friend request accepted!', 'success');
+                loadFriends();
+                
+                // Update other UI elements if they exist
+                if (typeof clearFriendshipCache === 'function') {
+                    clearFriendshipCache();
+                }
+                if (typeof loadUsers === 'function') {
+                    loadUsers();
+                }
+            } else {
+                showNotification('Error: ' + (response.message || 'Unknown error'), 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Accept friend error:', {xhr, status, error});
+            let errorMsg = 'Network error occurred';
+            
+            if (status === 'timeout') {
+                errorMsg = 'Request timed out. Please try again.';
+            } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            }
+            
+            showNotification('Error accepting friend request: ' + errorMsg, 'error');
+        },
+        complete: function() {
+            // Re-enable button
+            acceptBtn.prop('disabled', false).html(originalHtml);
+        }
+    });
+}
+
+function loadConversations() {
+    debugLog('Loading conversations...');
+    managedAjax({
+        url: 'api/private_messages.php',
+        method: 'GET',
+        data: { action: 'get_conversations' },
+        dataType: 'json'
+    }).then(response => {
+        debugLog('Conversations response:', response);
+        if (response.status === 'success') {
+            displayConversations(response.conversations);
+        } else {
+            $('#conversationsList').html('<p class="text-danger small">Error loading conversations</p>');
+        }
+    }).catch(error => {
+        console.error('Conversations API error:', error);
+        $('#conversationsList').html('<p class="text-danger small">Failed to load conversations</p>');
+    });
+}
+
+function displayConversations(conversations) {
+    let html = '';
+    
+    if (conversations.length === 0) {
+        html = '<p class="text-muted small">No conversations yet</p>';
+    } else {
+        conversations.forEach(conv => {
+            const unreadBadge = conv.unread_count > 0 ? `<span class="badge bg-danger">${conv.unread_count}</span>` : '';
+            html += `
+                <div class="d-flex align-items-center mb-2 p-2" style="background: #333; border-radius: 4px; cursor: pointer;" onclick="openPrivateMessage(${conv.other_user_id}, '${conv.username}')">
+                    <img src="images/${conv.avatar}" width="24" height="24" class="me-2" style="border-radius: 2px; filter: hue-rotate(${conv.avatar_hue || 0}deg) saturate(${conv.avatar_saturation || 100}%);">
+                    <div class="flex-grow-1">
+                        <small style="color: #e0e0e0;">${conv.username}</small>
+                        <br><small class="text-muted">${conv.last_message ? conv.last_message.substring(0, 30) + '...' : 'No messages'}</small>
+                    </div>
+                    ${unreadBadge}
+                </div>
+            `;
+        });
+    }
+    
+    $('#conversationsList').html(html);
+}
+
+function openPrivateMessage(userId, username) {
+    debugLog('=== DEBUG openPrivateMessage ===');
+    debugLog('Received userId:', userId, 'Type:', typeof userId);
+    debugLog('Received username:', username, 'Type:', typeof username);
+    debugLog('Current user:', currentUser);
+    
+    if (openPrivateChats.has(userId)) {
+        $(`#pm-${userId}`).show();
+        return;
+    }
+    
+    const windowHtml = `
+        <div class="private-message-window" id="pm-${userId}">
+            <div class="private-message-header">
+                <h6 class="private-message-title">Chat with ${username}</h6>
+                <button class="private-message-close" onclick="closePrivateMessage(${userId})">&times;</button>
+            </div>
+            <div class="private-message-body" id="pm-body-${userId}">
+                Loading messages...
+            </div>
+            <div class="private-message-input">
+                <form class="private-message-form" onsubmit="sendPrivateMessage(${userId}); return false;">
+                    <input type="text" id="pm-input-${userId}" placeholder="Type a message..." required>
+                    <button type="submit">Send</button>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    $('body').append(windowHtml);
+    openPrivateChats.set(userId, { username: username, color: 'blue' }); // Default until we fetch
+    
+    debugLog('Fetching user info for userId:', userId);
+    managedAjax({
+        url: 'api/get_user_info.php',
+        method: 'GET',
+        data: { user_id: userId },
+        dataType: 'json'
+    }).then(response => {
+        debugLog('User info response:', response);
+        if (response.status === 'success') {
+            const chatData = openPrivateChats.get(userId);
+            chatData.color = response.user.color || 'blue';
+            chatData.avatar = response.user.avatar || 'default_avatar.jpg';
+            openPrivateChats.set(userId, chatData);
+            debugLog('Fetched user color:', response.user.color);
+            loadPrivateMessages(userId);
+        }
+    }).catch(error => {
+        console.error('Failed to fetch user info:', error);
+        debugLog('Failed to fetch user info, using default color');
+        loadPrivateMessages(userId);
+    });
+}
+
+function closePrivateMessage(userId) {
+    $(`#pm-${userId}`).remove();
+    openPrivateChats.delete(userId);
+}
+
+function sendPrivateMessage(recipientId) {
+    debugLog('=== DEBUG sendPrivateMessage ===');
+    debugLog('Sending message to recipientId:', recipientId, 'Type:', typeof recipientId);
+    
+    const input = $(`#pm-input-${recipientId}`);
+    const message = input.val().trim();
+    
+    debugLog('Message content:', message);
+    
+    if (!message) return false;
+    
+    const requestData = {
+        action: 'send',
+        recipient_id: recipientId,
+        message: message
+    };
+    
+    debugLog('Request data being sent:', requestData);
+    
+    managedAjax({
+        url: 'api/private_messages.php',
+        method: 'POST',
+        data: requestData,
+        dataType: 'json',
+        success: function(response) {
+            debugLog('Send message response:', response);
+            if (response.status === 'success') {
+                input.val('');
+                loadPrivateMessages(recipientId);
+            } else {
+                console.error('API Error:', response.message);
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Send message AJAX error:', {
+                status: status,
+                error: error,
+                responseText: xhr.responseText,
+                recipientId: recipientId,
+                requestData: requestData
+            });
+            alert('Error sending message: ' + error);
+        }
+    });
+    
+    return false;
+}
+
+function loadPrivateMessages(otherUserId) {
+    debugLog('Loading private messages with user:', otherUserId);
+    
+    managedAjax({
+        url: 'api/private_messages.php',
+        method: 'GET',
+        data: {
+            action: 'get',
+            other_user_id: otherUserId
+        },
+        dataType: 'json'
+    }).then(response => {
+        debugLog('Load messages response:', response);
+        if (response.status === 'success') {
+            displayPrivateMessages(otherUserId, response.messages);
+        } else {
+            $(`#pm-body-${otherUserId}`).html('<div style="color: #f44336; padding: 10px;">Error: ' + response.message + '</div>');
+        }
+    }).catch(error => {
+        console.error('Load messages error:', error);
+        $(`#pm-body-${otherUserId}`).html('<div style="color: #f44336; padding: 10px;">Failed to load messages</div>');
+    });
+}
+
+function displayPrivateMessages(otherUserId, messages) {
+    const container = $(`#pm-body-${otherUserId}`);
+    
+    
+    const wasAtBottom = container[0] ? 
+        (container.scrollTop() + container.innerHeight() >= container[0].scrollHeight - 20) : true;
+    
+    let html = '';
+    
+    if (messages.length === 0) {
+        html = '<div style="text-align: center; color: #999; padding: 20px;">No messages yet</div>';
+    } else {
+        messages.forEach(msg => {
+    const isOwn = msg.sender_id == currentUser.id;
+    const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    
+    const author = isOwn ? (currentUser.username || currentUser.name) : msg.sender_username;
+    const avatar = isOwn ? (currentUser.avatar || 'default_avatar.jpg') : (msg.sender_avatar || 'default_avatar.jpg');
+    const userColor = isOwn ? (currentUser.color || 'blue') : (msg.sender_color || 'blue');
+    
+    const avatarHue = isOwn ? (currentUser.avatar_hue || 0) : (msg.sender_avatar_hue || 0);
+    const avatarSat = isOwn ? (currentUser.avatar_saturation || 100) : (msg.sender_avatar_saturation || 100);
+    
+    debugLog('Avatar customization debug:', {
+        isOwn: isOwn,
+        avatarHue: avatarHue,
+        avatarSat: avatarSat,
+        msg_sender_avatar_hue: msg.sender_avatar_hue,
+        currentUser_avatar_hue: currentUser.avatar_hue
+    });
+    
+    html += `
+        <div class="private-chat-message ${isOwn ? 'sent' : 'received'}">
+            <img src="images/${avatar}" 
+                 class="private-message-avatar" 
+                 style="filter: hue-rotate(${avatarHue}deg) saturate(${avatarSat}%);"
+                 alt="${author}'s avatar">
+            <div class="private-message-bubble ${isOwn ? 'sent' : 'received'} user-color-${userColor}">
+                <div class="private-message-header-info">
+                    <div class="private-message-author">${author}</div>
+                    <div class="private-message-time">${time}</div>
+                </div>
+                <div class="private-message-content">${msg.message}</div>
+            </div>
+        </div>
+    `;
+});
+    }
+    
+    container.html(html);
+    
+    if (wasAtBottom) {
+        container.scrollTop(container[0].scrollHeight);
+    }
+}
+
+/*function checkForNewPrivateMessages() {
+    if (currentUser.type !== 'user') return;
+    
+    openPrivateChats.forEach((data, userId) => {
+        const input = $(`#pm-input-${userId}`);
+        const isTyping = input.is(':focus') && input.val().length > 0;
+        
+        if (!isTyping) {
+            loadPrivateMessages(userId);
+        }
+    });
+    
+    if ($('#friendsPanel').is(':visible')) {
+        loadConversations();
+    }
+}*/
+
+function syncAvatarCustomization() {
+    $.ajax({
+        url: 'api/update_room_avatar_customization.php',
+        method: 'POST',
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                debugLog('Avatar customization synced:', response);
+                setTimeout(() => {
+                    loadUsers();
+                    loadMessages();
+                }, 200);
+            } else {
+                debugLog('Avatar sync failed:', response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            debugLog('Avatar sync error (non-critical):', error);
+        }
+    });
+}
+
+function applyAvatarFilter(imgElement, hue, saturation) {
+    if (hue !== undefined && saturation !== undefined) {
+        const hueValue = parseInt(hue) || 0;
+        const satValue = parseInt(saturation) || 100;
+        const filterValue = `hue-rotate(${hueValue}deg) saturate(${satValue}%)`;
+        const filterKey = `${hueValue}-${satValue}`;
+        
+        if (imgElement.data('filter-applied') !== filterKey) {
+            imgElement.css('filter', filterValue);
+            imgElement.data('filter-applied', filterKey);
+            imgElement.addClass('avatar-filtered');
+        }
+    }
+}
+
+function applyAllAvatarFilters() {
+    $('.avatar-filtered, .message-avatar, .user-avatar, .private-message-avatar').each(function() {
+        const $img = $(this);
+        const hue = $img.data('hue');
+        const sat = $img.data('saturation');
+        
+        if (hue === undefined || sat === undefined) return;
+        
+        const filterKey = `${hue}-${sat}`;
+        const appliedKey = $img.data('filter-applied');
+        
+        if (appliedKey !== filterKey) {
+            const filterValue = `hue-rotate(${hue}deg) saturate(${sat}%)`;
+            $img.css('filter', filterValue);
+            $img.data('filter-applied', filterKey);
+        }
+    });
+}
+
+function handleAvatarClick(event, userId, username) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    debugLog('Avatar clicked - userId:', userId, 'username:', username); // Debug log
+    
+    if (userId && userId !== 'null' && userId !== null && userId > 0) {
+        if (userId == currentUser.id) {
+            showUserProfile(userId, event.target);
+        } else {
+            showUserProfile(userId, event.target);
+        }
+    }
+}
+
+if (typeof disappearingMessages !== 'undefined' && disappearingMessages && messageLifetimeMinutes > 0) {
+    $('.room-title').append(`
+        <span class="badge bg-warning ms-2" title="Messages disappear after ${messageLifetimeMinutes} minutes">
+            <i class="fas fa-clock"></i> ${messageLifetimeMinutes}min
+        </span>
+    `);
+    
+    setTimeout(() => {
+        showToast(`This room has disappearing messages enabled. Messages will be deleted after ${messageLifetimeMinutes} minutes.`, 'warning');
+    }, 2000);
+}
+
+function copyInviteLink(inviteCode) {
+    const inviteLink = `${window.location.origin}/lounge.php?invite=${inviteCode}`;
+    
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(inviteLink).then(() => {
+            showToast('Invite link copied to clipboard!', 'success');
+        }).catch(() => {
+            fallbackCopyTextToClipboard(inviteLink);
+        });
+    } else {
+        fallbackCopyTextToClipboard(inviteLink);
+    }
+}
+
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        document.execCommand('copy');
+        showToast('Invite link copied to clipboard!', 'success');
+    } catch (err) {
+        console.error('Fallback: Oops, unable to copy', err);
+        showToast('Unable to copy link automatically. Please copy manually.', 'warning');
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function showAnnouncementModal() {
+    const modalHtml = `
+        <div class="modal fade" id="announcementModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
+                    <div class="modal-header" style="border-bottom: 1px solid #444;">
+                        <h5 class="modal-title">
+                            <i class="fas fa-bullhorn"></i> Send Site Announcement
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="announcementMessage" class="form-label">Announcement Message</label>
+                            <textarea class="form-control" id="announcementMessage" rows="4" maxlength="500" placeholder="Enter your announcement message..." style="background: #333; border: 1px solid #555; color: #fff;"></textarea>
+                            <div class="form-text text-muted">Maximum 500 characters. This will be sent to all active rooms.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid #444;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-warning" onclick="sendAnnouncement()">
+                            <i class="fas fa-bullhorn"></i> Send Announcement
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#announcementModal').remove();
+    $('body').append(modalHtml);
+    $('#announcementModal').modal('show');
+}
+
+function sendAnnouncement() {
+    const message = $('#announcementMessage').val().trim();
+    
+    if (!message) {
+        alert('Please enter an announcement message');
+        return;
+    }
+    
+    const button = $('#announcementModal .btn-warning');
+    const originalText = button.html();
+    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+    
+    $.ajax({
+        url: 'api/send_announcement.php',
+        method: 'POST',
+        data: { message: message },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                alert('Announcement sent successfully to all rooms!');
+                $('#announcementModal').modal('hide');
+                if (typeof loadMessages === 'function') {
+                    setTimeout(loadMessages, 1000);
+                }
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            alert('Failed to send announcement: ' + error);
+        },
+        complete: function() {
+            button.prop('disabled', false).html(originalText);
+        }
+    });
+}
+
+function showQuickBanModal(userIdString, username, ipAddress) {
+    const modalHtml = `
+        <div class="modal fade" id="quickBanModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
+                    <div class="modal-header" style="border-bottom: 1px solid #444;">
+                        <h5 class="modal-title">
+                            <i class="fas fa-ban"></i> Site Ban User
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Warning:</strong> This will ban the user from the entire site, not just this room.
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">User to Ban</label>
+                            <input type="text" class="form-control" value="${username}" readonly style="background: #333; border: 1px solid #555; color: #fff;">
+                        </div>
+                        <div class="mb-3">
+                            <label for="quickBanDuration" class="form-label">Ban Duration</label>
+                            <select class="form-select" id="quickBanDuration" style="background: #333; border: 1px solid #555; color: #fff;">
+                                <option value="3600">1 Hour</option>
+                                <option value="21600">6 Hours</option>
+                                <option value="86400">24 Hours</option>
+                                <option value="604800">7 Days</option>
+                                <option value="permanent">Permanent</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quickBanReason" class="form-label">Reason</label>
+                            <textarea class="form-control" id="quickBanReason" rows="3" placeholder="Enter reason for ban..." style="background: #333; border: 1px solid #555; color: #fff;"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid #444;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" onclick="executeQuickBan('${userIdString}', '${username.replace(/'/g, "\\'")}', '${ipAddress}')">
+                            <i class="fas fa-ban"></i> Site Ban
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#quickBanModal').remove();
+    $('body').append(modalHtml);
+    $('#quickBanModal').modal('show');
+}
+
+function executeQuickBan(userIdString, username, ipAddress) {
+    const duration = $('#quickBanDuration').val();
+    const reason = $('#quickBanReason').val().trim();
+    
+    const button = $('#quickBanModal .btn-danger');
+    const originalText = button.html();
+    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Banning...');
+    
+    const banData = {
+        user_id_string: userIdString,
+        duration: duration,
+        reason: reason
+    };
+    
+    if (username) banData.username = username;
+    if (ipAddress) banData.ip_address = ipAddress;
+    
+    $.ajax({
+        url: 'api/site_ban_user.php',
+        method: 'POST',
+        data: banData,
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                alert(response.message);
+                $('#quickBanModal').modal('hide');
+                
+                setTimeout(() => {
+                    loadUsers();
+                    loadMessages();
+                }, 1000);
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            alert('Failed to ban user: ' + error);
+        },
+        complete: function() {
+            button.prop('disabled', false).html(originalText);
+        }
+    });
+}
+
+
+function initializeMentionsAndReplies() {
+    debugLog('🏷️ Initializing mentions and replies system...');
+    
+    // Remove the old interval - mentions are now handled by fetchAllRoomData
+    // mentionCheckInterval = setInterval(checkForMentions, 1000);
+    
+    setupMentionsEventHandlers();
+    
+    debugLog('✅ Mentions and replies system initialized (using managed updates)');
+}
+
+
+function setupMentionsEventHandlers() {
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.mentions-panel, .mentions-counter').length) {
+            closeMentionsPanel();
+        }
+    });
+    
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape') {
+            clearReplyInterface();
+        }
+    });
+}
+
+
+function checkForMentions() {
+    if (!mentionCheckInterval) return;
+    
+    $.ajax({
+        url: 'api/get_mentions.php',
+        method: 'GET',
+        dataType: 'json',
+        timeout: 5000,
+        success: function(response) {
+            if (response.status === 'success') {
+                mentionNotifications = response.mentions;
+                updateMentionCounter(response.unread_count);
+                
+                if (response.unread_count > 0 && !mentionPanelOpen) {
+                    showNewMentionNotification(response.unread_count);
+                }
+            }
+        },
+        error: function() {
+            // Silently fail
+        }
+    });
+}
+
+function updateMentionCounter(count) {
+    const counter = $('.mentions-counter');
+    
+    if (count > 0) {
+        if (counter.length === 0) {
+            const counterHtml = `
+                <div class="mentions-counter" onclick="toggleMentionsPanel()">
+                    <i class="fas fa-at"></i> <span class="mention-count">${count}</span> mention${count !== 1 ? 's' : ''}
+                </div>
+            `;
+            $('body').append(counterHtml);
+            setTimeout(() => $('.mentions-counter').addClass('show'), 100);
+        } else {
+            counter.find('.mention-count').text(count);
+            counter.addClass('show');
+        }
+    } else {
+        counter.removeClass('show');
+        setTimeout(() => counter.remove(), 200);
+    }
+}
+
+function showNewMentionNotification(count) {
+    const notification = $(`
+        <div class="mention-notification-toast" style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #faa61a;
+            color: #000;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            z-index: 1060;
+            animation: slideInFromRight 0.3s ease-out;
+        ">
+            <i class="fas fa-at"></i> ${count} new mention${count !== 1 ? 's' : ''}!
+        </div>
+    `);
+    
+    $('body').append(notification);
+    
+    setTimeout(() => {
+        notification.fadeOut(300, function() {
+            $(this).remove();
+        });
+    }, 3000);
+}
+
+function toggleMentionsPanel() {
+    if (mentionPanelOpen) {
+        closeMentionsPanel();
+    } else {
+        openMentionsPanel();
+    }
+}
+
+function openMentionsPanel() {
+    if ($('.mentions-panel').length > 0) {
+        $('.mentions-panel').addClass('show');
+        mentionPanelOpen = true;
+        return;
+    }
+    
+    const panelHtml = `
+        <div class="mentions-panel">
+            <div class="mentions-panel-header">
+                <h6 class="mentions-panel-title">
+                    <i class="fas fa-at"></i> Mentions & Replies
+                </h6>
+                <button class="mentions-panel-close" onclick="closeMentionsPanel()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="mentions-panel-content" id="mentionsContent">
+                Loading mentions...
+            </div>
+        </div>
+    `;
+    
+    $('body').append(panelHtml);
+    
+    setTimeout(() => {
+        $('.mentions-panel').addClass('show');
+        mentionPanelOpen = true;
+        displayMentions();
+    }, 50);
+}
+
+function closeMentionsPanel() {
+    const panel = $('.mentions-panel');
+    if (panel.length > 0) {
+        panel.removeClass('show');
+        mentionPanelOpen = false;
+        
+        setTimeout(() => panel.remove(), 300);
+    }
+}
+
+function displayMentions() {
+    const container = $('#mentionsContent');
+    
+    if (mentionNotifications.length === 0) {
+        container.html(`
+            <div class="mentions-empty">
+                <i class="fas fa-bell"></i>
+                <p>No mentions yet</p>
+                <small>You'll see @mentions and replies here</small>
+            </div>
+        `);
+        return;
+    }
+    
+    let html = '';
+    mentionNotifications.forEach(mention => {
+        const timeAgo = getTimeAgo(new Date(mention.created_at));
+        const typeIcon = mention.type === 'reply' ? 'fa-reply' : 'fa-at';
+        const typeName = mention.type === 'reply' ? 'Reply' : 'Mention';
+        
+        html += `
+            <div class="mention-notification unread ${mention.type}" 
+                 onclick="jumpToMessage(${mention.message_id}, ${mention.id})">
+                <div class="mention-notification-header">
+                    <img src="images/${mention.sender_avatar}" class="mention-notification-avatar" alt="Avatar">
+                    <span class="mention-notification-author">${mention.sender_name}</span>
+                    <span class="mention-notification-type ${mention.type}">
+                        <i class="fas ${typeIcon}"></i> ${typeName}
+                    </span>
+                </div>
+                <div class="mention-notification-content">
+                    ${mention.message}
+                </div>
+                <div class="mention-notification-time">${timeAgo}</div>
+            </div>
+        `;
+    });
+    
+    container.html(html);
+}
+
+function jumpToMessage(messageId, mentionId) {
+    markMentionAsRead(mentionId);
+    
+    const messageElement = $(`.chat-message[data-message-id="${messageId}"]`);
+    if (messageElement.length > 0) {
+        const chatbox = $('#chatbox');
+        const messageTop = messageElement.position().top + chatbox.scrollTop();
+        chatbox.animate({ scrollTop: messageTop - 100 }, 300);
+        
+        messageElement.addClass('mentioned-highlight');
+        setTimeout(() => {
+            messageElement.removeClass('mentioned-highlight');
+        }, 3000);
+    }
+    
+    closeMentionsPanel();
+}
+
+function markMentionAsRead(mentionId) {
+    $.ajax({
+        url: 'api/mark_mentions_read.php',
+        method: 'POST',
+        data: { mention_id: mentionId },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                mentionNotifications = mentionNotifications.filter(m => m.id !== mentionId);
+                updateMentionCounter(mentionNotifications.length);
+            }
+        }
+    });
+}
+
+function markAllMentionsAsRead() {
+    $.ajax({
+        url: 'api/mark_mentions_read.php',
+        method: 'POST',
+        data: { mark_all: true },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                mentionNotifications = [];
+                updateMentionCounter(0);
+                displayMentions();
+            }
+        }
+    });
+}
+
+
+function showReplyInterface(messageId, author, content) {
+    clearReplyInterface();
+    
+    const replyHtml = `
+        <div class="reply-interface" id="replyInterface">
+            <div class="reply-interface-header">
+                <div class="reply-interface-label">
+                    <i class="fas fa-reply"></i>
+                    Replying to ${author}
+                </div>
+                <button class="reply-interface-close" onclick="clearReplyInterface()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="reply-interface-preview">
+                <div class="reply-preview-author">${author}</div>
+                <div class="reply-preview-content">${content}</div>
+            </div>
+        </div>
+    `;
+    
+    $('.chat-input-container').before(replyHtml);
+    currentReplyTo = messageId;
+    
+    $('#message').focus();
+}
+
+function clearReplyInterface() {
+    $('.reply-interface').remove();
+    currentReplyTo = null;
+}
+
+function getTimeAgo(date) {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    
+    return date.toLocaleDateString();
+}
+
+function addMentionHighlightCSS() {
+    if ($('#mentionHighlightCSS').length > 0) return;
+    
+    const css = `
+        <style id="mentionHighlightCSS">
+        @keyframes mentionHighlight {
+            0% { background-color: rgba(250, 166, 26, 0.4); }
+            100% { background-color: transparent; }
+        }
+
+        @keyframes mentionHighlightBorder {
+            0% {--user-border-color: #faa61a !important;
+            --user-tail-color: #faa61a !important;}
+        100% {--user-border-color: transparent !important;
+            --user-tail-color: transparent !important;}
+        }
+
+            @keyframes mentionHighlightBorder {
+        0% {--user-border-color: #faa61a !important;
+            --user-tail-color: #faa61a !important;}
+        100% {--user-border-color: transparent !important;
+            --user-tail-color: transparent !important;}
+        }
+        
+        .mentioned-highlight {
+            animation: mentionHighlight 5s ease-out;
+        }
+        
+        .mentioned-highlight .message-bubble {
+            --user-border-color: #faa61a !important;
+            --user-tail-color: #faa61a !important; 
+        }
+        
+
+        </style>
+    `;
+    
+    $('head').append(css);
+}
+
+    function toggleAFK() {
+    const button = $('.btn-toggle-afk');
+    const originalText = button.html();
+    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+    
+    $.ajax({
+        url: 'api/toggle_afk.php',
+        method: 'POST',
+        data: { action: 'toggle' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                currentUserAFK = response.is_afk;
+                manualAFK = response.manual_afk;
+                
+                updateAFKButton();
+                
+                setTimeout(() => {
+                    loadUsers();
+                    loadMessages();
+                }, 500);
+                
+                showToast(response.message, 'success');
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AFK toggle error:', error);
+            alert('Failed to toggle AFK status: ' + error);
+        },
+        complete: function() {
+            button.prop('disabled', false);
+            updateAFKButton(); // Restore button text
+        }
+    });
+}
+
+function updateAFKButton() {
+    const button = $('.btn-toggle-afk');
+    
+    if (currentUserAFK) {
+       // button.removeClass('btn-outline-warning')
+             // button.addClass('btn-warning')
+              button.html('<i class="fas fa-plane-arrival"></i>');
+    } else {
+      //  button.removeClass('btn-warning')
+             // button.addClass('btn-outline-warning')
+              button.html('<i class="fas fa-plane-departure"></i>');
+    }
+}
+
+function formatAFKDuration(minutes) {
+    if (minutes < 60) {
+        return `${minutes}m`;
+    } else {
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+    }
+}
+
+function addAFKStyles() {
+    if ($('#afkStylesCSS').length > 0) return;
+    
+    const css = `
+        <style id="afkStylesCSS">
+        .user-item.afk-user {
+            opacity: 0.7;
+        }
+        
+        .user-item.afk-user .user-avatar {
+            opacity: 0.6;
+            filter: grayscale(30%) !important;
+        }
+        
+        .user-item.afk-user .user-name {
+            color: #888 !important;
+        }
+        
+        .badge-afk {
+            background-color: #6c757d !important;
+            color: white !important;
+        }
+        
+        .btn.afk-user {
+            opacity: 0.8;
+            border-color: #6c757d !important;
+            color: #6c757d !important;
+        }
+        
+        .btn.afk-user:hover {
+            background-color: rgba(108, 117, 125, 0.1) !important;
+        }
+        
+        .system-message img[src*="afk.png"],
+        .system-message img[src*="active.png"] {
+            width: 16px;
+            height: 16px;
+        }
+        </style>
+    `;
+    
+    $('head').append(css);
+}
+
+function showActivityStatus() {
+    //if (!DEBUG_MODE) return;
+    
+    const statusHtml = `
+        <div class="activity-status-debug" style="position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-size: 12px; z-index: 9999;">
+            <div><strong>Activity Status</strong></div>
+            <div>Tracker Enabled: ${activityTracker.enabled}</div>
+            <div>AFK Timeout: ${ACTIVITY_CONFIG.AFK_TIMEOUT_MINUTES}min</div>
+            <div>Disconnect Timeout: ${ACTIVITY_CONFIG.DISCONNECT_TIMEOUT_MINUTES}min</div>
+            <div>Last Activity: ${new Date(activityTracker.lastActivityUpdate).toLocaleTimeString()}</div>
+            <div>Current AFK: ${currentUserAFK}</div>
+        </div>
+    `;
+    
+    $('.activity-status-debug').remove();
+    $('body').append(statusHtml);
+    
+    setTimeout(() => $('.activity-status-debug').remove(), 10000);
+}
+
+if (DEBUG_MODE) {
+    setInterval(showActivityStatus, 30000);
+}
+
+function startYouTubeUpdates() {
+    if (youtubeUpdateInterval) {
+        clearInterval(youtubeUpdateInterval);
+    }
+    
+    // Reduced frequency: every 5 seconds instead of 2-3 seconds
+    youtubeUpdateInterval = setInterval(updateYouTubeData, 5000);
+    updateYouTubeData(); // Initial load
+    debugLog('🔄 Started combined YouTube updates (every 5s)');
+}
+
+function updateYouTubeData() {
+    if (!youtubeEnabled || isYoutubeUpdating) {
+        return;
+    }
+    
+    isYoutubeUpdating = true;
+    
+    $.ajax({
+        url: 'api/youtube_combined.php',
+        method: 'GET',
+        dataType: 'json',
+        timeout: 8000,
+        success: function(response) {
+            if (response.status === 'success') {
+                // Update sync data
+                const sync = response.sync_data;
+                if (sync.enabled && sync.sync_token !== lastSyncToken) {
+                    debugLog('🔄 Syncing player state:', sync);
+                    lastSyncToken = sync.sync_token;
+                    applySyncState(sync);
+                }
+                
+                // Update queue data  
+                const queueData = response.queue_data;
+                playerQueue = queueData.queue || [];
+                playerSuggestions = queueData.suggestions || [];
+                currentVideoData = queueData.current_playing;
+                
+                renderQueue();
+                renderSuggestions();
+                updateVideoInfo();
+            }
+        },
+        error: function(xhr, status, error) {
+            debugLog('⚠️ YouTube update error:', error);
+        },
+        complete: function() {
+            isYoutubeUpdating = false;
+        }
+    });
+}
+
+function applySyncState(sync) {
+    if (!youtubePlayerReady) return;
+    
+    if (sync.video_id) {
+        const currentVideoId = getCurrentVideoId();
+        
+        if (currentVideoId !== sync.video_id) {
+            youtubePlayer.loadVideoById({
+                videoId: sync.video_id,
+                startSeconds: sync.current_time
+            });
+        } else {
+            const currentTime = youtubePlayer.getCurrentTime();
+            const timeDiff = Math.abs(currentTime - sync.current_time);
+            
+            if (timeDiff > 3) {
+                youtubePlayer.seekTo(sync.current_time, true);
+            }
+        }
+        
+        if (sync.is_playing && youtubePlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
+            youtubePlayer.playVideo();
+        } else if (!sync.is_playing && youtubePlayer.getPlayerState() === YT.PlayerState.PLAYING) {
+            youtubePlayer.pauseVideo();
+        }
+    } else {
+        if (youtubePlayer.getPlayerState() !== YT.PlayerState.CUED) {
+            youtubePlayer.stopVideo();
+        }
+    }
+}
+
+function showPassHostModal(userIdString, userName) {
+    const modalHtml = `
+        <div class="modal fade" id="passHostModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
+                    <div class="modal-header" style="border-bottom: 1px solid #444;">
+                        <h5 class="modal-title">
+                            <i class="fas fa-crown"></i> Pass Host Privileges
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Pass host privileges to <strong>${userName}</strong>?</p>
+                        <p class="text-warning">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            You will become a regular user and <strong>${userName}</strong> will become the host.
+                        </p>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid #444;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="executePassHost('${userIdString}')">
+                            <i class="fas fa-crown"></i> Pass Host
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#passHostModal').remove();
+    $('body').append(modalHtml);
+    $('#passHostModal').modal('show');
+}
+
+// Execute pass host action
+function executePassHost(targetUserIdString) {
+    const button = $('#passHostModal .btn-primary');
+    const originalText = button.html();
+    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Passing...');
+    
+    $.ajax({
+        url: 'api/pass_host.php',
+        method: 'POST',
+        data: {
+            room_id: roomId,
+            target_user_id_string: targetUserIdString
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                $('#passHostModal').modal('hide');
+                alert('Host privileges passed successfully!');
+                
+                // Update global isHost variable - you are no longer host
+                window.isHost = false;
+                
+                // Update the navigation menu
+                updateNavigationForHostChange(false);
+                
+                // Reload users to reflect changes
+                setTimeout(() => {
+                    loadUsers();
+                    loadMessages();
+                }, 500);
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            alert('Failed to pass host: ' + error);
+        },
+        complete: function() {
+            button.prop('disabled', false).html(originalText);
+        }
+    });
+}
+
+// Update navigation menu when host status changes
+function updateNavigationForHostChange(isNowHost) {
+    // Find the dropdown menu or nav items
+    const dropdownMenu = $('.dropdown-menu');
+    const navItems = $('.navbar-nav');
+    
+    if (isNowHost) {
+        // Add Room Settings button if not present
+        if ($('[onclick="showRoomSettings()"]').length === 0) {
+            const roomSettingsItem = `
+                <li>
+                    <a class="dropdown-item" href="#" onclick="showRoomSettings()">
+                        <i class="fas fa-tools me-2"></i>
+                        Room Settings
+                    </a>
+                </li>
+            `;
+            // Insert before Leave Room button
+            dropdownMenu.find('li:has([onclick="leaveRoom()"])').before(roomSettingsItem);
+        }
+    } else {
+        // Remove Room Settings button
+        $('[onclick="showRoomSettings()"]').closest('li').remove();
+    }
+}
+
+// Add this to your handleUsersResponse function or loadUsers success callback:
+// Check if current user's host status changed
+function checkHostStatusChange(users) {
+    const currentUser = users.find(u => u.user_id_string === currentUserIdString);
+    if (currentUser) {
+        const wasHost = window.isHost;
+        const isNowHost = currentUser.is_host === 1 || currentUser.is_host === true;
+        
+        // If status changed, update navigation
+        if (wasHost !== isNowHost) {
+            window.isHost = isNowHost;
+            updateNavigationForHostChange(isNowHost);
+            
+            // Show notification
+            if (isNowHost) {
+                // Optional: Show a toast or notification
+                console.log('You are now the host!');
+            }
+        }
+    }
+}
+$.getScript('js/inactivity_warning.js');

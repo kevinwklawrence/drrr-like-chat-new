@@ -1,1 +1,307 @@
-const _0x3f737a=_0x5a26;(function(_0x29dec3,_0x34db62){const _0x15e1fa=_0x5a26,_0x502cf1=_0x29dec3();while(!![]){try{const _0x4896e7=-parseInt(_0x15e1fa(0x167))/0x1+-parseInt(_0x15e1fa(0x127))/0x2+-parseInt(_0x15e1fa(0x13a))/0x3+-parseInt(_0x15e1fa(0x111))/0x4*(-parseInt(_0x15e1fa(0x104))/0x5)+-parseInt(_0x15e1fa(0x13d))/0x6+parseInt(_0x15e1fa(0x105))/0x7*(-parseInt(_0x15e1fa(0x15d))/0x8)+-parseInt(_0x15e1fa(0x162))/0x9*(-parseInt(_0x15e1fa(0x132))/0xa);if(_0x4896e7===_0x34db62)break;else _0x502cf1['push'](_0x502cf1['shift']());}catch(_0x20ed43){_0x502cf1['push'](_0x502cf1['shift']());}}}(_0x32bb,0x480cd),document[_0x3f737a(0x160)](_0x3f737a(0x115),function(){initializeNavbar();}));function initializeNavbar(){updateActiveNavigation();}function updateActiveNavigation(){const _0x23c5bf=_0x3f737a,_0x12c2dd=window['location'][_0x23c5bf(0x102)]['split']('/')[_0x23c5bf(0x11d)]()[_0x23c5bf(0x128)]('.php',''),_0x346c67=document['querySelectorAll']('.navbar-nav\x20.nav-link');_0x346c67[_0x23c5bf(0x114)](_0x267511=>{const _0x270dc2=_0x23c5bf,_0x2e5ed0=_0x267511[_0x270dc2(0x12c)](_0x270dc2(0x103));_0x2e5ed0&&_0x2e5ed0[_0x270dc2(0x154)](_0x12c2dd)&&_0x267511['classList'][_0x270dc2(0x112)](_0x270dc2(0x10a));});}function showCreateRoomModal(){const _0x2bd70f=_0x3f737a;if(typeof bootstrap!==_0x2bd70f(0x144)&&document[_0x2bd70f(0x113)]('createRoomModal')){const _0x27beb9=new bootstrap[(_0x2bd70f(0x13b))](document[_0x2bd70f(0x113)](_0x2bd70f(0x129)));_0x27beb9['show']();}else console['warn'](_0x2bd70f(0x159));}function showFriendsPanel(){const _0x3b5f66=_0x3f737a,_0x4083de=document[_0x3b5f66(0x113)](_0x3b5f66(0x125));_0x4083de?(_0x4083de[_0x3b5f66(0x101)][_0x3b5f66(0x137)]='block',typeof loadFriendsList===_0x3b5f66(0x136)&&loadFriendsList()):console['warn'](_0x3b5f66(0x123));}function _0x5a26(_0x4faff2,_0xc52ccb){const _0x32bb33=_0x32bb();return _0x5a26=function(_0x5a2624,_0x43500d){_0x5a2624=_0x5a2624-0xfd;let _0x459ba2=_0x32bb33[_0x5a2624];return _0x459ba2;},_0x5a26(_0x4faff2,_0xc52ccb);}function closeFriendsPanel(){const _0xcda30e=_0x3f737a,_0x3fd3f4=document[_0xcda30e(0x113)]('friendsPanel');_0x3fd3f4&&(_0x3fd3f4[_0xcda30e(0x101)][_0xcda30e(0x137)]=_0xcda30e(0x12e));}function showProfileEditor(){const _0x223abc=_0x3f737a;if(typeof showProfileEditorModal===_0x223abc(0x136))showProfileEditorModal();else{if(document[_0x223abc(0x113)](_0x223abc(0x15b))){const _0x4feb0a=new bootstrap[(_0x223abc(0x13b))](document['getElementById'](_0x223abc(0x15b)));_0x4feb0a[_0x223abc(0x10c)]();}else console['warn'](_0x223abc(0x11f));}}function showUserSettings(){const _0x4b2657=_0x3f737a;if(typeof showUserSettingsModal==='function')showUserSettingsModal();else{if(document[_0x4b2657(0x113)]('userSettingsModal')){const _0x11fa5d=new bootstrap[(_0x4b2657(0x13b))](document['getElementById']('userSettingsModal'));_0x11fa5d[_0x4b2657(0x10c)]();}else console[_0x4b2657(0x15e)]('User\x20settings\x20not\x20available');}}function showRoomSettings(){const _0x3370d4=_0x3f737a;if(typeof showRoomSettingsModal===_0x3370d4(0x136))showRoomSettingsModal();else{if(document[_0x3370d4(0x113)](_0x3370d4(0x149))){const _0x1e4a8c=new bootstrap['Modal'](document[_0x3370d4(0x113)]('roomSettingsModal'));_0x1e4a8c[_0x3370d4(0x10c)]();}else console[_0x3370d4(0x15e)](_0x3370d4(0x141));}}function toggleAFK(){const _0x269762=_0x3f737a,_0x34dafa=document[_0x269762(0xff)](_0x269762(0x139));_0x34dafa&&_0x34dafa[_0x269762(0x134)]['add']('loading'),typeof window[_0x269762(0x133)]==='function'?window[_0x269762(0x133)]():fetch(_0x269762(0x147),{'method':_0x269762(0x14c),'headers':{'Content-Type':_0x269762(0x120)}})[_0x269762(0x131)](_0x1238b6=>_0x1238b6['json']())[_0x269762(0x131)](_0x33278c=>{const _0x5dc018=_0x269762;_0x33278c[_0x5dc018(0x16c)]===_0x5dc018(0x150)?(updateAFKButton(_0x33278c['is_afk']),showToast(_0x33278c[_0x5dc018(0x12a)]?'You\x20are\x20now\x20AFK':'Welcome\x20back!',_0x5dc018(0x16f))):showToast(_0x5dc018(0x126),'error');})[_0x269762(0x169)](_0x53548=>{const _0x2aec12=_0x269762;console[_0x2aec12(0x119)](_0x2aec12(0x165),_0x53548),showToast(_0x2aec12(0x100),_0x2aec12(0x119));})[_0x269762(0x10e)](()=>{const _0x532676=_0x269762;_0x34dafa&&_0x34dafa[_0x532676(0x134)][_0x532676(0x16a)](_0x532676(0x161));});}function _0x32bb(){const _0xe7fc2d=['Leave\x20room\x20error:','addEventListener','loading','10450629hCpHGZ','permission','[onclick=\x22toggleGhostMode()\x22]','AFK\x20toggle\x20error:','<i\x20class=\x22fas\x20fa-plane-departure\x22></i>','65244mCxFps','requestPermission','catch','remove','<i\x20class=\x22fas\x20fa-bell-slash\x22></i><span\x20class=\x22d-none\x20d-xl-inline\x20ms-1\x22>Disable\x20Notifications</span>','status','toggleGhostMode','top:\x2080px;\x20right:\x2020px;\x20z-index:\x209999;\x20min-width:\x20250px;\x20opacity:\x200.95;','info','Ghost\x20mode\x20enabled','warning','querySelector','Error\x20toggling\x20AFK\x20status','style','pathname','href','29335EFZEbb','7pYrrVL','Notifications\x20permission\x20denied','<i\x20class=\x22fas\x20fa-bell\x22></i><span\x20class=\x22d-none\x20d-xl-inline\x20ms-1\x22>Notifications</span>','json','parentElement','active','Go\x20AFK','show','\x20me-2\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20','finally','Notifications\x20are\x20now\x20enabled!','leaveRoom','352OWrbOA','add','getElementById','forEach','DOMContentLoaded','/images/duranu.png','Failed\x20to\x20leave\x20room:\x20','Error\x20leaving\x20room','error','<i\x20class=\x22fas\x20fa-plane-arrival\x22></i>','Ghost\x20mode\x20toggle\x20error:','Unknown\x20error','pop','createElement','Profile\x20editor\x20not\x20available','application/json','granted','body','Friends\x20panel\x20not\x20found','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn-close\x22\x20onclick=\x22this.parentElement.remove()\x22></button>\x0a\x20\x20\x20\x20','friendsPanel','Failed\x20to\x20toggle\x20AFK\x20status','424106qhTicG','replace','createRoomModal','is_afk','\x20position-fixed','getAttribute','This\x20browser\x20does\x20not\x20support\x20notifications','none','Notifications\x20enabled','btn-warning','then','10smJRiq','toggleAFK','classList','ghost_mode','function','display','check','.btn-toggle-afk','1063539uqyuoC','Modal','title','1467462nyZXPJ','notificationsEnabled','exclamation-triangle','setItem','Room\x20settings\x20not\x20available','div','btn-outline-warning','undefined','Error\x20toggling\x20ghost\x20mode','true','api/toggle_afk.php','showToast','roomSettingsModal','danger','[onclick=\x22toggleNotifications()\x22]','POST','btn-secondary','cssText','alert\x20alert-','success','Notification','btn-outline-secondary','innerHTML','includes','getItem','location','/lounge','btn-outline-light','Create\x20room\x20modal\x20not\x20found\x20or\x20Bootstrap\x20not\x20loaded','appendChild','profileEditorModal','api/toggle_ghost_mode.php','4047784UlODPM','warn'];_0x32bb=function(){return _0xe7fc2d;};return _0x32bb();}function updateAFKButton(_0x528bc6){const _0x5ee726=_0x3f737a,_0x528d70=document[_0x5ee726(0xff)](_0x5ee726(0x139));_0x528d70&&(_0x528bc6?(_0x528d70[_0x5ee726(0x134)][_0x5ee726(0x16a)](_0x5ee726(0x143)),_0x528d70[_0x5ee726(0x134)][_0x5ee726(0x112)](_0x5ee726(0x130)),_0x528d70['innerHTML']=_0x5ee726(0x11a),_0x528d70[_0x5ee726(0x13c)]='Return\x20from\x20AFK'):(_0x528d70['classList'][_0x5ee726(0x16a)](_0x5ee726(0x130)),_0x528d70[_0x5ee726(0x134)][_0x5ee726(0x112)](_0x5ee726(0x143)),_0x528d70[_0x5ee726(0x153)]=_0x5ee726(0x166),_0x528d70[_0x5ee726(0x13c)]=_0x5ee726(0x10b)));}function toggleGhostMode(){const _0x30af09=_0x3f737a;typeof window[_0x30af09(0x16d)]===_0x30af09(0x136)?window[_0x30af09(0x16d)]():fetch(_0x30af09(0x15c),{'method':_0x30af09(0x14c),'headers':{'Content-Type':_0x30af09(0x120)}})[_0x30af09(0x131)](_0x503d8e=>_0x503d8e[_0x30af09(0x108)]())[_0x30af09(0x131)](_0x126081=>{const _0x5d2817=_0x30af09;_0x126081['status']===_0x5d2817(0x150)?(updateGhostModeButton(_0x126081['ghost_mode']),showToast(_0x126081[_0x5d2817(0x135)]?_0x5d2817(0xfd):'Ghost\x20mode\x20disabled',_0x5d2817(0x16f))):showToast('Failed\x20to\x20toggle\x20ghost\x20mode',_0x5d2817(0x119));})[_0x30af09(0x169)](_0x45b8ae=>{const _0x2b49e0=_0x30af09;console['error'](_0x2b49e0(0x11b),_0x45b8ae),showToast(_0x2b49e0(0x145),_0x2b49e0(0x119));});}function updateGhostModeButton(_0x333889){const _0x262beb=_0x3f737a,_0x398f92=document[_0x262beb(0xff)](_0x262beb(0x164));_0x398f92&&(_0x333889?(_0x398f92[_0x262beb(0x134)][_0x262beb(0x16a)](_0x262beb(0x152)),_0x398f92['classList'][_0x262beb(0x112)]('btn-secondary')):(_0x398f92[_0x262beb(0x134)][_0x262beb(0x16a)](_0x262beb(0x14d)),_0x398f92[_0x262beb(0x134)][_0x262beb(0x112)](_0x262beb(0x152))));}function toggleNotifications(){const _0x3de69b=_0x3f737a;if(!(_0x3de69b(0x151)in window)){showToast(_0x3de69b(0x12d),'warning');return;}if(Notification[_0x3de69b(0x163)]===_0x3de69b(0x121))localStorage['setItem'](_0x3de69b(0x13e),'false'),showToast('Notifications\x20disabled',_0x3de69b(0x16f)),updateNotificationButton(![]);else Notification['permission']==='denied'?showToast('Notifications\x20are\x20blocked.\x20Please\x20enable\x20them\x20in\x20your\x20browser\x20settings.',_0x3de69b(0xfe)):Notification[_0x3de69b(0x168)]()['then'](_0x45c2a0=>{const _0x3c6e0a=_0x3de69b;_0x45c2a0===_0x3c6e0a(0x121)?(localStorage[_0x3c6e0a(0x140)](_0x3c6e0a(0x13e),'true'),showToast(_0x3c6e0a(0x12f),'success'),updateNotificationButton(!![]),new Notification('Duranu\x20Chat',{'body':_0x3c6e0a(0x10f),'icon':_0x3c6e0a(0x116)})):showToast(_0x3c6e0a(0x106),_0x3c6e0a(0xfe));});}function leaveRoom(){const _0x567737=_0x3f737a;typeof window[_0x567737(0x110)]==='function'?window[_0x567737(0x110)]():fetch('api/leave_room.php',{'method':_0x567737(0x14c),'headers':{'Content-Type':'application/json'}})['then'](_0x2ed809=>_0x2ed809[_0x567737(0x108)]())[_0x567737(0x131)](_0x5f531f=>{const _0x507e5c=_0x567737;_0x5f531f[_0x507e5c(0x16c)]===_0x507e5c(0x150)?window[_0x507e5c(0x156)][_0x507e5c(0x103)]=_0x507e5c(0x157):showToast(_0x507e5c(0x117)+(_0x5f531f['message']||_0x507e5c(0x11c)),_0x507e5c(0x119));})[_0x567737(0x169)](_0x2271d3=>{const _0x11b83c=_0x567737;console[_0x11b83c(0x119)](_0x11b83c(0x15f),_0x2271d3),showToast(_0x11b83c(0x118),'error');});}function updateNotificationButton(_0x25d312){const _0x4b08d2=_0x3f737a,_0x3ef665=document[_0x4b08d2(0xff)](_0x4b08d2(0x14b));_0x3ef665&&(_0x25d312?(_0x3ef665[_0x4b08d2(0x134)][_0x4b08d2(0x16a)](_0x4b08d2(0x158)),_0x3ef665[_0x4b08d2(0x134)][_0x4b08d2(0x112)]('btn-warning'),_0x3ef665[_0x4b08d2(0x153)]=_0x4b08d2(0x16b)):(_0x3ef665[_0x4b08d2(0x134)][_0x4b08d2(0x16a)](_0x4b08d2(0x130)),_0x3ef665[_0x4b08d2(0x134)][_0x4b08d2(0x112)](_0x4b08d2(0x158)),_0x3ef665[_0x4b08d2(0x153)]=_0x4b08d2(0x107)));}function showToast(_0x4c85c1,_0x303892='info'){const _0x5862a2=_0x3f737a;if(typeof window[_0x5862a2(0x148)]===_0x5862a2(0x136)){window['showToast'](_0x4c85c1,_0x303892);return;}const _0x579815=document[_0x5862a2(0x11e)](_0x5862a2(0x142));_0x579815['className']=_0x5862a2(0x14f)+(_0x303892===_0x5862a2(0x119)?_0x5862a2(0x14a):_0x303892)+_0x5862a2(0x12b),_0x579815[_0x5862a2(0x101)][_0x5862a2(0x14e)]=_0x5862a2(0x16e),_0x579815['innerHTML']='\x0a\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-'+(_0x303892==='success'?_0x5862a2(0x138):_0x303892==='error'?_0x5862a2(0x13f):'info-circle')+_0x5862a2(0x10d)+_0x4c85c1+_0x5862a2(0x124),document[_0x5862a2(0x122)][_0x5862a2(0x15a)](_0x579815),setTimeout(()=>{const _0x608d84=_0x5862a2;_0x579815[_0x608d84(0x109)]&&_0x579815[_0x608d84(0x16a)]();},0xbb8);}document[_0x3f737a(0x160)](_0x3f737a(0x115),function(){const _0x56dec3=_0x3f737a,_0xb8ceb6=localStorage[_0x56dec3(0x155)]('notificationsEnabled')===_0x56dec3(0x146)&&Notification[_0x56dec3(0x163)]===_0x56dec3(0x121);updateNotificationButton(_0xb8ceb6);}),window['navbarFunctions']={'showCreateRoomModal':showCreateRoomModal,'showFriendsPanel':showFriendsPanel,'closeFriendsPanel':closeFriendsPanel,'showProfileEditor':showProfileEditor,'showUserSettings':showUserSettings,'showRoomSettings':showRoomSettings,'toggleAFK':toggleAFK,'toggleGhostMode':toggleGhostMode,'toggleNotifications':toggleNotifications,'leaveRoom':leaveRoom,'showToast':showToast};
+// js/navbar.js - Global navbar functionality
+
+// Initialize navbar functionality
+document.addEventListener('DOMContentLoaded', function() {
+    initializeNavbar();
+});
+
+function initializeNavbar() {
+    // Update active navigation based on current page
+    updateActiveNavigation();
+}
+
+function updateActiveNavigation() {
+    const currentPage = window.location.pathname.split('/').pop().replace('.php', '');
+    const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
+    
+    navLinks.forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && href.includes(currentPage)) {
+            link.classList.add('active');
+        }
+    });
+}
+
+// Navigation action functions
+function showCreateRoomModal() {
+    if (typeof bootstrap !== 'undefined' && document.getElementById('createRoomModal')) {
+        const modal = new bootstrap.Modal(document.getElementById('createRoomModal'));
+        modal.show();
+    } else {
+        console.warn('Create room modal not found or Bootstrap not loaded');
+    }
+}
+
+function showFriendsPanel() {
+    const friendsPanel = document.getElementById('friendsPanel');
+    if (friendsPanel) {
+        friendsPanel.style.display = 'block';
+        
+        // Load friends list if function exists
+        if (typeof loadFriendsList === 'function') {
+            loadFriendsList();
+        }
+    } else {
+        console.warn('Friends panel not found');
+    }
+}
+
+function closeFriendsPanel() {
+    const friendsPanel = document.getElementById('friendsPanel');
+    if (friendsPanel) {
+        friendsPanel.style.display = 'none';
+    }
+}
+
+function showProfileEditor() {
+    if (typeof showProfileEditorModal === 'function') {
+        showProfileEditorModal();
+    } else if (document.getElementById('profileEditorModal')) {
+        const modal = new bootstrap.Modal(document.getElementById('profileEditorModal'));
+        modal.show();
+    } else {
+        console.warn('Profile editor not available');
+    }
+}
+
+function showUserSettings() {
+    if (typeof showUserSettingsModal === 'function') {
+        showUserSettingsModal();
+    } else if (document.getElementById('userSettingsModal')) {
+        const modal = new bootstrap.Modal(document.getElementById('userSettingsModal'));
+        modal.show();
+    } else {
+        console.warn('User settings not available');
+    }
+}
+
+function showRoomSettings() {
+    if (typeof showRoomSettingsModal === 'function') {
+        showRoomSettingsModal();
+    } else if (document.getElementById('roomSettingsModal')) {
+        const modal = new bootstrap.Modal(document.getElementById('roomSettingsModal'));
+        modal.show();
+    } else {
+        console.warn('Room settings not available');
+    }
+}
+
+function toggleAFK() {
+    const btn = document.querySelector('.btn-toggle-afk');
+    if (btn) {
+        btn.classList.add('loading');
+    }
+    
+    if (typeof window.toggleAFK === 'function') {
+        window.toggleAFK();
+    } else {
+        // Fallback AJAX call
+        fetch('api/toggle_afk.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                updateAFKButton(data.is_afk);
+                showToast(data.is_afk ? 'You are now AFK' : 'Welcome back!', 'info');
+            } else {
+                showToast('Failed to toggle AFK status', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('AFK toggle error:', error);
+            showToast('Error toggling AFK status', 'error');
+        })
+        .finally(() => {
+            if (btn) {
+                btn.classList.remove('loading');
+            }
+        });
+    }
+}
+
+function updateAFKButton(isAfk) {
+    const btn = document.querySelector('.btn-toggle-afk');
+    if (btn) {
+        if (isAfk) {
+            btn.classList.remove('btn-outline-warning');
+            btn.classList.add('btn-warning');
+            btn.innerHTML = '<i class="fas fa-plane-arrival"></i>';
+            btn.title = 'Return from AFK';
+        } else {
+            btn.classList.remove('btn-warning');
+            btn.classList.add('btn-outline-warning');
+            btn.innerHTML = '<i class="fas fa-plane-departure"></i>';
+            btn.title = 'Go AFK';
+        }
+    }
+}
+
+function toggleGhostMode() {
+    if (typeof window.toggleGhostMode === 'function') {
+        window.toggleGhostMode();
+    } else {
+        // Fallback AJAX call
+        fetch('api/toggle_ghost_mode.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                updateGhostModeButton(data.ghost_mode);
+                showToast(data.ghost_mode ? 'Ghost mode enabled' : 'Ghost mode disabled', 'info');
+            } else {
+                showToast('Failed to toggle ghost mode', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Ghost mode toggle error:', error);
+            showToast('Error toggling ghost mode', 'error');
+        });
+    }
+}
+
+function updateGhostModeButton(ghostMode) {
+    const btn = document.querySelector('[onclick="toggleGhostMode()"]');
+    if (btn) {
+        if (ghostMode) {
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-secondary');
+        } else {
+            btn.classList.remove('btn-secondary');
+            btn.classList.add('btn-outline-secondary');
+        }
+    }
+}
+
+function toggleNotifications() {
+    // Check if browser supports notifications
+    if (!('Notification' in window)) {
+        showToast('This browser does not support notifications', 'warning');
+        return;
+    }
+    
+    // Check current permission
+    if (Notification.permission === 'granted') {
+        // Notifications are enabled, toggle off
+        localStorage.setItem('notificationsEnabled', 'false');
+        showToast('Notifications disabled', 'info');
+        updateNotificationButton(false);
+    } else if (Notification.permission === 'denied') {
+        showToast('Notifications are blocked. Please enable them in your browser settings.', 'warning');
+    } else {
+        // Request permission
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                localStorage.setItem('notificationsEnabled', 'true');
+                showToast('Notifications enabled', 'success');
+                updateNotificationButton(true);
+                
+                // Send test notification
+                new Notification('Duranu Chat', {
+                    body: 'Notifications are now enabled!',
+                    icon: '/images/duranu.png'
+                });
+            } else {
+                showToast('Notifications permission denied', 'warning');
+            }
+        });
+    }
+}
+
+function leaveRoom() {
+    if (typeof window.leaveRoom === 'function') {
+        window.leaveRoom();
+    } else {
+        // Fallback AJAX call
+        fetch('api/leave_room.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                window.location.href = '/lounge';
+            } else {
+                showToast('Failed to leave room: ' + (data.message || 'Unknown error'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Leave room error:', error);
+            showToast('Error leaving room', 'error');
+        });
+    }
+}
+
+function updateNotificationButton(enabled) {
+    const btn = document.querySelector('[onclick="toggleNotifications()"]');
+    if (btn) {
+        if (enabled) {
+            btn.classList.remove('btn-outline-light');
+            btn.classList.add('btn-warning');
+            btn.innerHTML = '<i class="fas fa-bell-slash"></i><span class="d-none d-xl-inline ms-1">Disable Notifications</span>';
+        } else {
+            btn.classList.remove('btn-warning');
+            btn.classList.add('btn-outline-light');
+            btn.innerHTML = '<i class="fas fa-bell"></i><span class="d-none d-xl-inline ms-1">Notifications</span>';
+        }
+    }
+}
+
+// Utility function for showing toast messages
+function showToast(message, type = 'info') {
+    // Check if there's an existing toast function
+    if (typeof window.showToast === 'function') {
+        window.showToast(message, type);
+        return;
+    }
+    
+    // Fallback: create simple toast
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'error' ? 'danger' : type} position-fixed`;
+    toast.style.cssText = 'top: 80px; right: 20px; z-index: 9999; min-width: 250px; opacity: 0.95;';
+    toast.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 3000);
+}
+
+// Initialize notification button state on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationsEnabled = localStorage.getItem('notificationsEnabled') === 'true' && 
+                                  Notification.permission === 'granted';
+    updateNotificationButton(notificationsEnabled);
+});
+
+// Export functions for global use
+window.navbarFunctions = {
+    showCreateRoomModal,
+    showFriendsPanel,
+    closeFriendsPanel,
+    showProfileEditor,
+    showUserSettings,
+    showRoomSettings,
+    toggleAFK,
+    toggleGhostMode,
+    toggleNotifications,
+    leaveRoom,
+    showToast
+};

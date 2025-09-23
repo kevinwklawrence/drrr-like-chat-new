@@ -1,1 +1,359 @@
-const _0xe411b6=_0x3526;(function(_0x28cb08,_0x510cde){const _0x596627=_0x3526,_0x56d3f9=_0x28cb08();while(!![]){try{const _0xe92a4a=-parseInt(_0x596627(0x126))/0x1+-parseInt(_0x596627(0x13a))/0x2+parseInt(_0x596627(0x12f))/0x3+-parseInt(_0x596627(0x144))/0x4*(parseInt(_0x596627(0x12c))/0x5)+-parseInt(_0x596627(0x17d))/0x6*(-parseInt(_0x596627(0x155))/0x7)+-parseInt(_0x596627(0x138))/0x8+parseInt(_0x596627(0x11f))/0x9;if(_0xe92a4a===_0x510cde)break;else _0x56d3f9['push'](_0x56d3f9['shift']());}catch(_0x4807b5){_0x56d3f9['push'](_0x56d3f9['shift']());}}}(_0x3861,0xa6e69));class LazyAvatarLoader{constructor(){const _0x161bc8=_0x3526;this[_0x161bc8(0x146)]=null,this[_0x161bc8(0x166)]=new Set(),this[_0x161bc8(0x11b)]();}[_0xe411b6(0x11b)](){const _0x944509=_0xe411b6;'IntersectionObserver'in window&&(this[_0x944509(0x146)]=new IntersectionObserver(_0x44a3dc=>{_0x44a3dc['forEach'](_0x369b53=>{const _0x1ebcf5=_0x3526;_0x369b53[_0x1ebcf5(0x17b)]&&(this['loadImage'](_0x369b53[_0x1ebcf5(0x169)]),this[_0x1ebcf5(0x146)][_0x1ebcf5(0x134)](_0x369b53[_0x1ebcf5(0x169)]));});},{'root':document['getElementById'](_0x944509(0x15e)),'rootMargin':_0x944509(0x111)}));}['loadImage'](_0x3e95e4){const _0x5da2b7=_0xe411b6,_0x6f9bc7=_0x3e95e4['getAttribute'](_0x5da2b7(0x160));_0x6f9bc7&&!this[_0x5da2b7(0x166)][_0x5da2b7(0x172)](_0x3e95e4)&&(_0x3e95e4['src']=_0x6f9bc7,_0x3e95e4['removeAttribute'](_0x5da2b7(0x160)),_0x3e95e4['classList'][_0x5da2b7(0x163)](_0x5da2b7(0x122)),this[_0x5da2b7(0x166)]['add'](_0x3e95e4),_0x3e95e4[_0x5da2b7(0x164)]['opacity']='0',_0x3e95e4[_0x5da2b7(0x180)]=()=>{const _0x283751=_0x5da2b7;_0x3e95e4[_0x283751(0x164)]['transition']='opacity\x200.3s\x20ease',_0x3e95e4['style'][_0x283751(0x139)]='1';});}['observeImage'](_0x534542){const _0x3fa887=_0xe411b6;this[_0x3fa887(0x146)]?this[_0x3fa887(0x146)][_0x3fa887(0x16f)](_0x534542):this[_0x3fa887(0x174)](_0x534542);}}const lazyLoader=new LazyAvatarLoader();function renderAvatarsWithLazyLoading(){const _0x4ad942=_0xe411b6,_0x37c79d=document[_0x4ad942(0x143)](_0x4ad942(0x15e)),_0x20a892=_0x37c79d[_0x4ad942(0x154)](_0x4ad942(0x14c));_0x20a892[_0x4ad942(0x161)](_0x4a1e50=>{const _0x951b27=_0x4ad942;_0x4a1e50[_0x951b27(0x140)][_0x951b27(0x15b)]('lazy'),_0x4a1e50[_0x951b27(0x14e)]=_0x951b27(0x175),lazyLoader[_0x951b27(0x145)](_0x4a1e50);});}const lazyLoadingCSS=_0xe411b6(0x177);document[_0xe411b6(0x17f)][_0xe411b6(0x150)]('beforeend',lazyLoadingCSS);class ImagePreloader{constructor(){const _0x541480=_0xe411b6;this[_0x541480(0x12b)]=[],this[_0x541480(0x10f)]=new Map(),this[_0x541480(0x130)]=0x3,this[_0x541480(0x135)]=0x0;}[_0xe411b6(0x14b)](_0x3b911b){return new Promise((_0x3677df,_0x4167da)=>{const _0x2de32f=_0x3526;if(this[_0x2de32f(0x10f)]['has'](_0x3b911b)){_0x3677df(this[_0x2de32f(0x10f)][_0x2de32f(0x176)](_0x3b911b));return;}const _0x451433=new Image();_0x451433[_0x2de32f(0x180)]=()=>{const _0x57d816=_0x2de32f;this[_0x57d816(0x10f)][_0x57d816(0x17c)](_0x3b911b,_0x451433),_0x3677df(_0x451433);},_0x451433[_0x2de32f(0x129)]=_0x4167da,_0x451433['src']=_0x3b911b;});}async[_0xe411b6(0x157)](_0x3072dc){const _0x5bf3dc=_0xe411b6,_0x250a0d=[];for(let _0x1e2aaa=0x0;_0x1e2aaa<_0x3072dc[_0x5bf3dc(0x115)];_0x1e2aaa+=this[_0x5bf3dc(0x130)]){_0x250a0d[_0x5bf3dc(0x165)](_0x3072dc[_0x5bf3dc(0x132)](_0x1e2aaa,_0x1e2aaa+this['maxConcurrentLoads']));}for(const _0x113012 of _0x250a0d){await Promise[_0x5bf3dc(0x16d)](_0x113012[_0x5bf3dc(0x13d)](_0x10b88b=>this[_0x5bf3dc(0x14b)](_0x10b88b)));}}}class VirtualScrollAvatars{constructor(_0x3329b2,_0x9fcd55=0x46,_0x553f1f=0x8){const _0x22729d=_0xe411b6;this[_0x22729d(0x16c)]=_0x3329b2,this[_0x22729d(0x15d)]=_0x9fcd55,this[_0x22729d(0x168)]=_0x553f1f,this['visibleItems']=[],this[_0x22729d(0x15c)]=[],this['scrollTop']=0x0,this[_0x22729d(0x152)]=_0x3329b2[_0x22729d(0x147)],this[_0x22729d(0x136)]();}[_0xe411b6(0x136)](){const _0x5cc2b6=_0xe411b6;this[_0x5cc2b6(0x16c)][_0x5cc2b6(0x113)]('scroll',this['onScroll']['bind'](this)),window[_0x5cc2b6(0x113)]('resize',this[_0x5cc2b6(0x12e)][_0x5cc2b6(0x116)](this));}[_0xe411b6(0x124)](_0x1ed860){const _0x2707cd=_0xe411b6;this['allItems']=_0x1ed860,this[_0x2707cd(0x127)]();}['onScroll'](){const _0x251908=_0xe411b6;this[_0x251908(0x14f)]=this['container'][_0x251908(0x14f)],this[_0x251908(0x127)]();}[_0xe411b6(0x12e)](){const _0x277fed=_0xe411b6;this[_0x277fed(0x152)]=this[_0x277fed(0x16c)][_0x277fed(0x147)],this[_0x277fed(0x127)]();}[_0xe411b6(0x127)](){const _0x4dd034=_0xe411b6,_0x3ead1a=Math[_0x4dd034(0x121)](this[_0x4dd034(0x14f)]/this[_0x4dd034(0x15d)]),_0x1a04d6=Math[_0x4dd034(0x15a)](_0x3ead1a+Math['ceil'](this[_0x4dd034(0x152)]/this[_0x4dd034(0x15d)])+0x1,Math[_0x4dd034(0x159)](this['allItems'][_0x4dd034(0x115)]/this['itemsPerRow'])),_0x150c5f=_0x3ead1a*this[_0x4dd034(0x168)],_0x5a807a=Math[_0x4dd034(0x15a)](_0x1a04d6*this[_0x4dd034(0x168)],this['allItems'][_0x4dd034(0x115)]);this['visibleItems']=this['allItems']['slice'](_0x150c5f,_0x5a807a),this[_0x4dd034(0x16c)][_0x4dd034(0x171)]='';if(_0x150c5f>0x0){const _0x580f82=document[_0x4dd034(0x148)](_0x4dd034(0x14d));_0x580f82[_0x4dd034(0x164)][_0x4dd034(0x131)]=_0x3ead1a*this[_0x4dd034(0x15d)]+'px',this[_0x4dd034(0x16c)][_0x4dd034(0x110)](_0x580f82);}this[_0x4dd034(0x133)][_0x4dd034(0x161)]((_0x201f93,_0x438cda)=>{const _0x49c879=_0x4dd034,_0x2208b1=this[_0x49c879(0x119)](_0x201f93,_0x150c5f+_0x438cda);this['container'][_0x49c879(0x110)](_0x2208b1);});const _0x34055e=this[_0x4dd034(0x15c)][_0x4dd034(0x115)]-_0x5a807a;if(_0x34055e>0x0){const _0x1699cd=document['createElement'](_0x4dd034(0x14d)),_0x16699f=Math[_0x4dd034(0x159)](_0x34055e/this[_0x4dd034(0x168)]);_0x1699cd['style']['height']=_0x16699f*this[_0x4dd034(0x15d)]+'px',this[_0x4dd034(0x16c)][_0x4dd034(0x110)](_0x1699cd);}}[_0xe411b6(0x119)](_0x1f9277,_0x1a0bc7){const _0x26be85=_0xe411b6,_0x582412=document[_0x26be85(0x148)](_0x26be85(0x158));return _0x582412['src']=_0x1f9277[_0x26be85(0x181)],_0x582412['className']=_0x26be85(0x153),_0x582412['dataset'][_0x26be85(0x153)]=_0x1f9277[_0x26be85(0x15f)],_0x582412[_0x26be85(0x125)]=_0x26be85(0x167),_0x582412[_0x26be85(0x113)]('click',()=>this[_0x26be85(0x128)](_0x1f9277)),_0x582412;}[_0xe411b6(0x128)](_0x35f8cc){const _0xd4e564=_0xe411b6;debugLog(_0xd4e564(0x13e),_0x35f8cc);}}class PerformanceMonitor{constructor(){const _0x55b3c6=_0xe411b6;this[_0x55b3c6(0x142)]={'imagesLoaded':0x0,'totalLoadTime':0x0,'averageLoadTime':0x0,'failedLoads':0x0,'memoryUsage':0x0},this['startTime']=performance[_0x55b3c6(0x112)]();}[_0xe411b6(0x14a)](_0x472bc8){const _0x428de4=_0xe411b6;this[_0x428de4(0x142)]['imagesLoaded']++,this[_0x428de4(0x142)]['totalLoadTime']+=_0x472bc8,this[_0x428de4(0x142)]['averageLoadTime']=this[_0x428de4(0x142)][_0x428de4(0x11c)]/this[_0x428de4(0x142)][_0x428de4(0x16b)],this[_0x428de4(0x151)]();}['recordFailedLoad'](){const _0x4ca971=_0xe411b6;this[_0x4ca971(0x142)][_0x4ca971(0x123)]++,this[_0x4ca971(0x151)]();}['updateMemoryUsage'](){const _0x499faa=_0xe411b6;_0x499faa(0x173)in performance&&(this['metrics'][_0x499faa(0x170)]=Math[_0x499faa(0x16e)](performance[_0x499faa(0x173)][_0x499faa(0x178)]/0x400/0x400));}['updateDisplay'](){const _0x2caf2f=_0xe411b6,_0x4b788d=document[_0x2caf2f(0x143)](_0x2caf2f(0x13b));_0x4b788d&&(_0x4b788d['innerHTML']=_0x2caf2f(0x162)+this[_0x2caf2f(0x142)][_0x2caf2f(0x16b)]+_0x2caf2f(0x13c)+Math['round'](this[_0x2caf2f(0x142)][_0x2caf2f(0x11d)])+'ms\x20|\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20Failed:\x20'+this[_0x2caf2f(0x142)]['failedLoads']+_0x2caf2f(0x12d)+this[_0x2caf2f(0x142)][_0x2caf2f(0x170)]+'MB\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20');}['getReport'](){const _0x370458=_0xe411b6;return{...this[_0x370458(0x142)],'totalTime':performance[_0x370458(0x112)]()-this[_0x370458(0x118)],'successRate':(this[_0x370458(0x142)][_0x370458(0x16b)]/(this[_0x370458(0x142)][_0x370458(0x16b)]+this['metrics'][_0x370458(0x123)])*0x64)[_0x370458(0x11a)](0x2)};}}function _0x3526(_0x53ab1d,_0x39166d){const _0x3861e7=_0x3861();return _0x3526=function(_0x35268f,_0x2b073d){_0x35268f=_0x35268f-0x10e;let _0x20c0d3=_0x3861e7[_0x35268f];return _0x20c0d3;},_0x3526(_0x53ab1d,_0x39166d);}class ImageCache{constructor(_0x5a0a26=0x32){const _0x30b4f8=_0xe411b6;this[_0x30b4f8(0x17a)]=new Map(),this[_0x30b4f8(0x137)]=_0x5a0a26,this[_0x30b4f8(0x156)]=[];}[_0xe411b6(0x176)](_0x12cab2){const _0x4b1476=_0xe411b6;if(this[_0x4b1476(0x17a)][_0x4b1476(0x172)](_0x12cab2))return this[_0x4b1476(0x156)]=this[_0x4b1476(0x156)][_0x4b1476(0x17e)](_0x4b9ff8=>_0x4b9ff8!==_0x12cab2),this[_0x4b1476(0x156)][_0x4b1476(0x165)](_0x12cab2),this[_0x4b1476(0x17a)][_0x4b1476(0x176)](_0x12cab2);return null;}['set'](_0x201126,_0x28042a){const _0x36497f=_0xe411b6;if(this['cache'][_0x36497f(0x117)]>=this['maxSize']&&!this[_0x36497f(0x17a)][_0x36497f(0x172)](_0x201126)){const _0x1070bb=this[_0x36497f(0x156)][_0x36497f(0x16a)]();this[_0x36497f(0x17a)][_0x36497f(0x114)](_0x1070bb);}this[_0x36497f(0x17a)][_0x36497f(0x17c)](_0x201126,_0x28042a),this[_0x36497f(0x156)]=this[_0x36497f(0x156)][_0x36497f(0x17e)](_0x488e89=>_0x488e89!==_0x201126),this[_0x36497f(0x156)]['push'](_0x201126);}['clear'](){const _0x2431b2=_0xe411b6;this[_0x2431b2(0x17a)][_0x2431b2(0x120)](),this['accessOrder']=[];}}function _0x3861(){const _0x1f85fb=['alt','237776SZmYkl','render','selectAvatar','onerror','removeAttribute','preloadQueue','5SMZpxC','\x20|\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20Memory:\x20','onResize','3371742RIceXH','maxConcurrentLoads','height','slice','visibleItems','unobserve','currentLoads','init','maxSize','7699792JYplLq','opacity','228698YIHhLp','performance-stats','\x20|\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20Avg\x20Load\x20Time:\x20','map','Selected\x20avatar:','position:\x20fixed;\x20top:\x2010px;\x20right:\x2010px;\x20background:\x20rgba(0,0,0,0.8);\x20color:\x20white;\x20padding:\x2010px;\x20border-radius:\x205px;\x20font-size:\x2012px;\x20z-index:\x201000;','classList','DOMContentLoaded','metrics','getElementById','1929076mTOVhs','observeImage','observer','clientHeight','createElement','updateMemoryUsage','recordImageLoad','preloadImage','img.avatar[data-src]','div','src','scrollTop','insertAdjacentHTML','updateDisplay','containerHeight','avatar','querySelectorAll','19334tgvJKS','accessOrder','preloadBatch','img','ceil','min','add','allItems','itemHeight','avatarContainer','path','data-src','forEach','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20Images\x20Loaded:\x20','remove','style','push','loadedImages','Avatar\x20option','itemsPerRow','target','shift','imagesLoaded','container','allSettled','round','observe','memoryUsage','innerHTML','has','memory','loadImage','data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTgiIGhlaWdodD0iNTgiIHZpZXdCb3g9IjAgMCA1OCA1OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjU4IiBoZWlnaHQ9IjU4IiBmaWxsPSIjZjhmOWZhIi8+CjxjaXJjbGUgY3g9IjI5IiBjeT0iMjkiIHI9IjgiIGZpbGw9IiNkZGUiLz4KPC9zdmc+','get','\x0a<style>\x0a.avatar.lazy\x20{\x0a\x20\x20\x20\x20background:\x20linear-gradient(45deg,\x20#f8f9fa\x2025%,\x20transparent\x2025%),\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20linear-gradient(-45deg,\x20#f8f9fa\x2025%,\x20transparent\x2025%),\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20linear-gradient(45deg,\x20transparent\x2075%,\x20#f8f9fa\x2075%),\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20linear-gradient(-45deg,\x20transparent\x2075%,\x20#f8f9fa\x2075%);\x0a\x20\x20\x20\x20background-size:\x208px\x208px;\x0a\x20\x20\x20\x20background-position:\x200\x200,\x200\x204px,\x204px\x20-4px,\x20-4px\x200px;\x0a\x20\x20\x20\x20animation:\x20pulse\x201.5s\x20ease-in-out\x20infinite;\x0a}\x0a\x0a@keyframes\x20pulse\x20{\x0a\x20\x20\x20\x200%,\x20100%\x20{\x20opacity:\x200.8;\x20}\x0a\x20\x20\x20\x2050%\x20{\x20opacity:\x200.6;\x20}\x0a}\x0a</style>\x0a','usedJSHeapSize','body','cache','isIntersecting','set','2082DQIYRt','filter','head','onload','web_path','opacity\x200.3s\x20ease','preloadedImages','appendChild','100px','now','addEventListener','delete','length','bind','size','startTime','createItemElement','toFixed','initializeLazyLoading','totalLoadTime','averageLoadTime','transition','3583485dafKwz','clear','floor','lazy','failedLoads','setItems'];_0x3861=function(){return _0x1f85fb;};return _0x3861();}document[_0xe411b6(0x113)](_0xe411b6(0x141),function(){const _0xff065a=_0xe411b6,_0x491bec=new ImageCache(0x64),_0x1c405e=new ImagePreloader(),_0x27b1c9=new PerformanceMonitor();class _0x3ec094 extends LazyAvatarLoader{[_0xff065a(0x174)](_0x54a29e){const _0x23caa9=_0xff065a,_0x32d89c=performance[_0x23caa9(0x112)](),_0x4a5506=_0x54a29e['getAttribute'](_0x23caa9(0x160));if(_0x4a5506&&!this[_0x23caa9(0x166)]['has'](_0x54a29e)){const _0x19f0cb=_0x491bec[_0x23caa9(0x176)](_0x4a5506);if(_0x19f0cb){_0x54a29e[_0x23caa9(0x14e)]=_0x4a5506,_0x54a29e[_0x23caa9(0x12a)](_0x23caa9(0x160)),_0x54a29e[_0x23caa9(0x140)]['remove'](_0x23caa9(0x122)),this[_0x23caa9(0x166)][_0x23caa9(0x15b)](_0x54a29e),_0x27b1c9[_0x23caa9(0x14a)](0x0);return;}_0x54a29e[_0x23caa9(0x14e)]=_0x4a5506,_0x54a29e['removeAttribute'](_0x23caa9(0x160)),_0x54a29e[_0x23caa9(0x140)][_0x23caa9(0x163)](_0x23caa9(0x122)),this[_0x23caa9(0x166)][_0x23caa9(0x15b)](_0x54a29e),_0x54a29e[_0x23caa9(0x180)]=()=>{const _0x24bcb4=_0x23caa9,_0x310bd8=performance[_0x24bcb4(0x112)]()-_0x32d89c;_0x27b1c9[_0x24bcb4(0x14a)](_0x310bd8),_0x491bec[_0x24bcb4(0x17c)](_0x4a5506,_0x54a29e),_0x54a29e[_0x24bcb4(0x164)][_0x24bcb4(0x11e)]=_0x24bcb4(0x10e),_0x54a29e[_0x24bcb4(0x164)][_0x24bcb4(0x139)]='1';},_0x54a29e[_0x23caa9(0x129)]=()=>{_0x27b1c9['recordFailedLoad']();};}}}const _0x456e34=new _0x3ec094();setInterval(()=>{const _0x19f6c7=_0xff065a;_0x27b1c9[_0x19f6c7(0x149)](),_0x27b1c9[_0x19f6c7(0x151)]();},0x1388);const _0x9fd03c=document[_0xff065a(0x148)]('div');_0x9fd03c['id']='performance-stats',_0x9fd03c['style']['cssText']=_0xff065a(0x13f),document[_0xff065a(0x179)][_0xff065a(0x110)](_0x9fd03c);});
+class LazyAvatarLoader {
+    constructor() {
+        this.observer = null;
+        this.loadedImages = new Set();
+        this.initializeLazyLoading();
+    }
+
+    initializeLazyLoading() {
+        if ('IntersectionObserver' in window) {
+            this.observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        this.loadImage(entry.target);
+                        this.observer.unobserve(entry.target);
+                    }
+                });
+            }, {
+                root: document.getElementById('avatarContainer'),
+                rootMargin: '100px' // Start loading 100px before image is visible
+            });
+        }
+    }
+
+    loadImage(img) {
+        const dataSrc = img.getAttribute('data-src');
+        if (dataSrc && !this.loadedImages.has(img)) {
+            img.src = dataSrc;
+            img.removeAttribute('data-src');
+            img.classList.remove('lazy');
+            this.loadedImages.add(img);
+            
+            img.style.opacity = '0';
+            img.onload = () => {
+                img.style.transition = 'opacity 0.3s ease';
+                img.style.opacity = '1';
+            };
+        }
+    }
+
+    observeImage(img) {
+        if (this.observer) {
+            this.observer.observe(img);
+        } else {
+            this.loadImage(img);
+        }
+    }
+}
+
+const lazyLoader = new LazyAvatarLoader();
+
+function renderAvatarsWithLazyLoading() {
+    const avatarContainer = document.getElementById('avatarContainer');
+    
+    const avatars = avatarContainer.querySelectorAll('img.avatar[data-src]');
+    
+    avatars.forEach(img => {
+        img.classList.add('lazy');
+        
+        img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTgiIGhlaWdodD0iNTgiIHZpZXdCb3g9IjAgMCA1OCA1OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjU4IiBoZWlnaHQ9IjU4IiBmaWxsPSIjZjhmOWZhIi8+CjxjaXJjbGUgY3g9IjI5IiBjeT0iMjkiIHI9IjgiIGZpbGw9IiNkZGUiLz4KPC9zdmc+';
+        
+        lazyLoader.observeImage(img);
+    });
+}
+
+const lazyLoadingCSS = `
+<style>
+.avatar.lazy {
+    background: linear-gradient(45deg, #f8f9fa 25%, transparent 25%), 
+                linear-gradient(-45deg, #f8f9fa 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #f8f9fa 75%), 
+                linear-gradient(-45deg, transparent 75%, #f8f9fa 75%);
+    background-size: 8px 8px;
+    background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 0.6; }
+}
+</style>
+`;
+
+document.head.insertAdjacentHTML('beforeend', lazyLoadingCSS);
+
+
+
+class ImagePreloader {
+    constructor() {
+        this.preloadQueue = [];
+        this.preloadedImages = new Map();
+        this.maxConcurrentLoads = 3;
+        this.currentLoads = 0;
+    }
+
+    preloadImage(src) {
+        return new Promise((resolve, reject) => {
+            if (this.preloadedImages.has(src)) {
+                resolve(this.preloadedImages.get(src));
+                return;
+            }
+
+            const img = new Image();
+            img.onload = () => {
+                this.preloadedImages.set(src, img);
+                resolve(img);
+            };
+            img.onerror = reject;
+            img.src = src;
+        });
+    }
+
+    async preloadBatch(imageUrls) {
+        const chunks = [];
+        for (let i = 0; i < imageUrls.length; i += this.maxConcurrentLoads) {
+            chunks.push(imageUrls.slice(i, i + this.maxConcurrentLoads));
+        }
+
+        for (const chunk of chunks) {
+            await Promise.allSettled(chunk.map(url => this.preloadImage(url)));
+        }
+    }
+}
+
+
+
+class VirtualScrollAvatars {
+    constructor(container, itemHeight = 70, itemsPerRow = 8) {
+        this.container = container;
+        this.itemHeight = itemHeight;
+        this.itemsPerRow = itemsPerRow;
+        this.visibleItems = [];
+        this.allItems = [];
+        this.scrollTop = 0;
+        this.containerHeight = container.clientHeight;
+        
+        this.init();
+    }
+
+    init() {
+        this.container.addEventListener('scroll', this.onScroll.bind(this));
+        window.addEventListener('resize', this.onResize.bind(this));
+    }
+
+    setItems(items) {
+        this.allItems = items;
+        this.render();
+    }
+
+    onScroll() {
+        this.scrollTop = this.container.scrollTop;
+        this.render();
+    }
+
+    onResize() {
+        this.containerHeight = this.container.clientHeight;
+        this.render();
+    }
+
+    render() {
+        const startRow = Math.floor(this.scrollTop / this.itemHeight);
+        const endRow = Math.min(
+            startRow + Math.ceil(this.containerHeight / this.itemHeight) + 1,
+            Math.ceil(this.allItems.length / this.itemsPerRow)
+        );
+
+        const startIndex = startRow * this.itemsPerRow;
+        const endIndex = Math.min(endRow * this.itemsPerRow, this.allItems.length);
+
+        this.visibleItems = this.allItems.slice(startIndex, endIndex);
+        
+        this.container.innerHTML = '';
+        
+        // Add spacer for items above viewport
+        if (startIndex > 0) {
+            const spacer = document.createElement('div');
+            spacer.style.height = `${startRow * this.itemHeight}px`;
+            this.container.appendChild(spacer);
+        }
+
+        // Render visible items
+        this.visibleItems.forEach((item, index) => {
+            const element = this.createItemElement(item, startIndex + index);
+            this.container.appendChild(element);
+        });
+
+        // Add spacer for items below viewport
+        const remainingItems = this.allItems.length - endIndex;
+        if (remainingItems > 0) {
+            const spacer = document.createElement('div');
+            const remainingRows = Math.ceil(remainingItems / this.itemsPerRow);
+            spacer.style.height = `${remainingRows * this.itemHeight}px`;
+            this.container.appendChild(spacer);
+        }
+    }
+
+    createItemElement(item, index) {
+        const img = document.createElement('img');
+        img.src = item.web_path;
+        img.className = 'avatar';
+        img.dataset.avatar = item.path;
+        img.alt = 'Avatar option';
+        img.addEventListener('click', () => this.selectAvatar(item));
+        return img;
+    }
+
+    selectAvatar(item) {
+        debugLog('Selected avatar:', item);
+        // Your avatar selection logic here
+    }
+}
+
+
+
+class PerformanceMonitor {
+    constructor() {
+        this.metrics = {
+            imagesLoaded: 0,
+            totalLoadTime: 0,
+            averageLoadTime: 0,
+            failedLoads: 0,
+            memoryUsage: 0
+        };
+        this.startTime = performance.now();
+    }
+
+    recordImageLoad(loadTime) {
+        this.metrics.imagesLoaded++;
+        this.metrics.totalLoadTime += loadTime;
+        this.metrics.averageLoadTime = this.metrics.totalLoadTime / this.metrics.imagesLoaded;
+        this.updateDisplay();
+    }
+
+    recordFailedLoad() {
+        this.metrics.failedLoads++;
+        this.updateDisplay();
+    }
+
+    updateMemoryUsage() {
+        if ('memory' in performance) {
+            this.metrics.memoryUsage = Math.round(performance.memory.usedJSHeapSize / 1024 / 1024);
+        }
+    }
+
+    updateDisplay() {
+        const displayElement = document.getElementById('performance-stats');
+        if (displayElement) {
+            displayElement.innerHTML = `
+                Images Loaded: ${this.metrics.imagesLoaded} | 
+                Avg Load Time: ${Math.round(this.metrics.averageLoadTime)}ms | 
+                Failed: ${this.metrics.failedLoads} | 
+                Memory: ${this.metrics.memoryUsage}MB
+            `;
+            
+        }
+    }
+
+    getReport() {
+        return {
+            ...this.metrics,
+            totalTime: performance.now() - this.startTime,
+            successRate: ((this.metrics.imagesLoaded / (this.metrics.imagesLoaded + this.metrics.failedLoads)) * 100).toFixed(2)
+        };
+    }
+
+    
+}
+
+
+
+class ImageCache {
+    constructor(maxSize = 50) {
+        this.cache = new Map();
+        this.maxSize = maxSize;
+        this.accessOrder = [];
+    }
+
+    get(key) {
+        if (this.cache.has(key)) {
+            // Move to end (most recently used)
+            this.accessOrder = this.accessOrder.filter(k => k !== key);
+            this.accessOrder.push(key);
+            return this.cache.get(key);
+        }
+        return null;
+    }
+
+    set(key, value) {
+        if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
+            // Remove least recently used
+            const lru = this.accessOrder.shift();
+            this.cache.delete(lru);
+        }
+
+        this.cache.set(key, value);
+        this.accessOrder = this.accessOrder.filter(k => k !== key);
+        this.accessOrder.push(key);
+    }
+
+    clear() {
+        this.cache.clear();
+        this.accessOrder = [];
+    }
+}
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    const imageCache = new ImageCache(100);
+    const preloader = new ImagePreloader();
+    const perfMonitor = new PerformanceMonitor();
+    
+    class EnhancedLazyLoader extends LazyAvatarLoader {
+        loadImage(img) {
+            const startTime = performance.now();
+            const dataSrc = img.getAttribute('data-src');
+            
+            if (dataSrc && !this.loadedImages.has(img)) {
+                const cached = imageCache.get(dataSrc);
+                if (cached) {
+                    img.src = dataSrc;
+                    img.removeAttribute('data-src');
+                    img.classList.remove('lazy');
+                    this.loadedImages.add(img);
+                    perfMonitor.recordImageLoad(0); // Cached load
+                    return;
+                }
+
+                img.src = dataSrc;
+                img.removeAttribute('data-src');
+                img.classList.remove('lazy');
+                this.loadedImages.add(img);
+                
+                img.onload = () => {
+                    const loadTime = performance.now() - startTime;
+                    perfMonitor.recordImageLoad(loadTime);
+                    imageCache.set(dataSrc, img);
+                    img.style.transition = 'opacity 0.3s ease';
+                    img.style.opacity = '1';
+                };
+                
+                img.onerror = () => {
+                    perfMonitor.recordFailedLoad();
+                };
+            }
+        }
+    }
+
+    const enhancedLoader = new EnhancedLazyLoader();
+    
+    setInterval(() => {
+        perfMonitor.updateMemoryUsage();
+        perfMonitor.updateDisplay();
+    }, 5000);
+    
+    const statsDiv = document.createElement('div');
+    statsDiv.id = 'performance-stats';
+    statsDiv.style.cssText = 'position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-size: 12px; z-index: 1000;';
+    document.body.appendChild(statsDiv);
+});
