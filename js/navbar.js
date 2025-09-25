@@ -129,12 +129,12 @@ function updateAFKButton(isAfk) {
         if (isAfk) {
             btn.classList.remove('btn-outline-warning');
             btn.classList.add('btn-warning');
-            btn.innerHTML = '<i class="fas fa-plane-arrival"></i>';
+            btn.textContent = '<i class="fas fa-plane-arrival"></i>';
             btn.title = 'Return from AFK';
         } else {
             btn.classList.remove('btn-warning');
             btn.classList.add('btn-outline-warning');
-            btn.innerHTML = '<i class="fas fa-plane-departure"></i>';
+            btn.textContent = '<i class="fas fa-plane-departure"></i>';
             btn.title = 'Go AFK';
         }
     }
@@ -247,11 +247,11 @@ function updateNotificationButton(enabled) {
         if (enabled) {
             btn.classList.remove('btn-outline-light');
             btn.classList.add('btn-warning');
-            btn.innerHTML = '<i class="fas fa-bell-slash"></i><span class="d-none d-xl-inline ms-1">Disable Notifications</span>';
+            btn.textContent = '<i class="fas fa-bell-slash"></i><span class="d-none d-xl-inline ms-1">Disable Notifications</span>';
         } else {
             btn.classList.remove('btn-warning');
             btn.classList.add('btn-outline-light');
-            btn.innerHTML = '<i class="fas fa-bell"></i><span class="d-none d-xl-inline ms-1">Notifications</span>';
+            btn.textContent = '<i class="fas fa-bell"></i><span class="d-none d-xl-inline ms-1">Notifications</span>';
         }
     }
 }
@@ -268,7 +268,7 @@ function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `alert alert-${type === 'error' ? 'danger' : type} position-fixed`;
     toast.style.cssText = 'top: 80px; right: 20px; z-index: 9999; min-width: 250px; opacity: 0.95;';
-    toast.innerHTML = `
+    toast.textContent = `
         <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
         ${message}
         <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>

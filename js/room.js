@@ -52,24 +52,7 @@ let kickDetectionEnabled = true;
 let lastStatusCheck = 0;
 let consecutiveErrors = 0;
 
-/*const ACTIVITY_CONFIG = {
-    HEARTBEAT_INTERVAL: 15000,        // 30 seconds
-    ACTIVITY_UPDATE_INTERVAL: 120000,   // 5 seconds for interaction tracking
-    DISCONNECT_CHECK_INTERVAL: 150000, // 60 seconds
-    STATUS_CHECK_INTERVAL: 20000,      // 5 seconds
-    MIN_ACTIVITY_INTERVAL: 30000,      // Minimum 3 seconds between activity updates
-    
-    AFK_TIMEOUT_MINUTES: 20,          // 20 minutes to AFK
-    DISCONNECT_TIMEOUT_MINUTES: 80,   // 80 minutes total to disconnect
-    SESSION_TIMEOUT_MINUTES: 60,       // 60 minutes for session timeout
-    ACTIVITY_CHECK_INTERVAL: 2
-};
 
-let activityInterval = null;
-let disconnectCheckInterval = null;
-let lastActivityUpdate = 0;
-let userIsActive = true;
-let activityTrackingEnabled = false;*/
 
 
 
@@ -125,7 +108,7 @@ if (typeof debugLog === 'undefined') {
 class RequestManager {
     constructor() {
         this.activeRequests = 0;
-        this.maxConcurrentRequests = 2;
+        this.maxConcurrentRequests = 10;
         this.requestQueue = [];
         this.isProcessingQueue = false;
         this.requestStats = new Map();
@@ -393,7 +376,21 @@ function fetchAllRoomData() {
         });
     }
     
-    // 7. YouTube data (if enabled)
+    // 7. Room data (NEW)
+    promises.push(
+        managedAjax({
+            url: 'api/get_room_data.php',
+            method: 'GET',
+            data: { room_id: roomId },
+            dataType: 'json'
+        }).then(response => {
+            handleRoomDataResponse(response);
+        }).catch(error => {
+            console.error('Room data error:', error);
+        })
+    );
+
+    // 8. YouTube data (if enabled)
     if (youtubeEnabled) {
         promises.push(
             managedAjax({
@@ -409,6 +406,11 @@ function fetchAllRoomData() {
     }
     
     return Promise.allSettled(promises);
+}
+
+// Simple handler for get_room_data.php response
+function handleRoomDataResponse(response) {
+    console.log('Room data response:', response);
 }
 
 
@@ -812,9 +814,6 @@ function sendValidatedMessage(message) {
     
     sendBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
     
-    if (typeof activityTracker !== 'undefined') {
-       // activityTracker.recordActivity('message_send');
-    }
     
     const sendData = {
         room_id: roomId,
@@ -842,30 +841,16 @@ function sendValidatedMessage(message) {
                 if (typeof clearReplyInterface === 'function') {
                     clearReplyInterface();
                 }
-                
-                if (response.afk_cleared) {
-                    debugLog('🔄 AFK status was cleared due to sending message');
-                    if (typeof activityTracker !== 'undefined') {
-                       // activityTracker.handleAFKStatusChange(false);
-                    }
-                    
-                    if (typeof showToast === 'function') {
-                        showToast('You are no longer AFK', 'info');
-                    }
-                    
-                    setTimeout(() => {
-                        if (typeof loadUsers === 'function') loadUsers();
-                    }, 500);
-                }
+            
                 
                 if (typeof loadMessages === 'function') {
                     loadMessages();
                 }
                 
                 setTimeout(() => {
-                    if (typeof checkUserStatus === 'function') {
-                        checkUserStatus();
-                    }
+                    //if (typeof checkUserStatus === 'function') {
+                      //  checkUserStatus();
+                    //}
                 }, 200);
             } else {
                 alert('Error: ' + response.message);
@@ -2038,9 +2023,6 @@ function stopYouTubePlayer() {
     isYoutubeUpdating = false;
 }
 
-function checkUserStatus() {
-   // activityTracker.checkUserStatus();
-}
 
 function handleUserBanned(response) {
     debugLog('🚫 User has been BANNED:', response);
@@ -2184,78 +2166,8 @@ function stopKickDetection() {
     }
 }
 
-function initializeActivityTracking() {
-    debugLog('🚀 Initializing room activity tracking...');
-    
-   // activityTracker.init();
-    
-    
-    if (roomId) {
-       // activityTracker.recordActivity('room_join');
-    }
-    
-    $(document).on('submit', '.private-message-form', function() {
-       // activityTracker.recordActivity('private_message');
-    });
-    
-    $(document).on('submit', '.whisper-form', function() {
-       // activityTracker.recordActivity('whisper');
-    });
-    
-    $(document).on('click', '.btn-toggle-afk', function() {
-       // activityTracker.recordActivity('manual_activity');
-    });
-    
-    debugLog('✅ Activity tracking initialization complete');
-}
 
-/*function setupActivityListeners() {
-    debugLog('🎯 Setting up activity listeners...');
-    
-    $(document).off('mousemove.activity keypress.activity scroll.activity click.activity');
-    $(window).off('focus.activity');
-    
-    let activityTimeout;
-    function markUserActive() {
-        userIsActive = true;
-        
-        clearTimeout(activityTimeout);
-        activityTimeout = setTimeout(() => {
-            if (activityTrackingEnabled) {
-                updateUserActivity('interaction');
-            }
-        }, 5000);
-    }
-    
-    $(document).on('mousemove.activity keypress.activity scroll.activity click.activity', markUserActive);
-    
-    document.addEventListener('visibilitychange', function() {
-        if (!document.hidden && activityTrackingEnabled) {
-            updateUserActivity('page_focus');
-        }
-    });
-    
-    $(window).on('focus.activity', function() {
-        if (activityTrackingEnabled) {
-            updateUserActivity('window_focus');
-        }
-    });
-    
-    debugLog('✅ Activity listeners set up successfully');
-}*/
 
-function updateUserActivity(activityType = 'general') {
-   // activityTracker.recordActivity(activityType);
-}
-
-function triggerDisconnectCheck() {
-   // activityTracker.triggerDisconnectCheck();
-}
-
-function stopActivityTracking() {
-    debugLog('🛑 Stopping activity tracking system');
-   // activityTracker.cleanup();
-}
 
 function showRoomSettings() {
     debugLog('Loading room settings for roomId:', roomId);
@@ -3588,9 +3500,6 @@ window.debugPagination = function() {
 $(document).ready(function() {
     debugLog('🏠 Room loaded, roomId:', roomId);
 
-    if (typeof roomId !== 'undefined' && roomId) {
-        initializeActivityTracking();
-    }
 
     if (!roomId) {
         console.error('❌ Invalid room ID, redirecting to lounge');
@@ -3640,16 +3549,8 @@ $(document).ready(function() {
         }, 1000);
     });
 
-    // Visibility handlers
-    document.addEventListener('visibilitychange', function() {
-        if (!document.hidden) {
-            updateUserActivity('page_focus');
-            setTimeout(checkUserStatus, 100);
-        }
-    });
-
     $(window).on('focus', function() {
-        setTimeout(checkUserStatus, 100);
+       // setTimeout(checkUserStatus, 100);
     });
 
     // YouTube setup
@@ -3679,9 +3580,6 @@ $(document).ready(function() {
         debugLog('🎬 YouTube not enabled for this room');
         youtubeEnabled = false;
     }
-
-    // Initialize activity tracking
-    //initializeActivityTracking();
 
     // Host-specific features
     if (isHost) {
@@ -3713,8 +3611,8 @@ $(document).ready(function() {
     startRoomUpdates();
 
     // Keep only essential intervals at lower frequencies
-    setTimeout(checkUserStatus, 1000);
-    kickDetectionInterval = setInterval(checkUserStatus, 10000); // Reduced from 5s to 10s
+    //setTimeout(checkUserStatus, 1000);
+    //kickDetectionInterval = setInterval(checkUserStatus, 10000); // Reduced from 5s to 10s
     
     // Focus message input
     $('#message').focus();
@@ -4919,25 +4817,7 @@ function addAFKStyles() {
     $('head').append(css);
 }
 
-function showActivityStatus() {
-    //if (!DEBUG_MODE) return;
-    
-    const statusHtml = `
-        <div class="activity-status-debug" style="position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-size: 12px; z-index: 9999;">
-            <div><strong>Activity Status</strong></div>
-            <div>Tracker Enabled: ${activityTracker.enabled}</div>
-            <div>AFK Timeout: ${ACTIVITY_CONFIG.AFK_TIMEOUT_MINUTES}min</div>
-            <div>Disconnect Timeout: ${ACTIVITY_CONFIG.DISCONNECT_TIMEOUT_MINUTES}min</div>
-            <div>Last Activity: ${new Date(activityTracker.lastActivityUpdate).toLocaleTimeString()}</div>
-            <div>Current AFK: ${currentUserAFK}</div>
-        </div>
-    `;
-    
-    $('.activity-status-debug').remove();
-    $('body').append(statusHtml);
-    
-    setTimeout(() => $('.activity-status-debug').remove(), 10000);
-}
+
 
 if (DEBUG_MODE) {
     setInterval(showActivityStatus, 30000);

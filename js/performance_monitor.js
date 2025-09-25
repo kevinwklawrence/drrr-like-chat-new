@@ -169,7 +169,7 @@ class VirtualScrollAvatars {
 
         this.visibleItems = this.allItems.slice(startIndex, endIndex);
         
-        this.container.innerHTML = '';
+        this.container.textContent = '';
         
         // Add spacer for items above viewport
         if (startIndex > 0) {
@@ -245,7 +245,7 @@ class PerformanceMonitor {
     updateDisplay() {
         const displayElement = document.getElementById('performance-stats');
         if (displayElement) {
-            displayElement.innerHTML = `
+            displayElement.textContent = `
                 Images Loaded: ${this.metrics.imagesLoaded} | 
                 Avg Load Time: ${Math.round(this.metrics.averageLoadTime)}ms | 
                 Failed: ${this.metrics.failedLoads} | 

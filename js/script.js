@@ -1,6 +1,36 @@
 const DEBUG_MODE = false;
 const SHOW_SENSITIVE_DATA = false;
 
+function escapeHtml(unsafe) {
+    return (unsafe || '')
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function validateGuestName(name) {
+    // Clean the name client-side
+    name = name.trim().replace(/[^a-zA-Z0-9_-]/g, '');
+    
+    if (name.length < 2) {
+        return { valid: false, error: 'Guest name must be at least 2 characters' };
+    }
+    
+    if (name.length > 20) {
+        return { valid: false, error: 'Guest name must be 20 characters or less' };
+    }
+    
+    // Block reserved names
+    const blocked = ['admin', 'mod', 'moderator', 'system', 'bot', 'null', 'undefined'];
+    if (blocked.includes(name.toLowerCase())) {
+        return { valid: false, error: 'This name is reserved' };
+    }
+    
+    return { valid: true, name: name };
+}
+
 function debugLog(message, data = null) {
     if (DEBUG_MODE) {
         if (data !== null) {
@@ -52,6 +82,8 @@ function criticalError(message, error = null) {
 $(document).ready(function() {
     debugLog('script.js loaded');
 
+    
+
     $('.avatar').click(function() {
         $('.avatar').removeClass('selected');
         $(this).addClass('selected');
@@ -59,33 +91,46 @@ $(document).ready(function() {
     });
 
     $('#guestLoginForm').submit(function(e) {
-        e.preventDefault();
-        debugLog('Guest login form submitted');
-        $.ajax({
-            url: 'api/join_lounge.php',
-            method: 'POST',
-            data: {
-                guest_name: $('#guestName').val(),
-                avatar: $('#selectedAvatar').val(),
-                color: $('#selectedColor').val(),
-                type: 'guest'
-            },
-            dataType: 'json',
-            success: function(res) {
-                debugLog('Response from api/join_lounge.php:', res);
-                if (res.status === 'success') {
-                    window.location.href = '/lounge';
-
-                } else {
-                    alert('Error: ' + (res.message || 'Unknown error'));
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('AJAX error in guestLogin:', status, error, 'Response:', xhr.responseText);
-                alert('AJAX error: ' + error + ' (Response: ' + xhr.responseText + ')');
+    e.preventDefault();
+    debugLog('Guest login form submitted');
+    
+    // Validate and clean guest name
+    const guestNameInput = $('#guestName').val();
+    const validation = validateGuestName(guestNameInput);
+    
+    if (!validation.valid) {
+        // Show error message
+        alert(validation.error);
+        return;
+    }
+    
+    // Use the cleaned name
+    const cleanGuestName = validation.name;
+    
+    $.ajax({
+        url: 'api/join_lounge.php',
+        method: 'POST',
+        data: {
+            guest_name: cleanGuestName, // Use cleaned name
+            avatar: $('#selectedAvatar').val(),
+            color: $('#selectedColor').val(),
+            type: 'guest'
+        },
+        dataType: 'json',
+        success: function(res) {
+            debugLog('Response from api/join_lounge.php:', res);
+            if (res.status === 'success') {
+                window.location.href = '/lounge';
+            } else {
+                alert('Error: ' + (res.message || 'Unknown error'));
             }
-        });
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error in guestLogin:', status, error, 'Response:', xhr.responseText);
+            alert('AJAX error: ' + error + ' (Response: ' + xhr.responseText + ')');
+        }
     });
+});
 
 $('#userLoginForm').submit(function(e) {
     e.preventDefault();
@@ -338,3 +383,48 @@ function adjustProfilePopupForMobile() {
 
 // Call on window resize
 $(window).on('resize', adjustProfilePopupForMobile);
+
+// OPTIONAL: Add real-time validation feedback as user types
+// Add this to script.js for better user experience
+
+$('#guestName').on('input', function() {
+    const guestNameInput = $(this).val();
+    const validation = validateGuestName(guestNameInput);
+    const $input = $(this);
+    const $feedback = $('#guestNameFeedback'); // Add this div to your HTML
+    
+    // Remove existing validation classes
+    $input.removeClass('is-valid is-invalid');
+    
+    if (guestNameInput.length === 0) {
+        // Empty input - neutral state
+        $feedback.hide();
+        return;
+    }
+    
+    if (validation.valid) {
+        // Valid name
+        $input.addClass('is-valid');
+        $feedback.removeClass('invalid-feedback').addClass('valid-feedback')
+                 .text(`✓ Name will be: "${validation.name}"`)
+                 .show();
+    } else {
+        // Invalid name
+        $input.addClass('is-invalid');
+        $feedback.removeClass('valid-feedback').addClass('invalid-feedback')
+                 .text(validation.error)
+                 .show();
+    }
+});
+
+// Update the guest name input to show cleaned version in real-time
+$('#guestName').on('blur', function() {
+    const guestNameInput = $(this).val();
+    const validation = validateGuestName(guestNameInput);
+    
+    if (validation.valid && validation.name !== guestNameInput) {
+        // Show the cleaned version to the user
+        $(this).val(validation.name);
+        $('#guestNameFeedback').text(`✓ Name cleaned to: "${validation.name}"`);
+    }
+});

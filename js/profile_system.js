@@ -69,14 +69,14 @@ function displayProfilePopup(user, avatarElement) {
                 break;
             case 'request_received':
                 actionsHtml += `
-                    <button class="btn btn-sm btn-info profile-action-btn" onclick="acceptFriendFromProfile(${user.id}); event.stopPropagation();">
+                    <button class="btn btn-sm btn-info profile-action-btn" onclick="acceptFriendFromProfile(${escapeHtml(user.id)}); event.stopPropagation();">
                         <i class="fas fa-user-check"></i> Accept Request
                     </button>
                 `;
                 break;
             default: // 'none'
                 actionsHtml += `
-                    <button class="btn btn-sm btn-primary profile-action-btn" onclick="addFriendFromProfile('${user.username}'); event.stopPropagation();">
+                    <button class="btn btn-sm btn-primary profile-action-btn" onclick="addFriendFromProfile('${escapeHtml(user.username)}'); event.stopPropagation();">
                         <i class="fas fa-user-plus"></i>
                     </button>
                 `;
@@ -85,7 +85,7 @@ function displayProfilePopup(user, avatarElement) {
         
         if (isInRoom) {
             actionsHtml += `
-                <button class="btn btn-sm btn-secondary profile-action-btn" onclick="openWhisper('user_${user.id}', '${user.username}'); event.stopPropagation();">
+                <button class="btn btn-sm btn-secondary profile-action-btn" onclick="openWhisper('user_${escapeHtml(user.id)}', '${escapeHtml(user.username)}'); event.stopPropagation();">
                     <i class="fas fa-comment"></i> Message
                 </button>
             `;

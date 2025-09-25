@@ -61,7 +61,7 @@ $(document).ready(function() {
     updateFilterBadge();
 });
 
-function sendHeartbeat() {
+/*function sendHeartbeat() {
     debugLog('Sending heartbeat...');
     $.ajax({
         url: 'api/heartbeat.php',
@@ -75,7 +75,7 @@ function sendHeartbeat() {
             // Silent fail - don't show errors for heartbeat
         }
     });
-}
+}*/
 
 function cleanupInactiveUsers() {
     debugLog('Requesting cleanup of inactive users...');

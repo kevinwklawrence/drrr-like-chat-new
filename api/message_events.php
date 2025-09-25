@@ -91,8 +91,16 @@ while ($iteration < $max_iterations && connection_status() == CONNECTION_NORMAL)
         flush();
     }
     
-    sleep(5); // Check every 5 seconds
     $iteration++;
+    
+    // Wait before next iteration
+    sleep(5);
+    
+    // Reset connection after 5 minutes
+    if ($iteration >= $max_iterations) {
+        echo "data: " . json_encode(['type' => 'reconnect']) . "\n\n";
+        flush();
+    }
 }
 
 $conn->close();

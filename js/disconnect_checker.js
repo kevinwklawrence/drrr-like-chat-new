@@ -12,7 +12,7 @@
                     
                     // Show disconnect message
                     const modal = document.createElement('div');
-                    modal.innerHTML = `
+                    modal.textContent = `
                         <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:99999;display:flex;align-items:center;justify-content:center;">
                             <div style="background:white;padding:30px;border-radius:10px;text-align:center;max-width:400px;">
                                 <h2>⚠️ Disconnected</h2>

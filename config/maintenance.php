@@ -2,7 +2,7 @@
 // config/maintenance.php - Maintenance mode configuration
 
 // === MAINTENANCE MODE SETTINGS ===
-define('MAINTENANCE_MODE', true); // Set to true to enable maintenance mode
+define('MAINTENANCE_MODE', false); // Set to true to enable maintenance mode
 
 // Admin credentials for maintenance bypass
 define('MAINTENANCE_ADMIN_USERNAME', 'admin');

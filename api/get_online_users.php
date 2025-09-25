@@ -16,10 +16,12 @@ try {
     
     // First, identify and logout users who exceed the threshold (exclude ghost mode users from auto-logout)
     $inactive_users_sql = "SELECT gu.user_id_string, gu.username, gu.guest_name 
-                          FROM global_users gu
-                          LEFT JOIN users u ON gu.username = u.username
-                          WHERE gu.last_activity < DATE_SUB(NOW(), INTERVAL ? MINUTE)
-                          AND COALESCE(u.ghost_mode, 0) = 0";
+        FROM global_users gu
+        LEFT JOIN users u ON gu.username = u.username
+        LEFT JOIN chatroom_users cu ON gu.user_id_string = cu.user_id_string
+        WHERE gu.last_activity < DATE_SUB(NOW(), INTERVAL ? MINUTE)
+        AND cu.user_id_string IS NULL  -- This ensures they're NOT in any room (lounge only)
+        AND COALESCE(u.ghost_mode, 0) = 0";
     
     $inactive_stmt = $conn->prepare($inactive_users_sql);
     $inactive_stmt->bind_param("i", $active_threshold);

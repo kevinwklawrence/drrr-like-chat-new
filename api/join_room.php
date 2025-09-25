@@ -1,4 +1,5 @@
 <?php
+include_once '../includes/sanitize.php';
 // Add error logging
 ini_set('log_errors', 1);
 ini_set('error_log', '/tmp/php_errors.log');
