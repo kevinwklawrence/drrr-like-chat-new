@@ -101,6 +101,9 @@ let sseLastMessageTimestamp = 0;
 let privateMessageConversations = [];
 let whisperConversations = [];
 
+let sseConnectionTimeout = null;
+let sseConnectionEstablished = false;
+
 
 
 let sseFeatures = {
@@ -241,22 +244,49 @@ function initializeSSE() {
     }
     
     debugLog('🔌 Initializing SSE connection...');
+    sseConnectionEstablished = false;
     
     const params = new URLSearchParams({
         message_limit: messageLimit,
         check_youtube: youtubeEnabled ? '1' : '0'
     });
     
+    // Set connection timeout - if no message received in 10s, fall back
+    sseConnectionTimeout = setTimeout(() => {
+        if (!sseConnectionEstablished) {
+            debugLog('⏱️ SSE connection timeout - falling back to Ajax');
+            closeSSE();
+            sseEnabled = false;
+            startRoomUpdates(); // Start Ajax polling
+        }
+    }, 10000);
+    
     sseConnection = new EventSource(`api/sse_room_data.php?${params.toString()}`);
     
     sseConnection.onopen = function() {
         debugLog('✅ SSE connection established');
         sseConnected = true;
+        sseConnectionEstablished = true;
         sseReconnectAttempts = 0;
         sseReconnectDelay = 2000;
+        
+        // Clear timeout since connection is working
+        if (sseConnectionTimeout) {
+            clearTimeout(sseConnectionTimeout);
+            sseConnectionTimeout = null;
+        }
     };
     
     sseConnection.onmessage = function(event) {
+        // Mark as established on first message
+        if (!sseConnectionEstablished) {
+            sseConnectionEstablished = true;
+            if (sseConnectionTimeout) {
+                clearTimeout(sseConnectionTimeout);
+                sseConnectionTimeout = null;
+            }
+        }
+        
         try {
             const data = JSON.parse(event.data);
             handleSSEData(data);
@@ -268,6 +298,12 @@ function initializeSSE() {
     sseConnection.onerror = function(error) {
         console.error('❌ SSE error:', error);
         sseConnected = false;
+        
+        // Clear timeout
+        if (sseConnectionTimeout) {
+            clearTimeout(sseConnectionTimeout);
+            sseConnectionTimeout = null;
+        }
         
         // Attempt reconnection
         if (sseReconnectAttempts < sseMaxReconnectAttempts) {
@@ -283,17 +319,23 @@ function initializeSSE() {
         } else {
             debugLog('❌ Max SSE reconnect attempts reached, falling back to Ajax');
             sseEnabled = false;
-            // All features fall back to Ajax automatically
+            startRoomUpdates(); // Start Ajax polling
         }
     };
 }
 
 function closeSSE() {
+    if (sseConnectionTimeout) {
+        clearTimeout(sseConnectionTimeout);
+        sseConnectionTimeout = null;
+    }
+    
     if (sseConnection) {
         debugLog('🔌 Closing SSE connection');
         sseConnection.close();
         sseConnection = null;
         sseConnected = false;
+        sseConnectionEstablished = false;
     }
 }
 

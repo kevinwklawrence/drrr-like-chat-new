@@ -302,13 +302,19 @@ try {
         $activity_stmt->close();
     }
     
+    // Get username for verified users
+    $username = null;
+    if ($_SESSION['user']['type'] === 'user' && isset($_SESSION['user']['username'])) {
+        $username = $_SESSION['user']['username'];
+    }
+    
     // Insert the actual message
     $stmt = $conn->prepare("
         INSERT INTO messages (
-            room_id, user_id, guest_name, message, avatar, user_id_string, 
+            room_id, user_id, username, guest_name, message, avatar, user_id_string, 
             color, avatar_hue, avatar_saturation, bubble_hue, bubble_saturation,
             reply_to_message_id, mentions
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     
     if (!$stmt) {
@@ -316,8 +322,8 @@ try {
     }
     
     $stmt->bind_param(
-        "iisssssiiiiis", 
-        $room_id, $user_id, $guest_name, $sanitized_message, $avatar, $user_id_string, 
+        "iissssssiiiiis", 
+        $room_id, $user_id, $username, $guest_name, $sanitized_message, $avatar, $user_id_string, 
         $color, $avatar_hue, $avatar_saturation, $bubble_hue, $bubble_saturation,
         $reply_to_message_id, $mentionsJson
     );
