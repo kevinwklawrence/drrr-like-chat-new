@@ -91,8 +91,25 @@ let manualAFK = false;
 let lastProcessedSettingsEvent = null;
 let isReloadingSettings = false;
 
+let sseConnection = null;
+let sseReconnectAttempts = 0;
+let sseMaxReconnectAttempts = 5;
+let sseReconnectDelay = 2000;
+let sseConnected = false;
+let sseEnabled = true; // Master switch for SSE (set to false to use Ajax only)
+let sseLastMessageTimestamp = 0;
 
-
+let sseFeatures = {
+    messages: true,         // ✅ Using SSE
+    users: true,            // ✅ Using SSE
+    mentions: true,         // ✅ Using SSE
+    whispers: true,         // ✅ Using SSE (room whispers)
+    private_messages: true, // ✅ Using SSE (private messages between users)
+    friends: true,          // ✅ Using SSE
+    room_data: true,        // ✅ Using SSE
+    knocks: true,           // ✅ Using SSE
+    youtube: false          // ⏸️ Still using Ajax
+};
 
 
 if (typeof debugLog === 'undefined') {
@@ -206,6 +223,150 @@ function managedAjax(options) {
     return requestManager.makeRequest(options);
 }
 
+function initializeSSE() {
+    if (!sseEnabled) {
+        debugLog('❌ SSE disabled, using Ajax fallback');
+        return;
+    }
+    
+    if (sseConnection) {
+        debugLog('⚠️ SSE already connected, closing existing connection');
+        closeSSE();
+    }
+    
+    debugLog('🔌 Initializing SSE connection...');
+    
+    const params = new URLSearchParams({
+        message_limit: messageLimit,
+        check_youtube: youtubeEnabled ? '1' : '0'
+    });
+    
+    sseConnection = new EventSource(`api/sse_room_data.php?${params.toString()}`);
+    
+    sseConnection.onopen = function() {
+        debugLog('✅ SSE connection established');
+        sseConnected = true;
+        sseReconnectAttempts = 0;
+        sseReconnectDelay = 2000;
+    };
+    
+    sseConnection.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            handleSSEData(data);
+        } catch (error) {
+            console.error('❌ SSE parse error:', error, 'Raw data:', event.data);
+        }
+    };
+    
+    sseConnection.onerror = function(error) {
+        console.error('❌ SSE error:', error);
+        sseConnected = false;
+        
+        // Attempt reconnection
+        if (sseReconnectAttempts < sseMaxReconnectAttempts) {
+            sseReconnectAttempts++;
+            debugLog(`🔄 Attempting SSE reconnect ${sseReconnectAttempts}/${sseMaxReconnectAttempts} in ${sseReconnectDelay}ms...`);
+            
+            setTimeout(() => {
+                initializeSSE();
+            }, sseReconnectDelay);
+            
+            // Exponential backoff
+            sseReconnectDelay = Math.min(sseReconnectDelay * 2, 30000);
+        } else {
+            debugLog('❌ Max SSE reconnect attempts reached, falling back to Ajax');
+            sseEnabled = false;
+            // All features fall back to Ajax automatically
+        }
+    };
+}
+
+function closeSSE() {
+    if (sseConnection) {
+        debugLog('🔌 Closing SSE connection');
+        sseConnection.close();
+        sseConnection = null;
+        sseConnected = false;
+    }
+}
+
+// ============================================================================
+// SSE Data Handler
+// ============================================================================
+
+function handleSSEData(data) {
+    if (!data || typeof data !== 'object') {
+        console.error('Invalid SSE data:', data);
+        return;
+    }
+    
+    // Handle different event types
+    switch (data.type) {
+        case 'connected':
+            debugLog('📡 SSE connected to room:', data.room_id);
+            break;
+            
+        case 'room_data':
+            // Process each data category
+            if (data.messages && sseFeatures.messages) {
+                handleMessagesResponse(data.messages);
+            }
+            
+            if (data.users && sseFeatures.users) {
+                handleUsersResponse(data.users);
+            }
+            
+            if (data.mentions && sseFeatures.mentions) {
+                handleMentionsResponse(data.mentions);
+            }
+            
+            if (data.whispers && sseFeatures.whispers) {
+                handleWhispersResponse(data.whispers);
+            }
+            
+            if (data.private_messages && sseFeatures.private_messages) {
+                handleConversationsResponse(data.private_messages);
+            }
+            
+            if (data.friends && sseFeatures.friends) {
+                handleFriendsResponse(data.friends);
+            }
+            
+            if (data.room_data && sseFeatures.room_data) {
+                handleRoomDataResponse(data.room_data);
+            }
+
+            if (data.knocks && sseFeatures.knocks) {
+                handleKnocksResponse(data.knocks);
+            }
+            
+            if (data.youtube && sseFeatures.youtube) {
+                handleYouTubeResponse(data.youtube);
+            }
+            break;
+            
+        case 'heartbeat':
+            // Connection keepalive, no action needed
+            break;
+            
+        case 'reconnect':
+            debugLog('🔄 Server requested reconnect');
+            setTimeout(() => {
+                closeSSE();
+                initializeSSE();
+            }, 1000);
+            break;
+            
+        case 'error':
+            console.error('❌ SSE error from server:', data.message);
+            break;
+            
+        default:
+            debugLog('⚠️ Unknown SSE event type:', data.type);
+    }
+}
+
 // Add missing loadYouTubeAPI function
 function loadYouTubeAPI() {
     if (window.YT && window.YT.Player) {
@@ -227,133 +388,157 @@ function loadYouTubeAPI() {
     debugLog('🎬 Loading YouTube API...');
 }
 
+
+
 // Combined data fetcher for all room data
 function fetchAllRoomData() {
     const promises = [];
     
-    // 1. Messages
-    promises.push(
-        managedAjax({
-            url: 'api/get_messages.php',
-            method: 'GET',
-            data: { 
-                room_id: roomId,
-                limit: messageLimit,
-                offset: 0
-            },
-            dataType: 'json'
-        }).then(response => {
-            handleMessagesResponse(response);
-        }).catch(error => {
-            console.error('Messages error:', error);
-        })
-    );
-    
-    // 2. Users
-    promises.push(
-        managedAjax({
-            url: 'api/get_room_users.php',
-            method: 'GET',
-            data: { room_id: roomId },
-            dataType: 'json'
-        }).then(response => {
-            handleUsersResponse(response);
-        }).catch(error => {
-            console.error('Users error:', error);
-        })
-    );
-    
-    // 3. Mentions
-    promises.push(
-        managedAjax({
-            url: 'api/get_mentions.php',
-            method: 'GET',
-            dataType: 'json'
-        }).then(response => {
-            handleMentionsResponse(response);
-        }).catch(error => {
-            console.error('Mentions error:', error);
-        })
-    );
-    
-    // 4. Whispers
-    promises.push(
-        managedAjax({
-            url: 'api/room_whispers.php',
-            method: 'GET',
-            data: { action: 'get_conversations' },
-            dataType: 'json'
-        }).then(response => {
-            handleWhispersResponse(response);
-        }).catch(error => {
-            console.error('Whispers error:', error);
-        })
-    );
-
-    // 5. Friends - NEW!
-    if (currentUser.type === 'user') {
+    // 1. MESSAGES - Skip if using SSE
+    if (!sseFeatures.messages || !sseConnected) {
         promises.push(
             managedAjax({
-                url: 'api/friends.php',
+                url: 'api/get_messages.php',
                 method: 'GET',
-                data: { action: 'get' },
+                data: { 
+                    room_id: roomId,
+                    limit: messageLimit,
+                    offset: 0
+                },
                 dataType: 'json'
             }).then(response => {
-                handleFriendsResponse(response);
+                handleMessagesResponse(response);
             }).catch(error => {
-                console.error('Friends error:', error);
+                console.error('Messages error:', error);
             })
         );
+    } else {
+        debugLog('⏭️ Skipping messages Ajax (using SSE)');
     }
     
-    // 6. Private Message Conversations - NEW!
-    if (currentUser.type === 'user') {
+    // 2. USERS - Skip if using SSE
+    if (!sseFeatures.users || !sseConnected) {
         promises.push(
             managedAjax({
-                url: 'api/private_messages.php',
+                url: 'api/get_room_users.php',
+                method: 'GET',
+                data: { room_id: roomId },
+                dataType: 'json'
+            }).then(response => {
+                handleUsersResponse(response);
+            }).catch(error => {
+                console.error('Users error:', error);
+            })
+        );
+    } else {
+        debugLog('⏭️ Skipping users Ajax (using SSE)');
+    }
+    
+    // 3. MENTIONS - Skip if using SSE
+    if (!sseFeatures.mentions || !sseConnected) {
+        promises.push(
+            managedAjax({
+                url: 'api/get_mentions.php',
+                method: 'GET',
+                dataType: 'json'
+            }).then(response => {
+                handleMentionsResponse(response);
+            }).catch(error => {
+                console.error('Mentions error:', error);
+            })
+        );
+    } else {
+        debugLog('⏭️ Skipping mentions Ajax (using SSE)');
+    }
+    
+    // 4. WHISPERS - Skip if using SSE
+    if (!sseFeatures.whispers || !sseConnected) {
+        promises.push(
+            managedAjax({
+                url: 'api/room_whispers.php',
                 method: 'GET',
                 data: { action: 'get_conversations' },
                 dataType: 'json'
             }).then(response => {
-                handleConversationsResponse(response);
+                handleWhispersResponse(response);
             }).catch(error => {
-                console.error('Conversations error:', error);
+                console.error('Whispers error:', error);
             })
         );
+    } else {
+        debugLog('⏭️ Skipping whispers Ajax (using SSE)');
     }
 
-    promises.push(
-    managedAjax({
-        url: 'api/check_room_settings.php',
-        method: 'GET',
-        data: { room_id: roomId },
-        dataType: 'json'
-    }).then(response => {
-        if (response.status === 'success' && response.settings_changed && response.event_id) {
-            // Use sessionStorage to track processed events (clears on page reload)
-            const processedKey = `settings_event_${roomId}_${response.event_id}`;
-            
-            if (!sessionStorage.getItem(processedKey)) {
-                // Mark as processed immediately
-                sessionStorage.setItem(processedKey, 'true');
-                
-                showToast('Room settings have been updated. Refreshing...', 'info');
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
-            }
+    // 5. FRIENDS - Skip if using SSE
+    if (!sseFeatures.friends || !sseConnected) {
+        if (currentUser.type === 'user') {
+            promises.push(
+                managedAjax({
+                    url: 'api/friends.php',
+                    method: 'GET',
+                    data: { action: 'get' },
+                    dataType: 'json'
+                }).then(response => {
+                    handleFriendsResponse(response);
+                }).catch(error => {
+                    console.error('Friends error:', error);
+                })
+            );
         }
-    }).catch(error => {
-        console.error('Settings check error:', error);
-    })
-);
+    } else {
+        debugLog('⏭️ Skipping friends Ajax (using SSE)');
+    }
+    
+    // 6. PRIVATE MESSAGE CONVERSATIONS - Skip if using SSE
+    if (!sseFeatures.private_messages || !sseConnected) {
+        if (currentUser.type === 'user') {
+            promises.push(
+                managedAjax({
+                    url: 'api/private_messages.php',
+                    method: 'GET',
+                    data: { action: 'get_conversations' },
+                    dataType: 'json'
+                }).then(response => {
+                    handleConversationsResponse(response);
+                }).catch(error => {
+                    console.error('Conversations error:', error);
+                })
+            );
+        }
+    } else {
+        debugLog('⏭️ Skipping private messages Ajax (using SSE)');
+    }
 
+    // 7. ROOM SETTINGS CHECK - Still using Ajax
+    promises.push(
+        managedAjax({
+            url: 'api/check_room_settings.php',
+            method: 'GET',
+            data: { room_id: roomId },
+            dataType: 'json'
+        }).then(response => {
+            if (response.status === 'success' && response.settings_changed && response.event_id) {
+                const processedKey = `settings_event_${roomId}_${response.event_id}`;
+                
+                if (!sessionStorage.getItem(processedKey)) {
+                    sessionStorage.setItem(processedKey, 'true');
+                    showToast('Room settings have been updated. Refreshing...', 'info');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                }
+            }
+        }).catch(error => {
+            console.error('Settings check error:', error);
+        })
+    );
+
+    // 8. INDIVIDUAL PRIVATE MESSAGE UPDATES - Still using Ajax for open chats
     if (currentUser.type === 'user' && openPrivateChats.size > 0) {
         openPrivateChats.forEach((data, userId) => {
             const input = $(`#pm-input-${userId}`);
             const isTyping = input.is(':focus') && input.val().length > 0;
             
-            // Only update if user is not actively typing
             if (!isTyping) {
                 promises.push(
                     managedAjax({
@@ -376,37 +561,56 @@ function fetchAllRoomData() {
         });
     }
     
-    // 7. Room data (NEW)
-    promises.push(
-        managedAjax({
-            url: 'api/get_room_data.php',
-            method: 'GET',
-            data: { room_id: roomId },
-            dataType: 'json'
-        }).then(response => {
-            handleRoomDataResponse(response);
-        }).catch(error => {
-            console.error('Room data error:', error);
-        })
-    );
-
-    // 8. YouTube data (if enabled)
-    if (youtubeEnabled) {
+    // 9. ROOM DATA - Skip if using SSE
+    if (!sseFeatures.room_data || !sseConnected) {
         promises.push(
             managedAjax({
-                url: 'api/youtube_combined.php',
+                url: 'api/get_room_data.php',
                 method: 'GET',
+                data: { room_id: roomId },
                 dataType: 'json'
             }).then(response => {
-                handleYouTubeResponse(response);
+                handleRoomDataResponse(response);
             }).catch(error => {
-                console.error('YouTube error:', error);
+                console.error('Room data error:', error);
             })
         );
+    } else {
+        debugLog('⏭️ Skipping room data Ajax (using SSE)');
+    }
+
+    // 10. YOUTUBE DATA - Still using Ajax
+    if (!sseFeatures.youtube || !sseConnected) {
+        if (youtubeEnabled) {
+            promises.push(
+                managedAjax({
+                    url: 'api/youtube_combined.php',
+                    method: 'GET',
+                    dataType: 'json'
+                }).then(response => {
+                    handleYouTubeResponse(response);
+                }).catch(error => {
+                    console.error('YouTube error:', error);
+                })
+            );
+        }
     }
     
     return Promise.allSettled(promises);
 }
+
+function handleKnocksResponse(knocks) {
+    // Only process if user is host
+    if (!isHost) {
+        return;
+    }
+    
+    // Display knock notifications if any exist
+    if (Array.isArray(knocks) && knocks.length > 0) {
+        displayKnockNotifications(knocks);
+    }
+}
+
 
 // Simple handler for get_room_data.php response
 function handleRoomDataResponse(response) {
@@ -641,36 +845,43 @@ function checkIfFriend(userId, callback) {
         return;
     }
     
-    $.ajax({
-        url: 'api/friends.php',
-        method: 'GET',
-        data: { action: 'get' },
-        dataType: 'json',
-        success: function(response) {
-            if (response.status === 'success') {
-                const isFriend = response.friends.some(friend => 
-                    friend.friend_user_id == userId && friend.status === 'accepted'
-                );
-                
-                friendshipCache.set(userId, isFriend);
-                
-                if (friendshipCacheTimeout.has(userId)) {
-                    clearTimeout(friendshipCacheTimeout.get(userId));
+    // Check from the already-loaded friends array (populated by SSE)
+    if (friends && Array.isArray(friends)) {
+        const isFriend = friends.some(friend => 
+            friend.friend_user_id == userId && friend.status === 'accepted'
+        );
+        
+        friendshipCache.set(userId, isFriend);
+        callback(isFriend);
+        return;
+    }
+    
+    // Fallback to Ajax only if SSE is not connected
+    if (!sseEnabled || !sseConnected) {
+        $.ajax({
+            url: 'api/friends.php',
+            method: 'GET',
+            data: { action: 'get' },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    const isFriend = response.friends.some(friend => 
+                        friend.friend_user_id == userId && friend.status === 'accepted'
+                    );
+                    
+                    friendshipCache.set(userId, isFriend);
+                    callback(isFriend);
+                } else {
+                    callback(false);
                 }
-                friendshipCacheTimeout.set(userId, setTimeout(() => {
-                    friendshipCache.delete(userId);
-                    friendshipCacheTimeout.delete(userId);
-                }, 30000));
-                
-                callback(isFriend);
-            } else {
+            },
+            error: function() {
                 callback(false);
             }
-        },
-        error: function() {
-            callback(false);
-        }
-    });
+        });
+    } else {
+        callback(false);
+    }
 }
 
 function clearFriendshipCache(userId = null) {
@@ -3584,8 +3795,10 @@ $(document).ready(function() {
     // Host-specific features
     if (isHost) {
         debugLog('🚪 User is host, starting knock checking...');
-        setInterval(checkForKnocks, 5000); // Reduced frequency
-        setTimeout(checkForKnocks, 1000);
+     /*if (!sseEnabled || !sseFeatures.knocks) {
+     setInterval(checkForKnocks, 5000);
+ }
+        setTimeout(checkForKnocks, 1000);*/
     }
 
     // Initialize mentions and replies
@@ -3608,7 +3821,29 @@ $(document).ready(function() {
     // setInterval(checkForMentions, 1000);
     
     // Use the new managed update system instead:
-    startRoomUpdates();
+    //startRoomUpdates();
+
+    // Initialize SSE connection
+    if (sseEnabled) {
+        debugLog('🚀 Starting SSE mode');
+        debugLog('📡 SSE Features: Messages=' + sseFeatures.messages + 
+                 ', Users=' + sseFeatures.users +
+                 ', Mentions=' + sseFeatures.mentions +
+                 ', Whispers=' + sseFeatures.whispers + 
+                 ', PrivateMessages=' + sseFeatures.private_messages +
+                 ', Friends=' + sseFeatures.friends +
+                 ', RoomData=' + sseFeatures.room_data);
+        initializeSSE();
+        
+        // Start room updates (will skip SSE-enabled features)
+        startRoomUpdates();
+        
+        debugLog('✅ Room initialization complete with SSE + Ajax hybrid mode');
+    } else {
+        debugLog('🚀 Starting Ajax-only mode');
+        startRoomUpdates();
+        debugLog('✅ Room initialization complete with Ajax-only mode');
+    }
 
     // Keep only essential intervals at lower frequencies
     //setTimeout(checkUserStatus, 1000);
@@ -3627,11 +3862,52 @@ $(window).on('beforeunload', function() {
         clearInterval(mentionCheckInterval);
         mentionCheckInterval = null;
     }
-    
+    closeSSE(); // Close SSE connection
+
     stopYouTubePlayer();
     stopActivityTracking();
     stopKickDetection();
 });
+
+window.toggleSSE = function(feature = null) {
+    if (feature === null) {
+        // Toggle master switch
+        sseEnabled = !sseEnabled;
+        console.log(`🔧 SSE ${sseEnabled ? 'ENABLED' : 'DISABLED'}`);
+        
+        if (sseEnabled) {
+            initializeSSE();
+        } else {
+            closeSSE();
+        }
+    } else if (sseFeatures.hasOwnProperty(feature)) {
+        // Toggle specific feature
+        sseFeatures[feature] = !sseFeatures[feature];
+        console.log(`🔧 SSE for ${feature}: ${sseFeatures[feature] ? 'ENABLED' : 'DISABLED'}`);
+    } else {
+        console.log('Invalid feature. Available:', Object.keys(sseFeatures).join(', '));
+    }
+};
+
+window.showSSEStatus = function() {
+    console.log('=== SSE STATUS ===');
+    console.log('Master enabled:', sseEnabled);
+    console.log('Connected:', sseConnected);
+    console.log('Reconnect attempts:', sseReconnectAttempts);
+    console.log('Features using SSE:');
+    Object.keys(sseFeatures).forEach(feature => {
+        const icon = sseFeatures[feature] ? '✅' : '⏸️';
+        console.log(`  ${icon} ${feature}: ${sseFeatures[feature]}`);
+    });
+    console.log('Connection:', sseConnection ? 'Active' : 'Null');
+};
+
+window.forceSSEReconnect = function() {
+    console.log('🔄 Forcing SSE reconnect...');
+    sseReconnectAttempts = 0;
+    closeSSE();
+    initializeSSE();
+};
 
 function toggleMobileUsers() {
     const userListContent = $('#userList').html();
@@ -3695,24 +3971,40 @@ function closeFriendsPanel() {
 }
 
 function loadFriends() {
-    debugLog('Loading friends...');
-    managedAjax({
-        url: 'api/friends.php',
-        method: 'GET',
-        data: { action: 'get' },
-        dataType: 'json'
-    }).then(response => {
-        debugLog('Friends response:', response);
-        if (response.status === 'success') {
-            friends = response.friends;
-            updateFriendsPanel();
+    debugLog('Loading friends from SSE data...');
+    
+    // SSE already populates the 'friends' array
+    // Just update the UI with existing data
+    if (friends && Array.isArray(friends)) {
+        updateFriendsPanel();
+        debugLog('✅ Friends loaded from cache:', friends.length);
+    } else {
+        // Only make Ajax call if SSE is not connected
+        if (!sseEnabled || !sseConnected) {
+            debugLog('⚠️ SSE not connected, falling back to Ajax');
+            managedAjax({
+                url: 'api/friends.php',
+                method: 'GET',
+                data: { action: 'get' },
+                dataType: 'json'
+            }).then(response => {
+                debugLog('Friends response:', response);
+                if (response.status === 'success') {
+                    friends = response.friends;
+                    updateFriendsPanel();
+                } else {
+                    $('#friendsList').html('<p class="text-danger">Error: ' + response.message + '</p>');
+                }
+            }).catch(error => {
+                console.error('Friends API error:', error);
+                $('#friendsList').html('<p class="text-danger">Failed to load friends</p>');
+            });
         } else {
-            $('#friendsList').html('<p class="text-danger">Error: ' + response.message + '</p>');
+            debugLog('⏳ Waiting for SSE to populate friends...');
+            // SSE will populate friends soon, just show loading state
+            updateFriendsPanel();
         }
-    }).catch(error => {
-        console.error('Friends API error:', error);
-        $('#friendsList').html('<p class="text-danger">Failed to load friends. Check console for details.</p>');
-    });
+    }
 }
 
 function updateFriendsPanel() {
@@ -3816,18 +4108,21 @@ function acceptFriend(friendId) {
         timeout: 10000, // 10 second timeout
         success: function(response) {
             if (response.status === 'success') {
-                // Success - show brief feedback then reload
-                showNotification('Friend request accepted!', 'success');
-                loadFriends();
-                
-                // Update other UI elements if they exist
-                if (typeof clearFriendshipCache === 'function') {
-                    clearFriendshipCache();
-                }
-                if (typeof loadUsers === 'function') {
-                    loadUsers();
-                }
-            } else {
+    showNotification('Friend request accepted!', 'success');
+    // SSE will automatically update friends - no need to call loadFriends()
+    
+    if (typeof clearFriendshipCache === 'function') {
+        clearFriendshipCache();
+    }
+    if (typeof loadUsers === 'function') {
+        loadUsers();
+    }
+    
+    // Just update the UI with current SSE data
+    if (friends && Array.isArray(friends)) {
+        updateFriendsPanel();
+    }
+} else {
                 showNotification('Error: ' + (response.message || 'Unknown error'), 'error');
             }
         },
@@ -4820,7 +5115,7 @@ function addAFKStyles() {
 
 
 if (DEBUG_MODE) {
-    setInterval(showActivityStatus, 30000);
+    //setInterval(showActivityStatus, 30000);
 }
 
 function startYouTubeUpdates() {
