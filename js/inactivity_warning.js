@@ -46,17 +46,27 @@ function showInactivityWarning(seconds) {
     document.body.appendChild(warning);
 }
 
-function handleInactivityResponse(stayActive) {
-    if (stayActive) {
-        // Reset timer
-        fetch('api/reset_inactivity.php', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: 'reset_timer=1'
-        }).then(() => {
-            inactivityWarned = false;
-            const warning = document.getElementById('inactivity-warning');
-            if (warning) warning.remove();
-        });
+function handleInactivityStatusResponse(data) {
+    if (data.status !== 'success') {
+        return;
+    }
+    
+    const seconds = data.seconds || 0;
+    const timeout = data.timeout || 3600;
+    const warningThreshold = timeout - 300; // Warn 5 minutes before disconnect
+    
+    // Show warning if user is getting close to disconnect
+    if (seconds >= warningThreshold && !inactivityWarned) {
+        inactivityWarned = true;
+        showInactivityWarning(seconds);
+    }
+    
+    // Clear warning if user became active again
+    if (seconds < warningThreshold && inactivityWarned) {
+        inactivityWarned = false;
+        const warning = document.getElementById('inactivity-warning');
+        if (warning) {
+            warning.remove();
+        }
     }
 }
