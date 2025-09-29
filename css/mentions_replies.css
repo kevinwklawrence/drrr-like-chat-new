@@ -83,7 +83,9 @@
     /* text-overflow: ellipsis; */
     display: -webkit-box;
     /* -webkit-line-clamp: 2; */
+    max-height: 200px;
     /* -webkit-box-orient: vertical; */
+    overflow-y: auto;
 }
 
 .reply-content p::before {content: '"'}

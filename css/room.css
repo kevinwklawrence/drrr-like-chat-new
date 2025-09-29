@@ -668,6 +668,9 @@
     
     .room-header {
         padding: 10px 15px;
+        position: fixed;
+        width: 100%;
+        z-index: 1;
     }
 
 
@@ -751,6 +754,7 @@
         max-height: 70vh;
         display: flex;
         flex-direction: column;
+        margin-top: 52px;
     }
     
     .chat-messages {

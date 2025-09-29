@@ -46,14 +46,49 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
     
     try {
         // 1. MESSAGES
-        $messages_stmt = $conn->prepare("SELECT * FROM messages WHERE room_id = ? ORDER BY id DESC LIMIT ?");
-        $messages_stmt->bind_param("ii", $room_id, $message_limit);
-        $messages_stmt->execute();
-        $messages_result = $messages_stmt->get_result();
-        $messages = [];
-        while ($msg = $messages_result->fetch_assoc()) { $messages[] = $msg; }
-        $messages_stmt->close();
-        $all_data['messages'] = ['status' => 'success', 'messages' => array_reverse($messages)];
+        $messages_stmt = $conn->prepare("
+    SELECT m.*, 
+           u.username, u.is_admin, u.is_moderator,
+           cu.ip_address, cu.is_host, cu.guest_avatar,
+           rm.id as reply_original_id,
+           rm.message as reply_original_message,
+           rm.user_id_string as reply_original_user_id_string,
+           rm.guest_name as reply_original_guest_name,
+           rm.avatar as reply_original_avatar,
+           rm.avatar_hue as reply_original_avatar_hue,
+           rm.avatar_saturation as reply_original_avatar_saturation,
+           rm.bubble_hue as reply_original_bubble_hue,
+           rm.bubble_saturation as reply_original_bubble_saturation,
+           rm.color as reply_original_color,
+           ru.username as reply_original_registered_username,
+           rcu.username as reply_original_chatroom_username
+    FROM messages m 
+    LEFT JOIN users u ON m.user_id = u.id 
+    LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id 
+        AND (
+            (m.user_id IS NOT NULL AND m.user_id = cu.user_id) OR 
+            (m.user_id IS NULL AND m.guest_name = cu.guest_name) OR
+            (m.user_id IS NULL AND m.user_id_string = cu.user_id_string)
+        )
+    LEFT JOIN messages rm ON m.reply_to_message_id = rm.id
+    LEFT JOIN users ru ON rm.user_id = ru.id
+    LEFT JOIN chatroom_users rcu ON rm.room_id = rcu.room_id 
+        AND (
+            (rm.user_id IS NOT NULL AND rm.user_id = rcu.user_id) OR 
+            (rm.user_id IS NULL AND rm.guest_name = rcu.guest_name) OR
+            (rm.user_id IS NULL AND rm.user_id_string = rcu.user_id_string)
+        )
+    WHERE m.room_id = ? 
+    ORDER BY m.id DESC 
+    LIMIT ?
+");
+$messages_stmt->bind_param("ii", $room_id, $message_limit);
+$messages_stmt->execute();
+$messages_result = $messages_stmt->get_result();
+$messages = [];
+while ($msg = $messages_result->fetch_assoc()) { $messages[] = $msg; }
+$messages_stmt->close();
+$all_data['messages'] = ['status' => 'success', 'messages' => array_reverse($messages)];
         
         // 2. USERS
         $users_stmt = $conn->prepare("SELECT * FROM chatroom_users WHERE room_id = ? ORDER BY is_host DESC, joined_at ASC");
@@ -357,7 +392,7 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
     flush();
     
     // Wait before next iteration
-    sleep(1);
+    sleep(2);
 }
 
 $conn->close();

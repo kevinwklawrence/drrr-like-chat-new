@@ -34,7 +34,7 @@ let youtubeUpdateInterval = null;
 let isYoutubeUpdating = false;
 
 let messageOffset = 0;
-let messageLimit = 50;
+let messageLimit = 100;
 let totalMessageCount = 0;
 let isLoadingMessages = false;
 let hasMoreOlderMessages = false;
@@ -777,6 +777,12 @@ function handleWhispersResponse(data) {
                 } else {
                     unreadElement.hide();
                 }
+                
+                // AUTO-UPDATE: Load messages for open whisper windows
+                const input = $(`#whisper-input-${data.safeId}`);
+                if (!input.is(':focus') || input.val().length === 0) {
+                    loadWhisperMessages(userIdString);
+                }
             }
         });
     }
@@ -851,6 +857,16 @@ function handleConversationsResponse(data) {
     if (data.status === 'success') {
         privateMessageConversations = data.conversations || [];
         displayConversations(privateMessageConversations);
+        
+        // AUTO-UPDATE: Load messages for open private message windows
+        if (openPrivateChats.size > 0) {
+            openPrivateChats.forEach((chatData, userId) => {
+                const input = $(`#pm-input-${userId}`);
+                if (!input.is(':focus') || input.val().length === 0) {
+                    loadPrivateMessages(userId);
+                }
+            });
+        }
     }
 }
 
@@ -1335,7 +1351,7 @@ function optimizeForMobile() {
     const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
     if (isMobile) {
-        messageLimit = 20; // Smaller batches for mobile
+        messageLimit = 50; // Smaller batches for mobile
     }
 }
 
@@ -4847,7 +4863,7 @@ function checkForMentions() {
 }
 
 function updateMentionCounter(count) {
-    const counter = $('.mentions-counter');
+  /*  const counter = $('.mentions-counter');
     
     if (count > 0) {
         if (counter.length === 0) {
@@ -4865,11 +4881,11 @@ function updateMentionCounter(count) {
     } else {
         counter.removeClass('show');
         setTimeout(() => counter.remove(), 200);
-    }
+    }*/
 }
 
 function showNewMentionNotification(count) {
-    const notification = $(`
+   /* const notification = $(`
         <div class="mention-notification-toast" style="
             position: fixed;
             top: 20px;
@@ -4892,7 +4908,7 @@ function showNewMentionNotification(count) {
         notification.fadeOut(300, function() {
             $(this).remove();
         });
-    }, 3000);
+    }, 3000); */
 }
 
 function toggleMentionsPanel() {

@@ -123,7 +123,22 @@ if (!empty($user_id_string)) {
     <link href="css/moderator.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
 <link href="css/loading.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
 <link rel="stylesheet" href="css/friend_notifications.css?v=<?php echo $versions['version']; ?>">
-
+<style>
+    .notice-link {
+        color: #ffe1b3;
+    }
+    .notice {
+        font-size: 12px;
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    background: #ffa50054;
+    border: 2px solid orange;
+    border-radius: 12px;
+    box-shadow: 0 0 8px 0px orange;
+    padding: 12px;
+    }
+    </style>
 </head>
 <body>
     <div class="avatar-loader" id="avatarLoader">
@@ -314,6 +329,14 @@ if (!empty($user_id_string)) {
                             </div>
                         </div>
                     </div>
+                    <div class="notice"><h4>Notice:</h4><small>SSE Update is successfully *partially* implemented.
+If you experience any bugs, contact: <a class="notice-link" href="mailto:bugs@duranu.net">bugs@duranu.net</a>.
+I will not see them any other way.
+<br>Contact directly at: <a class="notice-link" href="mailto:admin@duranu.net">admin@duranu.net</a>.
+<br>Report bugs at: <a class="notice-link" href="mailto:bugs@duranu.net">bugs@duranu.net</a>.
+<br>Send feature requests at: <a class="notice-link" href="mailto:request@duranu.net">request@duranu.net</a>.
+</small>
+</div>
                 </div>
                 
                 <!-- Rooms List -->
@@ -376,6 +399,7 @@ if (!empty($user_id_string)) {
                     <small class="text-muted">
                         <i class="fas fa-info-circle"></i> You can paste invite links like: lounge.php?invite=abc123
                     </small>
+                    
                 </div>
                     <div id="roomsList">
                         <div class="text-center py-5">

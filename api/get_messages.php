@@ -14,7 +14,7 @@ if ($room_id <= 0) {
 }
 
 // Pagination parameters
-$limit = isset($_GET['limit']) ? min(max((int)$_GET['limit'], 1), 100) : 50;
+$limit = isset($_GET['limit']) ? min(max((int)$_GET['limit'], 1), 150) : 100;
 $offset = isset($_GET['offset']) ? max((int)$_GET['offset'], 0) : 0;
 $load_older = isset($_GET['load_older']) ? (bool)$_GET['load_older'] : false;
 

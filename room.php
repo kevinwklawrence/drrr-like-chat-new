@@ -524,7 +524,7 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
     <!-- Knock notifications will appear here -->
     <div id="knockNotifications"></div>
     
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
 // Room theme and feature data
@@ -889,6 +889,7 @@ $('<style>').text(`
     <script src="js/friend_notifications.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/inactivity_warning.js"></script>
     <script src="js/disconnect_checker.js"></script>
+    
 
 
     <?php include 'user_settings.php'; ?>

@@ -134,7 +134,7 @@ echo "<!-- Nav items count: " . count($nav_items) . ", Use hamburger: " . ($use_
             <!-- Hamburger menu dropdown when >4 items -->
             <div class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle btn btn-outline-light" href="#" role="button" data-bs-toggle="dropdown">
-                    <i class="fas fa-bars"></i> <span class="d-none d-md-inline ms-1">Menu</span>
+                    <i class="fas fa-bars"></i> <span class="d-none d-md-inline ms-1">Options</span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
                     <?php foreach ($nav_items as $item): ?>
