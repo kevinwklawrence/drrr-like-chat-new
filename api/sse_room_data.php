@@ -70,41 +70,45 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
             // MESSAGES
             if (in_array('message', $event_types)) {
                 $messages_stmt = $conn->prepare("
-                    SELECT m.*, 
-                           u.username, u.is_admin, u.is_moderator,
-                           cu.ip_address, cu.is_host, cu.guest_avatar,
-                           rm.id as reply_original_id,
-                           rm.message as reply_original_message,
-                           rm.user_id_string as reply_original_user_id_string,
-                           rm.guest_name as reply_original_guest_name,
-                           rm.avatar as reply_original_avatar,
-                           rm.avatar_hue as reply_original_avatar_hue,
-                           rm.avatar_saturation as reply_original_avatar_saturation,
-                           rm.bubble_hue as reply_original_bubble_hue,
-                           rm.bubble_saturation as reply_original_bubble_saturation,
-                           rm.color as reply_original_color,
-                           ru.username as reply_original_registered_username,
-                           rcu.username as reply_original_chatroom_username
-                    FROM messages m 
-                    LEFT JOIN users u ON m.user_id = u.id 
-                    LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id 
-                        AND (
-                            (m.user_id IS NOT NULL AND m.user_id = cu.user_id) OR 
-                            (m.user_id IS NULL AND m.guest_name = cu.guest_name) OR
-                            (m.user_id IS NULL AND m.user_id_string = cu.user_id_string)
-                        )
-                    LEFT JOIN messages rm ON m.reply_to_message_id = rm.id
-                    LEFT JOIN users ru ON rm.user_id = ru.id
-                    LEFT JOIN chatroom_users rcu ON rm.room_id = rcu.room_id 
-                        AND (
-                            (rm.user_id IS NOT NULL AND rm.user_id = rcu.user_id) OR 
-                            (rm.user_id IS NULL AND rm.guest_name = rcu.guest_name) OR
-                            (rm.user_id IS NULL AND rm.user_id_string = rcu.user_id_string)
-                        )
-                    WHERE m.room_id = ? 
-                    ORDER BY m.id DESC 
-                    LIMIT ?
-                ");
+    SELECT m.id, m.user_id, m.user_id_string, m.guest_name, m.message, 
+           m.avatar, m.type, m.color, m.avatar_hue, m.avatar_saturation,
+           m.bubble_hue, m.bubble_saturation, m.reply_to_message_id, m.mentions,
+           m.is_system, m.room_id,
+           UNIX_TIMESTAMP(m.timestamp) * 1000 as timestamp,
+           u.username, u.is_admin, u.is_moderator,
+           cu.ip_address, cu.is_host, cu.guest_avatar,
+           rm.id as reply_original_id,
+           rm.message as reply_original_message,
+           rm.user_id_string as reply_original_user_id_string,
+           rm.guest_name as reply_original_guest_name,
+           rm.avatar as reply_original_avatar,
+           rm.avatar_hue as reply_original_avatar_hue,
+           rm.avatar_saturation as reply_original_avatar_saturation,
+           rm.bubble_hue as reply_original_bubble_hue,
+           rm.bubble_saturation as reply_original_bubble_saturation,
+           rm.color as reply_original_color,
+           ru.username as reply_original_registered_username,
+           rcu.username as reply_original_chatroom_username
+    FROM messages m 
+    LEFT JOIN users u ON m.user_id = u.id 
+    LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id 
+        AND (
+            (m.user_id IS NOT NULL AND m.user_id = cu.user_id) OR 
+            (m.user_id IS NULL AND m.guest_name = cu.guest_name) OR
+            (m.user_id IS NULL AND m.user_id_string = cu.user_id_string)
+        )
+    LEFT JOIN messages rm ON m.reply_to_message_id = rm.id
+    LEFT JOIN users ru ON rm.user_id = ru.id
+    LEFT JOIN chatroom_users rcu ON rm.room_id = rcu.room_id 
+        AND (
+            (rm.user_id IS NOT NULL AND rm.user_id = rcu.user_id) OR 
+            (rm.user_id IS NULL AND rm.guest_name = rcu.guest_name) OR
+            (rm.user_id IS NULL AND rm.user_id_string = rcu.user_id_string)
+        )
+    WHERE m.room_id = ? 
+    ORDER BY m.id DESC 
+    LIMIT ?
+");
                 $messages_stmt->bind_param("ii", $room_id, $message_limit);
                 $messages_stmt->execute();
                 $messages_result = $messages_stmt->get_result();
@@ -127,15 +131,15 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
             // MENTIONS
             if (in_array('mention', $event_types)) {
                 $mentions_stmt = $conn->prepare("
-                    SELECT um.*, m.message, m.timestamp, m.user_id_string as sender_user_id_string,
-                           u.username as sender_username, cu.guest_name as sender_guest_name
-                    FROM user_mentions um
-                    JOIN messages m ON um.message_id = m.id
-                    LEFT JOIN users u ON m.user_id = u.id
-                    LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id AND m.user_id_string = cu.user_id_string
-                    WHERE um.room_id = ? AND um.mentioned_user_id_string = ? AND um.is_read = 0
-                    ORDER BY um.created_at DESC
-                ");
+    SELECT um.*, m.message, UNIX_TIMESTAMP(m.timestamp) * 1000 as timestamp, m.user_id_string as sender_user_id_string,
+           u.username as sender_username, cu.guest_name as sender_guest_name
+    FROM user_mentions um
+    JOIN messages m ON um.message_id = m.id
+    LEFT JOIN users u ON m.user_id = u.id
+    LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id AND m.user_id_string = cu.user_id_string
+    WHERE um.room_id = ? AND um.mentioned_user_id_string = ? AND um.is_read = 0
+    ORDER BY um.created_at DESC
+");
                 $mentions_stmt->bind_param("is", $room_id, $user_id_string);
                 $mentions_stmt->execute();
                 $mentions_result = $mentions_stmt->get_result();
@@ -193,51 +197,67 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
             }
             
             // PRIVATE MESSAGES
-            if (in_array('private_message', $event_types) && $user_id) {
-                $pm_stmt = $conn->prepare("
-                    SELECT DISTINCT 
-                        CASE WHEN sender_id = ? THEN recipient_id ELSE sender_id END as other_user_id
-                    FROM private_messages 
-                    WHERE sender_id = ? OR recipient_id = ?
-                ");
-                $pm_stmt->bind_param("iii", $user_id, $user_id, $user_id);
-                $pm_stmt->execute();
-                $pm_result = $pm_stmt->get_result();
-                
-                $pms = [];
-                while ($row = $pm_result->fetch_assoc()) {
-                    $other_user_id = $row['other_user_id'];
-                    
-                    $user_stmt = $conn->prepare("SELECT username, avatar FROM users WHERE id = ?");
-                    $user_stmt->bind_param("i", $other_user_id);
-                    $user_stmt->execute();
-                    $user_result = $user_stmt->get_result();
-                    
-                    if ($user_result->num_rows > 0) {
-                        $user_data = $user_result->fetch_assoc();
-                        
-                        $count_stmt = $conn->prepare("
-                            SELECT COUNT(*) as count FROM private_messages 
-                            WHERE sender_id = ? AND recipient_id = ? AND is_read = 0
-                        ");
-                        $count_stmt->bind_param("ii", $other_user_id, $user_id);
-                        $count_stmt->execute();
-                        $count_result = $count_stmt->get_result();
-                        $unread_count = $count_result->fetch_assoc()['count'];
-                        $count_stmt->close();
-                        
-                        $pms[] = [
-                            'other_user_id' => $other_user_id,
-                            'username' => $user_data['username'],
-                            'avatar' => $user_data['avatar'],
-                            'unread_count' => (int)$unread_count
-                        ];
-                    }
-                    $user_stmt->close();
-                }
-                $pm_stmt->close();
-                $all_data['private_messages'] = ['status' => 'success', 'conversations' => $pms];
-            }
+if (in_array('private_message', $event_types) && $user_id) {
+    $pm_stmt = $conn->prepare("
+        SELECT DISTINCT 
+            CASE WHEN sender_id = ? THEN recipient_id ELSE sender_id END as other_user_id
+        FROM private_messages 
+        WHERE sender_id = ? OR recipient_id = ?
+    ");
+    $pm_stmt->bind_param("iii", $user_id, $user_id, $user_id);
+    $pm_stmt->execute();
+    $pm_result = $pm_stmt->get_result();
+    
+    $pms = [];
+    while ($row = $pm_result->fetch_assoc()) {
+        $other_user_id = $row['other_user_id'];
+        
+        $user_stmt = $conn->prepare("SELECT username, avatar, avatar_hue, avatar_saturation FROM users WHERE id = ?");
+        $user_stmt->bind_param("i", $other_user_id);
+        $user_stmt->execute();
+        $user_result = $user_stmt->get_result();
+        
+        if ($user_result->num_rows > 0) {
+            $user_data = $user_result->fetch_assoc();
+            
+            // Get last message
+            $last_msg_stmt = $conn->prepare("
+                SELECT message FROM private_messages 
+                WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)
+                ORDER BY created_at DESC LIMIT 1
+            ");
+            $last_msg_stmt->bind_param("iiii", $user_id, $other_user_id, $other_user_id, $user_id);
+            $last_msg_stmt->execute();
+            $last_msg_result = $last_msg_stmt->get_result();
+            $last_message = $last_msg_result->num_rows > 0 ? $last_msg_result->fetch_assoc()['message'] : null;
+            $last_msg_stmt->close();
+            
+            // Get unread count
+            $count_stmt = $conn->prepare("
+                SELECT COUNT(*) as count FROM private_messages 
+                WHERE sender_id = ? AND recipient_id = ? AND is_read = 0
+            ");
+            $count_stmt->bind_param("ii", $other_user_id, $user_id);
+            $count_stmt->execute();
+            $count_result = $count_stmt->get_result();
+            $unread_count = $count_result->fetch_assoc()['count'];
+            $count_stmt->close();
+            
+            $pms[] = [
+                'other_user_id' => $other_user_id,
+                'username' => $user_data['username'],
+                'avatar' => $user_data['avatar'],
+                'avatar_hue' => (int)($user_data['avatar_hue'] ?? 0),
+                'avatar_saturation' => (int)($user_data['avatar_saturation'] ?? 100),
+                'last_message' => $last_message,
+                'unread_count' => (int)$unread_count
+            ];
+        }
+        $user_stmt->close();
+    }
+    $pm_stmt->close();
+    $all_data['private_messages'] = ['status' => 'success', 'conversations' => $pms];
+}
             
             // FRIENDS
             if (in_array('friend', $event_types) && $user_id) {

@@ -19,6 +19,7 @@ try {
         SELECT 
             c.id,
             c.host_user_id_string,
+            c.permanent,
             (SELECT COUNT(*) FROM chatroom_users WHERE room_id = c.id AND is_host = 1) as host_count,
             (SELECT COUNT(*) FROM chatroom_users WHERE room_id = c.id) as total_users
         FROM chatrooms c 
@@ -30,6 +31,7 @@ try {
     
     if ($host_result->num_rows > 0) {
         $host_data = $host_result->fetch_assoc();
+        $is_permanent = (bool)($host_data['permanent'] ?? 0);
         
         // Check if host reassignment is needed
         $needs_new_host = false;
@@ -61,8 +63,8 @@ try {
             }
         }
         
-        // Perform host reassignment if needed
-        if ($needs_new_host && $host_data['total_users'] > 0) {
+        // Perform host reassignment if needed AND room is not permanent
+        if ($needs_new_host && $host_data['total_users'] > 0 && !$is_permanent) {
             error_log("FAILSAFE: Room $room_id needs new host (reason: $reassignment_reason)");
             
             $conn->begin_transaction();
@@ -122,6 +124,8 @@ try {
                 $conn->rollback();
                 error_log("FAILSAFE: Failed to reassign host: " . $e->getMessage());
             }
+        } elseif ($needs_new_host && $is_permanent) {
+            error_log("FAILSAFE: Room $room_id needs new host but skipping auto-assignment (permanent room)");
         }
     }
     $host_check->close();
