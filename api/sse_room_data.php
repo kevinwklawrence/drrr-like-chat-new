@@ -12,6 +12,7 @@ if (!isset($_SESSION['user']) || !isset($_SESSION['room_id'])) {
 }
 
 include '../db_connect.php';
+require_once __DIR__ . '/../config/inactivity_config.php';
 
 $room_id = (int)$_SESSION['room_id'];
 $user_id_string = $_SESSION['user']['user_id'] ?? '';
@@ -48,198 +49,49 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
     
     try {
         // 1. MESSAGES
-        $select_fields = ['m.id', 'm.user_id', 'm.guest_name', 'm.message', 'm.avatar', 'm.type', 'm.timestamp'];
-        if (in_array('color', $msg_columns)) $select_fields[] = 'm.color';
-        if (in_array('avatar_hue', $msg_columns)) $select_fields[] = 'm.avatar_hue';
-        if (in_array('avatar_saturation', $msg_columns)) $select_fields[] = 'm.avatar_saturation';
-        if (in_array('bubble_hue', $msg_columns)) $select_fields[] = 'm.bubble_hue';
-        if (in_array('bubble_saturation', $msg_columns)) $select_fields[] = 'm.bubble_saturation';
-        if (in_array('user_id_string', $msg_columns)) $select_fields[] = 'm.user_id_string';
-        if (in_array('reply_to_message_id', $msg_columns)) $select_fields[] = 'm.reply_to_message_id';
-        if (in_array('mentions', $msg_columns)) $select_fields[] = 'm.mentions';
-        if (in_array('username', $users_columns)) $select_fields[] = 'u.username';
-        if (in_array('is_admin', $users_columns)) $select_fields[] = 'u.is_admin';
-        if (in_array('is_moderator', $users_columns)) $select_fields[] = 'u.is_moderator';
-        if (in_array('ip_address', $cu_columns)) $select_fields[] = 'cu.ip_address';
-        if (in_array('is_host', $cu_columns)) $select_fields[] = 'cu.is_host';
-        if (in_array('guest_avatar', $cu_columns)) $select_fields[] = 'cu.guest_avatar';
-        if (in_array('user_id_string', $cu_columns)) $select_fields[] = 'cu.user_id_string';
-        
-        $reply_fields = [];
-        if (in_array('reply_to_message_id', $msg_columns)) {
-            $reply_fields = [
-                'rm.color as reply_original_color', 'rm.id as reply_original_id',
-                'rm.message as reply_original_message', 'rm.user_id_string as reply_original_user_id_string',
-                'rm.guest_name as reply_original_guest_name', 'rm.avatar as reply_original_avatar',
-                'rm.avatar_hue as reply_original_avatar_hue', 'rm.avatar_saturation as reply_original_avatar_saturation',
-                'rm.bubble_hue as reply_original_bubble_hue', 'rm.bubble_saturation as reply_original_bubble_saturation',
-                'ru.username as reply_original_registered_username', 'ru.avatar as reply_original_registered_avatar',
-                'rcu.username as reply_original_chatroom_username'
-            ];
-            $select_fields = array_merge($select_fields, $reply_fields);
-        }
-        
-        $msg_sql = "SELECT " . implode(', ', $select_fields) . "
-            FROM messages m 
-            LEFT JOIN users u ON m.user_id = u.id 
-            LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id 
-                AND ((m.user_id IS NOT NULL AND m.user_id = cu.user_id) OR 
-                     (m.user_id IS NULL AND m.guest_name = cu.guest_name) OR
-                     (m.user_id IS NULL AND m.user_id_string = cu.user_id_string))";
-        
-        if (in_array('reply_to_message_id', $msg_columns)) {
-            $msg_sql .= " LEFT JOIN messages rm ON m.reply_to_message_id = rm.id
-                         LEFT JOIN users ru ON rm.user_id = ru.id
-                         LEFT JOIN chatroom_users rcu ON rm.room_id = rcu.room_id 
-                            AND ((rm.user_id IS NOT NULL AND rm.user_id = rcu.user_id) OR 
-                                 (rm.user_id IS NULL AND rm.guest_name = rcu.guest_name) OR
-                                 (rm.user_id IS NULL AND rm.user_id_string = rcu.user_id_string))";
-        }
-        
-        $msg_sql .= " WHERE m.room_id = ? ORDER BY m.timestamp DESC LIMIT ? OFFSET 0";
-        
-        $msg_stmt = $conn->prepare($msg_sql);
-        $msg_stmt->bind_param("ii", $room_id, $message_limit);
-        $msg_stmt->execute();
-        $msg_result = $msg_stmt->get_result();
-        
+        $messages_stmt = $conn->prepare("SELECT * FROM messages WHERE room_id = ? ORDER BY id DESC LIMIT ?");
+        $messages_stmt->bind_param("ii", $room_id, $message_limit);
+        $messages_stmt->execute();
+        $messages_result = $messages_stmt->get_result();
         $messages = [];
-        while ($row = $msg_result->fetch_assoc()) {
-            $message_data = [
-                'id' => $row['id'],
-                'user_id' => $row['user_id'],
-                'guest_name' => $row['guest_name'],
-                'message' => $row['message'],
-                'avatar' => $row['avatar'],
-                'type' => $row['type'],
-                'timestamp' => $row['timestamp'],
-                'color' => $row['color'] ?? 'blue',
-                'avatar_hue' => (int)($row['avatar_hue'] ?? 0),
-                'avatar_saturation' => (int)($row['avatar_saturation'] ?? 100),
-                'bubble_hue' => (int)($row['bubble_hue'] ?? 0),
-                'bubble_saturation' => (int)($row['bubble_saturation'] ?? 100),
-                'username' => $row['username'] ?? null,
-                'is_admin' => $row['is_admin'] ?? false,
-                'is_moderator' => $row['is_moderator'] ?? false,
-                'ip_address' => $row['ip_address'] ?? null,
-                'is_host' => $row['is_host'] ?? false,
-                'guest_avatar' => $row['guest_avatar'] ?? null,
-                'user_id_string' => $row['user_id_string'] ?? null
-            ];
-            
-            if (in_array('reply_to_message_id', $msg_columns) && !empty($row['reply_to_message_id'])) {
-                $message_data['reply_to_message_id'] = $row['reply_to_message_id'];
-                $message_data['reply_original_color'] = $row['reply_original_color'] ?? null;
-                $message_data['reply_original_id'] = $row['reply_original_id'] ?? null;
-                $message_data['reply_original_message'] = $row['reply_original_message'] ?? null;
-                $message_data['reply_original_user_id_string'] = $row['reply_original_user_id_string'] ?? null;
-                $message_data['reply_original_guest_name'] = $row['reply_original_guest_name'] ?? null;
-                $message_data['reply_original_avatar'] = $row['reply_original_avatar'] ?? null;
-                $message_data['reply_original_avatar_hue'] = $row['reply_original_avatar_hue'] ?? 0;
-                $message_data['reply_original_avatar_saturation'] = $row['reply_original_avatar_saturation'] ?? 100;
-                $message_data['reply_original_bubble_hue'] = $row['reply_original_bubble_hue'] ?? 0;
-                $message_data['reply_original_bubble_saturation'] = $row['reply_original_bubble_saturation'] ?? 100;
-                $message_data['reply_original_username'] = $row['reply_original_registered_username'] ?? ($row['reply_original_chatroom_username'] ?? null);
-            }
-            
-            if (in_array('mentions', $msg_columns)) {
-                $message_data['mentions'] = $row['mentions'];
-            }
-            
-            $messages[] = $message_data;
-        }
-        $msg_stmt->close();
-        $all_data['messages'] = ['status' => 'success', 'messages' => $messages];
+        while ($msg = $messages_result->fetch_assoc()) { $messages[] = $msg; }
+        $messages_stmt->close();
+        $all_data['messages'] = ['status' => 'success', 'messages' => array_reverse($messages)];
         
         // 2. USERS
-        $user_fields = ['cu.user_id', 'cu.user_id_string', 'cu.guest_name', 'cu.avatar as guest_avatar', 'cu.is_host', 'cu.last_activity'];
-        if (in_array('is_afk', $cu_columns)) $user_fields[] = 'cu.is_afk'; else $user_fields[] = '0 as is_afk';
-        if (in_array('manual_afk', $cu_columns)) $user_fields[] = 'cu.manual_afk'; else $user_fields[] = '0 as manual_afk';
-        if (in_array('afk_since', $cu_columns)) $user_fields[] = 'cu.afk_since'; else $user_fields[] = 'NULL as afk_since';
-        if (in_array('username', $cu_columns)) $user_fields[] = 'cu.username'; else $user_fields[] = 'NULL as cu_username';
-        if (in_array('avatar_hue', $cu_columns)) $user_fields[] = 'cu.avatar_hue'; else $user_fields[] = '0 as avatar_hue';
-        if (in_array('avatar_saturation', $cu_columns)) $user_fields[] = 'cu.avatar_saturation'; else $user_fields[] = '100 as avatar_saturation';
-        if (in_array('color', $cu_columns)) $user_fields[] = 'cu.color'; else $user_fields[] = "'blue' as color";
-        if (in_array('username', $users_columns)) $user_fields[] = 'u.username as registered_username'; else $user_fields[] = 'NULL as registered_username';
-        if (in_array('avatar', $users_columns)) $user_fields[] = 'u.avatar as registered_avatar'; else $user_fields[] = 'NULL as registered_avatar';
-        if (in_array('is_admin', $users_columns)) $user_fields[] = 'u.is_admin'; else $user_fields[] = '0 as is_admin';
-        if (in_array('is_moderator', $users_columns)) $user_fields[] = 'u.is_moderator'; else $user_fields[] = '0 as is_moderator';
-        
-        $users_sql = "SELECT " . implode(', ', $user_fields) . " FROM chatroom_users cu LEFT JOIN users u ON cu.user_id = u.id WHERE cu.room_id = ?";
-        $users_stmt = $conn->prepare($users_sql);
+        $users_stmt = $conn->prepare("SELECT * FROM chatroom_users WHERE room_id = ? ORDER BY is_host DESC, joined_at ASC");
         $users_stmt->bind_param("i", $room_id);
         $users_stmt->execute();
         $users_result = $users_stmt->get_result();
-        
         $users = [];
-        while ($row = $users_result->fetch_assoc()) {
-            $display_name = $row['registered_username'] ?: ($row['cu_username'] ?: ($row['guest_name'] ?: 'Unknown'));
-            $avatar = $row['registered_avatar'] ?: ($row['guest_avatar'] ?: 'default_avatar.jpg');
-            
-            $users[] = [
-                'user_id' => $row['user_id'],
-                'user_id_string' => $row['user_id_string'],
-                'guest_name' => $row['guest_name'],
-                'username' => $row['registered_username'],
-                'display_name' => $display_name,
-                'avatar' => $avatar,
-                'is_host' => (bool)$row['is_host'],
-                'is_afk' => (bool)$row['is_afk'],
-                'manual_afk' => (bool)$row['manual_afk'],
-                'afk_since' => $row['afk_since'],
-                'last_activity' => $row['last_activity'],
-                'avatar_hue' => (int)$row['avatar_hue'],
-                'avatar_saturation' => (int)$row['avatar_saturation'],
-                'color' => $row['color'],
-                'is_admin' => (bool)$row['is_admin'],
-                'is_moderator' => (bool)$row['is_moderator']
-            ];
-        }
+        while ($user = $users_result->fetch_assoc()) { $users[] = $user; }
         $users_stmt->close();
         $all_data['users'] = $users;
         
-        // 3. MENTIONS
-        $mentions_stmt = $conn->prepare("
-            SELECT um.id, um.message_id, um.mention_type, um.created_at, m.message, m.timestamp as message_timestamp,
-                   m.user_id_string as sender_user_id_string, m.username as sender_username, m.guest_name as sender_guest_name,
-                   m.avatar as sender_avatar, u.username as sender_registered_username, u.avatar as sender_registered_avatar
-            FROM user_mentions um
-            LEFT JOIN messages m ON um.message_id = m.id
-            LEFT JOIN users u ON m.user_id = u.id
-            WHERE um.room_id = ? AND um.mentioned_user_id_string = ? AND um.is_read = FALSE
-            ORDER BY um.created_at DESC LIMIT 10
-        ");
-        
-        if ($mentions_stmt) {
-            $mentions_stmt->bind_param("is", $room_id, $user_id_string);
+        // 3. MENTIONS (only for registered users)
+        if ($user_type === 'user' && $user_id) {
+            $mentions_stmt = $conn->prepare("
+                SELECT m.*, u.username, u.avatar, u.avatar_hue, u.avatar_saturation 
+                FROM user_mentions m
+                JOIN users u ON m.sender_id = u.id
+                WHERE m.recipient_id = ? AND m.is_read = 0
+                ORDER BY m.created_at DESC LIMIT 50
+            ");
+            $mentions_stmt->bind_param("i", $user_id);
             $mentions_stmt->execute();
             $mentions_result = $mentions_stmt->get_result();
-            
             $mentions = [];
-            while ($row = $mentions_result->fetch_assoc()) {
-                $sender_name = $row['sender_registered_username'] ?: ($row['sender_username'] ?: ($row['sender_guest_name'] ?: 'Unknown'));
-                $sender_avatar = $row['sender_registered_avatar'] ?: ($row['sender_avatar'] ?: 'default_avatar.jpg');
-                
-                $mentions[] = [
-                    'id' => $row['id'],
-                    'message_id' => $row['message_id'],
-                    'type' => $row['mention_type'],
-                    'message' => $row['message'],
-                    'sender_name' => $sender_name,
-                    'sender_avatar' => $sender_avatar,
-                    'sender_user_id_string' => $row['sender_user_id_string'],
-                    'timestamp' => $row['message_timestamp'],
-                    'created_at' => $row['created_at']
-                ];
-            }
+            while ($mention = $mentions_result->fetch_assoc()) { $mentions[] = $mention; }
             $mentions_stmt->close();
-            $all_data['mentions'] = ['status' => 'success', 'mentions' => $mentions, 'unread_count' => count($mentions)];
+            $all_data['mentions'] = ['status' => 'success', 'mentions' => $mentions];
         }
         
-        // 4. WHISPERS (ROOM WHISPERS)
+        // 4. WHISPERS (room whispers)
         $whispers_stmt = $conn->prepare("
-            SELECT DISTINCT CASE WHEN sender_user_id_string = ? THEN recipient_user_id_string ELSE sender_user_id_string END as other_user_id_string
-            FROM room_whispers WHERE room_id = ? AND (sender_user_id_string = ? OR recipient_user_id_string = ?)
+            SELECT DISTINCT 
+                CASE WHEN sender_user_id_string = ? THEN recipient_user_id_string ELSE sender_user_id_string END as other_user_id_string
+            FROM room_whispers 
+            WHERE room_id = ? AND (sender_user_id_string = ? OR recipient_user_id_string = ?)
         ");
         $whispers_stmt->bind_param("siss", $user_id_string, $room_id, $user_id_string, $user_id_string);
         $whispers_stmt->execute();
@@ -345,52 +197,31 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
         $room_stmt->bind_param("i", $room_id);
         $room_stmt->execute();
         $room_result = $room_stmt->get_result();
-        
-        if ($room_result->num_rows > 0) {
-            $room_data = $room_result->fetch_assoc();
-            $all_data['room_data'] = [
-                'id' => $room_data['id'],
-                'name' => $room_data['name'],
-                'description' => $room_data['description'],
-                'capacity' => $room_data['capacity'],
-                'background' => $room_data['background'],
-                'theme' => $room_data['theme'] ?? 'default',
-                'has_password' => (bool)$room_data['has_password'],
-                'youtube_enabled' => (bool)($room_data['youtube_enabled'] ?? false),
-                'disappearing_messages' => (bool)($room_data['disappearing_messages'] ?? false),
-                'message_lifetime_minutes' => (int)($room_data['message_lifetime_minutes'] ?? 0),
-                'host_user_id_string' => $room_data['host_user_id_string'] ?? ''
-            ];
-        }
+        $room_data = $room_result->num_rows > 0 ? $room_result->fetch_assoc() : null;
         $room_stmt->close();
+        if ($room_data) {
+            $all_data['room_data'] = ['status' => 'success', 'room' => $room_data];
+        }
         
         // 8. KNOCKS (only for hosts)
-        $knocks_stmt = $conn->prepare("
-            SELECT rk.*, c.name as room_name 
-            FROM room_knocks rk 
-            JOIN chatrooms c ON rk.room_id = c.id 
-            JOIN chatroom_users cu ON c.id = cu.room_id 
-            WHERE cu.user_id_string = ? 
-            AND cu.is_host = 1 
-            AND rk.status = 'pending'
-            AND rk.created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)
-            ORDER BY rk.created_at DESC
-        ");
+        $is_host_stmt = $conn->prepare("SELECT is_host FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");
+        $is_host_stmt->bind_param("is", $room_id, $user_id_string);
+        $is_host_stmt->execute();
+        $is_host_result = $is_host_stmt->get_result();
+        $is_host = ($is_host_result->num_rows > 0 && $is_host_result->fetch_assoc()['is_host'] == 1);
+        $is_host_stmt->close();
         
-        if ($knocks_stmt) {
-            $knocks_stmt->bind_param("s", $user_id_string);
+        if ($is_host) {
+            $knocks_stmt = $conn->prepare("SELECT k.*, COALESCE(u.username, k.guest_name) as display_name, COALESCE(u.avatar, k.guest_avatar, 'default_avatar.jpg') as avatar FROM room_knocks k LEFT JOIN users u ON k.user_id = u.id WHERE k.room_id = ? AND k.status = 'pending' ORDER BY k.created_at DESC");
+            $knocks_stmt->bind_param("i", $room_id);
             $knocks_stmt->execute();
             $knocks_result = $knocks_stmt->get_result();
-            
             $knocks = [];
             while ($row = $knocks_result->fetch_assoc()) {
                 $knocks[] = [
-                    'id' => (int)$row['id'],
-                    'room_id' => (int)$row['room_id'],
-                    'room_name' => $row['room_name'],
+                    'id' => $row['id'],
                     'user_id_string' => $row['user_id_string'],
-                    'username' => $row['username'],
-                    'guest_name' => $row['guest_name'],
+                    'display_name' => $row['display_name'],
                     'avatar' => $row['avatar'] ?: 'default_avatar.jpg',
                     'created_at' => $row['created_at']
                 ];
@@ -444,6 +275,66 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
             }
             $yt_stmt->close();
         }
+        
+        // 10. ROOM SETTINGS CHECK
+        $settings_stmt = $conn->prepare("
+            SELECT id, UNIX_TIMESTAMP(created_at) as timestamp
+            FROM room_events 
+            WHERE room_id = ? 
+            AND event_type = 'settings_update' 
+            AND created_at > DATE_SUB(NOW(), INTERVAL 5 SECOND)
+            ORDER BY created_at DESC
+            LIMIT 1
+        ");
+        $settings_stmt->bind_param("i", $room_id);
+        $settings_stmt->execute();
+        $settings_result = $settings_stmt->get_result();
+        
+        if ($settings_result->num_rows > 0) {
+            $event = $settings_result->fetch_assoc();
+            $all_data['settings_check'] = [
+                'status' => 'success',
+                'settings_changed' => true,
+                'event_id' => $event['id'],
+                'timestamp' => $event['timestamp']
+            ];
+        } else {
+            $all_data['settings_check'] = [
+                'status' => 'success',
+                'settings_changed' => false
+            ];
+        }
+        $settings_stmt->close();
+        
+        // 11. INACTIVITY STATUS
+        $inactivity_stmt = $conn->prepare("
+            SELECT cu.inactivity_seconds, cu.is_host, c.youtube_enabled 
+            FROM chatroom_users cu 
+            JOIN chatrooms c ON cu.room_id = c.id 
+            WHERE cu.room_id = ? AND cu.user_id_string = ?
+        ");
+        $inactivity_stmt->bind_param("is", $room_id, $user_id_string);
+        $inactivity_stmt->execute();
+        $inactivity_result = $inactivity_stmt->get_result();
+        
+        if ($inactivity_result->num_rows > 0) {
+            $data = $inactivity_result->fetch_assoc();
+            $timeout = getDisconnectTimeout($room_id, $data['is_host'], $conn);
+            
+            $all_data['inactivity_status'] = [
+                'status' => 'success',
+                'seconds' => (int)$data['inactivity_seconds'],
+                'timeout' => $timeout,
+                'is_host' => (bool)$data['is_host'],
+                'youtube_enabled' => (bool)$data['youtube_enabled']
+            ];
+        } else {
+            $all_data['inactivity_status'] = [
+                'status' => 'error',
+                'message' => 'User not found'
+            ];
+        }
+        $inactivity_stmt->close();
         
     } catch (Exception $e) {
         error_log("SSE Error: " . $e->getMessage());

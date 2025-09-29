@@ -98,6 +98,10 @@ let sseReconnectDelay = 2000;
 let sseConnected = false;
 let sseEnabled = true; // Master switch for SSE (set to false to use Ajax only)
 let sseLastMessageTimestamp = 0;
+let privateMessageConversations = [];
+let whisperConversations = [];
+
+
 
 let sseFeatures = {
     messages: true,         // ✅ Using SSE
@@ -108,7 +112,9 @@ let sseFeatures = {
     friends: true,          // ✅ Using SSE
     room_data: true,        // ✅ Using SSE
     knocks: true,           // ✅ Using SSE
-    youtube: false          // ⏸️ Still using Ajax
+    youtube: false,         // ⏸️ Still using Ajax
+    settings_check: true,   // ✅ Using SSE (NEW)
+    inactivity_status: true // ✅ Using SSE (NEW)
 };
 
 
@@ -344,6 +350,16 @@ function handleSSEData(data) {
             if (data.youtube && sseFeatures.youtube) {
                 handleYouTubeResponse(data.youtube);
             }
+            
+            // NEW: Handle settings check
+            if (data.settings_check && sseFeatures.settings_check) {
+                handleSettingsCheckResponse(data.settings_check);
+            }
+            
+            // NEW: Handle inactivity status
+            if (data.inactivity_status && sseFeatures.inactivity_status) {
+                handleInactivityStatusResponse(data.inactivity_status);
+            }
             break;
             
         case 'heartbeat':
@@ -509,7 +525,8 @@ function fetchAllRoomData() {
         debugLog('⏭️ Skipping private messages Ajax (using SSE)');
     }
 
-    // 7. ROOM SETTINGS CHECK - Still using Ajax
+    // 7. ROOM SETTINGS CHECK - Skip if using SSE
+if (!sseFeatures.settings_check || !sseConnected) {
     promises.push(
         managedAjax({
             url: 'api/check_room_settings.php',
@@ -517,21 +534,14 @@ function fetchAllRoomData() {
             data: { room_id: roomId },
             dataType: 'json'
         }).then(response => {
-            if (response.status === 'success' && response.settings_changed && response.event_id) {
-                const processedKey = `settings_event_${roomId}_${response.event_id}`;
-                
-                if (!sessionStorage.getItem(processedKey)) {
-                    sessionStorage.setItem(processedKey, 'true');
-                    showToast('Room settings have been updated. Refreshing...', 'info');
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
-                }
-            }
+            handleSettingsCheckResponse(response);
         }).catch(error => {
             console.error('Settings check error:', error);
         })
     );
+} else {
+    debugLog('⏭️ Skipping settings check Ajax (using SSE)');
+}
 
     // 8. INDIVIDUAL PRIVATE MESSAGE UPDATES - Still using Ajax for open chats
     if (currentUser.type === 'user' && openPrivateChats.size > 0) {
@@ -597,6 +607,20 @@ function fetchAllRoomData() {
     }
     
     return Promise.allSettled(promises);
+}
+
+function handleSettingsCheckResponse(data) {
+    if (data.status === 'success' && data.settings_changed && data.event_id) {
+        const processedKey = `settings_event_${roomId}_${data.event_id}`;
+        
+        if (!sessionStorage.getItem(processedKey)) {
+            sessionStorage.setItem(processedKey, 'true');
+            showToast('Room settings have been updated. Refreshing...', 'info');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        }
+    }
 }
 
 function handleKnocksResponse(knocks) {
@@ -687,9 +711,12 @@ function handleMentionsResponse(response) {
     }
 }
 
-function handleWhispersResponse(response) {
-    if (response.status === 'success') {
-        response.conversations.forEach(conv => {
+function handleWhispersResponse(data) {
+    if (data.status === 'success') {
+        whisperConversations = data.conversations || [];
+        
+        // Update unread badges for open whispers
+        whisperConversations.forEach(conv => {
             const userIdString = conv.other_user_id_string;
             
             if (conv.unread_count > 0 && !openWhispers.has(userIdString)) {
@@ -778,12 +805,10 @@ function handleFriendsResponse(response) {
     }
 }
 
-function handleConversationsResponse(response) {
-    if (response.status === 'success') {
-        // Only update the display if the friends panel is visible
-        if ($('#friendsPanel').is(':visible')) {
-            displayConversations(response.conversations);
-        }
+function handleConversationsResponse(data) {
+    if (data.status === 'success') {
+        privateMessageConversations = data.conversations || [];
+        displayConversations(privateMessageConversations);
     }
 }
 
@@ -3606,53 +3631,85 @@ function markWhisperAsRead(userIdString) {
 }
 
 function checkForNewWhispers() {
-    managedAjax({
-        url: 'api/room_whispers.php',
-        method: 'GET',
-        data: { action: 'get_conversations' },
-        dataType: 'json',
-        success: function(response) {
-            if (response.status === 'success') {
-                response.conversations.forEach(conv => {
-                    const userIdString = conv.other_user_id_string;
-                    
-                    if (conv.unread_count > 0 && !openWhispers.has(userIdString)) {
-                        const displayName = conv.username || conv.guest_name || 'Unknown';
-                        openWhisper(userIdString, displayName);
-                    }
-                    
-                    if (openWhispers.has(userIdString)) {
-                        const data = openWhispers.get(userIdString);
-                        data.unreadCount = conv.unread_count;
-                        openWhispers.set(userIdString, data);
-                        
-                        const unreadElement = $(`#whisper-unread-${data.safeId}`);
-                        if (conv.unread_count > 0) {
-                            unreadElement.text(conv.unread_count).show();
-                        } else {
-                            unreadElement.hide();
-                        }
-                    }
-                });
+    // Use cached SSE data if available and SSE is connected
+    if (sseConnected && whisperConversations.length >= 0) {
+        debugLog('✅ Using cached whisper conversations from SSE');
+        
+        // Update unread badges using cached data
+        whisperConversations.forEach(conv => {
+            const userIdString = conv.other_user_id_string;
+            
+            if (conv.unread_count > 0 && !openWhispers.has(userIdString)) {
+                const displayName = conv.username || conv.guest_name || 'Unknown';
+                openWhisper(userIdString, displayName);
             }
-        },
-        error: function() {
-            // Silently fail
+            
+            if (openWhispers.has(userIdString)) {
+                const data = openWhispers.get(userIdString);
+                data.unreadCount = conv.unread_count;
+                openWhispers.set(userIdString, data);
+                
+                const unreadElement = $(`#whisper-unread-${data.safeId}`);
+                if (conv.unread_count > 0) {
+                    unreadElement.text(conv.unread_count).show();
+                } else {
+                    unreadElement.hide();
+                }
+            }
+        });
+        
+        return;
+    }
+    
+    // Only make AJAX call if SSE is not connected
+    if (!sseEnabled || !sseConnected) {
+        debugLog('⚠️ SSE not connected, falling back to AJAX for whisper conversations');
+        managedAjax({
+            url: 'api/room_whispers.php',
+            method: 'GET',
+            data: { action: 'get_conversations' },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    response.conversations.forEach(conv => {
+                        const userIdString = conv.other_user_id_string;
+                        
+                        if (conv.unread_count > 0 && !openWhispers.has(userIdString)) {
+                            const displayName = conv.username || conv.guest_name || 'Unknown';
+                            openWhisper(userIdString, displayName);
+                        }
+                        
+                        if (openWhispers.has(userIdString)) {
+                            const data = openWhispers.get(userIdString);
+                            data.unreadCount = conv.unread_count;
+                            openWhispers.set(userIdString, data);
+                            
+                            const unreadElement = $(`#whisper-unread-${data.safeId}`);
+                            if (conv.unread_count > 0) {
+                                unreadElement.text(conv.unread_count).show();
+                            } else {
+                                unreadElement.hide();
+                            }
+                        }
+                    });
+                }
+            },
+            error: function() {
+                // Silently fail
+            }
+        });
+    }
+    
+    // Update individual whisper windows
+    openWhispers.forEach((data, userIdString) => {
+        const safeId = data.safeId;
+        const input = $(`#whisper-input-${safeId}`);
+        
+        // Only update if user is not actively typing
+        if (!input.is(':focus') || input.val().length === 0) {
+            // Individual messages handled by loadWhisperMessages
         }
     });
-    
-    openWhispers.forEach((data, userIdString) => {
-    const safeId = data.safeId;
-    const input = $(`#whisper-input-${safeId}`);
-    
-    // Only update if user is not actively typing in this specific whisper
-    if (!input.is(':focus') || input.val().length === 0) {
-        // This will be handled by fetchAllRoomData, no need for individual calls
-    }
-});
-if ($('#friendsPanel').is(':visible')) {
-    // This will be handled by fetchAllRoomData
-}
 }
 
 
@@ -4147,22 +4204,37 @@ function acceptFriend(friendId) {
 
 function loadConversations() {
     debugLog('Loading conversations...');
-    managedAjax({
-        url: 'api/private_messages.php',
-        method: 'GET',
-        data: { action: 'get_conversations' },
-        dataType: 'json'
-    }).then(response => {
-        debugLog('Conversations response:', response);
-        if (response.status === 'success') {
-            displayConversations(response.conversations);
-        } else {
-            $('#conversationsList').html('<p class="text-danger small">Error loading conversations</p>');
-        }
-    }).catch(error => {
-        console.error('Conversations API error:', error);
-        $('#conversationsList').html('<p class="text-danger small">Failed to load conversations</p>');
-    });
+    
+    // Use cached SSE data if available and SSE is connected
+    if (sseConnected && privateMessageConversations.length > 0) {
+        debugLog('✅ Using cached conversations from SSE:', privateMessageConversations.length);
+        displayConversations(privateMessageConversations);
+        return;
+    }
+    
+    // Only make AJAX call if SSE is not connected or no cached data
+    if (!sseEnabled || !sseConnected) {
+        debugLog('⚠️ SSE not connected, falling back to AJAX for conversations');
+        managedAjax({
+            url: 'api/private_messages.php',
+            method: 'GET',
+            data: { action: 'get_conversations' },
+            dataType: 'json'
+        }).then(response => {
+            debugLog('Conversations response:', response);
+            if (response.status === 'success') {
+                displayConversations(response.conversations);
+            } else {
+                $('#conversationsList').html('<p class="text-danger small">Error loading conversations</p>');
+            }
+        }).catch(error => {
+            console.error('Conversations API error:', error);
+            $('#conversationsList').html('<p class="text-danger small">Failed to load conversations</p>');
+        });
+    } else {
+        debugLog('⏳ Waiting for SSE to populate conversations...');
+        $('#conversationsList').html('<p class="text-muted small">Loading...</p>');
+    }
 }
 
 function displayConversations(conversations) {
