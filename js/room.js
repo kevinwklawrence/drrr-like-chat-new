@@ -1438,10 +1438,28 @@ function renderMessage(msg) {
     }
     
     const userColorClass = getUserColor(msg);
-    const timestamp = new Date(msg.timestamp).toLocaleTimeString([], {
+    const timestamp = (() => {
+    // Check both lowercase and uppercase (SSE sends uppercase, Ajax sends lowercase)
+    const ts = msg.timestamp || msg.TIMESTAMP;
+    
+    if (!ts) {
+        console.warn('Message missing timestamp:', msg);
+        return 'N/A';
+    }
+    
+    // Parse MySQL datetime format (YYYY-MM-DD HH:MM:SS)
+    let date = new Date(ts.replace(' ', 'T'));
+    
+    if (isNaN(date.getTime())) {
+        console.warn('Invalid timestamp format:', ts);
+        return 'N/A';
+    }
+    
+    return date.toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit'
     });
+})();
 
     const isRegisteredUser = msg.user_id && msg.user_id > 0;
     const isCurrentUser = msg.user_id_string === currentUserIdString;

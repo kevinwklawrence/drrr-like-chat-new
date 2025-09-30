@@ -75,6 +75,9 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
                u.username,
                u.is_admin,
                u.is_moderator,
+               cu.ip_address,
+               cu.is_host,
+               cu.guest_avatar,
                (SELECT JSON_ARRAYAGG(
                    JSON_OBJECT(
                        'name', si.name,
@@ -91,6 +94,12 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
                LIMIT 5) as equipped_titles
         FROM messages m
         LEFT JOIN users u ON m.user_id = u.id
+        LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id 
+            AND (
+                (m.user_id IS NOT NULL AND m.user_id = cu.user_id) OR 
+                (m.user_id IS NULL AND m.guest_name = cu.guest_name) OR
+                (m.user_id IS NULL AND m.user_id_string = cu.user_id_string)
+            )
         WHERE m.room_id = ?
         ORDER BY m.id DESC 
         LIMIT ?
@@ -100,6 +109,9 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
     $messages_result = $messages_stmt->get_result();
     $messages = [];
     while ($msg = $messages_result->fetch_assoc()) {
+        // Normalize keys to lowercase
+        $msg = array_change_key_case($msg, CASE_LOWER);
+        
         // Parse equipped titles
         $equipped_titles = [];
         if (!empty($msg['equipped_titles'])) {
@@ -109,6 +121,10 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
             }
         }
         $msg['equipped_titles'] = $equipped_titles;
+        
+        // Ensure ip_address has a value (even if NULL)
+        $msg['ip_address'] = $msg['ip_address'] ?? null;
+        
         $messages[] = $msg;
     }
     $messages_stmt->close();
