@@ -371,6 +371,17 @@ function displayProfileEditor(user) {
                                     <i class="fas fa-palette"></i> Chat Color
                                 </button>
                             </li>
+                            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="shop-tab" data-bs-toggle="tab" data-bs-target="#shop-panel" type="button" role="tab" style="background: transparent; border: none; color: #e0e0e0;" onclick="loadShopItems()">
+                    <i class="fas fa-store"></i> Shop
+                </button>
+            </li>
+             <li class="nav-item" role="presentation">
+                <button class="nav-link" id="inventory-tab" data-bs-toggle="tab" data-bs-target="#inventory-panel" type="button" role="tab" style="background: transparent; border: none; color: #e0e0e0;" onclick="loadInventory()">
+                    <i class="fas fa-box"></i> Inventory
+                </button>
+            </li>
+
                         </ul>
                         
                         <div class="tab-content" id="profileTabsContent">
@@ -614,6 +625,89 @@ function displayProfileEditor(user) {
                                     </div>
                                 </div>
                             </div>
+                            <!-- Shop Panel -->
+                            <div class="tab-pane fade" id="shop-panel" role="tabpanel">
+                                <div class="row g-0">
+                                    <div class="col-12 p-4">
+                                        <h5 class="mb-4" style="color: #e0e0e0;">
+                                            <i class="fas fa-store"></i> Shop
+                                        </h5>
+                                        
+                                        <!-- Currency Display -->
+                                        <div class="row mb-4">
+                                            <div class="col-md-6 mb-3">
+                                                <div class="currency-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 20px; color: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                                                    <div class="d-flex align-items-center justify-content-between">
+                                                        <div>
+                                                            <div style="font-size: 0.9rem; opacity: 0.9;">💎 Dura Balance</div>
+                                                            <div style="font-size: 2rem; font-weight: bold;" id="shopDuraBalance">${currentUser.dura || 0}</div>
+                                                        </div>
+                                                        <i class="fas fa-gem fa-3x" style="opacity: 0.3;"></i>
+                                                    </div>
+                                                    <div class="mt-2" style="font-size: 0.8rem; opacity: 0.8;">
+                                                        <i class="fas fa-clock"></i> Uhhhhhh
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <div class="currency-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 12px; padding: 20px; color: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                                                    <div class="d-flex align-items-center justify-content-between">
+                                                        <div>
+                                                            <div style="font-size: 0.9rem; opacity: 0.9;">🎫 Token Balance</div>
+                                                            <div style="font-size: 2rem; font-weight: bold;" id="shopTokenBalance">${currentUser.tokens || 0}</div>
+                                                        </div>
+                                                        <i class="fas fa-ticket-alt fa-3x" style="opacity: 0.3;"></i>
+                                                    </div>
+                                                    <div class="mt-2" style="font-size: 0.8rem; opacity: 0.8;">
+                                                        <i class="fas fa-clock"></i> Tokens regenerate every 12 hours
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Shop Items -->
+                                        <h6 class="mb-3" style="color: #e0e0e0; border-bottom: 1px solid #555; padding-bottom: 10px;">
+                                            <i class="fas fa-shopping-cart"></i> Available Items
+                                        </h6>
+                                        
+                                        <div class="row" id="shopItemsContainer">
+                                            <!--<div class="text-center py-4">
+                                                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                                <p class="mt-2">Loading shop items...</p>
+                                            </div>-->
+                                        </div>
+
+                                        
+                                        <div class="alert alert-info mt-4" style="background: rgba(23, 162, 184, 0.1); border: 1px solid rgba(23, 162, 184, 0.3); color: #17a2b8;">
+                                            <i class="fas fa-info-circle"></i> <strong>Note:</strong> More items coming soon! Keep collecting Dura and Tokens.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Inventory Panel -->
+                            <div class="tab-pane fade" id="inventory-panel" role="tabpanel">
+                                <div class="row g-0">
+                                    <div class="col-12 p-4">
+                                        <h5 class="mb-4" style="color: #e0e0e0;">
+                                            <i class="fas fa-box"></i> Your Inventory
+                                        </h5>
+                                        
+                                        <div class="alert alert-info mb-4" style="background: rgba(23, 162, 184, 0.1); border: 1px solid rgba(23, 162, 184, 0.3); color: #17a2b8;">
+                                            <i class="fas fa-info-circle"></i> <strong>Tip:</strong> Equip titles to show them as badges next to your name!
+                                        </div>
+                                        
+                                        <div id="inventoryContainer">
+                                            <div class="text-center py-4">
+                                                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                                <p class="mt-2">Loading inventory...</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
                         </div>
                     </div>
                     <div class="modal-footer" style="border-top: 1px solid #555; background: #333;">

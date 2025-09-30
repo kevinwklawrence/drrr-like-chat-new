@@ -962,12 +962,328 @@ body {
             background: linear-gradient(45deg, #6c757d, #5a6268) !important;
             color: white !important;
         }
-
+/* Version Text in Navbar */
 .navbar::after {
-    content: 'BETA C_0.1.34_';
+    content: 'BETA C_0.1.35_';
     position: fixed;
     text-align:center;
     left: 158px;
     color: #3a3a3a;
     font-family: monospace;
+}
+
+/* Tip Button Styles */
+.tip-btn {
+    background: linear-gradient(45deg, #ffc107, #ff9800);
+    border: 1px solid #ffc107;
+    color: #212529;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    margin-left: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.tip-btn:hover {
+    background: linear-gradient(45deg, #ff9800, #f57c00);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+}
+
+.tip-btn i {
+    color: inherit;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .tip-btn {
+        padding: 4px 10px;
+        font-size: 0.7rem;
+    }
+}
+
+/* Shop Panel Styles */
+.currency-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.currency-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3) !important;
+}
+
+.shop-item {
+    transition: all 0.2s ease;
+}
+
+.shop-item:hover {
+    transform: translateY(-2px);
+    border-color: #777 !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    background: #3a3a3a !important;
+}
+
+.shop-item-price {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.shop-item .btn-warning {
+    transition: all 0.2s ease;
+}
+
+.shop-item .btn-warning:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .currency-card {
+        margin-bottom: 15px;
+    }
+    
+    .shop-item {
+        margin-bottom: 15px;
+    }
+    
+    .shop-item .d-flex {
+        flex-direction: column;
+    }
+    
+    .shop-item-icon {
+        margin-bottom: 10px;
+        text-align: center;
+    }
+}
+
+/* Rarity Colors */
+.rarity-common {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+    border-color: #6c757d;
+    color: #fff;
+}
+
+.rarity-rare {
+    background: linear-gradient(135deg, #4dabf7, #339af0);
+    border-color: #4dabf7;
+    color: #fff;
+}
+
+.rarity-strange {
+    background: linear-gradient(135deg, #9775fa, #845ef7);
+    border-color: #9775fa;
+    color: #fff;
+}
+
+.rarity-legendary {
+    background: linear-gradient(135deg, #ffd43b, #fab005);
+    border-color: #ffd43b;
+    color: #333;
+}
+
+/* Title Badge Styles */
+.user-title-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-left: 4px;
+    margin-right: 2px;
+    vertical-align: middle;
+    border: 1px solid;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Rarity Badge Styles for Inventory */
+.rarity-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 2px solid;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.rarity-badge.common {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+    border-color: #8a939b;
+    color: #fff;
+}
+
+.rarity-badge.rare {
+    background: linear-gradient(135deg, #4dabf7, #339af0);
+    border-color: #74c0fc;
+    color: #fff;
+}
+
+.rarity-badge.strange {
+    background: linear-gradient(135deg, #9775fa, #845ef7);
+    border-color: #b197fc;
+    color: #fff;
+}
+
+.rarity-badge.legendary {
+    background: linear-gradient(135deg, #ffd43b, #fab005);
+    border-color: #ffe066;
+    color: #333;
+    text-shadow: 0 1px 2px rgba(255,255,255,0.3);
+}
+
+/* Inventory Item Card */
+.inventory-item {
+    background: #333;
+    border: 2px solid #555;
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.inventory-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+}
+
+.inventory-item.common::before {
+    background: linear-gradient(90deg, #6c757d, #5a6268);
+}
+
+.inventory-item.rare::before {
+    background: linear-gradient(90deg, #4dabf7, #339af0);
+}
+
+.inventory-item.strange::before {
+    background: linear-gradient(90deg, #9775fa, #845ef7);
+}
+
+.inventory-item.legendary::before {
+    background: linear-gradient(90deg, #ffd43b, #fab005);
+}
+
+.inventory-item:hover {
+    transform: translateY(-4px);
+    border-color: #777;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+}
+
+.inventory-item.equipped {
+    border-color: #28a745;
+    background: linear-gradient(135deg, #333 0%, #2d4a2e 100%);
+}
+
+.inventory-item.equipped::after {
+    content: '✓ EQUIPPED';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #28a745;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.inventory-item-icon {
+    font-size: 3rem;
+    margin-bottom: 10px;
+    display: block;
+    text-align: center;
+}
+
+.inventory-item-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.inventory-item-description {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+    text-align: center;
+    min-height: 40px;
+}
+
+.inventory-item-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #444;
+}
+
+/* Empty Inventory State */
+.empty-inventory {
+    text-align: center;
+    padding: 60px 20px;
+    color: #777;
+}
+
+.empty-inventory i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+/* Shop Item Card with Owned Indicator */
+.shop-item.owned {
+    opacity: 0.6;
+    pointer-events: none;
+    position: relative;
+}
+
+.shop-item.owned::after {
+    content: '✓ OWNED';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(40, 167, 69, 0.95);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    z-index: 10;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .inventory-item {
+        margin-bottom: 15px;
+    }
+    
+    .inventory-item-icon {
+        font-size: 2.5rem;
+    }
+    
+    .user-title-badge {
+        font-size: 0.65rem;
+        padding: 2px 6px;
+    }
+}
+
+#inventoryContainer .col-lg-4 {
+    position: relative !important;
 }

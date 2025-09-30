@@ -1,6 +1,11 @@
 const DEBUG_MODE = false;
 const SHOW_SENSITIVE_DATA = false;
 
+function isMobileDevice() {
+       return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+   }
+
+
 function debugLog(message, data = null) {
     if (DEBUG_MODE) {
         if (data !== null) {
@@ -1435,6 +1440,37 @@ function renderMessage(msg) {
     } else if (!msg.user_id) {
         badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
     }
+
+    // Load and display titles for registered users
+    let titleBadges = '';
+    if (msg.user_id && msg.user_id > 0) {
+        // This will be populated via AJAX
+        if (!window.userTitlesCache) {
+            window.userTitlesCache = new Map();
+        }
+        
+        if (window.userTitlesCache.has(msg.user_id)) {
+            const titles = window.userTitlesCache.get(msg.user_id);
+            titles.forEach(title => {
+                titleBadges += `<span class="user-title-badge rarity-${title.rarity}">${title.icon || ''} ${title.name}</span>`;
+            });
+        } else {
+            // Load titles asynchronously
+            $.ajax({
+                url: 'api/get_user_titles.php',
+                method: 'GET',
+                data: { user_id: msg.user_id },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success' && response.titles.length > 0) {
+                        window.userTitlesCache.set(msg.user_id, response.titles);
+                        // Re-render user list to show titles
+                       // loadUsers();
+                    }
+                }
+            });
+        }
+    }
     
     let adminInfo = '';
     let moderatorActions = '';
@@ -1523,7 +1559,7 @@ if (msg.reply_to_message_id && msg.reply_original_message) {
             <div class="message-header-external">
                 <div class="message-header-left">
                     <div class="message-author">${name}</div>
-                    ${badges ? `<div class="message-badges">${badges}</div>` : ''}
+                    ${badges ? `<div class="message-badges">${badges}${titleBadges}</div>` : ''}
                 </div>
                 <div class="message-time">${timestamp}</div>
             </div>
@@ -1631,6 +1667,37 @@ function renderUser(user) {
     } else if (!isRegisteredUser) {
         badges += '<span class="user-badge badge-guest"><i class="fas fa-user" title="Guest"></i></span>';
     }
+
+    // Load and display titles for registered users
+    let titleBadges = '';
+    if (user.user_id && user.user_id > 0) {
+        // This will be populated via AJAX
+        if (!window.userTitlesCache) {
+            window.userTitlesCache = new Map();
+        }
+        
+        if (window.userTitlesCache.has(user.user_id)) {
+            const titles = window.userTitlesCache.get(user.user_id);
+            titles.forEach(title => {
+                titleBadges += `<span class="user-title-badge rarity-${title.rarity}">${title.icon || ''} ${title.name}</span>`;
+            });
+        } else {
+            // Load titles asynchronously
+            $.ajax({
+                url: 'api/get_user_titles.php',
+                method: 'GET',
+                data: { user_id: user.user_id },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success' && response.titles.length > 0) {
+                        window.userTitlesCache.set(user.user_id, response.titles);
+                        // Re-render user list to show titles
+                        loadUsers();
+                    }
+                }
+            });
+        }
+    }
     
     let actions = '';
     if (user.user_id_string !== currentUserIdString) {
@@ -1661,7 +1728,9 @@ function renderUser(user) {
                         </button>
                     `;
                 }
-            } else {
+                
+            }
+             else {
                 actions += `<div id="friend-action-${user.user_id}" class="d-inline">
                     <button class="btn btn-secondary btn-sm" disabled>
                         <i class="fas fa-spinner fa-spin"></i> Loading...
@@ -1715,6 +1784,14 @@ function renderUser(user) {
                 </button>
             `;
         }
+
+         if (user.user_id && user.user_id > 0) {
+                actions += `
+                    <button class="btn tip-btn" onclick="showTipModal(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
+                        <i class="fas fa-coins"></i>
+                    </button>
+                `;
+            }
         
         actions += `</div>`;
     } else if (isCurrentUser) {
@@ -1740,7 +1817,7 @@ function renderUser(user) {
                      alt="${name}'s avatar">
                 <div class="user-details">
                     <div class="user-name ${user.is_afk ? 'afk-name' : ''}">${name}</div>
-                    <div class="user-badges-row">${badges}</div>
+                    <div class="user-badges-row">${badges}${titleBadges}</div>
                 </div>
             </div>
             ${actions}
@@ -5457,4 +5534,4 @@ function checkHostStatusChange(users) {
         }
     }
 }
-$.getScript('js/inactivity_warning.js');
+//$.getScript('js/inactivity_warning.js');

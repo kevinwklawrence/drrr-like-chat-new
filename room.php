@@ -883,12 +883,15 @@ $('<style>').text(`
 `).appendTo('head');
 </script>
     <script src="js/room.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/dura_system.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/inventory_system.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/profile_system.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/loading.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/notifications.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/friend_notifications.js?v=<?php echo $versions['version']; ?>"></script>
-    <script src="js/inactivity_warning.js"></script>
-    <script src="js/disconnect_checker.js"></script>
+    
+    <script src="js/disconnect_checker.js?v=<?php echo $versions['version']; ?>"></script>
+    
     
 
 

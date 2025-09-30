@@ -1133,6 +1133,11 @@
 
 /* Mobile responsive adjustments */
 @media (max-width: 768px) {
+
+    .message-header-external .message-badges {
+    display:none;
+}
+    
     .message-header-external {
         position: relative;
         top:-8px;
