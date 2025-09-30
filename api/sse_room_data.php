@@ -31,11 +31,11 @@ $check_youtube = isset($_GET['check_youtube']) ? (bool)$_GET['check_youtube'] : 
 echo "data: " . json_encode(['type' => 'connected', 'room_id' => $room_id]) . "\n\n";
 flush();
 
-$max_duration = 50;
+$max_duration = 25; // CHANGE FROM 50 to 25 seconds
 $start_time = time();
 $last_event_id = 0;
 $iteration = 0;
-$max_iterations = 60;
+$max_iterations = 50; // CHANGE FROM 60 to 50
 
 while ((time() - $start_time) < $max_duration && connection_status() == CONNECTION_NORMAL) {
     $has_events = false;
@@ -512,7 +512,7 @@ if (in_array('private_message', $event_types) && $user_id) {
     }
     
     // Send heartbeat every 30 seconds
-    if ($iteration % 30 == 0) {
+    if ($iteration % 15 == 0) {
         echo "data: " . json_encode(['type' => 'heartbeat']) . "\n\n";
         flush();
     }
@@ -524,7 +524,7 @@ if (in_array('private_message', $event_types) && $user_id) {
     sleep($has_events ? 0.5 : 1);
     
     // Reset connection after max iterations
-    if ($iteration >= $max_iterations) {
+    if ($iteration >= $max_iterations || (time() - $start_time) >= ($max_duration - 2)) {
         echo "data: " . json_encode(['type' => 'reconnect']) . "\n\n";
         flush();
         break;

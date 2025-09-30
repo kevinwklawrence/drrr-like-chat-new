@@ -108,6 +108,9 @@ let whisperConversations = [];
 
 let sseConnectionTimeout = null;
 let sseConnectionEstablished = false;
+let sseReconnectExpected = false; // ADD THIS LINE
+
+
 
 
 
@@ -251,6 +254,7 @@ function initializeSSE() {
     
     debugLog('🔌 Initializing SSE connection...');
     sseConnectionEstablished = false;
+    sseReconnectExpected = false; // ADD THIS LINE
     
     const params = new URLSearchParams({
         message_limit: messageLimit,
@@ -270,18 +274,18 @@ function initializeSSE() {
     sseConnection = new EventSource(`api/sse_room_data.php?${params.toString()}`);
     
     sseConnection.onopen = function() {
-        debugLog('✅ SSE connection established');
-        sseConnected = true;
-        sseConnectionEstablished = true;
-        sseReconnectAttempts = 0;
-        sseReconnectDelay = 2000;
-        
-        // Clear timeout since connection is working
-        if (sseConnectionTimeout) {
-            clearTimeout(sseConnectionTimeout);
-            sseConnectionTimeout = null;
-        }
-    };
+    debugLog('✅ SSE connection established');
+    sseConnected = true;
+    sseConnectionEstablished = true;
+    sseReconnectAttempts = 0; // Reset attempts
+    sseReconnectDelay = 2000;  // Reset delay
+    
+    // Clear timeout since connection is working
+    if (sseConnectionTimeout) {
+        clearTimeout(sseConnectionTimeout);
+        sseConnectionTimeout = null;
+    }
+};
     
     sseConnection.onmessage = function(event) {
         // Mark as established on first message
@@ -302,7 +306,19 @@ function initializeSSE() {
     };
     
     sseConnection.onerror = function(error) {
-        console.error('❌ SSE error:', error);
+        const state = this.readyState; // 0=CONNECTING, 1=OPEN, 2=CLOSED
+
+        if (sseReconnectExpected) {
+            debugLog('⏭️ Ignoring error during planned reconnection');
+            return;
+        }
+
+        if (state === 2) {
+        debugLog('🔄 SSE connection closed (likely timeout), reconnecting...');
+    } else {
+        console.error('❌ SSE error:', error, 'ReadyState:', state);
+    }
+        
         sseConnected = false;
         
         // Clear timeout
@@ -312,22 +328,26 @@ function initializeSSE() {
         }
         
         // Attempt reconnection
-        if (sseReconnectAttempts < sseMaxReconnectAttempts) {
-            sseReconnectAttempts++;
-            debugLog(`🔄 Attempting SSE reconnect ${sseReconnectAttempts}/${sseMaxReconnectAttempts} in ${sseReconnectDelay}ms...`);
-            
-            setTimeout(() => {
-                initializeSSE();
-            }, sseReconnectDelay);
-            
-            // Exponential backoff
+         if (sseReconnectAttempts < sseMaxReconnectAttempts) {
+        sseReconnectAttempts++;
+        // Use shorter delay for clean closes (state 2)
+        const delay = (state === 2) ? 500 : sseReconnectDelay;
+        debugLog(`🔄 Attempting SSE reconnect ${sseReconnectAttempts}/${sseMaxReconnectAttempts} in ${delay}ms...`);
+        
+        setTimeout(() => {
+            initializeSSE();
+        }, delay);
+        
+        // Only apply exponential backoff for actual errors (not clean closes)
+        if (state !== 2) {
             sseReconnectDelay = Math.min(sseReconnectDelay * 2, 30000);
-        } else {
-            debugLog('❌ Max SSE reconnect attempts reached, falling back to Ajax');
-            sseEnabled = false;
-            startRoomUpdates(); // Start Ajax polling
         }
-    };
+    } else {
+        debugLog('❌ Max SSE reconnect attempts reached, falling back to Ajax');
+        sseEnabled = false;
+        startRoomUpdates(); // Start Ajax polling
+    }
+};
 }
 
 function closeSSE() {
@@ -415,12 +435,14 @@ function handleSSEData(data) {
             break;
             
         case 'reconnect':
-            debugLog('🔄 Server requested reconnect');
-            setTimeout(() => {
-                closeSSE();
-                initializeSSE();
-            }, 1000);
-            break;
+    debugLog('🔄 Server requested reconnect');
+    sseReconnectExpected = true; // ADD THIS LINE
+    closeSSE();
+    setTimeout(() => {
+        sseReconnectExpected = false; // ADD THIS LINE
+        initializeSSE();
+    }, 500); // CHANGED FROM 1000 to 500
+    break;
             
         case 'error':
             console.error('❌ SSE error from server:', data.message);
