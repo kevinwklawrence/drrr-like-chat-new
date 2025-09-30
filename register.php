@@ -21,38 +21,30 @@ if (isset($_SESSION['user'])) {
 // Include database connection
 include 'db_connect.php';
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
 // Handle POST request for registration
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = $_POST['username'] ?? '';
-    $email = $_POST['email'] ?? '';
+    $username = trim($_POST['username'] ?? '');
+    $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
 
     // Validation
     if (empty($username) || empty($email) || empty($password) || empty($confirm_password)) {
-        error_log("Missing registration fields");
         echo json_encode(['status' => 'error', 'message' => 'All fields are required']);
         exit;
     }
 
     if ($password !== $confirm_password) {
-        error_log("Password mismatch during registration");
         echo json_encode(['status' => 'error', 'message' => 'Passwords do not match']);
         exit;
     }
 
     if (strlen($password) < 6) {
-        error_log("Password too short during registration");
         echo json_encode(['status' => 'error', 'message' => 'Password must be at least 6 characters']);
         exit;
     }
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        error_log("Invalid email format during registration");
         echo json_encode(['status' => 'error', 'message' => 'Invalid email format']);
         exit;
     }

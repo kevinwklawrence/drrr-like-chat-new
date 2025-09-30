@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/auto_sanitize.php';
 $host = 'localhost';
 $user = 'duranune_lennzuki';
 $password = 'Hazingmars69*';
@@ -8,6 +9,6 @@ if ($conn->connect_error) {
     error_log("Connection failed: " . $conn->connect_error);
     die("Connection failed: " . $conn->connect_error);
 }
-$conn->query("SET SESSION wait_timeout = 60");
-$conn->query("SET SESSION interactive_timeout = 60");
+$conn->set_charset("utf8mb4");
+
 ?>
