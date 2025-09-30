@@ -12,7 +12,7 @@ include '../db_connect.php';
 
 try {
     // Active threshold in minutes (30 minutes)
-    $active_threshold = 30;
+    $active_threshold = 20;
     
     // First, identify and logout users who exceed the threshold (exclude ghost mode users from auto-logout)
     $inactive_users_sql = "SELECT gu.user_id_string, gu.username, gu.guest_name 
@@ -126,6 +126,23 @@ try {
         'gu.is_admin',
         'gu.color',
         'gu.last_activity',
+         "(
+        SELECT JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'name', si.name,
+                'rarity', si.rarity,
+                'icon', si.icon
+            )
+        )
+        FROM users u2
+        JOIN user_inventory ui ON u2.id = ui.user_id
+        JOIN shop_items si ON ui.item_id = si.item_id
+        WHERE u2.username = gu.username
+        AND ui.is_equipped = 1 
+        AND si.type = 'title'
+        ORDER BY FIELD(si.rarity, 'legendary', 'strange', 'rare', 'common')
+        LIMIT 5
+    ) as equipped_titles",
         'TIMESTAMPDIFF(SECOND, gu.last_activity, NOW()) as seconds_since_activity'
     ];
     
@@ -207,7 +224,9 @@ try {
             'last_activity' => $row['last_activity'],
             'seconds_since_activity' => $seconds_since,
             'activity_status' => $activity_status,
+            'equipped_titles' => $equipped_titles,
             'avatar_hue' => (int)($row['avatar_hue'] ?? 0),
+            
             'avatar_saturation' => (int)($row['avatar_saturation'] ?? 100)
         ];
     }

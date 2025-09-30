@@ -684,32 +684,13 @@ function displayOnlineUsers(users) {
                 badges += '<span class="user-badge badge-mod me-2"><i class="fas fa-shield-alt" title="Moderator"></i>Moderator</span>';
             }
 
-            let titleBadges = '';
-    if (user.user_id && user.user_id > 0) {
-        if (!window.userTitlesCache) {
-            window.userTitlesCache = new Map();
-        }
-        
-        if (window.userTitlesCache.has(user.user_id)) {
-            const titles = window.userTitlesCache.get(user.user_id);
-            titles.forEach(title => {
-                titleBadges += `<span class="user-title-badge rarity-${title.rarity}">${title.icon || ''} ${title.name}</span>`;
-            });
-        } else {
-            $.ajax({
-                url: 'api/get_user_titles.php',
-                method: 'GET',
-                data: { user_id: user.user_id },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.status === 'success' && response.titles.length > 0) {
-                        window.userTitlesCache.set(user.user_id, response.titles);
-                        loadOnlineUsers();
-                    }
-                }
-            });
-        }
+           let titleBadges = '';
+    if (user.user_id && user.user_id > 0 && user.equipped_titles && Array.isArray(user.equipped_titles)) {
+        user.equipped_titles.forEach(title => {
+            titleBadges += `<span class="user-title-badge rarity-${title.rarity}">${title.icon || ''} ${title.name}</span>`;
+        });
     }
+
             
             html += `
                 <div class="d-flex align-items-center mb-2">

@@ -889,7 +889,7 @@ $('<style>').text(`
     <script src="js/loading.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/notifications.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/friend_notifications.js?v=<?php echo $versions['version']; ?>"></script>
-    
+    <script src="js/inactivity_warning.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/disconnect_checker.js?v=<?php echo $versions['version']; ?>"></script>
     
     

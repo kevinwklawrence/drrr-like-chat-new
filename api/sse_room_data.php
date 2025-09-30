@@ -31,7 +31,7 @@ $check_youtube = isset($_GET['check_youtube']) ? (bool)$_GET['check_youtube'] : 
 echo "data: " . json_encode(['type' => 'connected', 'room_id' => $room_id]) . "\n\n";
 flush();
 
-$max_duration = 300;
+$max_duration = 50;
 $start_time = time();
 $last_event_id = 0;
 $iteration = 0;
@@ -69,64 +69,96 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
             
             // MESSAGES
             if (in_array('message', $event_types)) {
-                $messages_stmt = $conn->prepare("
-    SELECT m.id, m.user_id, m.user_id_string, m.guest_name, m.message, 
-           m.avatar, m.type, m.color, m.avatar_hue, m.avatar_saturation,
-           m.bubble_hue, m.bubble_saturation, m.reply_to_message_id, m.mentions,
-           m.is_system, m.room_id,
-           UNIX_TIMESTAMP(m.timestamp) * 1000 as timestamp,
-           u.username, u.is_admin, u.is_moderator,
-           cu.ip_address, cu.is_host, cu.guest_avatar,
-           rm.id as reply_original_id,
-           rm.message as reply_original_message,
-           rm.user_id_string as reply_original_user_id_string,
-           rm.guest_name as reply_original_guest_name,
-           rm.avatar as reply_original_avatar,
-           rm.avatar_hue as reply_original_avatar_hue,
-           rm.avatar_saturation as reply_original_avatar_saturation,
-           rm.bubble_hue as reply_original_bubble_hue,
-           rm.bubble_saturation as reply_original_bubble_saturation,
-           rm.color as reply_original_color,
-           ru.username as reply_original_registered_username,
-           rcu.username as reply_original_chatroom_username
-    FROM messages m 
-    LEFT JOIN users u ON m.user_id = u.id 
-    LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id 
-        AND (
-            (m.user_id IS NOT NULL AND m.user_id = cu.user_id) OR 
-            (m.user_id IS NULL AND m.guest_name = cu.guest_name) OR
-            (m.user_id IS NULL AND m.user_id_string = cu.user_id_string)
-        )
-    LEFT JOIN messages rm ON m.reply_to_message_id = rm.id
-    LEFT JOIN users ru ON rm.user_id = ru.id
-    LEFT JOIN chatroom_users rcu ON rm.room_id = rcu.room_id 
-        AND (
-            (rm.user_id IS NOT NULL AND rm.user_id = rcu.user_id) OR 
-            (rm.user_id IS NULL AND rm.guest_name = rcu.guest_name) OR
-            (rm.user_id IS NULL AND rm.user_id_string = rcu.user_id_string)
-        )
-    WHERE m.room_id = ? 
-    ORDER BY m.id DESC 
-    LIMIT ?
-");
-                $messages_stmt->bind_param("ii", $room_id, $message_limit);
-                $messages_stmt->execute();
-                $messages_result = $messages_stmt->get_result();
-                $messages = [];
-                while ($msg = $messages_result->fetch_assoc()) { $messages[] = $msg; }
-                $messages_stmt->close();
-                $all_data['messages'] = ['status' => 'success', 'messages' => array_reverse($messages)];
+    $message_limit = 100;
+    $messages_stmt = $conn->prepare("
+        SELECT m.*,
+               u.username,
+               u.is_admin,
+               u.is_moderator,
+               (SELECT JSON_ARRAYAGG(
+                   JSON_OBJECT(
+                       'name', si.name,
+                       'rarity', si.rarity,
+                       'icon', si.icon
+                   )
+               )
+               FROM user_inventory ui
+               JOIN shop_items si ON ui.item_id = si.item_id
+               WHERE ui.user_id = m.user_id 
+               AND ui.is_equipped = 1 
+               AND si.type = 'title'
+               ORDER BY FIELD(si.rarity, 'legendary', 'strange', 'rare', 'common')
+               LIMIT 5) as equipped_titles
+        FROM messages m
+        LEFT JOIN users u ON m.user_id = u.id
+        WHERE m.room_id = ?
+        ORDER BY m.id DESC 
+        LIMIT ?
+    ");
+    $messages_stmt->bind_param("ii", $room_id, $message_limit);
+    $messages_stmt->execute();
+    $messages_result = $messages_stmt->get_result();
+    $messages = [];
+    while ($msg = $messages_result->fetch_assoc()) {
+        // Parse equipped titles
+        $equipped_titles = [];
+        if (!empty($msg['equipped_titles'])) {
+            $titles_json = json_decode($msg['equipped_titles'], true);
+            if (is_array($titles_json)) {
+                $equipped_titles = $titles_json;
             }
+        }
+        $msg['equipped_titles'] = $equipped_titles;
+        $messages[] = $msg;
+    }
+    $messages_stmt->close();
+    $all_data['messages'] = ['status' => 'success', 'messages' => array_reverse($messages)];
+}
             
             // USERS (send with every event)
-            $users_stmt = $conn->prepare("SELECT * FROM chatroom_users WHERE room_id = ?");
-            $users_stmt->bind_param("i", $room_id);
-            $users_stmt->execute();
-            $users_result = $users_stmt->get_result();
-            $users = [];
-            while ($u = $users_result->fetch_assoc()) { $users[] = $u; }
-            $users_stmt->close();
-            $all_data['users'] = $users;
+            $users_stmt = $conn->prepare("
+    SELECT cu.*,
+           u.username as registered_username,
+           u.avatar as registered_avatar,
+           u.is_admin,
+           u.is_moderator,
+           (SELECT JSON_ARRAYAGG(
+               JSON_OBJECT(
+                   'name', si.name,
+                   'rarity', si.rarity,
+                   'icon', si.icon
+               )
+           )
+           FROM user_inventory ui
+           JOIN shop_items si ON ui.item_id = si.item_id
+           WHERE ui.user_id = cu.user_id 
+           AND ui.is_equipped = 1 
+           AND si.type = 'title'
+           ORDER BY FIELD(si.rarity, 'legendary', 'strange', 'rare', 'common')
+           LIMIT 5) as equipped_titles
+    FROM chatroom_users cu
+    LEFT JOIN users u ON cu.user_id = u.id
+    WHERE cu.room_id = ?
+    ORDER BY cu.is_host DESC, cu.last_activity DESC
+");
+$users_stmt->bind_param("i", $room_id);
+$users_stmt->execute();
+$users_result = $users_stmt->get_result();
+$users = [];
+while ($u = $users_result->fetch_assoc()) {
+    // Parse equipped titles
+    $equipped_titles = [];
+    if (!empty($u['equipped_titles'])) {
+        $titles_json = json_decode($u['equipped_titles'], true);
+        if (is_array($titles_json)) {
+            $equipped_titles = $titles_json;
+        }
+    }
+    $u['equipped_titles'] = $equipped_titles;
+    $users[] = $u;
+}
+$users_stmt->close();
+$all_data['users'] = $users;
             
             // MENTIONS
             if (in_array('mention', $event_types)) {

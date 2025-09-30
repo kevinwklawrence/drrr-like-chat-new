@@ -586,6 +586,8 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
     <!-- Include the fixed lounge.js -->
     <script src="js/lounge.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/dura_system.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/inventory_system.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/profile_system.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/loading.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/friend_notifications.js?v=<?php echo $versions['version']; ?>"></script>

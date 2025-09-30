@@ -40,15 +40,23 @@ while ($row = $users_columns_query->fetch_assoc()) {
 }
 
 // Build select fields
-$select_fields = [
-    'm.id', 
-    'm.user_id', 
-    'm.guest_name', 
-    'm.message', 
-    'm.avatar',
-    'm.type', 
-    'm.timestamp'
-];
+$select_fields[] = "(
+    SELECT JSON_ARRAYAGG(
+        JSON_OBJECT(
+            'name', si.name,
+            'rarity', si.rarity,
+            'icon', si.icon
+        )
+    )
+    FROM user_inventory ui
+    JOIN shop_items si ON ui.item_id = si.item_id
+    WHERE ui.user_id = m.user_id 
+    AND ui.is_equipped = 1 
+    AND si.type = 'title'
+    AND m.user_id IS NOT NULL
+    ORDER BY FIELD(si.rarity, 'legendary', 'strange', 'rare', 'common')
+    LIMIT 5
+) as equipped_titles";
 
 // Add stored customization fields from messages table
 if (in_array('color', $msg_columns)) {
@@ -102,6 +110,7 @@ if (in_array('guest_avatar', $cu_columns)) {
 if (in_array('user_id_string', $cu_columns) && !in_array('m.user_id_string', $select_fields)) {
     $select_fields[] = 'cu.user_id_string';
 }
+
 
 // Add reply message fields if reply functionality exists
 $reply_fields = [];
@@ -184,15 +193,24 @@ while ($row = $result->fetch_assoc()) {
     $user_color = $row['color'] ?? 'blue';
     $bubble_hue = (int)($row['bubble_hue'] ?? 0);
     $bubble_saturation = (int)($row['bubble_saturation'] ?? 100);
+
+    // Parse equipped titles
+    $equipped_titles = [];
+    if (!empty($row['equipped_titles'])) {
+        $titles_json = json_decode($row['equipped_titles'], true);
+        if (is_array($titles_json)) {
+            $equipped_titles = $titles_json;
+        }
+    }
     
     $message_data = [
-        'id' => $row['id'],
-        'user_id' => $row['user_id'],
-        'guest_name' => $row['guest_name'],
-        'message' => $row['message'],
-        'avatar' => $row['avatar'],
-        'type' => $row['type'],
-        'timestamp' => $row['timestamp'],
+        'id' => $row['id'] ?? null,
+        'user_id' => $row['user_id'] ?? null,
+        'guest_name' => $row['guest_name'] ?? null,
+        'message' => $row['message'] ?? '',
+        'avatar' => $row['avatar'] ?? 'default_avatar.jpg',
+        'type' => $row['type'] ?? 'chat',
+        'timestamp' => $row['timestamp'] ?? date('Y-m-d H:i:s'),
         'color' => $user_color,
         'avatar_hue' => $avatar_hue,
         'avatar_saturation' => $avatar_saturation,
@@ -204,7 +222,8 @@ while ($row = $result->fetch_assoc()) {
         'ip_address' => $row['ip_address'] ?? null,
         'is_host' => $row['is_host'] ?? false,
         'guest_avatar' => $row['guest_avatar'] ?? null,
-        'user_id_string' => $row['user_id_string'] ?? null
+        'user_id_string' => $row['user_id_string'] ?? null,
+        'equipped_titles' => $equipped_titles
     ];
     
     // Add reply data if present

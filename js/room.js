@@ -133,6 +133,7 @@ if (typeof debugLog === 'undefined') {
 }
 
 
+
 // Add this to the top of room.js, after the global variables
 
 // Request Management System
@@ -1113,7 +1114,6 @@ function sendValidatedMessage(message) {
     
     sendBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
     
-    
     const sendData = {
         room_id: roomId,
         message: message
@@ -1130,27 +1130,24 @@ function sendValidatedMessage(message) {
         dataType: 'json',
         success: function(response) {
             if (response.status === 'not_in_room') {
-    alert(response.message || 'You have been disconnected from the room');
-    window.location.href = '/lounge';
-    return;
-}
+                alert(response.message || 'You have been disconnected from the room');
+                window.location.href = '/lounge';
+                return;
+            }
 
             if (response.status === 'success') {
                 messageInput.val('');
                 if (typeof clearReplyInterface === 'function') {
                     clearReplyInterface();
                 }
-            
                 
-                if (typeof loadMessages === 'function') {
-                    loadMessages();
+                // Don't manually reload - SSE will deliver the new message
+                // Only reload if SSE is not connected
+                if (!sseConnected || !sseFeatures.messages) {
+                    if (typeof loadMessages === 'function') {
+                        loadMessages();
+                    }
                 }
-                
-                setTimeout(() => {
-                    //if (typeof checkUserStatus === 'function') {
-                      //  checkUserStatus();
-                    //}
-                }, 200);
             } else {
                 alert('Error: ' + response.message);
             }
@@ -1160,6 +1157,7 @@ function sendValidatedMessage(message) {
             alert('AJAX error: ' + error);
         },
         complete: function() {
+            // Always re-enable the button
             sendBtn.prop('disabled', false).html(originalText);
             messageInput.focus();
         }
@@ -1289,7 +1287,11 @@ function loadOlderMessages() {
     debugLog('loadOlderMessages called. hasMoreOlderMessages:', hasMoreOlderMessages, 'isLoadingMessages:', isLoadingMessages);
     
     if (!isLoadingMessages && hasMoreOlderMessages) {
-        loadMessages(true);
+        if (!sseConnected || !sseFeatures.messages) {
+                    if (typeof loadMessages === 'function') {
+                        loadMessages();
+                    }
+                }
     } else if (isLoadingMessages) {
         debugLog('Already loading messages, skipping...');
     } else if (!hasMoreOlderMessages) {
@@ -1337,7 +1339,11 @@ function pollForNewMessages() {
                         if (latestMessage.id != currentLatest) {
                             const wasAtBottom = chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 50;
                             if (wasAtBottom) {
-                                loadMessages(); // This will maintain bottom position
+                               if (!sseConnected || !sseFeatures.messages) {
+                    if (typeof loadMessages === 'function') {
+                        loadMessages();
+                    }
+                }
                             }
                         }
                     }
@@ -1443,33 +1449,10 @@ function renderMessage(msg) {
 
     // Load and display titles for registered users
     let titleBadges = '';
-    if (msg.user_id && msg.user_id > 0) {
-        // This will be populated via AJAX
-        if (!window.userTitlesCache) {
-            window.userTitlesCache = new Map();
-        }
-        
-        if (window.userTitlesCache.has(msg.user_id)) {
-            const titles = window.userTitlesCache.get(msg.user_id);
-            titles.forEach(title => {
-                titleBadges += `<span class="user-title-badge rarity-${title.rarity}">${title.icon || ''} ${title.name}</span>`;
-            });
-        } else {
-            // Load titles asynchronously
-            $.ajax({
-                url: 'api/get_user_titles.php',
-                method: 'GET',
-                data: { user_id: msg.user_id },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.status === 'success' && response.titles.length > 0) {
-                        window.userTitlesCache.set(msg.user_id, response.titles);
-                        // Re-render user list to show titles
-                       // loadUsers();
-                    }
-                }
-            });
-        }
+    if (msg.user_id && msg.user_id > 0 && msg.equipped_titles && Array.isArray(msg.equipped_titles)) {
+        msg.equipped_titles.forEach(title => {
+            titleBadges += `<span class="user-title-badge rarity-${title.rarity}">${title.icon || ''} ${title.name}</span>`;
+        });
     }
     
     let adminInfo = '';
@@ -1669,34 +1652,11 @@ function renderUser(user) {
     }
 
     // Load and display titles for registered users
-    let titleBadges = '';
-    if (user.user_id && user.user_id > 0) {
-        // This will be populated via AJAX
-        if (!window.userTitlesCache) {
-            window.userTitlesCache = new Map();
-        }
-        
-        if (window.userTitlesCache.has(user.user_id)) {
-            const titles = window.userTitlesCache.get(user.user_id);
-            titles.forEach(title => {
-                titleBadges += `<span class="user-title-badge rarity-${title.rarity}">${title.icon || ''} ${title.name}</span>`;
-            });
-        } else {
-            // Load titles asynchronously
-            $.ajax({
-                url: 'api/get_user_titles.php',
-                method: 'GET',
-                data: { user_id: user.user_id },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.status === 'success' && response.titles.length > 0) {
-                        window.userTitlesCache.set(user.user_id, response.titles);
-                        // Re-render user list to show titles
-                        loadUsers();
-                    }
-                }
-            });
-        }
+     let titleBadges = '';
+    if (user.user_id && user.user_id > 0 && user.equipped_titles && Array.isArray(user.equipped_titles)) {
+        user.equipped_titles.forEach(title => {
+            titleBadges += `<span class="user-title-badge rarity-${title.rarity}">${title.icon || ''} ${title.name}</span>`;
+        });
     }
     
     let actions = '';
@@ -3064,7 +3024,11 @@ function saveRoomSettings() {
                         location.reload();
                     }, 2000);
                 } else {
-                    loadMessages();
+                   if (!sseConnected || !sseFeatures.messages) {
+                    if (typeof loadMessages === 'function') {
+                        loadMessages();
+                    }
+                }
                     loadUsers();
                 }
             } else {
@@ -3353,7 +3317,11 @@ function confirmBanUser(userIdString, userName) {
                 $('#banUserModal').modal('hide');
                 
                 loadUsers();
-                loadMessages();
+                if (!sseConnected || !sseFeatures.messages) {
+                    if (typeof loadMessages === 'function') {
+                        loadMessages();
+                    }
+                }
                 
                 setTimeout(() => {
                     checkUserStatus();
@@ -3451,7 +3419,11 @@ function respondToKnock(knockId, response) {
         success: function(result) {
             if (result.status === 'success') {
                 dismissKnock(knockId);
-                loadMessages();
+                if (!sseConnected || !sseFeatures.messages) {
+                    if (typeof loadMessages === 'function') {
+                        loadMessages();
+                    }
+                }
                 
                 const message = response === 'accepted' ? 
                     'Knock accepted! The user can now join the room.' : 
@@ -3483,7 +3455,11 @@ function createTestUser() {
             if (response.status === 'success') {
                 alert('Test user created: ' + response.user.name);
                 loadUsers();
-                loadMessages();
+                if (!sseConnected || !sseFeatures.messages) {
+                    if (typeof loadMessages === 'function') {
+                        loadMessages();
+                    }
+                }
             } else {
                 alert('Error: ' + response.message);
             }
@@ -4612,7 +4588,11 @@ function syncAvatarCustomization() {
                 debugLog('Avatar customization synced:', response);
                 setTimeout(() => {
                     loadUsers();
-                    loadMessages();
+                    if (!sseConnected || !sseFeatures.messages) {
+                    if (typeof loadMessages === 'function') {
+                        loadMessages();
+                    }
+                }
                 }, 200);
             } else {
                 debugLog('Avatar sync failed:', response.message);
@@ -4872,7 +4852,11 @@ function executeQuickBan(userIdString, username, ipAddress) {
                 
                 setTimeout(() => {
                     loadUsers();
-                    loadMessages();
+                    if (!sseConnected || !sseFeatures.messages) {
+                    if (typeof loadMessages === 'function') {
+                        loadMessages();
+                    }
+                }
                 }, 1000);
             } else {
                 alert('Error: ' + response.message);
@@ -5232,7 +5216,11 @@ function addMentionHighlightCSS() {
                 
                 setTimeout(() => {
                     loadUsers();
-                    loadMessages();
+                    if (!sseConnected || !sseFeatures.messages) {
+                    if (typeof loadMessages === 'function') {
+                        loadMessages();
+                    }
+                }
                 }, 500);
                 
                 showToast(response.message, 'success');
@@ -5472,7 +5460,11 @@ function executePassHost(targetUserIdString) {
                 // Reload users to reflect changes
                 setTimeout(() => {
                     loadUsers();
-                    loadMessages();
+                    if (!sseConnected || !sseFeatures.messages) {
+                    if (typeof loadMessages === 'function') {
+                        loadMessages();
+                    }
+                }
                 }, 500);
             } else {
                 alert('Error: ' + response.message);
@@ -5534,4 +5526,4 @@ function checkHostStatusChange(users) {
         }
     }
 }
-//$.getScript('js/inactivity_warning.js');
+$.getScript('js/inactivity_warning.js');
