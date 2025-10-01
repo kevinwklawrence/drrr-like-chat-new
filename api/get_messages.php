@@ -39,54 +39,10 @@ while ($row = $users_columns_query->fetch_assoc()) {
     $users_columns[] = $row['Field'];
 }
 
-// Build select fields
-$select_fields[] = "(
-    SELECT JSON_ARRAYAGG(
-        JSON_OBJECT(
-            'name', si.name,
-            'rarity', si.rarity,
-            'icon', si.icon
-        )
-    )
-    FROM user_inventory ui
-    JOIN shop_items si ON ui.item_id = si.item_id
-    WHERE ui.user_id = m.user_id 
-    AND ui.is_equipped = 1 
-    AND si.type = 'title'
-    AND m.user_id IS NOT NULL
-    ORDER BY FIELD(si.rarity, 'legendary', 'strange', 'rare', 'common')
-    LIMIT 5
-) as equipped_titles";
+// Build select fields - USE m.* FOR PERFORMANCE
+$select_fields = ['m.*'];
 
-// Add stored customization fields from messages table
-if (in_array('color', $msg_columns)) {
-    $select_fields[] = 'm.color';
-}
-if (in_array('avatar_hue', $msg_columns)) {
-    $select_fields[] = 'm.avatar_hue';
-}
-if (in_array('avatar_saturation', $msg_columns)) {
-    $select_fields[] = 'm.avatar_saturation';
-}
-if (in_array('bubble_hue', $msg_columns)) {
-    $select_fields[] = 'm.bubble_hue';
-}
-if (in_array('bubble_saturation', $msg_columns)) {
-    $select_fields[] = 'm.bubble_saturation';
-}
-if (in_array('user_id_string', $msg_columns)) {
-    $select_fields[] = 'm.user_id_string';
-}
-
-// Add reply and mention fields
-if (in_array('reply_to_message_id', $msg_columns)) {
-    $select_fields[] = 'm.reply_to_message_id';
-}
-if (in_array('mentions', $msg_columns)) {
-    $select_fields[] = 'm.mentions';
-}
-
-// Add user fields if they exist
+// Add user fields
 if (in_array('username', $users_columns)) {
     $select_fields[] = 'u.username';
 }
@@ -107,13 +63,8 @@ if (in_array('is_host', $cu_columns)) {
 if (in_array('guest_avatar', $cu_columns)) {
     $select_fields[] = 'cu.guest_avatar';
 }
-if (in_array('user_id_string', $cu_columns) && !in_array('m.user_id_string', $select_fields)) {
-    $select_fields[] = 'cu.user_id_string';
-}
-
 
 // Add reply message fields if reply functionality exists
-$reply_fields = [];
 if (in_array('reply_to_message_id', $msg_columns)) {
     $reply_fields = [
         'rm.color as reply_original_color',
@@ -147,7 +98,11 @@ $sql = "SELECT " . implode(', ', $select_fields) . "
         FROM messages m 
         LEFT JOIN users u ON m.user_id = u.id 
         LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id 
-            AND m.user_id_string = cu.user_id_string";  
+            AND (
+                (m.user_id IS NOT NULL AND m.user_id = cu.user_id) OR 
+                (m.user_id IS NULL AND m.guest_name = cu.guest_name) OR
+                (m.user_id IS NULL AND m.user_id_string = cu.user_id_string)
+            )";  
 
 // Add reply message join if column exists
 if (in_array('reply_to_message_id', $msg_columns)) {
@@ -156,17 +111,12 @@ if (in_array('reply_to_message_id', $msg_columns)) {
               LEFT JOIN chatroom_users rcu ON rm.room_id = rcu.room_id 
                 AND (
                     (rm.user_id IS NOT NULL AND rm.user_id = rcu.user_id) OR 
-                    (rm.user_id IS NULL AND rm.guest_name = rcu.guest_name) OR
+                    (rm.user_id IS NULL AND rm.guest_name = rcu.guest_name) OR 
                     (rm.user_id IS NULL AND rm.user_id_string = rcu.user_id_string)
                 )";
 }
 
 $sql .= " WHERE m.room_id = ?";
-$sql .= " GROUP BY m.id";  // This prevents duplicate rows for same message
-
-
-// For pagination, always order by timestamp DESC and use LIMIT/OFFSET
-// The frontend will handle reversing the order if needed
 $sql .= " ORDER BY m.timestamp DESC LIMIT ? OFFSET ?";
 
 error_log("Messages query: " . $sql);
@@ -191,88 +141,19 @@ while ($row = $result->fetch_assoc()) {
         continue;
     }
     
-    // Skip if message content is missing (shouldn't happen with GROUP BY, but safety check)
     if (!isset($row['message'])) {
         error_log("Skipping message ID {$row['id']} - NULL message content");
         continue;
     }
-    $avatar_hue = (int)($row['avatar_hue'] ?? 0);
-    $avatar_saturation = (int)($row['avatar_saturation'] ?? 100);
-    $user_color = $row['color'] ?? 'blue';
-    $bubble_hue = (int)($row['bubble_hue'] ?? 0);
-    $bubble_saturation = (int)($row['bubble_saturation'] ?? 100);
-
-    // Parse equipped titles
-    $equipped_titles = [];
-    if (!empty($row['equipped_titles'])) {
-        $titles_json = json_decode($row['equipped_titles'], true);
-        if (is_array($titles_json)) {
-            $equipped_titles = $titles_json;
-        }
-    }
     
-    $message_data = [
-        'id' => $row['id'] ?? null,
-        'user_id' => $row['user_id'] ?? null,
-        'guest_name' => $row['guest_name'] ?? null,
-        'message' => $row['message'] ?? '',
-        'avatar' => $row['avatar'] ?? 'default_avatar.jpg',
-        'type' => $row['type'] ?? 'chat',
-        'timestamp' => $row['timestamp'] ?? date('Y-m-d H:i:s'),
-        'color' => $user_color,
-        'avatar_hue' => $avatar_hue,
-        'avatar_saturation' => $avatar_saturation,
-        'bubble_hue' => $bubble_hue,
-        'bubble_saturation' => $bubble_saturation,
-        'username' => $row['username'] ?? null,
-        'is_admin' => $row['is_admin'] ?? false,
-        'is_moderator' => $row['is_moderator'] ?? false,
-        'ip_address' => $row['ip_address'] ?? null,
-        'is_host' => $row['is_host'] ?? false,
-        'guest_avatar' => $row['guest_avatar'] ?? null,
-        'user_id_string' => $row['user_id_string'] ?? null,
-        'equipped_titles' => $equipped_titles
-    ];
-    
-    // Add reply data if present
-    if (in_array('reply_to_message_id', $msg_columns) && !empty($row['reply_to_message_id'])) {
-        $message_data['reply_to_message_id'] = $row['reply_to_message_id'];
-        $message_data['reply_original_color'] = $row['reply_original_color'] ?? null;
-        $message_data['reply_original_id'] = $row['reply_original_id'] ?? null;
-        $message_data['reply_original_message'] = $row['reply_original_message'] ?? null;
-        $message_data['reply_original_user_id_string'] = $row['reply_original_user_id_string'] ?? null;
-        $message_data['reply_original_guest_name'] = $row['reply_original_guest_name'] ?? null;
-        $message_data['reply_original_avatar'] = $row['reply_original_avatar'] ?? null;
-        $message_data['reply_original_avatar_hue'] = $row['reply_original_avatar_hue'] ?? 0;
-        $message_data['reply_original_avatar_saturation'] = $row['reply_original_avatar_saturation'] ?? 100;
-        $message_data['reply_original_bubble_hue'] = $row['reply_original_bubble_hue'] ?? 0;
-        $message_data['reply_original_bubble_saturation'] = $row['reply_original_bubble_saturation'] ?? 100;
-        $message_data['reply_original_registered_username'] = $row['reply_original_registered_username'] ?? null;
-        $message_data['reply_original_registered_avatar'] = $row['reply_original_registered_avatar'] ?? null;
-        $message_data['reply_original_chatroom_username'] = $row['reply_original_chatroom_username'] ?? null;
-    }
-    
-    // Add mentions if present
-    if (in_array('mentions', $msg_columns)) {
-        $message_data['mentions'] = $row['mentions'] ?? null;
-    }
-    
-    $messages[] = $message_data;
+    // m.* includes all message fields automatically
+    $messages[] = $row;
 }
 
 $stmt->close();
 
 // IMPORTANT: Always reverse so messages display in chronological order
-// Database gives us newest first (DESC), but we want oldest first for display
-// This ensures: oldest messages at top, newest messages at bottom
 $messages = array_reverse($messages);
-
-// Debug: Log message order
-if (count($messages) > 0) {
-    $first_msg_time = $messages[0]['timestamp'];
-    $last_msg_time = $messages[count($messages)-1]['timestamp'];
-    error_log("Message order check - First: $first_msg_time, Last: $last_msg_time");
-}
 
 // Calculate pagination info
 $has_more_newer = $offset > 0;

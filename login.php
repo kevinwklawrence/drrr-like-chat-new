@@ -750,6 +750,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="color-name">Lenn</div>
                                     <div class="selected-indicator"><i class="fas fa-check"></i></div>
                                 </div>
+                                <div class="color-option color-kisin" style="display:none;"data-color="kisin" onclick="selectColor('kisin', this)">
+                                    <div class="color-name">Kisin</div>
+                                    <div class="selected-indicator"><i class="fas fa-check"></i></div>
+                                </div>
                             </div>
                         </div>
 

@@ -655,11 +655,11 @@ function displayOnlineUsers(users) {
             const isCurrentUser = user.user_id_string === currentUser.user_id;
 
             let avatarClickHandler = '';
-            if (isRegisteredUser) {
-                avatarClickHandler = `onclick="handleAvatarClick(event, '${user.user_id_string}', '${user.username.replace(/'/g, "\\'")}')" style="cursor: pointer;"`;
-            } else if (isCurrentUser) {
-                avatarClickHandler = `onclick="showProfileEditor()" style="cursor: pointer;"`;
-            }
+if (isRegisteredUser && user.user_id) {
+    avatarClickHandler = `onclick="handleAvatarClick(event, ${user.user_id}, '${user.username.replace(/'/g, "\\'")}')" style="cursor: pointer;"`;
+} else if (isCurrentUser) {
+    avatarClickHandler = `onclick="showProfileEditor()" style="cursor: pointer;"`;
+}
             
             let activityIndicator = '';
             if (lastActivity) {

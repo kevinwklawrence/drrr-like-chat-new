@@ -31,11 +31,11 @@ $check_youtube = isset($_GET['check_youtube']) ? (bool)$_GET['check_youtube'] : 
 echo "data: " . json_encode(['type' => 'connected', 'room_id' => $room_id]) . "\n\n";
 flush();
 
-$max_duration = 25; // CHANGE FROM 50 to 25 seconds
+$max_duration = 55; // CHANGE FROM 50 to 25 seconds
 $start_time = time();
 $last_event_id = 0;
 $iteration = 0;
-$max_iterations = 50; // CHANGE FROM 60 to 50
+$max_iterations = 110; // CHANGE FROM 60 to 50
 
 while ((time() - $start_time) < $max_duration && connection_status() == CONNECTION_NORMAL) {
     $has_events = false;
@@ -91,11 +91,32 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
            AND ui.is_equipped = 1 
            AND si.type = 'title'
            ORDER BY FIELD(si.rarity, 'legendary', 'strange', 'rare', 'common')
-           LIMIT 5) as equipped_titles
+           LIMIT 5) as equipped_titles,
+           rm.id as reply_original_id,
+           rm.message as reply_original_message,
+           rm.user_id_string as reply_original_user_id_string,
+           rm.guest_name as reply_original_guest_name,
+           rm.avatar as reply_original_avatar,
+           rm.avatar_hue as reply_original_avatar_hue,
+           rm.avatar_saturation as reply_original_avatar_saturation,
+           rm.bubble_hue as reply_original_bubble_hue,
+           rm.bubble_saturation as reply_original_bubble_saturation,
+           rm.color as reply_original_color,
+           ru.username as reply_original_registered_username,
+           ru.avatar as reply_original_registered_avatar,
+           rcu.username as reply_original_chatroom_username
     FROM messages m
     LEFT JOIN users u ON m.user_id = u.id
     LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id 
         AND m.user_id_string = cu.user_id_string
+    LEFT JOIN messages rm ON m.reply_to_message_id = rm.id
+    LEFT JOIN users ru ON rm.user_id = ru.id
+    LEFT JOIN chatroom_users rcu ON rm.room_id = rcu.room_id 
+        AND (
+            (rm.user_id IS NOT NULL AND rm.user_id = rcu.user_id) OR 
+            (rm.user_id IS NULL AND rm.guest_name = rcu.guest_name) OR
+            (rm.user_id IS NULL AND rm.user_id_string = rcu.user_id_string)
+        )
     WHERE m.room_id = ?
     GROUP BY m.id
     ORDER BY m.id DESC 
