@@ -102,12 +102,7 @@ ErrorDocument 500 /error/500.html
     ExpiresByType font/woff2 "access plus 1 year"
 </IfModule>
 
-# Prevent access to PHP files in uploads directory (if you have one)
-<Directory "api">
-    <Files "*.php">
-        Require all denied
-    </Files>
-</Directory>
+
 
 # Main application routing
 # Redirect root to firewall for access control

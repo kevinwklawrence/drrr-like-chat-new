@@ -1,11 +1,6 @@
 const DEBUG_MODE = false;
 const SHOW_SENSITIVE_DATA = false;
 
-function isMobileDevice() {
-       return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-   }
-
-
 function debugLog(message, data = null) {
     if (DEBUG_MODE) {
         if (data !== null) {
@@ -34,12 +29,181 @@ function criticalError(message, error = null) {
     }
 }
 
+function initializeSSE() {
+    if (sseConnection && sseConnection.readyState !== EventSource.CLOSED) {
+        return; // Already connected
+    }
+    
+    debugLog('🚀 Initializing SSE connection...');
+    
+    try {
+        sseConnection = new EventSource('api/sse_room_updates.php');
+        
+        sseConnection.onopen = function(e) {
+            debugLog('✅ SSE connection established');
+            sseReconnectAttempts = 0;
+            sseReconnectDelay = 1000;
+            sseFallbackMode = false;
+            showToast('Real-time updates connected', 'success', 2000);
+        };
+        
+        sseConnection.onmessage = function(e) {
+            try {
+                const data = JSON.parse(e.data);
+                handleSSEEvent(data);
+            } catch (error) {
+                console.error('SSE parse error:', error);
+            }
+        };
+        
+        sseConnection.onerror = function(e) {
+            console.error('SSE connection error:', e);
+            
+            if (sseConnection.readyState === EventSource.CLOSED) {
+                debugLog('❌ SSE connection closed, attempting reconnection...');
+                reconnectSSE();
+            }
+        };
+        
+    } catch (error) {
+        console.error('Failed to initialize SSE:', error);
+        fallbackToPolling();
+    }
+}
+
+function handleSSEEvent(data) {
+    if (!data || !data.type) return;
+    
+    switch (data.type) {
+        case 'connected':
+            debugLog('🔗 SSE connected to room:', data.room_id);
+            break;
+            
+        case 'room_update':
+            if (data.updates) {
+                // Handle messages
+                if (data.updates.messages) {
+                    handleMessagesResponse({ 
+                        status: 'success', 
+                        messages: data.updates.messages 
+                    });
+                }
+                
+                // Handle users
+                if (data.updates.users) {
+                    handleUsersResponse(data.updates.users);
+                }
+                
+                // Handle mentions
+                if (data.updates.mentions) {
+                    handleMentionsResponse({
+                        status: 'success',
+                        mentions: data.updates.mentions.mentions,
+                        unread_count: data.updates.mentions.unread_count
+                    });
+                }
+                
+                // Handle whispers
+                if (data.updates.whispers) {
+                    handleWhispersResponse({
+                        status: 'success',
+                        conversations: data.updates.whispers.conversations
+                    });
+                }
+                
+                // Handle friends
+                if (data.updates.friends) {
+                    handleFriendsResponse({
+                        status: 'success',
+                        friends: data.updates.friends.friends
+                    });
+                }
+                
+                // Handle private messages
+                if (data.updates.private_messages) {
+                    handleConversationsResponse({
+                        status: 'success',
+                        conversations: data.updates.private_messages.conversations
+                    });
+                }
+                
+                // Handle room settings
+                if (data.updates.room_settings) {
+                    const settings = data.updates.room_settings;
+                    if (settings.youtube_enabled !== undefined) {
+                        youtubeEnabled = settings.youtube_enabled;
+                    }
+                    // Handle other settings changes as needed
+                }
+                
+                // Handle YouTube data
+                if (data.updates.youtube) {
+                    handleYouTubeResponse({
+                        status: 'success',
+                        sync: data.updates.youtube.sync,
+                        queue: data.updates.youtube.queue
+                    });
+                }
+            }
+            break;
+            
+        case 'heartbeat':
+            debugLog('💓 SSE heartbeat received');
+            break;
+            
+        case 'error':
+            console.error('SSE server error:', data.message);
+            break;
+            
+        default:
+            debugLog('Unknown SSE event type:', data.type);
+    }
+}
+
+function reconnectSSE() {
+    if (sseReconnectAttempts >= sseMaxReconnectAttempts) {
+        debugLog('⚠️ Max SSE reconnection attempts reached, falling back to polling');
+        fallbackToPolling();
+        return;
+    }
+    
+    sseReconnectAttempts++;
+    const delay = Math.min(sseReconnectDelay * Math.pow(2, sseReconnectAttempts - 1), 30000);
+    
+    debugLog(`🔄 Reconnecting SSE in ${delay}ms (attempt ${sseReconnectAttempts}/${sseMaxReconnectAttempts})`);
+    
+    setTimeout(() => {
+        if (sseConnection) {
+            sseConnection.close();
+        }
+        initializeSSE();
+    }, delay);
+}
+
+function fallbackToPolling() {
+    sseFallbackMode = true;
+    debugLog('📡 Falling back to polling mode');
+    showToast('Switched to fallback update mode', 'warning', 3000);
+    
+    // Re-enable traditional polling
+    if (!roomUpdateInterval) {
+        roomUpdateInterval = setInterval(updateAllRoomData, 3000);
+        updateAllRoomData();
+    }
+}
+
+let sseConnection = null;
+let sseReconnectAttempts = 0;
+let sseMaxReconnectAttempts = 10;
+let sseReconnectDelay = 1000;
+let sseFallbackMode = false;
+
 
 let youtubeUpdateInterval = null;
 let isYoutubeUpdating = false;
 
 let messageOffset = 0;
-let messageLimit = 100;
+let messageLimit = 50;
 let totalMessageCount = 0;
 let isLoadingMessages = false;
 let hasMoreOlderMessages = false;
@@ -57,8 +221,7 @@ let kickDetectionEnabled = true;
 let lastStatusCheck = 0;
 let consecutiveErrors = 0;
 
-let pendingMessages = new Map(); // Track optimistic messages
-let pendingMessageCounter = 0;
+
 
 
 
@@ -97,37 +260,8 @@ let manualAFK = false;
 let lastProcessedSettingsEvent = null;
 let isReloadingSettings = false;
 
-let sseConnection = null;
-let sseReconnectAttempts = 0;
-let sseMaxReconnectAttempts = 5;
-let sseReconnectDelay = 2000;
-let sseConnected = false;
-let sseEnabled = true; // Master switch for SSE (set to false to use Ajax only)
-let sseLastMessageTimestamp = 0;
-let privateMessageConversations = [];
-let whisperConversations = [];
-
-let sseConnectionTimeout = null;
-let sseConnectionEstablished = false;
-let sseReconnectExpected = false; // ADD THIS LINE
 
 
-
-
-
-let sseFeatures = {
-    messages: true,         // ✅ Using SSE
-    users: true,            // ✅ Using SSE
-    mentions: true,         // ✅ Using SSE
-    whispers: true,         // ✅ Using SSE (room whispers)
-    private_messages: true, // ✅ Using SSE (private messages between users)
-    friends: true,          // ✅ Using SSE
-    room_data: true,        // ✅ Using SSE
-    knocks: true,           // ✅ Using SSE
-    youtube: false,         // ⏸️ Still using Ajax
-    settings_check: true,   // ✅ Using SSE (NEW)
-    inactivity_status: true // ✅ Using SSE (NEW)
-};
 
 
 if (typeof debugLog === 'undefined') {
@@ -135,7 +269,6 @@ if (typeof debugLog === 'undefined') {
         console.log('[DEBUG]', ...args);
     };
 }
-
 
 
 // Add this to the top of room.js, after the global variables
@@ -148,15 +281,41 @@ class RequestManager {
         this.requestQueue = [];
         this.isProcessingQueue = false;
         this.requestStats = new Map();
+        this.sseEnabled = true;
+        this.fallbackRequests = new Set(); // Track which endpoints need fallback
     }
     
     async makeRequest(options) {
+        // If SSE is handling this endpoint, skip the request
+        if (this.sseEnabled && !sseFallbackMode && this.isSSEHandled(options.url)) {
+            return Promise.resolve({ status: 'sse_handled', message: 'Data handled by SSE' });
+        }
+        
+        // Otherwise, use traditional ajax for non-SSE requests or fallback
         return new Promise((resolve, reject) => {
             this.requestQueue.push({ options, resolve, reject });
             this.processQueue();
         });
     }
     
+    isSSEHandled(url) {
+        // List of endpoints handled by SSE
+        const sseEndpoints = [
+            'get_messages.php',
+            'get_room_users.php', 
+            'get_mentions.php',
+            'room_whispers.php',
+            'friends.php',
+            'private_messages.php',
+            'check_room_settings.php',
+            'youtube_combined.php',
+            'get_room_data.php'
+        ];
+        
+        return sseEndpoints.some(endpoint => url.includes(endpoint));
+    }
+    
+    // Keep existing processQueue and executeRequest methods unchanged
     async processQueue() {
         if (this.isProcessingQueue || this.requestQueue.length === 0) {
             return;
@@ -171,7 +330,6 @@ class RequestManager {
         
         this.isProcessingQueue = false;
         
-        // Continue processing if queue still has items
         if (this.requestQueue.length > 0) {
             setTimeout(() => this.processQueue(), 100);
         }
@@ -182,7 +340,6 @@ class RequestManager {
         const startTime = Date.now();
         const url = options.url;
         
-        // Track request stats
         if (!this.requestStats.has(url)) {
             this.requestStats.set(url, { count: 0, totalTime: 0, avgTime: 0 });
         }
@@ -194,7 +351,6 @@ class RequestManager {
             this.activeRequests--;
             const duration = Date.now() - startTime;
             
-            // Update stats
             const stats = this.requestStats.get(url);
             stats.count++;
             stats.totalTime += duration;
@@ -242,218 +398,6 @@ function managedAjax(options) {
     return requestManager.makeRequest(options);
 }
 
-function initializeSSE() {
-    if (!sseEnabled) {
-        debugLog('❌ SSE disabled, using Ajax fallback');
-        return;
-    }
-    
-    if (sseConnection) {
-        debugLog('⚠️ SSE already connected, closing existing connection');
-        closeSSE();
-    }
-    
-    debugLog('🔌 Initializing SSE connection...');
-    sseConnectionEstablished = false;
-    sseReconnectExpected = false; // ADD THIS LINE
-    
-    const params = new URLSearchParams({
-        message_limit: messageLimit,
-        check_youtube: youtubeEnabled ? '1' : '0'
-    });
-    
-    // Set connection timeout - if no message received in 10s, fall back
-    sseConnectionTimeout = setTimeout(() => {
-        if (!sseConnectionEstablished) {
-            debugLog('⏱️ SSE connection timeout - falling back to Ajax');
-            closeSSE();
-            sseEnabled = false;
-            startRoomUpdates(); // Start Ajax polling
-        }
-    }, 10000);
-    
-    sseConnection = new EventSource(`api/sse_room_data.php?${params.toString()}`);
-    
-    sseConnection.onopen = function() {
-    debugLog('✅ SSE connection established');
-    sseConnected = true;
-    sseConnectionEstablished = true;
-    sseReconnectAttempts = 0; // Reset attempts
-    sseReconnectDelay = 2000;  // Reset delay
-    
-    // Clear timeout since connection is working
-    if (sseConnectionTimeout) {
-        clearTimeout(sseConnectionTimeout);
-        sseConnectionTimeout = null;
-    }
-};
-    
-    sseConnection.onmessage = function(event) {
-        // Mark as established on first message
-        if (!sseConnectionEstablished) {
-            sseConnectionEstablished = true;
-            if (sseConnectionTimeout) {
-                clearTimeout(sseConnectionTimeout);
-                sseConnectionTimeout = null;
-            }
-        }
-        
-        try {
-            const data = JSON.parse(event.data);
-            handleSSEData(data);
-        } catch (error) {
-            console.error('❌ SSE parse error:', error, 'Raw data:', event.data);
-        }
-    };
-    
-    sseConnection.onerror = function(error) {
-        const state = this.readyState; // 0=CONNECTING, 1=OPEN, 2=CLOSED
-
-        if (sseReconnectExpected) {
-            debugLog('⏭️ Ignoring error during planned reconnection');
-            return;
-        }
-
-        if (state === 2) {
-        debugLog('🔄 SSE connection closed (likely timeout), reconnecting...');
-    } else {
-        console.error('❌ SSE error:', error, 'ReadyState:', state);
-    }
-        
-        sseConnected = false;
-        
-        // Clear timeout
-        if (sseConnectionTimeout) {
-            clearTimeout(sseConnectionTimeout);
-            sseConnectionTimeout = null;
-        }
-        
-        // Attempt reconnection
-         if (sseReconnectAttempts < sseMaxReconnectAttempts) {
-        sseReconnectAttempts++;
-        // Use shorter delay for clean closes (state 2)
-        const delay = (state === 2) ? 500 : sseReconnectDelay;
-        debugLog(`🔄 Attempting SSE reconnect ${sseReconnectAttempts}/${sseMaxReconnectAttempts} in ${delay}ms...`);
-        
-        setTimeout(() => {
-            initializeSSE();
-        }, delay);
-        
-        // Only apply exponential backoff for actual errors (not clean closes)
-        if (state !== 2) {
-            sseReconnectDelay = Math.min(sseReconnectDelay * 2, 30000);
-        }
-    } else {
-        debugLog('❌ Max SSE reconnect attempts reached, falling back to Ajax');
-        sseEnabled = false;
-        startRoomUpdates(); // Start Ajax polling
-    }
-};
-}
-
-function closeSSE() {
-    if (sseConnectionTimeout) {
-        clearTimeout(sseConnectionTimeout);
-        sseConnectionTimeout = null;
-    }
-    
-    if (sseConnection) {
-        debugLog('🔌 Closing SSE connection');
-        sseConnection.close();
-        sseConnection = null;
-        sseConnected = false;
-        sseConnectionEstablished = false;
-    }
-}
-
-// ============================================================================
-// SSE Data Handler
-// ============================================================================
-
-function handleSSEData(data) {
-    if (!data || typeof data !== 'object') {
-        console.error('Invalid SSE data:', data);
-        return;
-    }
-    
-    // Handle different event types
-    switch (data.type) {
-        case 'connected':
-            debugLog('📡 SSE connected to room:', data.room_id);
-            break;
-            
-        case 'room_data':
-            // Process each data category
-            if (data.messages && sseFeatures.messages) {
-                handleMessagesResponse(data.messages);
-            }
-            
-            if (data.users && sseFeatures.users) {
-                handleUsersResponse(data.users);
-            }
-            
-            if (data.mentions && sseFeatures.mentions) {
-                handleMentionsResponse(data.mentions);
-            }
-            
-            if (data.whispers && sseFeatures.whispers) {
-                handleWhispersResponse(data.whispers);
-            }
-            
-            if (data.private_messages && sseFeatures.private_messages) {
-                handleConversationsResponse(data.private_messages);
-            }
-            
-            if (data.friends && sseFeatures.friends) {
-                handleFriendsResponse(data.friends);
-            }
-            
-            if (data.room_data && sseFeatures.room_data) {
-                handleRoomDataResponse(data.room_data);
-            }
-
-            if (data.knocks && sseFeatures.knocks) {
-                handleKnocksResponse(data.knocks);
-            }
-            
-            if (data.youtube && sseFeatures.youtube) {
-                handleYouTubeResponse(data.youtube);
-            }
-            
-            // NEW: Handle settings check
-            if (data.settings_check && sseFeatures.settings_check) {
-                handleSettingsCheckResponse(data.settings_check);
-            }
-            
-            // NEW: Handle inactivity status
-            if (data.inactivity_status && sseFeatures.inactivity_status) {
-                handleInactivityStatusResponse(data.inactivity_status);
-            }
-            break;
-            
-        case 'heartbeat':
-            // Connection keepalive, no action needed
-            break;
-            
-        case 'reconnect':
-    debugLog('🔄 Server requested reconnect');
-    sseReconnectExpected = true; // ADD THIS LINE
-    closeSSE();
-    setTimeout(() => {
-        sseReconnectExpected = false; // ADD THIS LINE
-        initializeSSE();
-    }, 500); // CHANGED FROM 1000 to 500
-    break;
-            
-        case 'error':
-            console.error('❌ SSE error from server:', data.message);
-            break;
-            
-        default:
-            debugLog('⚠️ Unknown SSE event type:', data.type);
-    }
-}
-
 // Add missing loadYouTubeAPI function
 function loadYouTubeAPI() {
     if (window.YT && window.YT.Player) {
@@ -475,155 +419,133 @@ function loadYouTubeAPI() {
     debugLog('🎬 Loading YouTube API...');
 }
 
-
-
 // Combined data fetcher for all room data
 function fetchAllRoomData() {
     const promises = [];
     
-    // 1. MESSAGES - Skip if using SSE
-     if (!sseFeatures.messages || !sseConnected) {
-        if (!isLoadingMessages) {  // ADDED: Check if already loading
-            promises.push(
-                managedAjax({
-                    url: 'api/get_messages.php',
-                    method: 'GET',
-                    data: { 
-                        room_id: roomId,
-                        limit: messageLimit,
-                        offset: 0
-                    },
-                    dataType: 'json'
-                }).then(response => {
-                    handleMessagesResponse(response);
-                }).catch(error => {
-                    console.error('Messages error:', error);
-                })
-            );
-        } else {
-            debugLog('⏸️ Skipping messages Ajax (already loading)');
-        }
-    } else {
-        debugLog('⏭️ Skipping messages Ajax (using SSE)');
-    }
-    
-    // 2. USERS - Skip if using SSE
-    if (!sseFeatures.users || !sseConnected) {
-        promises.push(
-            managedAjax({
-                url: 'api/get_room_users.php',
-                method: 'GET',
-                data: { room_id: roomId },
-                dataType: 'json'
-            }).then(response => {
-                handleUsersResponse(response);
-            }).catch(error => {
-                console.error('Users error:', error);
-            })
-        );
-    } else {
-        debugLog('⏭️ Skipping users Ajax (using SSE)');
-    }
-    
-    // 3. MENTIONS - Skip if using SSE
-    if (!sseFeatures.mentions || !sseConnected) {
-        promises.push(
-            managedAjax({
-                url: 'api/get_mentions.php',
-                method: 'GET',
-                dataType: 'json'
-            }).then(response => {
-                handleMentionsResponse(response);
-            }).catch(error => {
-                console.error('Mentions error:', error);
-            })
-        );
-    } else {
-        debugLog('⏭️ Skipping mentions Ajax (using SSE)');
-    }
-    
-    // 4. WHISPERS - Skip if using SSE
-    if (!sseFeatures.whispers || !sseConnected) {
-        promises.push(
-            managedAjax({
-                url: 'api/room_whispers.php',
-                method: 'GET',
-                data: { action: 'get_conversations' },
-                dataType: 'json'
-            }).then(response => {
-                handleWhispersResponse(response);
-            }).catch(error => {
-                console.error('Whispers error:', error);
-            })
-        );
-    } else {
-        debugLog('⏭️ Skipping whispers Ajax (using SSE)');
-    }
-
-    // 5. FRIENDS - Skip if using SSE
-    if (!sseFeatures.friends || !sseConnected) {
-        if (currentUser.type === 'user') {
-            promises.push(
-                managedAjax({
-                    url: 'api/friends.php',
-                    method: 'GET',
-                    data: { action: 'get' },
-                    dataType: 'json'
-                }).then(response => {
-                    handleFriendsResponse(response);
-                }).catch(error => {
-                    console.error('Friends error:', error);
-                })
-            );
-        }
-    } else {
-        debugLog('⏭️ Skipping friends Ajax (using SSE)');
-    }
-    
-    // 6. PRIVATE MESSAGE CONVERSATIONS - Skip if using SSE
-    if (!sseFeatures.private_messages || !sseConnected) {
-        if (currentUser.type === 'user') {
-            promises.push(
-                managedAjax({
-                    url: 'api/private_messages.php',
-                    method: 'GET',
-                    data: { action: 'get_conversations' },
-                    dataType: 'json'
-                }).then(response => {
-                    handleConversationsResponse(response);
-                }).catch(error => {
-                    console.error('Conversations error:', error);
-                })
-            );
-        }
-    } else {
-        debugLog('⏭️ Skipping private messages Ajax (using SSE)');
-    }
-
-    // 7. ROOM SETTINGS CHECK - Skip if using SSE
-if (!sseFeatures.settings_check || !sseConnected) {
+    // 1. Messages
     promises.push(
         managedAjax({
-            url: 'api/check_room_settings.php',
+            url: 'api/get_messages.php',
+            method: 'GET',
+            data: { 
+                room_id: roomId,
+                limit: messageLimit,
+                offset: 0
+            },
+            dataType: 'json'
+        }).then(response => {
+            handleMessagesResponse(response);
+        }).catch(error => {
+            console.error('Messages error:', error);
+        })
+    );
+    
+    // 2. Users
+    promises.push(
+        managedAjax({
+            url: 'api/get_room_users.php',
             method: 'GET',
             data: { room_id: roomId },
             dataType: 'json'
         }).then(response => {
-            handleSettingsCheckResponse(response);
+            handleUsersResponse(response);
         }).catch(error => {
-            console.error('Settings check error:', error);
+            console.error('Users error:', error);
         })
     );
-} else {
-    debugLog('⏭️ Skipping settings check Ajax (using SSE)');
-}
+    
+    // 3. Mentions
+    promises.push(
+        managedAjax({
+            url: 'api/get_mentions.php',
+            method: 'GET',
+            dataType: 'json'
+        }).then(response => {
+            handleMentionsResponse(response);
+        }).catch(error => {
+            console.error('Mentions error:', error);
+        })
+    );
+    
+    // 4. Whispers
+    promises.push(
+        managedAjax({
+            url: 'api/room_whispers.php',
+            method: 'GET',
+            data: { action: 'get_conversations' },
+            dataType: 'json'
+        }).then(response => {
+            handleWhispersResponse(response);
+        }).catch(error => {
+            console.error('Whispers error:', error);
+        })
+    );
 
-    // 8. INDIVIDUAL PRIVATE MESSAGE UPDATES - Still using Ajax for open chats
+    // 5. Friends - NEW!
+    if (currentUser.type === 'user') {
+        promises.push(
+            managedAjax({
+                url: 'api/friends.php',
+                method: 'GET',
+                data: { action: 'get' },
+                dataType: 'json'
+            }).then(response => {
+                handleFriendsResponse(response);
+            }).catch(error => {
+                console.error('Friends error:', error);
+            })
+        );
+    }
+    
+    // 6. Private Message Conversations - NEW!
+    if (currentUser.type === 'user') {
+        promises.push(
+            managedAjax({
+                url: 'api/private_messages.php',
+                method: 'GET',
+                data: { action: 'get_conversations' },
+                dataType: 'json'
+            }).then(response => {
+                handleConversationsResponse(response);
+            }).catch(error => {
+                console.error('Conversations error:', error);
+            })
+        );
+    }
+
+    promises.push(
+    managedAjax({
+        url: 'api/check_room_settings.php',
+        method: 'GET',
+        data: { room_id: roomId },
+        dataType: 'json'
+    }).then(response => {
+        if (response.status === 'success' && response.settings_changed && response.event_id) {
+            // Use sessionStorage to track processed events (clears on page reload)
+            const processedKey = `settings_event_${roomId}_${response.event_id}`;
+            
+            if (!sessionStorage.getItem(processedKey)) {
+                // Mark as processed immediately
+                sessionStorage.setItem(processedKey, 'true');
+                
+                showToast('Room settings have been updated. Refreshing...', 'info');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            }
+        }
+    }).catch(error => {
+        console.error('Settings check error:', error);
+    })
+);
+
     if (currentUser.type === 'user' && openPrivateChats.size > 0) {
         openPrivateChats.forEach((data, userId) => {
             const input = $(`#pm-input-${userId}`);
             const isTyping = input.is(':focus') && input.val().length > 0;
             
+            // Only update if user is not actively typing
             if (!isTyping) {
                 promises.push(
                     managedAjax({
@@ -646,70 +568,37 @@ if (!sseFeatures.settings_check || !sseConnected) {
         });
     }
     
-    // 9. ROOM DATA - Skip if using SSE
-    if (!sseFeatures.room_data || !sseConnected) {
+    // 7. Room data (NEW)
+    promises.push(
+        managedAjax({
+            url: 'api/get_room_data.php',
+            method: 'GET',
+            data: { room_id: roomId },
+            dataType: 'json'
+        }).then(response => {
+            handleRoomDataResponse(response);
+        }).catch(error => {
+            console.error('Room data error:', error);
+        })
+    );
+
+    // 8. YouTube data (if enabled)
+    if (youtubeEnabled) {
         promises.push(
             managedAjax({
-                url: 'api/get_room_data.php',
+                url: 'api/youtube_combined.php',
                 method: 'GET',
-                data: { room_id: roomId },
                 dataType: 'json'
             }).then(response => {
-                handleRoomDataResponse(response);
+                handleYouTubeResponse(response);
             }).catch(error => {
-                console.error('Room data error:', error);
+                console.error('YouTube error:', error);
             })
         );
-    } else {
-        debugLog('⏭️ Skipping room data Ajax (using SSE)');
-    }
-
-    // 10. YOUTUBE DATA - Still using Ajax
-    if (!sseFeatures.youtube || !sseConnected) {
-        if (youtubeEnabled) {
-            promises.push(
-                managedAjax({
-                    url: 'api/youtube_combined.php',
-                    method: 'GET',
-                    dataType: 'json'
-                }).then(response => {
-                    handleYouTubeResponse(response);
-                }).catch(error => {
-                    console.error('YouTube error:', error);
-                })
-            );
-        }
     }
     
     return Promise.allSettled(promises);
 }
-
-function handleSettingsCheckResponse(data) {
-    if (data.status === 'success' && data.settings_changed && data.event_id) {
-        const processedKey = `settings_event_${roomId}_${data.event_id}`;
-        
-        if (!sessionStorage.getItem(processedKey)) {
-            sessionStorage.setItem(processedKey, 'true');
-            showToast('Room settings have been updated. Refreshing...', 'info');
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
-        }
-    }
-}
-
-function handleKnocksResponse(knocks) {
-    // Only process if user is host
-    if (!isHost) {
-        return;
-    }
-    
-    // Display knock notifications if any exist
-    if (Array.isArray(knocks) && knocks.length > 0) {
-        displayKnockNotifications(knocks);
-    }
-}
-
 
 // Simple handler for get_room_data.php response
 function handleRoomDataResponse(response) {
@@ -720,56 +609,18 @@ function handleRoomDataResponse(response) {
 
 // Response handlers
 function handleMessagesResponse(data) {
-    if (!data || typeof data !== 'object') {
-        console.error('Invalid data in handleMessagesResponse:', data);
-        return;
-    }
-    
-    if (data.status !== 'success') {
-        console.error('Non-success status in handleMessagesResponse:', data.status);
-        return;
-    }
-    
-    const messages = data.messages || [];
-    
-    if (!Array.isArray(messages)) {
-        console.error('Messages is not an array:', messages);
-        return;
-    }
-    
-    const existingMessageCount = $('.chat-message').length;
-    if (messages.length === 0 && existingMessageCount > 0 && !isInitialLoad) {
-        console.warn('⚠️ Ignoring empty message response - keeping existing messages');
-        return;
-    }
-    
-    // Check for pending messages that are now confirmed
-    messages.forEach(msg => {
-        // Find any pending message from this user with similar content/timestamp
-        pendingMessages.forEach((pendingMsg, tempId) => {
-            if (pendingMsg.message === msg.message && 
-                pendingMsg.user_id_string === msg.user_id_string) {
-                // This pending message is now confirmed - remove it
-                removeOptimisticMessage(tempId);
-            }
-        });
-    });
-    
-    let html = '';
-    
-    if (messages.length === 0) {
-        html = '<div class="empty-chat"><i class="fas fa-comments"></i><h5>No messages yet</h5><p>Start the conversation!</p></div>';
-    } else {
-        messages.forEach(msg => {
-            if (msg && msg.id && msg.message !== undefined) {
+    if (data.status === 'success') {
+        const messages = data.messages || [];
+        let html = '';
+        
+        if (messages.length === 0) {
+            html = '<div class="empty-chat"><i class="fas fa-comments"></i><h5>No messages yet</h5><p>Start the conversation!</p></div>';
+        } else {
+            messages.forEach(msg => {
                 html += renderMessage(msg);
-            } else {
-                console.warn('Skipping invalid message:', msg);
-            }
-        });
-    }
-    
-    if (html) {
+            });
+        }
+        
         const chatbox = $('#chatbox');
         const wasAtBottom = isInitialLoad || (chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20);
         
@@ -824,12 +675,9 @@ function handleMentionsResponse(response) {
     }
 }
 
-function handleWhispersResponse(data) {
-    if (data.status === 'success') {
-        whisperConversations = data.conversations || [];
-        
-        // Update unread badges for open whispers
-        whisperConversations.forEach(conv => {
+function handleWhispersResponse(response) {
+    if (response.status === 'success') {
+        response.conversations.forEach(conv => {
             const userIdString = conv.other_user_id_string;
             
             if (conv.unread_count > 0 && !openWhispers.has(userIdString)) {
@@ -847,12 +695,6 @@ function handleWhispersResponse(data) {
                     unreadElement.text(conv.unread_count).show();
                 } else {
                     unreadElement.hide();
-                }
-                
-                // AUTO-UPDATE: Load messages for open whisper windows
-                const input = $(`#whisper-input-${data.safeId}`);
-                if (!input.is(':focus') || input.val().length === 0) {
-                    loadWhisperMessages(userIdString);
                 }
             }
         });
@@ -924,19 +766,11 @@ function handleFriendsResponse(response) {
     }
 }
 
-function handleConversationsResponse(data) {
-    if (data.status === 'success') {
-        privateMessageConversations = data.conversations || [];
-        displayConversations(privateMessageConversations);
-        
-        // AUTO-UPDATE: Load messages for open private message windows
-        if (openPrivateChats.size > 0) {
-            openPrivateChats.forEach((chatData, userId) => {
-                const input = $(`#pm-input-${userId}`);
-                if (!input.is(':focus') || input.val().length === 0) {
-                    loadPrivateMessages(userId);
-                }
-            });
+function handleConversationsResponse(response) {
+    if (response.status === 'success') {
+        // Only update the display if the friends panel is visible
+        if ($('#friendsPanel').is(':visible')) {
+            displayConversations(response.conversations);
         }
     }
 }
@@ -946,15 +780,18 @@ let roomUpdateInterval = null;
 let isUpdatingRoom = false;
 
 function startRoomUpdates() {
-    if (roomUpdateInterval) {
-        clearInterval(roomUpdateInterval);
+     initializeSSE();
+    
+
+    if (!roomUpdateInterval) {
+        roomUpdateInterval = setInterval(() => {
+            if (sseFallbackMode) {
+                updateAllRoomData();
+            }
+        }, 3000);
     }
     
-    // Single update cycle every 3 seconds instead of multiple 1-second intervals
-    roomUpdateInterval = setInterval(updateAllRoomData, 3000);
-    updateAllRoomData(); // Initial load
-    
-    debugLog('🔄 Started managed room updates (every 3s)');
+    debugLog('🔄 Started room updates with SSE priority');
 }
 
 function updateAllRoomData() {
@@ -971,12 +808,21 @@ function updateAllRoomData() {
 }
 
 function stopRoomUpdates() {
+    if (sseConnection) {
+        sseConnection.close();
+        sseConnection = null;
+        debugLog('🛑 SSE connection closed');
+    }
+    
+    // Stop polling interval
     if (roomUpdateInterval) {
         clearInterval(roomUpdateInterval);
         roomUpdateInterval = null;
     }
+    
     isUpdatingRoom = false;
-    debugLog('🛑 Stopped room updates');
+    sseFallbackMode = false;
+    debugLog('🛑 Stopped all room updates');
 }
 
 // Debug function to show request stats
@@ -999,43 +845,36 @@ function checkIfFriend(userId, callback) {
         return;
     }
     
-    // Check from the already-loaded friends array (populated by SSE)
-    if (friends && Array.isArray(friends)) {
-        const isFriend = friends.some(friend => 
-            friend.friend_user_id == userId && friend.status === 'accepted'
-        );
-        
-        friendshipCache.set(userId, isFriend);
-        callback(isFriend);
-        return;
-    }
-    
-    // Fallback to Ajax only if SSE is not connected
-    if (!sseEnabled || !sseConnected) {
-        $.ajax({
-            url: 'api/friends.php',
-            method: 'GET',
-            data: { action: 'get' },
-            dataType: 'json',
-            success: function(response) {
-                if (response.status === 'success') {
-                    const isFriend = response.friends.some(friend => 
-                        friend.friend_user_id == userId && friend.status === 'accepted'
-                    );
-                    
-                    friendshipCache.set(userId, isFriend);
-                    callback(isFriend);
-                } else {
-                    callback(false);
+    $.ajax({
+        url: 'api/friends.php',
+        method: 'GET',
+        data: { action: 'get' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                const isFriend = response.friends.some(friend => 
+                    friend.friend_user_id == userId && friend.status === 'accepted'
+                );
+                
+                friendshipCache.set(userId, isFriend);
+                
+                if (friendshipCacheTimeout.has(userId)) {
+                    clearTimeout(friendshipCacheTimeout.get(userId));
                 }
-            },
-            error: function() {
+                friendshipCacheTimeout.set(userId, setTimeout(() => {
+                    friendshipCache.delete(userId);
+                    friendshipCacheTimeout.delete(userId);
+                }, 30000));
+                
+                callback(isFriend);
+            } else {
                 callback(false);
             }
-        });
-    } else {
-        callback(false);
-    }
+        },
+        error: function() {
+            callback(false);
+        }
+    });
 }
 
 function clearFriendshipCache(userId = null) {
@@ -1179,6 +1018,7 @@ function sendValidatedMessage(message) {
     
     sendBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
     
+    
     const sendData = {
         room_id: roomId,
         message: message
@@ -1188,38 +1028,6 @@ function sendValidatedMessage(message) {
         sendData.reply_to = currentReplyTo;
     }
     
-    // OPTIMISTIC UPDATE: Create temporary message ID
-    const tempId = `pending_${Date.now()}_${++pendingMessageCounter}`;
-    
-    // Create optimistic message object
-    const optimisticMessage = {
-        id: tempId,
-        message: message,
-        user_id: currentUser.id || null,
-        user_id_string: currentUser.user_id || currentUserIdString,
-        guest_name: currentUser.type === 'guest' ? (currentUser.name || currentUser.guest_name) : null,
-        username: currentUser.username || null,
-        avatar: currentUser.avatar || 'default_avatar.jpg',
-        color: currentUser.color || 'blue',
-        avatar_hue: currentUser.avatar_hue || 0,
-        avatar_saturation: currentUser.avatar_saturation || 100,
-        bubble_hue: currentUser.bubble_hue || 0,
-        bubble_saturation: currentUser.bubble_saturation || 100,
-        timestamp: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        type: 'chat',
-        is_system: false,
-        is_host: isHost,
-        reply_to_message_id: sendData.reply_to || null,
-        equipped_titles: currentUser.equipped_titles || [],
-        pending: true // Mark as pending
-    };
-    
-    // Store in pending map
-    pendingMessages.set(tempId, optimisticMessage);
-    
-    // Immediately add to UI
-    addOptimisticMessage(optimisticMessage);
-    
     $.ajax({
         url: 'api/send_message.php',
         method: 'POST',
@@ -1227,33 +1035,32 @@ function sendValidatedMessage(message) {
         dataType: 'json',
         success: function(response) {
             if (response.status === 'not_in_room') {
-                // Remove optimistic message
-                removeOptimisticMessage(tempId);
-                alert(response.message || 'You have been disconnected from the room');
-                window.location.href = '/lounge';
-                return;
-            }
+    alert(response.message || 'You have been disconnected from the room');
+    window.location.href = '/lounge';
+    return;
+}
 
             if (response.status === 'success') {
                 messageInput.val('');
                 if (typeof clearReplyInterface === 'function') {
                     clearReplyInterface();
                 }
+            
                 
-                // Mark message as confirmed (SSE will replace it with real data)
-                const pendingEl = $(`.chat-message[data-message-id="${tempId}"]`);
-                pendingEl.removeClass('pending-message');
+                if (typeof loadMessages === 'function') {
+                    loadMessages();
+                }
                 
-                // SSE will deliver the real message and replace this one
+                setTimeout(() => {
+                    //if (typeof checkUserStatus === 'function') {
+                      //  checkUserStatus();
+                    //}
+                }, 200);
             } else {
-                // Failed - remove optimistic message
-                removeOptimisticMessage(tempId);
                 alert('Error: ' + response.message);
             }
         },
         error: function(xhr, status, error) {
-            // Failed - remove optimistic message
-            removeOptimisticMessage(tempId);
             console.error('AJAX error in sendMessage:', status, error);
             alert('AJAX error: ' + error);
         },
@@ -1261,39 +1068,6 @@ function sendValidatedMessage(message) {
             sendBtn.prop('disabled', false).html(originalText);
             messageInput.focus();
         }
-    });
-}
-
-function addOptimisticMessage(msg) {
-    const chatbox = $('#chatbox');
-    const wasAtBottom = chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20;
-    
-    // Remove "no messages" placeholder if present
-    chatbox.find('.empty-chat').remove();
-    
-    // Render and append the message
-    const messageHtml = renderMessage(msg);
-    chatbox.append(messageHtml);
-    
-    // Add pending styling
-    const messageEl = $(`.chat-message[data-message-id="${msg.id}"]`);
-    messageEl.addClass('pending-message');
-    
-    // Scroll to bottom if user was at bottom
-    if (wasAtBottom) {
-        chatbox.scrollTop(chatbox[0].scrollHeight);
-    }
-    
-    if (typeof applyAllAvatarFilters === 'function') {
-        applyAllAvatarFilters();
-    }
-}
-
-// 4. Function to remove optimistic message
-function removeOptimisticMessage(tempId) {
-    pendingMessages.delete(tempId);
-    $(`.chat-message[data-message-id="${tempId}"]`).fadeOut(200, function() {
-        $(this).remove();
     });
 }
 
@@ -1420,8 +1194,7 @@ function loadOlderMessages() {
     debugLog('loadOlderMessages called. hasMoreOlderMessages:', hasMoreOlderMessages, 'isLoadingMessages:', isLoadingMessages);
     
     if (!isLoadingMessages && hasMoreOlderMessages) {
-        messageOffset += messageLimit;  // Increment offset BEFORE loading
-        loadMessages(true);  // FIXED: Added true parameter
+        loadMessages(true);
     } else if (isLoadingMessages) {
         debugLog('Already loading messages, skipping...');
     } else if (!hasMoreOlderMessages) {
@@ -1469,11 +1242,7 @@ function pollForNewMessages() {
                         if (latestMessage.id != currentLatest) {
                             const wasAtBottom = chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 50;
                             if (wasAtBottom) {
-                               if (!sseConnected || !sseFeatures.messages) {
-                    if (typeof loadMessages === 'function') {
-                        loadMessages();
-                    }
-                }
+                                loadMessages(); // This will maintain bottom position
                             }
                         }
                     }
@@ -1492,7 +1261,7 @@ function optimizeForMobile() {
     const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
     if (isMobile) {
-        messageLimit = 50; // Smaller batches for mobile
+        messageLimit = 20; // Smaller batches for mobile
     }
 }
 
@@ -1546,28 +1315,10 @@ function renderMessage(msg) {
     }
     
     const userColorClass = getUserColor(msg);
-    const timestamp = (() => {
-    // Check both lowercase and uppercase (SSE sends uppercase, Ajax sends lowercase)
-    const ts = msg.timestamp || msg.TIMESTAMP;
-    
-    if (!ts) {
-        console.warn('Message missing timestamp:', msg);
-        return 'N/A';
-    }
-    
-    // Parse MySQL datetime format (YYYY-MM-DD HH:MM:SS)
-    let date = new Date(ts.replace(' ', 'T'));
-    
-    if (isNaN(date.getTime())) {
-        console.warn('Invalid timestamp format:', ts);
-        return 'N/A';
-    }
-    
-    return date.toLocaleTimeString([], {
+    const timestamp = new Date(msg.timestamp).toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit'
     });
-})();
 
     const isRegisteredUser = msg.user_id && msg.user_id > 0;
     const isCurrentUser = msg.user_id_string === currentUserIdString;
@@ -1593,14 +1344,6 @@ function renderMessage(msg) {
         badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle"></i> Verified</span>';
     } else if (!msg.user_id) {
         badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
-    }
-
-    // Load and display titles for registered users
-    let titleBadges = '';
-    if (msg.user_id && msg.user_id > 0 && msg.equipped_titles && Array.isArray(msg.equipped_titles)) {
-        msg.equipped_titles.forEach(title => {
-            titleBadges += `<span class="user-title-badge rarity-${title.rarity}">${title.icon || ''} ${title.name}</span>`;
-        });
     }
     
     let adminInfo = '';
@@ -1690,7 +1433,7 @@ if (msg.reply_to_message_id && msg.reply_original_message) {
             <div class="message-header-external">
                 <div class="message-header-left">
                     <div class="message-author">${name}</div>
-                    ${badges ? `<div class="message-badges">${badges}${titleBadges}</div>` : ''}
+                    ${badges ? `<div class="message-badges">${badges}</div>` : ''}
                 </div>
                 <div class="message-time">${timestamp}</div>
             </div>
@@ -1798,14 +1541,6 @@ function renderUser(user) {
     } else if (!isRegisteredUser) {
         badges += '<span class="user-badge badge-guest"><i class="fas fa-user" title="Guest"></i></span>';
     }
-
-    // Load and display titles for registered users
-     let titleBadges = '';
-    if (user.user_id && user.user_id > 0 && user.equipped_titles && Array.isArray(user.equipped_titles)) {
-        user.equipped_titles.forEach(title => {
-            titleBadges += `<span class="user-title-badge rarity-${title.rarity}">${title.icon || ''} ${title.name}</span>`;
-        });
-    }
     
     let actions = '';
     if (user.user_id_string !== currentUserIdString) {
@@ -1836,9 +1571,7 @@ function renderUser(user) {
                         </button>
                     `;
                 }
-                
-            }
-             else {
+            } else {
                 actions += `<div id="friend-action-${user.user_id}" class="d-inline">
                     <button class="btn btn-secondary btn-sm" disabled>
                         <i class="fas fa-spinner fa-spin"></i> Loading...
@@ -1892,14 +1625,6 @@ function renderUser(user) {
                 </button>
             `;
         }
-
-         if (user.user_id && user.user_id > 0) {
-                actions += `
-                    <button class="btn tip-btn" onclick="showTipModal(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
-                        <i class="fas fa-coins"></i>
-                    </button>
-                `;
-            }
         
         actions += `</div>`;
     } else if (isCurrentUser) {
@@ -1925,7 +1650,7 @@ function renderUser(user) {
                      alt="${name}'s avatar">
                 <div class="user-details">
                     <div class="user-name ${user.is_afk ? 'afk-name' : ''}">${name}</div>
-                    <div class="user-badges-row">${badges}${titleBadges}</div>
+                    <div class="user-badges-row">${badges}</div>
                 </div>
             </div>
             ${actions}
@@ -3172,11 +2897,7 @@ function saveRoomSettings() {
                         location.reload();
                     }, 2000);
                 } else {
-                   if (!sseConnected || !sseFeatures.messages) {
-                    if (typeof loadMessages === 'function') {
-                        loadMessages();
-                    }
-                }
+                    loadMessages();
                     loadUsers();
                 }
             } else {
@@ -3465,11 +3186,7 @@ function confirmBanUser(userIdString, userName) {
                 $('#banUserModal').modal('hide');
                 
                 loadUsers();
-                if (!sseConnected || !sseFeatures.messages) {
-                    if (typeof loadMessages === 'function') {
-                        loadMessages();
-                    }
-                }
+                loadMessages();
                 
                 setTimeout(() => {
                     checkUserStatus();
@@ -3567,11 +3284,7 @@ function respondToKnock(knockId, response) {
         success: function(result) {
             if (result.status === 'success') {
                 dismissKnock(knockId);
-                if (!sseConnected || !sseFeatures.messages) {
-                    if (typeof loadMessages === 'function') {
-                        loadMessages();
-                    }
-                }
+                loadMessages();
                 
                 const message = response === 'accepted' ? 
                     'Knock accepted! The user can now join the room.' : 
@@ -3603,11 +3316,7 @@ function createTestUser() {
             if (response.status === 'success') {
                 alert('Test user created: ' + response.user.name);
                 loadUsers();
-                if (!sseConnected || !sseFeatures.messages) {
-                    if (typeof loadMessages === 'function') {
-                        loadMessages();
-                    }
-                }
+                loadMessages();
             } else {
                 alert('Error: ' + response.message);
             }
@@ -3890,85 +3599,53 @@ function markWhisperAsRead(userIdString) {
 }
 
 function checkForNewWhispers() {
-    // Use cached SSE data if available and SSE is connected
-    if (sseConnected && whisperConversations.length >= 0) {
-        debugLog('✅ Using cached whisper conversations from SSE');
-        
-        // Update unread badges using cached data
-        whisperConversations.forEach(conv => {
-            const userIdString = conv.other_user_id_string;
-            
-            if (conv.unread_count > 0 && !openWhispers.has(userIdString)) {
-                const displayName = conv.username || conv.guest_name || 'Unknown';
-                openWhisper(userIdString, displayName);
-            }
-            
-            if (openWhispers.has(userIdString)) {
-                const data = openWhispers.get(userIdString);
-                data.unreadCount = conv.unread_count;
-                openWhispers.set(userIdString, data);
-                
-                const unreadElement = $(`#whisper-unread-${data.safeId}`);
-                if (conv.unread_count > 0) {
-                    unreadElement.text(conv.unread_count).show();
-                } else {
-                    unreadElement.hide();
-                }
-            }
-        });
-        
-        return;
-    }
-    
-    // Only make AJAX call if SSE is not connected
-    if (!sseEnabled || !sseConnected) {
-        debugLog('⚠️ SSE not connected, falling back to AJAX for whisper conversations');
-        managedAjax({
-            url: 'api/room_whispers.php',
-            method: 'GET',
-            data: { action: 'get_conversations' },
-            dataType: 'json',
-            success: function(response) {
-                if (response.status === 'success') {
-                    response.conversations.forEach(conv => {
-                        const userIdString = conv.other_user_id_string;
+    managedAjax({
+        url: 'api/room_whispers.php',
+        method: 'GET',
+        data: { action: 'get_conversations' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                response.conversations.forEach(conv => {
+                    const userIdString = conv.other_user_id_string;
+                    
+                    if (conv.unread_count > 0 && !openWhispers.has(userIdString)) {
+                        const displayName = conv.username || conv.guest_name || 'Unknown';
+                        openWhisper(userIdString, displayName);
+                    }
+                    
+                    if (openWhispers.has(userIdString)) {
+                        const data = openWhispers.get(userIdString);
+                        data.unreadCount = conv.unread_count;
+                        openWhispers.set(userIdString, data);
                         
-                        if (conv.unread_count > 0 && !openWhispers.has(userIdString)) {
-                            const displayName = conv.username || conv.guest_name || 'Unknown';
-                            openWhisper(userIdString, displayName);
+                        const unreadElement = $(`#whisper-unread-${data.safeId}`);
+                        if (conv.unread_count > 0) {
+                            unreadElement.text(conv.unread_count).show();
+                        } else {
+                            unreadElement.hide();
                         }
-                        
-                        if (openWhispers.has(userIdString)) {
-                            const data = openWhispers.get(userIdString);
-                            data.unreadCount = conv.unread_count;
-                            openWhispers.set(userIdString, data);
-                            
-                            const unreadElement = $(`#whisper-unread-${data.safeId}`);
-                            if (conv.unread_count > 0) {
-                                unreadElement.text(conv.unread_count).show();
-                            } else {
-                                unreadElement.hide();
-                            }
-                        }
-                    });
-                }
-            },
-            error: function() {
-                // Silently fail
+                    }
+                });
             }
-        });
-    }
-    
-    // Update individual whisper windows
-    openWhispers.forEach((data, userIdString) => {
-        const safeId = data.safeId;
-        const input = $(`#whisper-input-${safeId}`);
-        
-        // Only update if user is not actively typing
-        if (!input.is(':focus') || input.val().length === 0) {
-            // Individual messages handled by loadWhisperMessages
+        },
+        error: function() {
+            // Silently fail
         }
     });
+    
+    openWhispers.forEach((data, userIdString) => {
+    const safeId = data.safeId;
+    const input = $(`#whisper-input-${safeId}`);
+    
+    // Only update if user is not actively typing in this specific whisper
+    if (!input.is(':focus') || input.val().length === 0) {
+        // This will be handled by fetchAllRoomData, no need for individual calls
+    }
+});
+if ($('#friendsPanel').is(':visible')) {
+    // This will be handled by fetchAllRoomData
+}
 }
 
 
@@ -4111,10 +3788,8 @@ $(document).ready(function() {
     // Host-specific features
     if (isHost) {
         debugLog('🚪 User is host, starting knock checking...');
-     /*if (!sseEnabled || !sseFeatures.knocks) {
-     setInterval(checkForKnocks, 5000);
- }
-        setTimeout(checkForKnocks, 1000);*/
+        setInterval(checkForKnocks, 5000); // Reduced frequency
+        setTimeout(checkForKnocks, 1000);
     }
 
     // Initialize mentions and replies
@@ -4137,29 +3812,7 @@ $(document).ready(function() {
     // setInterval(checkForMentions, 1000);
     
     // Use the new managed update system instead:
-    //startRoomUpdates();
-
-    // Initialize SSE connection
-    if (sseEnabled) {
-        debugLog('🚀 Starting SSE mode');
-        debugLog('📡 SSE Features: Messages=' + sseFeatures.messages + 
-                 ', Users=' + sseFeatures.users +
-                 ', Mentions=' + sseFeatures.mentions +
-                 ', Whispers=' + sseFeatures.whispers + 
-                 ', PrivateMessages=' + sseFeatures.private_messages +
-                 ', Friends=' + sseFeatures.friends +
-                 ', RoomData=' + sseFeatures.room_data);
-        initializeSSE();
-        
-        // Start room updates (will skip SSE-enabled features)
-        startRoomUpdates();
-        
-        debugLog('✅ Room initialization complete with SSE + Ajax hybrid mode');
-    } else {
-        debugLog('🚀 Starting Ajax-only mode');
-        startRoomUpdates();
-        debugLog('✅ Room initialization complete with Ajax-only mode');
-    }
+    startRoomUpdates();
 
     // Keep only essential intervals at lower frequencies
     //setTimeout(checkUserStatus, 1000);
@@ -4172,57 +3825,33 @@ $(document).ready(function() {
 });
 
 $(window).on('beforeunload', function() {
-    stopRoomUpdates(); // Stop managed updates
+    stopRoomUpdates(); // This now stops both SSE and polling
     
     if (mentionCheckInterval) {
         clearInterval(mentionCheckInterval);
         mentionCheckInterval = null;
     }
-    closeSSE(); // Close SSE connection
-
+    
     stopYouTubePlayer();
     stopActivityTracking();
     stopKickDetection();
 });
 
-window.toggleSSE = function(feature = null) {
-    if (feature === null) {
-        // Toggle master switch
-        sseEnabled = !sseEnabled;
-        console.log(`🔧 SSE ${sseEnabled ? 'ENABLED' : 'DISABLED'}`);
-        
-        if (sseEnabled) {
-            initializeSSE();
-        } else {
-            closeSSE();
-        }
-    } else if (sseFeatures.hasOwnProperty(feature)) {
-        // Toggle specific feature
-        sseFeatures[feature] = !sseFeatures[feature];
-        console.log(`🔧 SSE for ${feature}: ${sseFeatures[feature] ? 'ENABLED' : 'DISABLED'}`);
-    } else {
-        console.log('Invalid feature. Available:', Object.keys(sseFeatures).join(', '));
-    }
-};
-
 window.showSSEStatus = function() {
-    console.log('=== SSE STATUS ===');
-    console.log('Master enabled:', sseEnabled);
-    console.log('Connected:', sseConnected);
-    console.log('Reconnect attempts:', sseReconnectAttempts);
-    console.log('Features using SSE:');
-    Object.keys(sseFeatures).forEach(feature => {
-        const icon = sseFeatures[feature] ? '✅' : '⏸️';
-        console.log(`  ${icon} ${feature}: ${sseFeatures[feature]}`);
-    });
-    console.log('Connection:', sseConnection ? 'Active' : 'Null');
-};
-
-window.forceSSEReconnect = function() {
-    console.log('🔄 Forcing SSE reconnect...');
-    sseReconnectAttempts = 0;
-    closeSSE();
-    initializeSSE();
+    const status = {
+        connected: sseConnection && sseConnection.readyState === EventSource.OPEN,
+        readyState: sseConnection ? sseConnection.readyState : 'Not initialized',
+        reconnectAttempts: sseReconnectAttempts,
+        fallbackMode: sseFallbackMode
+    };
+    
+    console.table(status);
+    
+    if (sseConnection) {
+        console.log('ReadyState values: 0=CONNECTING, 1=OPEN, 2=CLOSED');
+    }
+    
+    return status;
 };
 
 function toggleMobileUsers() {
@@ -4287,40 +3916,24 @@ function closeFriendsPanel() {
 }
 
 function loadFriends() {
-    debugLog('Loading friends from SSE data...');
-    
-    // SSE already populates the 'friends' array
-    // Just update the UI with existing data
-    if (friends && Array.isArray(friends)) {
-        updateFriendsPanel();
-        debugLog('✅ Friends loaded from cache:', friends.length);
-    } else {
-        // Only make Ajax call if SSE is not connected
-        if (!sseEnabled || !sseConnected) {
-            debugLog('⚠️ SSE not connected, falling back to Ajax');
-            managedAjax({
-                url: 'api/friends.php',
-                method: 'GET',
-                data: { action: 'get' },
-                dataType: 'json'
-            }).then(response => {
-                debugLog('Friends response:', response);
-                if (response.status === 'success') {
-                    friends = response.friends;
-                    updateFriendsPanel();
-                } else {
-                    $('#friendsList').html('<p class="text-danger">Error: ' + response.message + '</p>');
-                }
-            }).catch(error => {
-                console.error('Friends API error:', error);
-                $('#friendsList').html('<p class="text-danger">Failed to load friends</p>');
-            });
-        } else {
-            debugLog('⏳ Waiting for SSE to populate friends...');
-            // SSE will populate friends soon, just show loading state
+    debugLog('Loading friends...');
+    managedAjax({
+        url: 'api/friends.php',
+        method: 'GET',
+        data: { action: 'get' },
+        dataType: 'json'
+    }).then(response => {
+        debugLog('Friends response:', response);
+        if (response.status === 'success') {
+            friends = response.friends;
             updateFriendsPanel();
+        } else {
+            $('#friendsList').html('<p class="text-danger">Error: ' + response.message + '</p>');
         }
-    }
+    }).catch(error => {
+        console.error('Friends API error:', error);
+        $('#friendsList').html('<p class="text-danger">Failed to load friends. Check console for details.</p>');
+    });
 }
 
 function updateFriendsPanel() {
@@ -4424,21 +4037,18 @@ function acceptFriend(friendId) {
         timeout: 10000, // 10 second timeout
         success: function(response) {
             if (response.status === 'success') {
-    showNotification('Friend request accepted!', 'success');
-    // SSE will automatically update friends - no need to call loadFriends()
-    
-    if (typeof clearFriendshipCache === 'function') {
-        clearFriendshipCache();
-    }
-    if (typeof loadUsers === 'function') {
-        loadUsers();
-    }
-    
-    // Just update the UI with current SSE data
-    if (friends && Array.isArray(friends)) {
-        updateFriendsPanel();
-    }
-} else {
+                // Success - show brief feedback then reload
+                showNotification('Friend request accepted!', 'success');
+                loadFriends();
+                
+                // Update other UI elements if they exist
+                if (typeof clearFriendshipCache === 'function') {
+                    clearFriendshipCache();
+                }
+                if (typeof loadUsers === 'function') {
+                    loadUsers();
+                }
+            } else {
                 showNotification('Error: ' + (response.message || 'Unknown error'), 'error');
             }
         },
@@ -4463,37 +4073,22 @@ function acceptFriend(friendId) {
 
 function loadConversations() {
     debugLog('Loading conversations...');
-    
-    // Use cached SSE data if available and SSE is connected
-    if (sseConnected && privateMessageConversations.length > 0) {
-        debugLog('✅ Using cached conversations from SSE:', privateMessageConversations.length);
-        displayConversations(privateMessageConversations);
-        return;
-    }
-    
-    // Only make AJAX call if SSE is not connected or no cached data
-    if (!sseEnabled || !sseConnected) {
-        debugLog('⚠️ SSE not connected, falling back to AJAX for conversations');
-        managedAjax({
-            url: 'api/private_messages.php',
-            method: 'GET',
-            data: { action: 'get_conversations' },
-            dataType: 'json'
-        }).then(response => {
-            debugLog('Conversations response:', response);
-            if (response.status === 'success') {
-                displayConversations(response.conversations);
-            } else {
-                $('#conversationsList').html('<p class="text-danger small">Error loading conversations</p>');
-            }
-        }).catch(error => {
-            console.error('Conversations API error:', error);
-            $('#conversationsList').html('<p class="text-danger small">Failed to load conversations</p>');
-        });
-    } else {
-        debugLog('⏳ Waiting for SSE to populate conversations...');
-        $('#conversationsList').html('<p class="text-muted small">Loading...</p>');
-    }
+    managedAjax({
+        url: 'api/private_messages.php',
+        method: 'GET',
+        data: { action: 'get_conversations' },
+        dataType: 'json'
+    }).then(response => {
+        debugLog('Conversations response:', response);
+        if (response.status === 'success') {
+            displayConversations(response.conversations);
+        } else {
+            $('#conversationsList').html('<p class="text-danger small">Error loading conversations</p>');
+        }
+    }).catch(error => {
+        console.error('Conversations API error:', error);
+        $('#conversationsList').html('<p class="text-danger small">Failed to load conversations</p>');
+    });
 }
 
 function displayConversations(conversations) {
@@ -4736,11 +4331,7 @@ function syncAvatarCustomization() {
                 debugLog('Avatar customization synced:', response);
                 setTimeout(() => {
                     loadUsers();
-                    if (!sseConnected || !sseFeatures.messages) {
-                    if (typeof loadMessages === 'function') {
-                        loadMessages();
-                    }
-                }
+                    loadMessages();
                 }, 200);
             } else {
                 debugLog('Avatar sync failed:', response.message);
@@ -5000,11 +4591,7 @@ function executeQuickBan(userIdString, username, ipAddress) {
                 
                 setTimeout(() => {
                     loadUsers();
-                    if (!sseConnected || !sseFeatures.messages) {
-                    if (typeof loadMessages === 'function') {
-                        loadMessages();
-                    }
-                }
+                    loadMessages();
                 }, 1000);
             } else {
                 alert('Error: ' + response.message);
@@ -5072,7 +4659,7 @@ function checkForMentions() {
 }
 
 function updateMentionCounter(count) {
-  /*  const counter = $('.mentions-counter');
+    const counter = $('.mentions-counter');
     
     if (count > 0) {
         if (counter.length === 0) {
@@ -5090,11 +4677,11 @@ function updateMentionCounter(count) {
     } else {
         counter.removeClass('show');
         setTimeout(() => counter.remove(), 200);
-    }*/
+    }
 }
 
 function showNewMentionNotification(count) {
-   /* const notification = $(`
+    const notification = $(`
         <div class="mention-notification-toast" style="
             position: fixed;
             top: 20px;
@@ -5117,7 +4704,7 @@ function showNewMentionNotification(count) {
         notification.fadeOut(300, function() {
             $(this).remove();
         });
-    }, 3000); */
+    }, 3000);
 }
 
 function toggleMentionsPanel() {
@@ -5364,11 +4951,7 @@ function addMentionHighlightCSS() {
                 
                 setTimeout(() => {
                     loadUsers();
-                    if (!sseConnected || !sseFeatures.messages) {
-                    if (typeof loadMessages === 'function') {
-                        loadMessages();
-                    }
-                }
+                    loadMessages();
                 }, 500);
                 
                 showToast(response.message, 'success');
@@ -5458,7 +5041,7 @@ function addAFKStyles() {
 
 
 if (DEBUG_MODE) {
-    //setInterval(showActivityStatus, 30000);
+    setInterval(showActivityStatus, 30000);
 }
 
 function startYouTubeUpdates() {
@@ -5608,11 +5191,7 @@ function executePassHost(targetUserIdString) {
                 // Reload users to reflect changes
                 setTimeout(() => {
                     loadUsers();
-                    if (!sseConnected || !sseFeatures.messages) {
-                    if (typeof loadMessages === 'function') {
-                        loadMessages();
-                    }
-                }
+                    loadMessages();
                 }, 500);
             } else {
                 alert('Error: ' + response.message);
