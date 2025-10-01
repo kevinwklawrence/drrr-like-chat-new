@@ -1,1 +1,240 @@
-(function(_0x213415,_0x319344){const _0x15a239=_0x31da,_0x528eb8=_0x213415();while(!![]){try{const _0x2cc427=-parseInt(_0x15a239(0x123))/0x1*(parseInt(_0x15a239(0x142))/0x2)+parseInt(_0x15a239(0x151))/0x3*(-parseInt(_0x15a239(0x14e))/0x4)+-parseInt(_0x15a239(0x16b))/0x5+parseInt(_0x15a239(0x13f))/0x6*(-parseInt(_0x15a239(0x15e))/0x7)+-parseInt(_0x15a239(0x156))/0x8+parseInt(_0x15a239(0x145))/0x9*(parseInt(_0x15a239(0x159))/0xa)+parseInt(_0x15a239(0x129))/0xb*(parseInt(_0x15a239(0x153))/0xc);if(_0x2cc427===_0x319344)break;else _0x528eb8['push'](_0x528eb8['shift']());}catch(_0x2cbe54){_0x528eb8['push'](_0x528eb8['shift']());}}}(_0x1e32,0x93a93));let playedNotificationIds=new Set(),currentNotifications=[],notificationCheckInterval;function initializeNotifications(){const _0x40f2f6=_0x31da;notificationCheckInterval=setInterval(checkForNotifications,0x1388),checkForNotifications(),$(document)['on'](_0x40f2f6(0x160),'#notificationBell',toggleNotificationsPanel),$(document)['on'](_0x40f2f6(0x160),'.notification-panel-close',closeNotificationsPanel),$(document)['on'](_0x40f2f6(0x160),'.notification-mark-all',markAllNotificationsRead),$(document)['on']('click',_0x40f2f6(0x137),handleNotificationClick),$(document)['on'](_0x40f2f6(0x160),function(_0x5574db){const _0x392587=_0x40f2f6;!$(_0x5574db[_0x392587(0x135)])[_0x392587(0x14f)](_0x392587(0x16a))[_0x392587(0x134)]&&closeNotificationsPanel();});}function checkForNotifications(){const _0x49f9bd=_0x31da;if(!$(_0x49f9bd(0x14a))[_0x49f9bd(0x134)])return;$[_0x49f9bd(0x14d)]({'url':_0x49f9bd(0x12a),'method':_0x49f9bd(0x13e),'dataType':_0x49f9bd(0x124),'success':function(_0x3ac515){const _0x4c3554=_0x49f9bd;_0x3ac515[_0x4c3554(0x12f)]==='success'&&(currentNotifications=_0x3ac515['notifications']||[],updateNotificationBell(),updateNotificationsPanel());},'error':function(_0x49d809,_0x192bd8,_0x29f214){const _0xc59caf=_0x49f9bd;console[_0xc59caf(0x122)](_0xc59caf(0x15a),_0x29f214);}});}function _0x31da(_0x28bcb1,_0x89198d){const _0x1e3222=_0x1e32();return _0x31da=function(_0x31daf1,_0x4cbc4e){_0x31daf1=_0x31daf1-0x120;let _0x2c47d5=_0x1e3222[_0x31daf1];return _0x2c47d5;},_0x31da(_0x28bcb1,_0x89198d);}function updateNotificationBell(){const _0x505202=_0x31da,_0xe49243=$('#notificationBell'),_0x562f24=_0xe49243['find'](_0x505202(0x13b)),_0x537aff=currentNotifications[_0x505202(0x134)];_0x537aff>0x0?(_0xe49243[_0x505202(0x147)](_0x505202(0x125)),_0x562f24['length']===0x0&&_0xe49243['append'](_0x505202(0x13d)),_0xe49243[_0x505202(0x15d)](_0x505202(0x13b))['text'](_0x537aff>0x63?_0x505202(0x138):_0x537aff)):(_0xe49243[_0x505202(0x12c)](_0x505202(0x125)),_0x562f24[_0x505202(0x128)]());}function toggleNotificationsPanel(){const _0xd4ecb7=_0x31da,_0x884685=$(_0xd4ecb7(0x157));_0x884685[_0xd4ecb7(0x166)](_0xd4ecb7(0x161))?closeNotificationsPanel():showNotificationsPanel();}function _0x1e32(){const _0x3f38b5=['closest','fa-bell','6sCJqVX','top','30411960gfcGnL','\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20data-type=\x22','h\x20ago','4724272TpmLiU','.notifications-panel','type','627530VqAlAp','Notification\x20check\x20failed:','mark_all_read','currentTarget','find','140CjUMuD','mention','click','show','floor','append','body','animate','hasClass','sender_name','sender_avatar','POST','.notifications-panel,\x20#notificationBell','3127390JHcbGJ','message_id','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20style=\x22color:#72767d;font-size:0.7rem;\x22>','filter','mentioned-highlight','toLocaleDateString','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22notifications-panel\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22notifications-panel-header\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h6\x20class=\x22notifications-panel-title\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-bell\x22></i>\x20Notifications\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</h6>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22notifications-panel-actions\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-sm\x20btn-outline-light\x20notification-mark-all\x22\x20title=\x22Mark\x20all\x20as\x20read\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-check-double\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-sm\x20btn-outline-light\x20notification-panel-close\x22\x20title=\x22Close\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-times\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22notifications-panel-content\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22notifications-loading\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-spinner\x20fa-spin\x22></i>\x20Loading...\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20','notification_type','error','516746WXezoq','json','has-notifications','m\x20ago','api/handle_notification_action.php','remove','11GziBPz','api/get_notifications.php','.notifications-panel-content','removeClass','scrollTop','message','status','\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20style=\x22display:flex;align-items:center;gap:10px;margin-bottom:8px;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22images/','d\x20ago','reply','message-id','length','target','\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20style=\x22width:32px;height:32px;border-radius:6px;object-fit:cover;\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20alt=\x22Avatar\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20style=\x22flex:1;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20style=\x22color:#fff;font-weight:600;font-size:0.85rem;display:flex;align-items:center;gap:6px;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20','.notification-item','99+','mark_read','data','.notification-badge','.chat-message[data-message-id=\x22','<span\x20class=\x22notification-badge\x22></span>','GET','180Muewwr','\x22></i>\x20','\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20data-id=\x22','2tEQxtw','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22notification-item\x20','</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20style=\x22color:#dcddde;font-size:0.8rem;line-height:1.4;overflow-wrap:break-word;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','45AXgUVr','<div\x20class=\x22notifications-empty\x22><i\x20class=\x22fas\x20fa-bell-slash\x22></i><p>No\x20notifications</p></div>','addClass','\x22\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20data-message-id=\x22','success','#notificationBell','/sounds/reply_or_mention_notification.mp3','has','ajax','1019836pVptQo'];_0x1e32=function(){return _0x3f38b5;};return _0x1e32();}function showNotificationsPanel(){const _0x17f3f5=_0x31da;let _0x1ba43f=$(_0x17f3f5(0x157));_0x1ba43f[_0x17f3f5(0x134)]===0x0&&(createNotificationsPanel(),_0x1ba43f=$(_0x17f3f5(0x157))),updateNotificationsPanel(),_0x1ba43f['addClass'](_0x17f3f5(0x161));}function closeNotificationsPanel(){const _0x570b1d=_0x31da;$(_0x570b1d(0x157))[_0x570b1d(0x12c)](_0x570b1d(0x161));}function createNotificationsPanel(){const _0x597e20=_0x31da,_0x4957a5=_0x597e20(0x120);$(_0x597e20(0x164))[_0x597e20(0x163)](_0x4957a5);}function updateNotificationsPanel(){const _0x35beba=_0x31da,_0x58a528=$(_0x35beba(0x12b));if(currentNotifications[_0x35beba(0x134)]===0x0){_0x58a528['html'](_0x35beba(0x146));return;}let _0x371021='',_0xe5213d=![];currentNotifications['forEach'](_0x5dc0a4=>{const _0x37894b=_0x35beba;_0x371021+=createNotificationHTML(_0x5dc0a4),(_0x5dc0a4[_0x37894b(0x158)]===_0x37894b(0x132)||_0x5dc0a4[_0x37894b(0x158)]===_0x37894b(0x15f))&&!playedNotificationIds[_0x37894b(0x14c)](_0x5dc0a4['id'])&&(playReplyOrMentionSound(),playedNotificationIds['add'](_0x5dc0a4['id']));}),_0x58a528['html'](_0x371021);}function createNotificationHTML(_0x2b367a){const _0x2b37d0=_0x31da,_0x400039=getTimeAgo(_0x2b367a['timestamp']);let _0x3ddc94=_0x2b37d0(0x150);if(_0x2b367a[_0x2b37d0(0x158)]===_0x2b37d0(0x15f))_0x3ddc94='fa-at';else{if(_0x2b367a[_0x2b37d0(0x158)]==='reply')_0x3ddc94='fa-reply';}return _0x2b37d0(0x143)+_0x2b367a[_0x2b37d0(0x158)]+_0x2b37d0(0x141)+_0x2b367a['id']+_0x2b37d0(0x154)+_0x2b367a[_0x2b37d0(0x121)]+_0x2b37d0(0x148)+(_0x2b367a[_0x2b37d0(0x16c)]||'')+_0x2b37d0(0x130)+_0x2b367a[_0x2b37d0(0x168)]+_0x2b37d0(0x136)+_0x3ddc94+_0x2b37d0(0x140)+_0x2b367a['title']+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20style=\x22color:#b9bbbe;font-size:0.75rem;\x22>'+_0x2b367a[_0x2b37d0(0x167)]+_0x2b37d0(0x16d)+_0x400039+_0x2b37d0(0x144)+_0x2b367a[_0x2b37d0(0x12e)]+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20';}function handleNotificationClick(_0x2e5076){const _0xe51aa6=_0x31da,_0x4d7a4c=$(_0x2e5076[_0xe51aa6(0x15c)]),_0x40fa8f=_0x4d7a4c[_0xe51aa6(0x13a)]('id'),_0x6d7429=_0x4d7a4c[_0xe51aa6(0x13a)](_0xe51aa6(0x158)),_0x33b231=_0x4d7a4c['data'](_0xe51aa6(0x133));markNotificationRead(_0x40fa8f,_0x6d7429),_0x6d7429===_0xe51aa6(0x15f)&&_0x33b231&&jumpToMessage(_0x33b231),closeNotificationsPanel();}function markNotificationRead(_0x5b6456,_0x3b6175){const _0x293ff2=_0x31da;$['ajax']({'url':'api/handle_notification_action.php','method':_0x293ff2(0x169),'data':{'action':_0x293ff2(0x139),'notification_type':_0x3b6175,'notification_id':_0x5b6456},'dataType':_0x293ff2(0x124),'success':function(_0x18ed2e){const _0x5f1f07=_0x293ff2;currentNotifications=currentNotifications[_0x5f1f07(0x16e)](_0x1f747c=>_0x1f747c['id']!==_0x5b6456),updateNotificationBell();}});}function markAllNotificationsRead(){const _0x2cf0cb=_0x31da;$[_0x2cf0cb(0x14d)]({'url':_0x2cf0cb(0x127),'method':_0x2cf0cb(0x169),'data':{'action':_0x2cf0cb(0x15b)},'dataType':_0x2cf0cb(0x124),'success':function(_0x4b8f9f){const _0x3b508c=_0x2cf0cb;_0x4b8f9f[_0x3b508c(0x12f)]===_0x3b508c(0x149)&&(currentNotifications=[],updateNotificationBell(),updateNotificationsPanel());}});}function jumpToMessage(_0x21e610){const _0x316266=_0x31da,_0x5f2cc2=$(_0x316266(0x13c)+_0x21e610+'\x22]');if(_0x5f2cc2[_0x316266(0x134)]>0x0){const _0x57c236=$('#chatbox'),_0x45dd75=_0x5f2cc2['position']()[_0x316266(0x152)]+_0x57c236[_0x316266(0x12d)]();_0x57c236[_0x316266(0x165)]({'scrollTop':_0x45dd75-0x64},0x12c),_0x5f2cc2[_0x316266(0x147)](_0x316266(0x16f)),setTimeout(()=>{const _0x26215b=_0x316266;_0x5f2cc2[_0x26215b(0x12c)](_0x26215b(0x16f));},0xbb8);}}function getTimeAgo(_0xe27574){const _0x42bf1a=_0x31da,_0x521683=new Date(),_0x52a753=new Date(_0xe27574),_0xba3061=Math[_0x42bf1a(0x162)]((_0x521683-_0x52a753)/0x3e8);if(_0xba3061<0x3c)return'Just\x20now';if(_0xba3061<0xe10)return Math[_0x42bf1a(0x162)](_0xba3061/0x3c)+_0x42bf1a(0x126);if(_0xba3061<0x15180)return Math[_0x42bf1a(0x162)](_0xba3061/0xe10)+_0x42bf1a(0x155);if(_0xba3061<0x93a80)return Math[_0x42bf1a(0x162)](_0xba3061/0x15180)+_0x42bf1a(0x131);return _0x52a753[_0x42bf1a(0x170)]();}function playReplyOrMentionSound(){const _0x10e8b7=_0x31da,_0x1fee82=new Audio(_0x10e8b7(0x14b));_0x1fee82['play']();}$(document)['ready'](function(){initializeNotifications();});
+let playedNotificationIds = new Set();
+let currentNotifications = [];
+let notificationCheckInterval;
+
+function initializeNotifications() {
+    notificationCheckInterval = setInterval(checkForNotifications, 5000);
+    checkForNotifications();
+    $(document).on("click", "#notificationBell", toggleNotificationsPanel);
+    $(document).on("click", ".notification-panel-close", closeNotificationsPanel);
+    $(document).on("click", ".notification-mark-all", markAllNotificationsRead);
+    $(document).on("click", ".notification-item", handleNotificationClick);
+    $(document).on("click", function(e) {
+        if (!$(e.target).closest(".notifications-panel, #notificationBell").length) {
+            closeNotificationsPanel();
+        }
+    });
+}
+
+function checkForNotifications() {
+    if (!$("#notificationBell").length) return;
+    
+    $.ajax({
+        url: "api/get_notifications.php",
+        method: "GET",
+        dataType: "json",
+        success: function(response) {
+            if (response.status === "success") {
+                currentNotifications = response.notifications || [];
+                updateNotificationBell();
+                updateNotificationsPanel();
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error("Notification check failed:", error);
+        }
+    });
+}
+
+function updateNotificationBell() {
+    const bellElement = $("#notificationBell");
+    const badge = bellElement.find(".notification-badge");
+    const count = currentNotifications.length;
+    
+    if (count > 0) {
+        bellElement.addClass("has-notifications");
+        if (badge.length === 0) {
+            bellElement.append("<span class=\"notification-badge\"></span>");
+        }
+        bellElement.find(".notification-badge").text(count > 99 ? "99+" : count);
+    } else {
+        bellElement.removeClass("has-notifications");
+        badge.remove();
+    }
+}
+
+function toggleNotificationsPanel() {
+    const panel = $(".notifications-panel");
+    if (panel.hasClass("show")) {
+        closeNotificationsPanel();
+    } else {
+        showNotificationsPanel();
+    }
+}
+
+function showNotificationsPanel() {
+    let panel = $(".notifications-panel");
+    if (panel.length === 0) {
+        createNotificationsPanel();
+        panel = $(".notifications-panel");
+    }
+    updateNotificationsPanel();
+    panel.addClass("show");
+}
+
+function closeNotificationsPanel() {
+    $(".notifications-panel").removeClass("show");
+}
+
+function createNotificationsPanel() {
+    const panelHtml = `
+        <div class="notifications-panel">
+            <div class="notifications-panel-header">
+                <h6 class="notifications-panel-title">
+                    <i class="fas fa-bell"></i> Notifications
+                </h6>
+                <div class="notifications-panel-actions">
+                    <button class="btn btn-sm btn-outline-light notification-mark-all" title="Mark all as read">
+                        <i class="fas fa-check-double"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-light notification-panel-close" title="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="notifications-panel-content">
+                <div class="notifications-loading">
+                    <i class="fas fa-spinner fa-spin"></i> Loading...
+                </div>
+            </div>
+        </div>
+    `;
+    $("body").append(panelHtml);
+}
+
+function updateNotificationsPanel() {
+    const container = $(".notifications-panel-content");
+    if (currentNotifications.length === 0) {
+        container.html(`<div class="notifications-empty"><i class="fas fa-bell-slash"></i><p>No notifications</p></div>`);
+        return;
+    }
+    
+    let html = "";
+    let shouldPlaySound = false;
+    currentNotifications.forEach(notification => {
+        html += createNotificationHTML(notification);
+            if ((notification.type === "reply" || notification.type === "mention") && !playedNotificationIds.has(notification.id)) {
+                playReplyOrMentionSound();
+                playedNotificationIds.add(notification.id);
+        }
+    });
+    container.html(html);
+
+    }
+
+
+function createNotificationHTML(notification) {
+    const timeAgo = getTimeAgo(notification.timestamp);
+    let iconClass = "fa-bell";
+    if (notification.type === "mention") iconClass = "fa-at";
+    else if (notification.type === "reply") iconClass = "fa-reply";
+
+    
+    
+    return `
+        <div class="notification-item ${notification.type}" 
+             data-id="${notification.id}" 
+             data-type="${notification.notification_type}"
+             data-message-id="${notification.message_id || ""}">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                <img src="images/${notification.sender_avatar}" 
+                     style="width:32px;height:32px;border-radius:6px;object-fit:cover;" 
+                     alt="Avatar">
+                <div style="flex:1;">
+                    <div style="color:#fff;font-weight:600;font-size:0.85rem;display:flex;align-items:center;gap:6px;">
+                        <i class="fas ${iconClass}"></i> ${notification.title}
+                    </div>
+                    <div style="color:#b9bbbe;font-size:0.75rem;">${notification.sender_name}</div>
+                </div>
+                <div style="color:#72767d;font-size:0.7rem;">${timeAgo}</div>
+            </div>
+            <div style="color:#dcddde;font-size:0.8rem;line-height:1.4;overflow-wrap:break-word;">
+                ${notification.message}
+            </div>
+        </div>
+    `;
+}
+
+function handleNotificationClick(e) {
+    const notification = $(e.currentTarget);
+    const notificationId = notification.data("id");
+    const notificationType = notification.data("type");
+    const messageId = notification.data("message-id");
+    
+    markNotificationRead(notificationId, notificationType);
+    
+    if (notificationType === "mention" && messageId) {
+        jumpToMessage(messageId);
+    }
+    
+    closeNotificationsPanel();
+}
+
+function markNotificationRead(notificationId, notificationType) {
+    $.ajax({
+        url: "api/handle_notification_action.php",
+        method: "POST",
+        data: {
+            action: "mark_read",
+            notification_type: notificationType,
+            notification_id: notificationId
+        },
+        dataType: "json",
+        success: function(response) {
+            currentNotifications = currentNotifications.filter(n => n.id !== notificationId);
+            updateNotificationBell();
+        }
+    });
+}
+
+function markAllNotificationsRead() {
+    $.ajax({
+        url: "api/handle_notification_action.php",
+        method: "POST",
+        data: { action: "mark_all_read" },
+        dataType: "json",
+        success: function(response) {
+            if (response.status === "success") {
+                currentNotifications = [];
+                updateNotificationBell();
+                updateNotificationsPanel();
+            }
+        }
+    });
+}
+
+function jumpToMessage(messageId) {
+    const messageElement = $(`.chat-message[data-message-id="${messageId}"]`);
+    if (messageElement.length > 0) {
+        const chatbox = $("#chatbox");
+        const messageTop = messageElement.position().top + chatbox.scrollTop();
+        chatbox.animate({ scrollTop: messageTop - 100 }, 300);
+        messageElement.addClass("mentioned-highlight");
+        setTimeout(() => {
+            messageElement.removeClass("mentioned-highlight");
+        }, 3000);
+    }
+}
+
+function getTimeAgo(timestamp) {
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diffInSeconds = Math.floor((now - time) / 1000);
+    
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600) return Math.floor(diffInSeconds / 60) + "m ago";
+    if (diffInSeconds < 86400) return Math.floor(diffInSeconds / 3600) + "h ago";
+    if (diffInSeconds < 604800) return Math.floor(diffInSeconds / 86400) + "d ago";
+    
+    return time.toLocaleDateString();
+}
+
+function playReplyOrMentionSound() {
+    const audio = new Audio('/sounds/reply_or_mention_notification.mp3');
+    audio.play();
+}
+
+$(document).ready(function() {
+    initializeNotifications();
+});
+

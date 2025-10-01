@@ -71,48 +71,46 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
             if (in_array('message', $event_types)) {
     $message_limit = 100;
     $messages_stmt = $conn->prepare("
-    SELECT m.*,
-           u.username,
-           u.is_admin,
-           u.is_moderator,
-           cu.ip_address,
-           cu.is_host,
-           cu.guest_avatar,
-           (SELECT JSON_ARRAYAGG(
-               JSON_OBJECT(
-                   'name', si.name,
-                   'rarity', si.rarity,
-                   'icon', si.icon
+        SELECT m.*,
+               u.username,
+               u.is_admin,
+               u.is_moderator,
+               cu.ip_address,
+               cu.is_host,
+               cu.guest_avatar,
+               (SELECT JSON_ARRAYAGG(
+                   JSON_OBJECT(
+                       'name', si.name,
+                       'rarity', si.rarity,
+                       'icon', si.icon
+                   )
                )
-           )
-           FROM user_inventory ui
-           JOIN shop_items si ON ui.item_id = si.item_id
-           WHERE ui.user_id = m.user_id 
-           AND ui.is_equipped = 1 
-           AND si.type = 'title'
-           ORDER BY FIELD(si.rarity, 'legendary', 'strange', 'rare', 'common')
-           LIMIT 5) as equipped_titles
-    FROM messages m
-    LEFT JOIN users u ON m.user_id = u.id
-    LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id 
-        AND m.user_id_string = cu.user_id_string
-    WHERE m.room_id = ?
-    GROUP BY m.id
-    ORDER BY m.id DESC 
-    LIMIT ?
-");
+               FROM user_inventory ui
+               JOIN shop_items si ON ui.item_id = si.item_id
+               WHERE ui.user_id = m.user_id 
+               AND ui.is_equipped = 1 
+               AND si.type = 'title'
+               ORDER BY FIELD(si.rarity, 'legendary', 'strange', 'rare', 'common')
+               LIMIT 5) as equipped_titles
+        FROM messages m
+        LEFT JOIN users u ON m.user_id = u.id
+        LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id 
+            AND (
+                (m.user_id IS NOT NULL AND m.user_id = cu.user_id) OR 
+                (m.user_id IS NULL AND m.guest_name = cu.guest_name) OR
+                (m.user_id IS NULL AND m.user_id_string = cu.user_id_string)
+            )
+        WHERE m.room_id = ?
+        ORDER BY m.id DESC 
+        LIMIT ?
+    ");
     $messages_stmt->bind_param("ii", $room_id, $message_limit);
     $messages_stmt->execute();
     $messages_result = $messages_stmt->get_result();
     $messages = [];
     while ($msg = $messages_result->fetch_assoc()) {
-        if (empty($msg['id']) || !isset($msg['message'])) {
-        error_log("SSE: Skipping invalid message");
-        continue;
-    }
-    
-    // Normalize keys to lowercase
-    $msg = array_change_key_case($msg, CASE_LOWER);
+        // Normalize keys to lowercase
+        $msg = array_change_key_case($msg, CASE_LOWER);
         
         // Parse equipped titles
         $equipped_titles = [];
@@ -539,7 +537,7 @@ if (in_array('private_message', $event_types) && $user_id) {
     
     // Short sleep to prevent hammering database
     // When events detected, sleep less; when no events, sleep more
-    usleep($has_events ? 100000 : 300000);
+    sleep($has_events ? 0.5 : 1);
     
     // Reset connection after max iterations
     if ($iteration >= $max_iterations || (time() - $start_time) >= ($max_duration - 2)) {

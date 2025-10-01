@@ -57,8 +57,7 @@ let kickDetectionEnabled = true;
 let lastStatusCheck = 0;
 let consecutiveErrors = 0;
 
-let pendingMessages = new Map(); // Track optimistic messages
-let pendingMessageCounter = 0;
+
 
 
 
@@ -482,27 +481,23 @@ function fetchAllRoomData() {
     const promises = [];
     
     // 1. MESSAGES - Skip if using SSE
-     if (!sseFeatures.messages || !sseConnected) {
-        if (!isLoadingMessages) {  // ADDED: Check if already loading
-            promises.push(
-                managedAjax({
-                    url: 'api/get_messages.php',
-                    method: 'GET',
-                    data: { 
-                        room_id: roomId,
-                        limit: messageLimit,
-                        offset: 0
-                    },
-                    dataType: 'json'
-                }).then(response => {
-                    handleMessagesResponse(response);
-                }).catch(error => {
-                    console.error('Messages error:', error);
-                })
-            );
-        } else {
-            debugLog('⏸️ Skipping messages Ajax (already loading)');
-        }
+    if (!sseFeatures.messages || !sseConnected) {
+        promises.push(
+            managedAjax({
+                url: 'api/get_messages.php',
+                method: 'GET',
+                data: { 
+                    room_id: roomId,
+                    limit: messageLimit,
+                    offset: 0
+                },
+                dataType: 'json'
+            }).then(response => {
+                handleMessagesResponse(response);
+            }).catch(error => {
+                console.error('Messages error:', error);
+            })
+        );
     } else {
         debugLog('⏭️ Skipping messages Ajax (using SSE)');
     }
@@ -720,56 +715,18 @@ function handleRoomDataResponse(response) {
 
 // Response handlers
 function handleMessagesResponse(data) {
-    if (!data || typeof data !== 'object') {
-        console.error('Invalid data in handleMessagesResponse:', data);
-        return;
-    }
-    
-    if (data.status !== 'success') {
-        console.error('Non-success status in handleMessagesResponse:', data.status);
-        return;
-    }
-    
-    const messages = data.messages || [];
-    
-    if (!Array.isArray(messages)) {
-        console.error('Messages is not an array:', messages);
-        return;
-    }
-    
-    const existingMessageCount = $('.chat-message').length;
-    if (messages.length === 0 && existingMessageCount > 0 && !isInitialLoad) {
-        console.warn('⚠️ Ignoring empty message response - keeping existing messages');
-        return;
-    }
-    
-    // Check for pending messages that are now confirmed
-    messages.forEach(msg => {
-        // Find any pending message from this user with similar content/timestamp
-        pendingMessages.forEach((pendingMsg, tempId) => {
-            if (pendingMsg.message === msg.message && 
-                pendingMsg.user_id_string === msg.user_id_string) {
-                // This pending message is now confirmed - remove it
-                removeOptimisticMessage(tempId);
-            }
-        });
-    });
-    
-    let html = '';
-    
-    if (messages.length === 0) {
-        html = '<div class="empty-chat"><i class="fas fa-comments"></i><h5>No messages yet</h5><p>Start the conversation!</p></div>';
-    } else {
-        messages.forEach(msg => {
-            if (msg && msg.id && msg.message !== undefined) {
+    if (data.status === 'success') {
+        const messages = data.messages || [];
+        let html = '';
+        
+        if (messages.length === 0) {
+            html = '<div class="empty-chat"><i class="fas fa-comments"></i><h5>No messages yet</h5><p>Start the conversation!</p></div>';
+        } else {
+            messages.forEach(msg => {
                 html += renderMessage(msg);
-            } else {
-                console.warn('Skipping invalid message:', msg);
-            }
-        });
-    }
-    
-    if (html) {
+            });
+        }
+        
         const chatbox = $('#chatbox');
         const wasAtBottom = isInitialLoad || (chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20);
         
@@ -1188,38 +1145,6 @@ function sendValidatedMessage(message) {
         sendData.reply_to = currentReplyTo;
     }
     
-    // OPTIMISTIC UPDATE: Create temporary message ID
-    const tempId = `pending_${Date.now()}_${++pendingMessageCounter}`;
-    
-    // Create optimistic message object
-    const optimisticMessage = {
-        id: tempId,
-        message: message,
-        user_id: currentUser.id || null,
-        user_id_string: currentUser.user_id || currentUserIdString,
-        guest_name: currentUser.type === 'guest' ? (currentUser.name || currentUser.guest_name) : null,
-        username: currentUser.username || null,
-        avatar: currentUser.avatar || 'default_avatar.jpg',
-        color: currentUser.color || 'blue',
-        avatar_hue: currentUser.avatar_hue || 0,
-        avatar_saturation: currentUser.avatar_saturation || 100,
-        bubble_hue: currentUser.bubble_hue || 0,
-        bubble_saturation: currentUser.bubble_saturation || 100,
-        timestamp: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        type: 'chat',
-        is_system: false,
-        is_host: isHost,
-        reply_to_message_id: sendData.reply_to || null,
-        equipped_titles: currentUser.equipped_titles || [],
-        pending: true // Mark as pending
-    };
-    
-    // Store in pending map
-    pendingMessages.set(tempId, optimisticMessage);
-    
-    // Immediately add to UI
-    addOptimisticMessage(optimisticMessage);
-    
     $.ajax({
         url: 'api/send_message.php',
         method: 'POST',
@@ -1227,8 +1152,6 @@ function sendValidatedMessage(message) {
         dataType: 'json',
         success: function(response) {
             if (response.status === 'not_in_room') {
-                // Remove optimistic message
-                removeOptimisticMessage(tempId);
                 alert(response.message || 'You have been disconnected from the room');
                 window.location.href = '/lounge';
                 return;
@@ -1240,60 +1163,26 @@ function sendValidatedMessage(message) {
                     clearReplyInterface();
                 }
                 
-                // Mark message as confirmed (SSE will replace it with real data)
-                const pendingEl = $(`.chat-message[data-message-id="${tempId}"]`);
-                pendingEl.removeClass('pending-message');
-                
-                // SSE will deliver the real message and replace this one
+                // Don't manually reload - SSE will deliver the new message
+                // Only reload if SSE is not connected
+                if (!sseConnected || !sseFeatures.messages) {
+                    if (typeof loadMessages === 'function') {
+                        loadMessages();
+                    }
+                }
             } else {
-                // Failed - remove optimistic message
-                removeOptimisticMessage(tempId);
                 alert('Error: ' + response.message);
             }
         },
         error: function(xhr, status, error) {
-            // Failed - remove optimistic message
-            removeOptimisticMessage(tempId);
             console.error('AJAX error in sendMessage:', status, error);
             alert('AJAX error: ' + error);
         },
         complete: function() {
+            // Always re-enable the button
             sendBtn.prop('disabled', false).html(originalText);
             messageInput.focus();
         }
-    });
-}
-
-function addOptimisticMessage(msg) {
-    const chatbox = $('#chatbox');
-    const wasAtBottom = chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20;
-    
-    // Remove "no messages" placeholder if present
-    chatbox.find('.empty-chat').remove();
-    
-    // Render and append the message
-    const messageHtml = renderMessage(msg);
-    chatbox.append(messageHtml);
-    
-    // Add pending styling
-    const messageEl = $(`.chat-message[data-message-id="${msg.id}"]`);
-    messageEl.addClass('pending-message');
-    
-    // Scroll to bottom if user was at bottom
-    if (wasAtBottom) {
-        chatbox.scrollTop(chatbox[0].scrollHeight);
-    }
-    
-    if (typeof applyAllAvatarFilters === 'function') {
-        applyAllAvatarFilters();
-    }
-}
-
-// 4. Function to remove optimistic message
-function removeOptimisticMessage(tempId) {
-    pendingMessages.delete(tempId);
-    $(`.chat-message[data-message-id="${tempId}"]`).fadeOut(200, function() {
-        $(this).remove();
     });
 }
 
@@ -1420,8 +1309,11 @@ function loadOlderMessages() {
     debugLog('loadOlderMessages called. hasMoreOlderMessages:', hasMoreOlderMessages, 'isLoadingMessages:', isLoadingMessages);
     
     if (!isLoadingMessages && hasMoreOlderMessages) {
-        messageOffset += messageLimit;  // Increment offset BEFORE loading
-        loadMessages(true);  // FIXED: Added true parameter
+        if (!sseConnected || !sseFeatures.messages) {
+                    if (typeof loadMessages === 'function') {
+                        loadMessages();
+                    }
+                }
     } else if (isLoadingMessages) {
         debugLog('Already loading messages, skipping...');
     } else if (!hasMoreOlderMessages) {

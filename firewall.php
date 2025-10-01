@@ -1,43 +1,14 @@
 <?php
 session_start();
 
-include 'db_connect.php';
-include 'check_site_ban.php';
-
-// Get user's IP address
-$ip_address = $_SERVER['REMOTE_ADDR'];
-
-// Check if IP has already passed the firewall
-$stmt = $conn->prepare("SELECT id FROM firewall_passes WHERE ip_address = ?");
-if ($stmt) {
-    $stmt->bind_param("s", $ip_address);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows > 0) {
-        // IP found - user has passed before, bypass firewall
-        $_SESSION['firewall_passed'] = true;
-        $stmt->close();
-        
-        // Update last_access timestamp
-        $update_stmt = $conn->prepare("UPDATE firewall_passes SET last_access = NOW() WHERE ip_address = ?");
-        if ($update_stmt) {
-            $update_stmt->bind_param("s", $ip_address);
-            $update_stmt->execute();
-            $update_stmt->close();
-        }
-        
-        header("Location: /select");
-        exit;
-    }
-    $stmt->close();
-}
-
-// If user already passed firewall, redirect to select
+// If user already passed firewall, redirect to index
 if (isset($_SESSION['firewall_passed'])) {
-    header("Location: /select");
+    header("Location: /guest");
     exit;
 }
+
+include 'db_connect.php';
+include 'check_site_ban.php';
 
 // Handle password submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -64,15 +35,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // If we reach here, user is not banned
         $_SESSION['firewall_passed'] = true;
-        
-        // Store IP in database
-        $insert_stmt = $conn->prepare("INSERT INTO firewall_passes (ip_address) VALUES (?) ON DUPLICATE KEY UPDATE last_access = NOW()");
-        if ($insert_stmt) {
-            $insert_stmt->bind_param("s", $ip_address);
-            $insert_stmt->execute();
-            $insert_stmt->close();
-        }
-        
         echo json_encode(['status' => 'success']);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Incorrect password']);
@@ -737,7 +699,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $('#continueBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Loading...');
             
             setTimeout(() => {
-                window.location.href = '/select';
+                window.location.href = '/guest';
             }, 1000);
         }
         

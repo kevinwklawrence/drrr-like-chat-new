@@ -1,1 +1,197 @@
-const _0x3ec49a=_0x24ac;(function(_0x50de2a,_0x511705){const _0x1ae8e2=_0x24ac,_0x416fd1=_0x50de2a();while(!![]){try{const _0x1a9647=parseInt(_0x1ae8e2(0x17a))/0x1*(parseInt(_0x1ae8e2(0x184))/0x2)+-parseInt(_0x1ae8e2(0x17c))/0x3*(parseInt(_0x1ae8e2(0x186))/0x4)+-parseInt(_0x1ae8e2(0x191))/0x5*(parseInt(_0x1ae8e2(0x171))/0x6)+parseInt(_0x1ae8e2(0x198))/0x7*(parseInt(_0x1ae8e2(0x192))/0x8)+parseInt(_0x1ae8e2(0x177))/0x9*(-parseInt(_0x1ae8e2(0x18b))/0xa)+parseInt(_0x1ae8e2(0x161))/0xb*(-parseInt(_0x1ae8e2(0x162))/0xc)+parseInt(_0x1ae8e2(0x18d))/0xd;if(_0x1a9647===_0x511705)break;else _0x416fd1['push'](_0x416fd1['shift']());}catch(_0x4e0692){_0x416fd1['push'](_0x416fd1['shift']());}}}(_0x15d4,0x9853a));function checkAndGrantTokens(){const _0x16aa80=_0x24ac;if(currentUser[_0x16aa80(0x190)]!==_0x16aa80(0x16a))return;$['ajax']({'url':_0x16aa80(0x170),'method':_0x16aa80(0x16b),'data':{'action':_0x16aa80(0x165)},'dataType':'json','success':function(_0x3c7ab4){const _0x5c0c39=_0x16aa80;_0x3c7ab4['status']==='success'&&(currentUser[_0x5c0c39(0x187)]=_0x3c7ab4[_0x5c0c39(0x187)],updateDuraDisplay());}});}function updateDuraBalance(){const _0x3c1033=_0x24ac;if(currentUser[_0x3c1033(0x190)]!==_0x3c1033(0x16a))return;$[_0x3c1033(0x176)]({'url':_0x3c1033(0x170),'method':'POST','data':{'action':'get_balance'},'dataType':'json','success':function(_0x5cd966){const _0x524bf3=_0x3c1033;_0x5cd966[_0x524bf3(0x180)]===_0x524bf3(0x168)&&(currentUser['dura']=_0x5cd966[_0x524bf3(0x175)],currentUser[_0x524bf3(0x187)]=_0x5cd966[_0x524bf3(0x187)],updateDuraDisplay(),updateShopBalances());}});}function updateDuraDisplay(){}function showTipModal(_0x240550,_0x3b5621){const _0x38f77e=_0x24ac;if(currentUser['type']!==_0x38f77e(0x16a)){alert(_0x38f77e(0x193));return;}const _0x5d3b44=$(_0x38f77e(0x16f)+_0x3b5621+'</h5>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn-close\x20btn-close-white\x22\x20data-bs-dismiss=\x22modal\x22></button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-body\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<strong>Your\x20Balance:</strong><br>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20💎\x20Dura:\x20'+(currentUser[_0x38f77e(0x175)]||0x0)+_0x38f77e(0x169)+(currentUser[_0x38f77e(0x187)]||0x0)+_0x38f77e(0x17f)+_0x240550+_0x38f77e(0x181)+_0x3b5621+'\x27)\x22>Send\x20Tip</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20');$('body')[_0x38f77e(0x18e)](_0x5d3b44);const _0x58f8c5=new bootstrap[(_0x38f77e(0x16e))](document['getElementById'](_0x38f77e(0x15f)));_0x58f8c5[_0x38f77e(0x164)](),$(_0x38f77e(0x16d))['on'](_0x38f77e(0x185),function(){const _0x4bdd2f=_0x38f77e;$(this)[_0x4bdd2f(0x19c)]();});}function sendTip(_0x4fe6cd,_0x9bca54){const _0x3a8c75=_0x24ac,_0x5d5f91=parseInt($(_0x3a8c75(0x163))[_0x3a8c75(0x167)]()),_0x28bf21=$(_0x3a8c75(0x197))[_0x3a8c75(0x167)]();if(!_0x5d5f91||_0x5d5f91<=0x0){$(_0x3a8c75(0x17d))[_0x3a8c75(0x183)](_0x3a8c75(0x188))['show']();return;}$[_0x3a8c75(0x176)]({'url':_0x3a8c75(0x170),'method':'POST','data':{'action':_0x3a8c75(0x166),'to_user_id':_0x4fe6cd,'amount':_0x5d5f91,'type':_0x28bf21},'dataType':'json','success':function(_0x1dcb39){const _0x5f0cb5=_0x3a8c75;_0x1dcb39[_0x5f0cb5(0x180)]==='success'?($(_0x5f0cb5(0x16d))['modal']('hide'),alert('✓\x20Sent\x20'+_0x5d5f91+'\x20'+(_0x28bf21===_0x5f0cb5(0x172)?_0x5f0cb5(0x18f):_0x5f0cb5(0x189))+_0x5f0cb5(0x199)+_0x9bca54+'!'),updateDuraBalance(),updateShopBalances()):$(_0x5f0cb5(0x17d))[_0x5f0cb5(0x183)](_0x1dcb39[_0x5f0cb5(0x160)])[_0x5f0cb5(0x164)]();},'error':function(){const _0x59758f=_0x3a8c75;$(_0x59758f(0x17d))['text']('Failed\x20to\x20send\x20tip')[_0x59758f(0x164)]();}});}function purchaseShopItem(_0x332ec1,_0x5b6705,_0x4f451b){const _0x58806c=_0x24ac;if(currentUser[_0x58806c(0x190)]!==_0x58806c(0x16a)){alert(_0x58806c(0x18a));return;}const _0x5001c1=_0x4f451b===_0x58806c(0x175)?currentUser[_0x58806c(0x175)]||0x0:currentUser[_0x58806c(0x187)]||0x0;if(_0x5001c1<_0x5b6705){alert(_0x58806c(0x18c)+_0x4f451b+'!\x20You\x20need\x20'+_0x5b6705[_0x58806c(0x178)]()+_0x58806c(0x194)+_0x5001c1[_0x58806c(0x178)]()+'.');return;}if(!confirm(_0x58806c(0x174)+_0x332ec1[_0x58806c(0x17e)]('_','\x20')['toUpperCase']()+'\x20for\x20'+_0x5b6705[_0x58806c(0x178)]()+'\x20'+_0x4f451b[_0x58806c(0x19b)]()+'?'))return;$[_0x58806c(0x176)]({'url':'api/shop.php','method':'POST','data':{'action':_0x58806c(0x16c),'item_id':_0x332ec1,'cost':_0x5b6705,'currency':_0x4f451b},'dataType':_0x58806c(0x17b),'success':function(_0x4bf7ba){const _0x55acdd=_0x58806c;_0x4bf7ba[_0x55acdd(0x180)]===_0x55acdd(0x168)?(alert('✓\x20Purchase\x20successful!'),updateDuraBalance(),$('#shopDuraBalance')[_0x55acdd(0x195)]&&updateShopBalances()):alert(_0x55acdd(0x19a)+_0x4bf7ba[_0x55acdd(0x160)]);},'error':function(){const _0xd38bc=_0x58806c;alert(_0xd38bc(0x196));}});}function _0x15d4(){const _0x24bf25=['Only\x20registered\x20users\x20can\x20tip','\x20but\x20only\x20have\x20','length','Purchase\x20failed.\x20Please\x20try\x20again.','#tipType','45458EsxCPT','\x20to\x20','Purchase\x20failed:\x20','toUpperCase','remove','tipModal','message','22arsOcZ','4338936vPKrai','#tipAmount','show','grant_tokens','tip','val','success','<br>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20🎫\x20Tokens:\x20','user','POST','purchase','#tipModal','Modal','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal\x20fade\x22\x20id=\x22tipModal\x22\x20tabindex=\x22-1\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-dialog\x20modal-dialog-centered\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-content\x22\x20style=\x22background:\x20#2a2a2a;\x20color:\x20#fff;\x20border:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-header\x22\x20style=\x22border-bottom:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h5\x20class=\x22modal-title\x22>Tip\x20','api/tip.php','1857138BDrMXV','token','ready','Purchase\x20','dura','ajax','2652687LZdATF','toLocaleString','#shopDuraBalance','5ltvnop','json','3LPkNJF','#tipError','replace','\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-label\x22>Tip\x20Type:</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<select\x20class=\x22form-select\x22\x20id=\x22tipType\x22\x20style=\x22background:\x20#333;\x20color:\x20#fff;\x20border:\x201px\x20solid\x20#555;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22token\x22>Use\x20Tokens\x20(1\x20Token\x20=\x201\x20Dura)</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<option\x20value=\x22dura\x22>Use\x20Your\x20Dura</option>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</select>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22mb-3\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20class=\x22form-label\x22>Amount:</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22number\x22\x20class=\x22form-control\x22\x20id=\x22tipAmount\x22\x20min=\x221\x22\x20value=\x221\x22\x20style=\x22background:\x20#333;\x20color:\x20#fff;\x20border:\x201px\x20solid\x20#555;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20id=\x22tipError\x22\x20class=\x22text-danger\x20mb-2\x22\x20style=\x22display:\x20none;\x22></div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-footer\x22\x20style=\x22border-top:\x201px\x20solid\x20#444;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-secondary\x22\x20data-bs-dismiss=\x22modal\x22>Cancel</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn\x20btn-warning\x22\x20onclick=\x22sendTip(','status',',\x20\x27','#shopTokenBalance','text','346588ZHeUNA','hidden.bs.modal','970556EqGTXZ','tokens','Invalid\x20amount','Dura','Only\x20registered\x20users\x20can\x20purchase\x20items','30KGWLhl','Insufficient\x20','24836669DXBLdn','append','Token','type','5yOWyXM','8psIvCG'];_0x15d4=function(){return _0x24bf25;};return _0x15d4();}function updateShopBalances(){const _0x1254db=_0x24ac;$('#shopDuraBalance')['length']&&$(_0x1254db(0x179))[_0x1254db(0x183)]((currentUser[_0x1254db(0x175)]||0x0)['toLocaleString']()),$(_0x1254db(0x182))['length']&&$('#shopTokenBalance')[_0x1254db(0x183)]((currentUser[_0x1254db(0x187)]||0x0)[_0x1254db(0x178)]());}function _0x24ac(_0x4324f3,_0x4f2d0e){const _0x15d48d=_0x15d4();return _0x24ac=function(_0x24ac81,_0xd20d0a){_0x24ac81=_0x24ac81-0x15f;let _0x4f6c40=_0x15d48d[_0x24ac81];return _0x4f6c40;},_0x24ac(_0x4324f3,_0x4f2d0e);}$(document)[_0x3ec49a(0x173)](function(){const _0x2aa1d9=_0x3ec49a;currentUser&&currentUser[_0x2aa1d9(0x190)]===_0x2aa1d9(0x16a)&&(updateDuraBalance(),checkAndGrantTokens(),setInterval(checkAndGrantTokens,0x36ee80));});
+// Dura Currency System
+
+// Get balance and auto-grant tokens
+function checkAndGrantTokens() {
+    if (currentUser.type !== 'user') return;
+    
+    $.ajax({
+        url: 'api/tip.php',
+        method: 'POST',
+        data: { action: 'grant_tokens' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                currentUser.tokens = response.tokens;
+                updateDuraDisplay();
+            }
+        }
+    });
+}
+
+// Update balance from server
+function updateDuraBalance() {
+    if (currentUser.type !== 'user') return;
+    
+    $.ajax({
+        url: 'api/tip.php',
+        method: 'POST',
+        data: { action: 'get_balance' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                currentUser.dura = response.dura;
+                currentUser.tokens = response.tokens;
+                updateDuraDisplay();
+                updateShopBalances();
+            }
+        }
+    });
+}
+
+// Update display
+function updateDuraDisplay() {
+    // This can be expanded to show in UI
+}
+
+// Show tip modal
+function showTipModal(userId, username) {
+    if (currentUser.type !== 'user') {
+        alert('Only registered users can tip');
+        return;
+    }
+    
+    const modal = $(`
+        <div class="modal fade" id="tipModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="background: #2a2a2a; color: #fff; border: 1px solid #444;">
+                    <div class="modal-header" style="border-bottom: 1px solid #444;">
+                        <h5 class="modal-title">Tip ${username}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <strong>Your Balance:</strong><br>
+                            💎 Dura: ${currentUser.dura || 0}<br>
+                            🎫 Tokens: ${currentUser.tokens || 0}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tip Type:</label>
+                            <select class="form-select" id="tipType" style="background: #333; color: #fff; border: 1px solid #555;">
+                                <option value="token">Use Tokens (1 Token = 1 Dura)</option>
+                                <option value="dura">Use Your Dura</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Amount:</label>
+                            <input type="number" class="form-control" id="tipAmount" min="1" value="1" style="background: #333; color: #fff; border: 1px solid #555;">
+                        </div>
+                        <div id="tipError" class="text-danger mb-2" style="display: none;"></div>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid #444;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-warning" onclick="sendTip(${userId}, '${username}')">Send Tip</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `);
+    
+    $('body').append(modal);
+    const bsModal = new bootstrap.Modal(document.getElementById('tipModal'));
+    bsModal.show();
+    
+    $('#tipModal').on('hidden.bs.modal', function() {
+        $(this).remove();
+    });
+}
+
+// Send tip
+function sendTip(toUserId, username) {
+    const amount = parseInt($('#tipAmount').val());
+    const tipType = $('#tipType').val();
+    
+    if (!amount || amount <= 0) {
+        $('#tipError').text('Invalid amount').show();
+        return;
+    }
+    
+    $.ajax({
+        url: 'api/tip.php',
+        method: 'POST',
+        data: {
+            action: 'tip',
+            to_user_id: toUserId,
+            amount: amount,
+            type: tipType
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                $('#tipModal').modal('hide');
+                alert(`✓ Sent ${amount} ${tipType === 'token' ? 'Token' : 'Dura'} to ${username}!`);
+                updateDuraBalance();
+                updateShopBalances();
+            } else {
+                $('#tipError').text(response.message).show();
+            }
+        },
+        error: function() {
+            $('#tipError').text('Failed to send tip').show();
+        }
+    });
+}
+
+// Shop Functions
+function purchaseShopItem(itemId, cost, currency) {
+    if (currentUser.type !== 'user') {
+        alert('Only registered users can purchase items');
+        return;
+    }
+    
+    // Check balance
+    const balance = currency === 'dura' ? (currentUser.dura || 0) : (currentUser.tokens || 0);
+    if (balance < cost) {
+        alert(`Insufficient ${currency}! You need ${cost.toLocaleString()} but only have ${balance.toLocaleString()}.`);
+        return;
+    }
+    
+    // Confirm purchase
+    if (!confirm(`Purchase ${itemId.replace('_', ' ').toUpperCase()} for ${cost.toLocaleString()} ${currency.toUpperCase()}?`)) {
+        return;
+    }
+    
+    $.ajax({
+        url: 'api/shop.php',
+        method: 'POST',
+        data: {
+            action: 'purchase',
+            item_id: itemId,
+            cost: cost,
+            currency: currency
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                alert('✓ Purchase successful!');
+                updateDuraBalance();
+                // Refresh shop display
+                if ($('#shopDuraBalance').length) {
+                    updateShopBalances();
+                }
+            } else {
+                alert('Purchase failed: ' + response.message);
+            }
+        },
+        error: function() {
+            alert('Purchase failed. Please try again.');
+        }
+    });
+}
+
+function updateShopBalances() {
+    if ($('#shopDuraBalance').length) {
+        $('#shopDuraBalance').text((currentUser.dura || 0).toLocaleString());
+    }
+    if ($('#shopTokenBalance').length) {
+        $('#shopTokenBalance').text((currentUser.tokens || 0).toLocaleString());
+    }
+}
+
+// Initialize
+$(document).ready(function() {
+    if (currentUser && currentUser.type === 'user') {
+        updateDuraBalance();
+        checkAndGrantTokens();
+        setInterval(checkAndGrantTokens, 3600000); // Check every hour
+    }
+});

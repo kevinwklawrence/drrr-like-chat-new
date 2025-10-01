@@ -1,1 +1,641 @@
-const _0x1953ff=_0x4349;function _0xe14e(){const _0xc61448=['setVolume','toggleTheatreMode','8238256HVqfhl','setupEventListeners','target','1398tjegLi','toggleYouTubeExclusion','initializeModal','playMessageNotification','84sBXKtN','loadSettings','show','fas\x20fa-volume-up','6753678eSpMWA','originalPlayReplyOrMentionSound','.youtube-player-container','toggleDimmer','zIndex','resize','toggleYouTubeMute','theatreSwitch','dimmerLevel','querySelector','adjustTheatreModeLayout','10241728XuFSoW','fas\x20fa-volume-mute','modal','/sounds/message_notification.mp3','exitTheatreMode','warn','18wqzSSh','youtubeMuteBtn','dimmerLevelValue','updateYouTubeVolume','userSettings','.youtube-player-container.theatre-mode','updateDimmerEffect','log','brightness(1.0)','input','9195UAagFZ','readyState','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<!--\x20User\x20Settings\x20Modal\x20-->\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal\x20fade\x20user-settings-modal\x22\x20id=\x22userSettingsModal\x22\x20tabindex=\x22-1\x22\x20aria-labelledby=\x22userSettingsModalLabel\x22\x20aria-hidden=\x22true\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-dialog\x20modal-lg\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-content\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-header\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h5\x20class=\x22modal-title\x22\x20id=\x22userSettingsModalLabel\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-cog\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20User\x20Settings\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</h5>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20type=\x22button\x22\x20class=\x22btn-close\x22\x20data-bs-dismiss=\x22modal\x22\x20aria-label=\x22Close\x22></button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22modal-body\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<!--\x20Audio\x20Settings\x20Section\x20-->\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22settings-section\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h6><i\x20class=\x22fas\x20fa-volume-up\x22></i>\x20Audio\x20Settings</h6>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22volume-control\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22notificationVolume\x22>Notification\x20Sounds</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22volume-row\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22mute-btn\x22\x20id=\x22notificationMuteBtn\x22\x20onclick=\x22userSettingsManager.toggleNotificationMute()\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-volume-up\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22range\x22\x20class=\x22volume-slider\x22\x20id=\x22notificationVolume\x22\x20min=\x220\x22\x20max=\x22100\x22\x20value=\x2250\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20class=\x22volume-value\x22\x20id=\x22notificationVolumeValue\x22>50</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<!--\x20YouTube\x20Settings\x20Section\x20-->\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22settings-section\x22\x20id=\x22youtubeSettingsSection\x22\x20style=\x22display:\x20none;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h6><i\x20class=\x22fab\x20fa-youtube\x22></i>\x20YouTube\x20Settings</h6>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22volume-control\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22youtubeVolume\x22>YouTube\x20Video\x20Volume</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22volume-row\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22mute-btn\x22\x20id=\x22youtubeMuteBtn\x22\x20onclick=\x22userSettingsManager.toggleYouTubeMute()\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-volume-up\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22range\x22\x20class=\x22volume-slider\x22\x20id=\x22youtubeVolume\x22\x20min=\x220\x22\x20max=\x22100\x22\x20value=\x2250\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20class=\x22volume-value\x22\x20id=\x22youtubeVolumeValue\x22>50</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<!--\x20<div\x20class=\x22theatre-toggle\x22\x20onclick=\x22userSettingsManager.toggleTheatreMode()\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22theatreMode\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-expand\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20Theatre\x20Mode\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22theatre-switch\x22\x20id=\x22theatreSwitch\x22></div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>-->\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<!--\x20Screen\x20Dimmer\x20Settings\x20Section\x20-->\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22settings-section\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h6><i\x20class=\x22fas\x20fa-adjust\x22></i>\x20Screen\x20Dimmer</h6>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22volume-control\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22dimmerLevel\x22>Screen\x20Brightness</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22volume-row\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22mute-btn\x22\x20id=\x22dimmerToggleBtn\x22\x20onclick=\x22userSettingsManager.toggleDimmer()\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-lightbulb\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22range\x22\x20class=\x22volume-slider\x22\x20id=\x22dimmerLevel\x22\x20min=\x2210\x22\x20max=\x22100\x22\x20value=\x22100\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20class=\x22volume-value\x22\x20id=\x22dimmerLevelValue\x22>100</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<!--<div\x20class=\x22theatre-toggle\x22\x20onclick=\x22userSettingsManager.toggleYouTubeExclusion()\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22excludeYouTube\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fab\x20fa-youtube\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20Exclude\x20YouTube\x20from\x20Dimming\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22theatre-switch\x22\x20id=\x22youtubeExclusionSwitch\x22></div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>-->\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22theatre-toggle\x22\x20onclick=\x22togglePlayerVisibility()\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22excludeYouTube\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fab\x20fa-youtube\x22></i>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20YouTube\x20Player\x20Visibility\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22theatre-switch\x22\x20id=\x22youtubeExclusionSwitch\x22></div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22settings-footer\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22reset-btn\x22\x20onclick=\x22userSettingsManager.resetUserSettings()\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-undo\x22></i>\x20Reset\x20to\x20Defaults\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<small\x20class=\x22text-muted\x22>Settings\x20are\x20saved\x20automatically</small>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20<!--\x20Theatre\x20Mode\x20Exit\x20Button\x20(hidden\x20by\x20default)\x20-->\x0a\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22theatre-exit-btn\x22\x20id=\x22theatreExitBtn\x22\x20onclick=\x22userSettingsManager.exitTheatreMode()\x22\x20style=\x22display:\x20none;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<i\x20class=\x22fas\x20fa-compress\x22></i>\x20Exit\x20Theatre\x0a\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20','Modal','className','resetToDefaults','add','remove','function','9998','initializeControls','originalPlayMessageNotification','Could\x20not\x20load\x20user\x20settings:','Reset\x20all\x20settings\x20to\x20defaults?\x20This\x20will\x20reset\x20volumes,\x20disable\x20theatre\x20mode,\x20and\x20restore\x20normal\x20brightness.','saveSettings','playReplyOrMentionSound','388gpmYpp','value','originalPlayNotificationSound','527VNWqJS','settings','theatre-mode-active','style','openModal','display','notificationVolume','theatre-mode','keydown','playFriendNotificationSound','excludeYouTubeFromDimmer','youtubeMuted','brightness(','onYouTubePlayerReady','Error\x20creating\x20audio:','addEventListener','#youtube-player\x20iframe','resetUserSettings','theatreMode','2163550oMHvJV','checkYouTubeAvailability','notificationVolumeValue','play','3286591VSqgqb','append','youtubeVolume','catch','enterTheatreMode','setProperty','getElementById','Could\x20not\x20play\x20notification\x20sound:','#youtube-player','Could\x20not\x20open\x20settings\x20modal:','Could\x20not\x20save\x20user\x20settings:','modalInitialized','youtubeExclusionSwitch','5gFENRb','textContent','youtubeVolumeUpdateTimeout','youtubeVolumeValue','youtubeSettingsSection','notificationMuted','9999','playNotificationSound','active','Could\x20not\x20set\x20YouTube\x20volume:','parse','block','body','/sounds/private_message_notification.mp3','--volume-percent','updateSliderVisual','theatreExitBtn','none','updateMuteButton','filter','calc(100vh\x20-\x20180px)','documentElement','#userSettingsModal','volume','undefined','exports','ready','toggleNotificationMute','muted','originalPlayFriendNotificationSound','notificationMuteBtn','classList'];_0xe14e=function(){return _0xc61448;};return _0xe14e();}(function(_0x404692,_0x5654f3){const _0x3f1085=_0x4349,_0x2b0217=_0x404692();while(!![]){try{const _0x267899=parseInt(_0x3f1085(0x190))/0x1*(parseInt(_0x3f1085(0x15a))/0x2)+-parseInt(_0x3f1085(0x17d))/0x3*(-parseInt(_0x3f1085(0x18d))/0x4)+-parseInt(_0x3f1085(0x135))/0x5*(parseInt(_0x3f1085(0x162))/0x6)+-parseInt(_0x3f1085(0x16d))/0x7+parseInt(_0x3f1085(0x157))/0x8+parseInt(_0x3f1085(0x173))/0x9*(-parseInt(_0x3f1085(0x124))/0xa)+-parseInt(_0x3f1085(0x128))/0xb*(-parseInt(_0x3f1085(0x15e))/0xc);if(_0x267899===_0x5654f3)break;else _0x2b0217['push'](_0x2b0217['shift']());}catch(_0x142731){_0x2b0217['push'](_0x2b0217['shift']());}}}(_0xe14e,0xbae3c));class UserSettings{constructor(){const _0x5c4625=_0x4349;this[_0x5c4625(0x191)]={'notificationVolume':0x32,'notificationMuted':![],'youtubeVolume':0x32,'youtubeMuted':![],'theatreMode':![],'dimmerLevel':0x64,'excludeYouTubeFromDimmer':!![]},this[_0x5c4625(0x133)]=![],this[_0x5c4625(0x137)]=null,this[_0x5c4625(0x15f)](),this['initializeModal'](),this[_0x5c4625(0x158)](),setTimeout(()=>this[_0x5c4625(0x179)](),0x64);}[_0x1953ff(0x15f)](){const _0x49cae9=_0x1953ff;try{const _0x185e02=localStorage['getItem'](_0x49cae9(0x177));if(_0x185e02){const _0x33076a=JSON[_0x49cae9(0x13f)](_0x185e02);this['settings']={...this[_0x49cae9(0x191)],..._0x33076a};}}catch(_0x37c78f){console[_0x49cae9(0x172)](_0x49cae9(0x189),_0x37c78f),this[_0x49cae9(0x182)]();}}[_0x1953ff(0x18b)](){const _0x5f2b04=_0x1953ff;try{localStorage['setItem'](_0x5f2b04(0x177),JSON['stringify'](this[_0x5f2b04(0x191)]));}catch(_0x473e81){console['warn'](_0x5f2b04(0x132),_0x473e81);}}['resetToDefaults'](){const _0x3b5a5b=_0x1953ff;this[_0x3b5a5b(0x191)]={'notificationVolume':0x32,'notificationMuted':![],'youtubeVolume':0x32,'youtubeMuted':![],'theatreMode':![],'dimmerLevel':0x64,'excludeYouTubeFromDimmer':!![]},this['saveSettings']();}[_0x1953ff(0x15c)](){const _0x1cecd9=_0x1953ff;if(this[_0x1cecd9(0x133)])return;const _0x3afc4c=_0x1cecd9(0x17f);$(_0x1cecd9(0x141))[_0x1cecd9(0x129)](_0x3afc4c),this[_0x1cecd9(0x133)]=!![],setTimeout(()=>this[_0x1cecd9(0x187)](),0x64);}[_0x1953ff(0x187)](){const _0x1fe978=_0x1953ff,_0x467eb2=document[_0x1fe978(0x12e)](_0x1fe978(0x196)),_0x55d16c=document[_0x1fe978(0x12e)](_0x1fe978(0x126)),_0xf16110=document[_0x1fe978(0x12e)](_0x1fe978(0x153));_0x467eb2&&(_0x467eb2['value']=this[_0x1fe978(0x191)][_0x1fe978(0x196)],_0x55d16c['textContent']=this['settings'][_0x1fe978(0x196)],_0x467eb2['addEventListener'](_0x1fe978(0x17c),_0x508e31=>{const _0x57b3da=_0x1fe978;this['settings']['notificationVolume']=parseInt(_0x508e31['target']['value']),_0x55d16c[_0x57b3da(0x136)]=this[_0x57b3da(0x191)][_0x57b3da(0x196)],this[_0x57b3da(0x144)](_0x467eb2,this[_0x57b3da(0x191)][_0x57b3da(0x196)]),this['saveSettings'](),this[_0x57b3da(0x191)][_0x57b3da(0x196)]>0x0&&(this[_0x57b3da(0x191)][_0x57b3da(0x13a)]=![],this['updateMuteButton'](_0xf16110,![]));}),this[_0x1fe978(0x144)](_0x467eb2,this[_0x1fe978(0x191)][_0x1fe978(0x196)]));const _0x14c465=document['getElementById']('youtubeVolume'),_0xb327a8=document['getElementById'](_0x1fe978(0x138)),_0x5b7e7d=document[_0x1fe978(0x12e)](_0x1fe978(0x174));_0x14c465&&(_0x14c465[_0x1fe978(0x18e)]=this['settings'][_0x1fe978(0x12a)],_0xb327a8[_0x1fe978(0x136)]=this[_0x1fe978(0x191)]['youtubeVolume'],_0x14c465['addEventListener']('input',_0x4219ff=>{const _0x251bef=_0x1fe978;this[_0x251bef(0x191)][_0x251bef(0x12a)]=parseInt(_0x4219ff['target']['value']),_0xb327a8[_0x251bef(0x136)]=this[_0x251bef(0x191)]['youtubeVolume'],this[_0x251bef(0x144)](_0x14c465,this[_0x251bef(0x191)][_0x251bef(0x12a)]),this[_0x251bef(0x18b)](),this[_0x251bef(0x137)]&&clearTimeout(this['youtubeVolumeUpdateTimeout']),this[_0x251bef(0x137)]=setTimeout(()=>{const _0x2be3e=_0x251bef;this[_0x2be3e(0x176)]();},0x64),this[_0x251bef(0x191)]['youtubeVolume']>0x0&&(this[_0x251bef(0x191)][_0x251bef(0x19b)]=![],this[_0x251bef(0x147)](_0x5b7e7d,![]));}),this[_0x1fe978(0x144)](_0x14c465,this[_0x1fe978(0x191)][_0x1fe978(0x12a)]));const _0x4445e2=document[_0x1fe978(0x12e)](_0x1fe978(0x16a)),_0x2d56f7=document[_0x1fe978(0x12e)](_0x1fe978(0x175)),_0x431122=document['getElementById']('dimmerToggleBtn');_0x4445e2&&(_0x4445e2['value']=this[_0x1fe978(0x191)][_0x1fe978(0x16a)],_0x2d56f7['textContent']=this['settings']['dimmerLevel'],_0x4445e2[_0x1fe978(0x120)](_0x1fe978(0x17c),_0x59bd8d=>{const _0x4c5bfb=_0x1fe978;this[_0x4c5bfb(0x191)][_0x4c5bfb(0x16a)]=parseInt(_0x59bd8d[_0x4c5bfb(0x159)][_0x4c5bfb(0x18e)]),_0x2d56f7[_0x4c5bfb(0x136)]=this[_0x4c5bfb(0x191)][_0x4c5bfb(0x16a)],this[_0x4c5bfb(0x144)](_0x4445e2,this[_0x4c5bfb(0x191)][_0x4c5bfb(0x16a)]),this[_0x4c5bfb(0x18b)](),this[_0x4c5bfb(0x179)]();}),this[_0x1fe978(0x144)](_0x4445e2,this['settings'][_0x1fe978(0x16a)]));const _0x2bd0e4=document[_0x1fe978(0x12e)](_0x1fe978(0x134));_0x2bd0e4&&(this[_0x1fe978(0x191)][_0x1fe978(0x19a)]&&_0x2bd0e4[_0x1fe978(0x154)][_0x1fe978(0x183)](_0x1fe978(0x13d)));const _0x574238=document[_0x1fe978(0x12e)](_0x1fe978(0x169));_0x574238&&(this[_0x1fe978(0x191)][_0x1fe978(0x123)]&&_0x574238[_0x1fe978(0x154)][_0x1fe978(0x183)](_0x1fe978(0x13d))),this[_0x1fe978(0x147)](_0xf16110,this['settings'][_0x1fe978(0x13a)]),this[_0x1fe978(0x147)](_0x5b7e7d,this['settings'][_0x1fe978(0x19b)]),this[_0x1fe978(0x125)](),this[_0x1fe978(0x179)]();}[_0x1953ff(0x144)](_0x470a8d,_0x4a11f3){const _0x12b9ad=_0x1953ff;_0x470a8d&&_0x470a8d[_0x12b9ad(0x193)][_0x12b9ad(0x12d)](_0x12b9ad(0x143),_0x4a11f3+'%');}[_0x1953ff(0x147)](_0x472f74,_0x2c103d){const _0x193b86=_0x1953ff;if(!_0x472f74)return;const _0x45f1d9=_0x472f74[_0x193b86(0x16b)]('i');_0x2c103d?(_0x472f74[_0x193b86(0x154)][_0x193b86(0x183)]('muted'),_0x45f1d9[_0x193b86(0x181)]=_0x193b86(0x16e)):(_0x472f74[_0x193b86(0x154)][_0x193b86(0x184)](_0x193b86(0x151)),_0x45f1d9[_0x193b86(0x181)]=_0x193b86(0x161));}[_0x1953ff(0x125)](){const _0x4b47b7=_0x1953ff,_0x175c4e=document['querySelector'](_0x4b47b7(0x164)),_0x36c2d6=document[_0x4b47b7(0x12e)](_0x4b47b7(0x139));_0x175c4e&&_0x36c2d6&&(_0x36c2d6[_0x4b47b7(0x193)][_0x4b47b7(0x195)]=_0x4b47b7(0x140));}[_0x1953ff(0x158)](){const _0x50c2d0=_0x1953ff;document['addEventListener'](_0x50c2d0(0x198),_0x18b50e=>{const _0x1e9b70=_0x50c2d0;_0x18b50e['key']==='Escape'&&this[_0x1e9b70(0x191)]['theatreMode']&&this[_0x1e9b70(0x171)]();}),window[_0x50c2d0(0x120)](_0x50c2d0(0x167),()=>{const _0x5ac93d=_0x50c2d0;this['settings'][_0x5ac93d(0x123)]&&this[_0x5ac93d(0x16c)]();}),$(document)['on']('show.bs.modal',_0x50c2d0(0x14b),()=>{const _0x1f6c21=_0x50c2d0;if(this['settings'][_0x1f6c21(0x123)]){const _0x3883aa=document['querySelector']('.youtube-player-container');if(_0x3883aa)_0x3883aa['style']['zIndex']=_0x1f6c21(0x186);}}),$(document)['on']('hide.bs.modal',_0x50c2d0(0x14b),()=>{const _0x54571f=_0x50c2d0;if(this[_0x54571f(0x191)]['theatreMode']){const _0x1131d8=document[_0x54571f(0x16b)](_0x54571f(0x164));if(_0x1131d8)_0x1131d8[_0x54571f(0x193)][_0x54571f(0x166)]=_0x54571f(0x13b);}});}[_0x1953ff(0x16c)](){const _0x19c583=_0x1953ff,_0x143f9b=document['querySelector'](_0x19c583(0x178));if(_0x143f9b){const _0x5109c1=_0x143f9b[_0x19c583(0x16b)](_0x19c583(0x130));_0x5109c1&&(_0x5109c1[_0x19c583(0x193)]['height']=_0x19c583(0x149));}}[_0x1953ff(0x176)](){const _0x3d9d52=_0x1953ff;if(typeof youtubePlayer!==_0x3d9d52(0x14d)&&youtubePlayer&&typeof youtubePlayer[_0x3d9d52(0x155)]===_0x3d9d52(0x185))try{const _0xf2c458=this[_0x3d9d52(0x191)][_0x3d9d52(0x19b)]?0x0:this[_0x3d9d52(0x191)]['youtubeVolume'];youtubePlayer['setVolume'](_0xf2c458);}catch(_0x5ea538){console[_0x3d9d52(0x172)](_0x3d9d52(0x13e),_0x5ea538);}}[_0x1953ff(0x179)](){const _0x55a1fb=_0x1953ff,_0x177ded=document[_0x55a1fb(0x14a)],_0x41c09=document['querySelector'](_0x55a1fb(0x121))||document[_0x55a1fb(0x16b)](_0x55a1fb(0x130)),_0x14ab8d=this['settings'][_0x55a1fb(0x16a)]/0x64;_0x177ded['style'][_0x55a1fb(0x148)]=_0x55a1fb(0x19c)+_0x14ab8d+')';if(this[_0x55a1fb(0x191)][_0x55a1fb(0x19a)]&&_0x41c09)_0x41c09[_0x55a1fb(0x193)][_0x55a1fb(0x148)]=_0x55a1fb(0x17b);else _0x41c09&&(_0x41c09[_0x55a1fb(0x193)][_0x55a1fb(0x148)]='');}[_0x1953ff(0x165)](){const _0x2fe4da=_0x1953ff;this[_0x2fe4da(0x191)][_0x2fe4da(0x16a)]<0x64?this['settings'][_0x2fe4da(0x16a)]=0x64:this['settings']['dimmerLevel']=0x46;this[_0x2fe4da(0x18b)](),this[_0x2fe4da(0x179)]();const _0xe09b89=document[_0x2fe4da(0x12e)]('dimmerLevel'),_0x3b837d=document[_0x2fe4da(0x12e)](_0x2fe4da(0x175));_0xe09b89&&(_0xe09b89[_0x2fe4da(0x18e)]=this[_0x2fe4da(0x191)][_0x2fe4da(0x16a)],this[_0x2fe4da(0x144)](_0xe09b89,this[_0x2fe4da(0x191)][_0x2fe4da(0x16a)])),_0x3b837d&&(_0x3b837d[_0x2fe4da(0x136)]=this[_0x2fe4da(0x191)][_0x2fe4da(0x16a)]);}[_0x1953ff(0x15b)](){const _0x27e6ff=_0x1953ff;this[_0x27e6ff(0x191)][_0x27e6ff(0x19a)]=!this['settings'][_0x27e6ff(0x19a)],this[_0x27e6ff(0x18b)]();const _0x465caf=document['getElementById']('youtubeExclusionSwitch');_0x465caf&&(this[_0x27e6ff(0x191)][_0x27e6ff(0x19a)]?_0x465caf[_0x27e6ff(0x154)][_0x27e6ff(0x183)]('active'):_0x465caf['classList']['remove'](_0x27e6ff(0x13d))),this['updateDimmerEffect']();}[_0x1953ff(0x13c)](_0x511136=_0x1953ff(0x170)){const _0x2ceb4d=_0x1953ff;if(this[_0x2ceb4d(0x191)][_0x2ceb4d(0x13a)]||this[_0x2ceb4d(0x191)][_0x2ceb4d(0x196)]===0x0)return;try{const _0x288420=new Audio(_0x511136);_0x288420[_0x2ceb4d(0x14c)]=this[_0x2ceb4d(0x191)][_0x2ceb4d(0x196)]/0x64,_0x288420[_0x2ceb4d(0x127)]()[_0x2ceb4d(0x12b)](_0x1b595d=>{const _0x2c6c7a=_0x2ceb4d;console[_0x2c6c7a(0x17a)](_0x2c6c7a(0x12f),_0x1b595d);});}catch(_0x46d7cf){console[_0x2ceb4d(0x172)](_0x2ceb4d(0x19e),_0x46d7cf);}}[_0x1953ff(0x150)](){const _0x5b6f0b=_0x1953ff;this[_0x5b6f0b(0x191)][_0x5b6f0b(0x13a)]=!this[_0x5b6f0b(0x191)][_0x5b6f0b(0x13a)],this[_0x5b6f0b(0x18b)]();const _0x284b49=document['getElementById']('notificationMuteBtn');this[_0x5b6f0b(0x147)](_0x284b49,this['settings'][_0x5b6f0b(0x13a)]),!this['settings'][_0x5b6f0b(0x13a)]&&setTimeout(()=>this[_0x5b6f0b(0x13c)](),0x64);}[_0x1953ff(0x168)](){const _0x32619a=_0x1953ff;this[_0x32619a(0x191)][_0x32619a(0x19b)]=!this[_0x32619a(0x191)][_0x32619a(0x19b)],this['saveSettings']();const _0x335721=document['getElementById']('youtubeMuteBtn');this[_0x32619a(0x147)](_0x335721,this[_0x32619a(0x191)]['youtubeMuted']),this[_0x32619a(0x176)]();}[_0x1953ff(0x156)](){const _0x4473c5=_0x1953ff;this['settings'][_0x4473c5(0x123)]=!this[_0x4473c5(0x191)][_0x4473c5(0x123)],this[_0x4473c5(0x18b)](),this[_0x4473c5(0x191)][_0x4473c5(0x123)]?this[_0x4473c5(0x12c)]():this[_0x4473c5(0x171)]();}[_0x1953ff(0x12c)](){const _0x3024fc=_0x1953ff,_0xa05655=document['getElementById'](_0x3024fc(0x169)),_0x31b0c9=document[_0x3024fc(0x16b)](_0x3024fc(0x164)),_0x1e8cfa=document['getElementById']('theatreExitBtn');if(_0xa05655)_0xa05655['classList'][_0x3024fc(0x183)](_0x3024fc(0x13d));if(_0x31b0c9){_0x31b0c9[_0x3024fc(0x154)][_0x3024fc(0x183)](_0x3024fc(0x197)),document[_0x3024fc(0x141)][_0x3024fc(0x154)]['add'](_0x3024fc(0x192));if(_0x1e8cfa)_0x1e8cfa[_0x3024fc(0x193)]['display']=_0x3024fc(0x140);setTimeout(()=>this[_0x3024fc(0x16c)](),0x64);}}[_0x1953ff(0x171)](){const _0x4dd568=_0x1953ff;this['settings'][_0x4dd568(0x123)]=![],this[_0x4dd568(0x18b)]();const _0x324032=document[_0x4dd568(0x12e)](_0x4dd568(0x169)),_0x1f2b90=document[_0x4dd568(0x16b)](_0x4dd568(0x164)),_0x146b6e=document['getElementById'](_0x4dd568(0x145));if(_0x324032)_0x324032[_0x4dd568(0x154)][_0x4dd568(0x184)]('active');if(_0x1f2b90){_0x1f2b90['classList']['remove'](_0x4dd568(0x197)),document[_0x4dd568(0x141)]['classList'][_0x4dd568(0x184)](_0x4dd568(0x192));if(_0x146b6e)_0x146b6e[_0x4dd568(0x193)]['display']=_0x4dd568(0x146);}}[_0x1953ff(0x122)](){const _0x549d0d=_0x1953ff;confirm(_0x549d0d(0x18a))&&(this[_0x549d0d(0x171)](),this[_0x549d0d(0x182)](),this[_0x549d0d(0x187)](),this[_0x549d0d(0x176)](),this[_0x549d0d(0x179)]());}[_0x1953ff(0x194)](){const _0x3cbd15=_0x1953ff;!this['modalInitialized']&&this[_0x3cbd15(0x15c)]();try{const _0x114226=new bootstrap[(_0x3cbd15(0x180))](document['getElementById']('userSettingsModal'));_0x114226[_0x3cbd15(0x160)]();}catch(_0x3cfda7){console[_0x3cbd15(0x172)](_0x3cbd15(0x131),_0x3cfda7),$(_0x3cbd15(0x14b))[_0x3cbd15(0x16f)]('show');}}}let userSettingsManager;function initializeUserSettings(){const _0x341980=_0x1953ff;userSettingsManager=new UserSettings(),window['originalPlayMessageNotification']=window[_0x341980(0x15d)],window[_0x341980(0x15d)]=function(){const _0x5a88ad=_0x341980;if(userSettingsManager)userSettingsManager[_0x5a88ad(0x13c)]('/sounds/message_notification.mp3');else window['originalPlayMessageNotification']&&window[_0x5a88ad(0x188)]();},window['originalPlayReplyOrMentionSound']=window[_0x341980(0x18c)],window[_0x341980(0x18c)]=function(){const _0x362c5d=_0x341980;if(userSettingsManager)userSettingsManager['playNotificationSound']('/sounds/reply_or_mention_notification.mp3');else window[_0x362c5d(0x163)]&&window[_0x362c5d(0x163)]();},window[_0x341980(0x152)]=window[_0x341980(0x199)],window[_0x341980(0x199)]=function(){const _0x18b690=_0x341980;if(userSettingsManager)userSettingsManager[_0x18b690(0x13c)](_0x18b690(0x142));else window[_0x18b690(0x152)]&&window['originalPlayFriendNotificationSound']();},window['originalPlayNotificationSound']=window[_0x341980(0x13c)],window[_0x341980(0x13c)]=function(){const _0x327058=_0x341980;if(userSettingsManager)userSettingsManager[_0x327058(0x13c)]('/sounds/notification.mp3');else window[_0x327058(0x18f)]&&window[_0x327058(0x18f)]();};}function waitForJQuery(_0x101097){const _0x726949=_0x1953ff;typeof $!=='undefined'&&typeof $['fn']!==_0x726949(0x14d)?document[_0x726949(0x17e)]==='loading'?$(document)[_0x726949(0x14f)](_0x101097):_0x101097():setTimeout(()=>waitForJQuery(_0x101097),0x64);}function _0x4349(_0x5b4b77,_0x21f1d5){const _0xe14e9=_0xe14e();return _0x4349=function(_0x434916,_0xd68117){_0x434916=_0x434916-0x120;let _0x339c18=_0xe14e9[_0x434916];return _0x339c18;},_0x4349(_0x5b4b77,_0x21f1d5);}waitForJQuery(initializeUserSettings);function openUserSettings(){userSettingsManager&&userSettingsManager['openModal']();}$(window)['on']('load',function(){const _0x5e4507=_0x1953ff;if(typeof youtubePlayer!==_0x5e4507(0x14d)||typeof window['onYouTubeIframeAPIReady']!==_0x5e4507(0x14d)){const _0x370ded=window['onYouTubeIframeAPIReady'];window['onYouTubeIframeAPIReady']=function(){if(_0x370ded)_0x370ded();setTimeout(()=>{const _0x947edb=_0x4349;userSettingsManager&&(userSettingsManager[_0x947edb(0x176)](),userSettingsManager[_0x947edb(0x179)]());},0x3e8);};}if(typeof window[_0x5e4507(0x19d)]!==_0x5e4507(0x14d)){const _0x312c18=window[_0x5e4507(0x19d)];window[_0x5e4507(0x19d)]=function(_0x3ff008){if(_0x312c18)_0x312c18(_0x3ff008);setTimeout(()=>{const _0x553c0e=_0x4349;userSettingsManager&&(userSettingsManager[_0x553c0e(0x176)](),userSettingsManager[_0x553c0e(0x179)]());},0x3e8);};}});typeof module!==_0x1953ff(0x14d)&&module[_0x1953ff(0x14e)]&&(module[_0x1953ff(0x14e)]={'UserSettings':UserSettings,'userSettingsManager':userSettingsManager});
+// js/user_settings.js - User Settings Management System
+
+class UserSettings {
+    constructor() {
+        this.settings = {
+            notificationVolume: 50,
+            notificationMuted: false,
+            youtubeVolume: 50,
+            youtubeMuted: false,
+            theatreMode: false,
+            dimmerLevel: 100,
+            excludeYouTubeFromDimmer: true
+        };
+        
+        this.modalInitialized = false;
+        this.youtubeVolumeUpdateTimeout = null;
+        
+        this.loadSettings();
+        this.initializeModal();
+        this.setupEventListeners();
+        
+        // Apply dimmer effect on initialization
+        setTimeout(() => this.updateDimmerEffect(), 100);
+    }
+
+    loadSettings() {
+        try {
+            const saved = localStorage.getItem('userSettings');
+            if (saved) {
+                const parsedSettings = JSON.parse(saved);
+                this.settings = { ...this.settings, ...parsedSettings };
+            }
+        } catch (e) {
+            console.warn('Could not load user settings:', e);
+            this.resetToDefaults();
+        }
+    }
+
+    saveSettings() {
+        try {
+            localStorage.setItem('userSettings', JSON.stringify(this.settings));
+        } catch (e) {
+            console.warn('Could not save user settings:', e);
+        }
+    }
+
+    resetToDefaults() {
+        this.settings = {
+            notificationVolume: 50,
+            notificationMuted: false,
+            youtubeVolume: 50,
+            youtubeMuted: false,
+            theatreMode: false,
+            dimmerLevel: 100,
+            excludeYouTubeFromDimmer: true
+        };
+        this.saveSettings();
+    }
+
+    initializeModal() {
+        if (this.modalInitialized) return;
+        
+        const modalHTML = `
+        <!-- User Settings Modal -->
+        <div class="modal fade user-settings-modal" id="userSettingsModal" tabindex="-1" aria-labelledby="userSettingsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="userSettingsModalLabel">
+                            <i class="fas fa-cog"></i>
+                            User Settings
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Audio Settings Section -->
+                        <div class="settings-section">
+                            <h6><i class="fas fa-volume-up"></i> Audio Settings</h6>
+                            
+                            <div class="volume-control">
+                                <label for="notificationVolume">Notification Sounds</label>
+                                <div class="volume-row">
+                                    <button class="mute-btn" id="notificationMuteBtn" onclick="userSettingsManager.toggleNotificationMute()">
+                                        <i class="fas fa-volume-up"></i>
+                                    </button>
+                                    <input type="range" class="volume-slider" id="notificationVolume" min="0" max="100" value="50">
+                                    <span class="volume-value" id="notificationVolumeValue">50</span>
+                                </div>
+                        </div>
+
+                        
+                            </div>
+
+                            
+
+                        <!-- YouTube Settings Section -->
+                        <div class="settings-section" id="youtubeSettingsSection" style="display: none;">
+                            <h6><i class="fab fa-youtube"></i> YouTube Settings</h6>
+                            
+                            <div class="volume-control">
+                                <label for="youtubeVolume">YouTube Video Volume</label>
+                                <div class="volume-row">
+                                    <button class="mute-btn" id="youtubeMuteBtn" onclick="userSettingsManager.toggleYouTubeMute()">
+                                        <i class="fas fa-volume-up"></i>
+                                    </button>
+                                    <input type="range" class="volume-slider" id="youtubeVolume" min="0" max="100" value="50">
+                                    <span class="volume-value" id="youtubeVolumeValue">50</span>
+                                </div>
+                            </div>
+
+                           <!-- <div class="theatre-toggle" onclick="userSettingsManager.toggleTheatreMode()">
+                                <label for="theatreMode">
+                                    <i class="fas fa-expand"></i>
+                                    Theatre Mode
+                                </label>
+                                <div class="theatre-switch" id="theatreSwitch"></div>
+                            </div>-->
+                        </div>
+
+                        <!-- Screen Dimmer Settings Section -->
+                        <div class="settings-section">
+                            <h6><i class="fas fa-adjust"></i> Screen Dimmer</h6>
+                            
+                            <div class="volume-control">
+                                <label for="dimmerLevel">Screen Brightness</label>
+                                <div class="volume-row">
+                                    <button class="mute-btn" id="dimmerToggleBtn" onclick="userSettingsManager.toggleDimmer()">
+                                        <i class="fas fa-lightbulb"></i>
+                                    </button>
+                                    <input type="range" class="volume-slider" id="dimmerLevel" min="10" max="100" value="100">
+                                    <span class="volume-value" id="dimmerLevelValue">100</span>
+                                </div>
+                            </div>
+
+                            <!--<div class="theatre-toggle" onclick="userSettingsManager.toggleYouTubeExclusion()">
+                                <label for="excludeYouTube">
+                                    <i class="fab fa-youtube"></i>
+                                    Exclude YouTube from Dimming
+                                </label>
+                                <div class="theatre-switch" id="youtubeExclusionSwitch"></div>
+                            </div>-->
+                        </div>
+
+                        <div class="theatre-toggle" onclick="togglePlayerVisibility()">
+                                <label for="excludeYouTube">
+                                    <i class="fab fa-youtube"></i>
+                                    YouTube Player Visibility
+                                </label>
+                                <div class="theatre-switch" id="youtubeExclusionSwitch"></div>
+                            </div>
+                        
+
+                        <div class="settings-footer">
+                            <button class="reset-btn" onclick="userSettingsManager.resetUserSettings()">
+                                <i class="fas fa-undo"></i> Reset to Defaults
+                            </button>
+                            <small class="text-muted">Settings are saved automatically</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theatre Mode Exit Button (hidden by default) -->
+        <button class="theatre-exit-btn" id="theatreExitBtn" onclick="userSettingsManager.exitTheatreMode()" style="display: none;">
+            <i class="fas fa-compress"></i> Exit Theatre
+        </button>
+        `;
+
+        // Add modal to body
+        $('body').append(modalHTML);
+        this.modalInitialized = true;
+        
+        // Initialize controls after modal is added
+        setTimeout(() => this.initializeControls(), 100);
+    }
+
+    initializeControls() {
+        // Notification volume controls
+        const notificationSlider = document.getElementById('notificationVolume');
+        const notificationValue = document.getElementById('notificationVolumeValue');
+        const notificationMuteBtn = document.getElementById('notificationMuteBtn');
+
+        if (notificationSlider) {
+            notificationSlider.value = this.settings.notificationVolume;
+            notificationValue.textContent = this.settings.notificationVolume;
+            
+            notificationSlider.addEventListener('input', (e) => {
+                this.settings.notificationVolume = parseInt(e.target.value);
+                notificationValue.textContent = this.settings.notificationVolume;
+                
+                // Update slider visual
+                this.updateSliderVisual(notificationSlider, this.settings.notificationVolume);
+                this.saveSettings();
+                
+                if (this.settings.notificationVolume > 0) {
+                    this.settings.notificationMuted = false;
+                    this.updateMuteButton(notificationMuteBtn, false);
+                }
+            });
+            
+            this.updateSliderVisual(notificationSlider, this.settings.notificationVolume);
+        }
+
+        // YouTube volume controls
+        const youtubeSlider = document.getElementById('youtubeVolume');
+        const youtubeValue = document.getElementById('youtubeVolumeValue');
+        const youtubeMuteBtn = document.getElementById('youtubeMuteBtn');
+
+        if (youtubeSlider) {
+            youtubeSlider.value = this.settings.youtubeVolume;
+            youtubeValue.textContent = this.settings.youtubeVolume;
+            
+            youtubeSlider.addEventListener('input', (e) => {
+                this.settings.youtubeVolume = parseInt(e.target.value);
+                youtubeValue.textContent = this.settings.youtubeVolume;
+                
+                // Update slider visual
+                this.updateSliderVisual(youtubeSlider, this.settings.youtubeVolume);
+                this.saveSettings();
+                
+                // Debounce YouTube volume updates
+                if (this.youtubeVolumeUpdateTimeout) {
+                    clearTimeout(this.youtubeVolumeUpdateTimeout);
+                }
+                this.youtubeVolumeUpdateTimeout = setTimeout(() => {
+                    this.updateYouTubeVolume();
+                }, 100);
+                
+                if (this.settings.youtubeVolume > 0) {
+                    this.settings.youtubeMuted = false;
+                    this.updateMuteButton(youtubeMuteBtn, false);
+                }
+            });
+            
+            this.updateSliderVisual(youtubeSlider, this.settings.youtubeVolume);
+        }
+
+        // Dimmer controls
+        const dimmerSlider = document.getElementById('dimmerLevel');
+        const dimmerValue = document.getElementById('dimmerLevelValue');
+        const dimmerToggleBtn = document.getElementById('dimmerToggleBtn');
+
+        if (dimmerSlider) {
+            dimmerSlider.value = this.settings.dimmerLevel;
+            dimmerValue.textContent = this.settings.dimmerLevel;
+            
+            dimmerSlider.addEventListener('input', (e) => {
+                this.settings.dimmerLevel = parseInt(e.target.value);
+                dimmerValue.textContent = this.settings.dimmerLevel;
+                
+                // Update slider visual
+                this.updateSliderVisual(dimmerSlider, this.settings.dimmerLevel);
+                this.saveSettings();
+                this.updateDimmerEffect();
+            });
+            
+            this.updateSliderVisual(dimmerSlider, this.settings.dimmerLevel);
+        }
+
+        // YouTube exclusion toggle
+        const youtubeExclusionSwitch = document.getElementById('youtubeExclusionSwitch');
+        if (youtubeExclusionSwitch) {
+            if (this.settings.excludeYouTubeFromDimmer) {
+                youtubeExclusionSwitch.classList.add('active');
+            }
+        }
+
+        // Theatre mode toggle
+        const theatreSwitch = document.getElementById('theatreSwitch');
+        if (theatreSwitch) {
+            if (this.settings.theatreMode) {
+                theatreSwitch.classList.add('active');
+            }
+        }
+
+        // Update mute button states
+        this.updateMuteButton(notificationMuteBtn, this.settings.notificationMuted);
+        this.updateMuteButton(youtubeMuteBtn, this.settings.youtubeMuted);
+        
+        // Check YouTube availability
+        this.checkYouTubeAvailability();
+        
+        // Apply initial dimmer effect
+        this.updateDimmerEffect();
+    }
+
+    updateSliderVisual(slider, value) {
+        if (slider) {
+            slider.style.setProperty('--volume-percent', `${value}%`);
+        }
+    }
+
+    updateMuteButton(button, isMuted) {
+        if (!button) return;
+        
+        const icon = button.querySelector('i');
+        if (isMuted) {
+            button.classList.add('muted');
+            icon.className = 'fas fa-volume-mute';
+        } else {
+            button.classList.remove('muted');
+            icon.className = 'fas fa-volume-up';
+        }
+    }
+
+    checkYouTubeAvailability() {
+        // Show YouTube settings if YouTube is enabled in the room
+        const youtubeContainer = document.querySelector('.youtube-player-container');
+        const youtubeSection = document.getElementById('youtubeSettingsSection');
+        
+        if (youtubeContainer && youtubeSection) {
+            youtubeSection.style.display = 'block';
+        }
+    }
+
+    setupEventListeners() {
+        // Handle escape key for theatre mode
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.settings.theatreMode) {
+                this.exitTheatreMode();
+            }
+        });
+
+        // Handle window resize in theatre mode
+        window.addEventListener('resize', () => {
+            if (this.settings.theatreMode) {
+                this.adjustTheatreModeLayout();
+            }
+        });
+
+        // Modal event listeners
+        $(document).on('show.bs.modal', '#userSettingsModal', () => {
+            if (this.settings.theatreMode) {
+                const container = document.querySelector('.youtube-player-container');
+                if (container) container.style.zIndex = '9998';
+            }
+        });
+
+        $(document).on('hide.bs.modal', '#userSettingsModal', () => {
+            if (this.settings.theatreMode) {
+                const container = document.querySelector('.youtube-player-container');
+                if (container) container.style.zIndex = '9999';
+            }
+        });
+    }
+
+    adjustTheatreModeLayout() {
+        const youtubeContainer = document.querySelector('.youtube-player-container.theatre-mode');
+        if (youtubeContainer) {
+            const player = youtubeContainer.querySelector('#youtube-player');
+            if (player) {
+                player.style.height = `calc(100vh - 180px)`;
+            }
+        }
+    }
+
+    updateYouTubeVolume() {
+        if (typeof youtubePlayer !== 'undefined' && youtubePlayer && typeof youtubePlayer.setVolume === 'function') {
+            try {
+                const volume = this.settings.youtubeMuted ? 0 : this.settings.youtubeVolume;
+                youtubePlayer.setVolume(volume);
+            } catch (e) {
+                console.warn('Could not set YouTube volume:', e);
+            }
+        }
+    }
+
+    updateDimmerEffect() {
+        const htmlElement = document.documentElement;
+        const youtubeIframe = document.querySelector('#youtube-player iframe') || document.querySelector('#youtube-player');
+        
+        // Apply brightness filter to HTML element
+        const brightness = this.settings.dimmerLevel / 100;
+        htmlElement.style.filter = `brightness(${brightness})`;
+        
+        // Exclude YouTube iframe if option is enabled
+        if (this.settings.excludeYouTubeFromDimmer && youtubeIframe) {
+            youtubeIframe.style.filter = 'brightness(1.0)';
+        } else if (youtubeIframe) {
+            youtubeIframe.style.filter = '';
+        }
+    }
+
+    toggleDimmer() {
+        // Toggle between current level and 100% (full brightness)
+        if (this.settings.dimmerLevel < 100) {
+            this.settings.dimmerLevel = 100;
+        } else {
+            this.settings.dimmerLevel = 70; // Default dimmed level
+        }
+        
+        this.saveSettings();
+        this.updateDimmerEffect();
+        
+        // Update UI controls
+        const dimmerSlider = document.getElementById('dimmerLevel');
+        const dimmerValue = document.getElementById('dimmerLevelValue');
+        
+        if (dimmerSlider) {
+            dimmerSlider.value = this.settings.dimmerLevel;
+            this.updateSliderVisual(dimmerSlider, this.settings.dimmerLevel);
+        }
+        if (dimmerValue) {
+            dimmerValue.textContent = this.settings.dimmerLevel;
+        }
+    }
+
+    toggleYouTubeExclusion() {
+        this.settings.excludeYouTubeFromDimmer = !this.settings.excludeYouTubeFromDimmer;
+        this.saveSettings();
+        
+        const youtubeExclusionSwitch = document.getElementById('youtubeExclusionSwitch');
+        if (youtubeExclusionSwitch) {
+            if (this.settings.excludeYouTubeFromDimmer) {
+                youtubeExclusionSwitch.classList.add('active');
+            } else {
+                youtubeExclusionSwitch.classList.remove('active');
+            }
+        }
+        
+        this.updateDimmerEffect();
+    }
+
+    playNotificationSound(soundFile = '/sounds/message_notification.mp3') {
+        if (this.settings.notificationMuted || this.settings.notificationVolume === 0) {
+            return;
+        }
+
+        try {
+            const audio = new Audio(soundFile);
+            audio.volume = this.settings.notificationVolume / 100;
+            audio.play().catch(e => {
+                console.log('Could not play notification sound:', e);
+            });
+        } catch (e) {
+            console.warn('Error creating audio:', e);
+        }
+    }
+
+    toggleNotificationMute() {
+        this.settings.notificationMuted = !this.settings.notificationMuted;
+        this.saveSettings();
+        
+        const button = document.getElementById('notificationMuteBtn');
+        this.updateMuteButton(button, this.settings.notificationMuted);
+        
+        // Test sound when unmuting
+        if (!this.settings.notificationMuted) {
+            setTimeout(() => this.playNotificationSound(), 100);
+        }
+    }
+
+    toggleYouTubeMute() {
+        this.settings.youtubeMuted = !this.settings.youtubeMuted;
+        this.saveSettings();
+        
+        const button = document.getElementById('youtubeMuteBtn');
+        this.updateMuteButton(button, this.settings.youtubeMuted);
+        
+        this.updateYouTubeVolume();
+    }
+
+    toggleTheatreMode() {
+        this.settings.theatreMode = !this.settings.theatreMode;
+        this.saveSettings();
+        
+        if (this.settings.theatreMode) {
+            this.enterTheatreMode();
+        } else {
+            this.exitTheatreMode();
+        }
+    }
+
+    enterTheatreMode() {
+        const theatreSwitch = document.getElementById('theatreSwitch');
+        const youtubeContainer = document.querySelector('.youtube-player-container');
+        const theatreExitBtn = document.getElementById('theatreExitBtn');
+        
+        if (theatreSwitch) theatreSwitch.classList.add('active');
+        
+        if (youtubeContainer) {
+            youtubeContainer.classList.add('theatre-mode');
+            document.body.classList.add('theatre-mode-active');
+            
+            if (theatreExitBtn) theatreExitBtn.style.display = 'block';
+            
+            // Adjust layout
+            setTimeout(() => this.adjustTheatreModeLayout(), 100);
+        }
+    }
+
+    exitTheatreMode() {
+        this.settings.theatreMode = false;
+        this.saveSettings();
+        
+        const theatreSwitch = document.getElementById('theatreSwitch');
+        const youtubeContainer = document.querySelector('.youtube-player-container');
+        const theatreExitBtn = document.getElementById('theatreExitBtn');
+        
+        if (theatreSwitch) theatreSwitch.classList.remove('active');
+        
+        if (youtubeContainer) {
+            youtubeContainer.classList.remove('theatre-mode');
+            document.body.classList.remove('theatre-mode-active');
+            
+            if (theatreExitBtn) theatreExitBtn.style.display = 'none';
+        }
+    }
+
+    resetUserSettings() {
+        if (confirm('Reset all settings to defaults? This will reset volumes, disable theatre mode, and restore normal brightness.')) {
+            this.exitTheatreMode();
+            this.resetToDefaults();
+            this.initializeControls();
+            this.updateYouTubeVolume();
+            this.updateDimmerEffect();
+        }
+    }
+
+    openModal() {
+        if (!this.modalInitialized) {
+            this.initializeModal();
+        }
+        
+        try {
+            const modal = new bootstrap.Modal(document.getElementById('userSettingsModal'));
+            modal.show();
+        } catch (e) {
+            console.warn('Could not open settings modal:', e);
+            // Fallback for older Bootstrap versions
+            $('#userSettingsModal').modal('show');
+        }
+    }
+}
+
+// Global instance
+let userSettingsManager;
+
+// Initialize when DOM and jQuery are ready
+function initializeUserSettings() {
+    userSettingsManager = new UserSettings();
+    
+    // Override existing notification functions to use user settings
+    window.originalPlayMessageNotification = window.playMessageNotification;
+    window.playMessageNotification = function() {
+        if (userSettingsManager) {
+            userSettingsManager.playNotificationSound('/sounds/message_notification.mp3');
+        } else if (window.originalPlayMessageNotification) {
+            window.originalPlayMessageNotification();
+        }
+    };
+
+    window.originalPlayReplyOrMentionSound = window.playReplyOrMentionSound;
+    window.playReplyOrMentionSound = function() {
+        if (userSettingsManager) {
+            userSettingsManager.playNotificationSound('/sounds/reply_or_mention_notification.mp3');
+        } else if (window.originalPlayReplyOrMentionSound) {
+            window.originalPlayReplyOrMentionSound();
+        }
+    };
+
+    window.originalPlayFriendNotificationSound = window.playFriendNotificationSound;
+    window.playFriendNotificationSound = function() {
+        if (userSettingsManager) {
+            userSettingsManager.playNotificationSound('/sounds/private_message_notification.mp3');
+        } else if (window.originalPlayFriendNotificationSound) {
+            window.originalPlayFriendNotificationSound();
+        }
+    };
+
+    window.originalPlayNotificationSound = window.playNotificationSound;
+    window.playNotificationSound = function() {
+        if (userSettingsManager) {
+            userSettingsManager.playNotificationSound('/sounds/notification.mp3');
+        } else if (window.originalPlayNotificationSound) {
+            window.originalPlayNotificationSound();
+        }
+    };
+}
+
+// Wait for jQuery to be available
+function waitForJQuery(callback) {
+    if (typeof $ !== 'undefined' && typeof $.fn !== 'undefined') {
+        if (document.readyState === 'loading') {
+            $(document).ready(callback);
+        } else {
+            callback();
+        }
+    } else {
+        setTimeout(() => waitForJQuery(callback), 100);
+    }
+}
+
+// Initialize when everything is ready
+waitForJQuery(initializeUserSettings);
+
+// Global function for opening settings modal
+function openUserSettings() {
+    if (userSettingsManager) {
+        userSettingsManager.openModal();
+    }
+}
+
+// Hook into YouTube player ready event
+$(window).on('load', function() {
+    // Set up YouTube integration after page load
+    if (typeof youtubePlayer !== 'undefined' || typeof window.onYouTubeIframeAPIReady !== 'undefined') {
+        const originalOnReady = window.onYouTubeIframeAPIReady;
+        window.onYouTubeIframeAPIReady = function() {
+            if (originalOnReady) originalOnReady();
+            
+            setTimeout(() => {
+                if (userSettingsManager) {
+                    userSettingsManager.updateYouTubeVolume();
+                    userSettingsManager.updateDimmerEffect(); // Reapply dimmer to new iframe
+                }
+            }, 1000);
+        };
+    }
+    
+    // Also hook into the global YouTube player ready function if it exists
+    if (typeof window.onYouTubePlayerReady !== 'undefined') {
+        const originalPlayerReady = window.onYouTubePlayerReady;
+        window.onYouTubePlayerReady = function(event) {
+            if (originalPlayerReady) originalPlayerReady(event);
+            
+            setTimeout(() => {
+                if (userSettingsManager) {
+                    userSettingsManager.updateYouTubeVolume();
+                    userSettingsManager.updateDimmerEffect(); // Reapply dimmer to new iframe
+                }
+            }, 1000);
+        };
+    }
+});
+
+// Export for use in other scripts
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { UserSettings, userSettingsManager };
+}

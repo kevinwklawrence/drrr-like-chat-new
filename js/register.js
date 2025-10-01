@@ -1,1 +1,184 @@
-const _0x5d5cb7=_0x5e8c;(function(_0x4cc61b,_0x2376de){const _0x3b9862=_0x5e8c,_0x2c3557=_0x4cc61b();while(!![]){try{const _0x43c739=-parseInt(_0x3b9862(0x104))/0x1*(-parseInt(_0x3b9862(0x112))/0x2)+parseInt(_0x3b9862(0xfa))/0x3+parseInt(_0x3b9862(0x118))/0x4*(parseInt(_0x3b9862(0x116))/0x5)+parseInt(_0x3b9862(0x12c))/0x6+parseInt(_0x3b9862(0x123))/0x7*(parseInt(_0x3b9862(0x117))/0x8)+-parseInt(_0x3b9862(0x120))/0x9+-parseInt(_0x3b9862(0xf5))/0xa*(parseInt(_0x3b9862(0x124))/0xb);if(_0x43c739===_0x2376de)break;else _0x2c3557['push'](_0x2c3557['shift']());}catch(_0x38200a){_0x2c3557['push'](_0x2c3557['shift']());}}}(_0x321d,0x4c692),$(document)[_0x5d5cb7(0xf7)](function(){const _0x441c9e=_0x5d5cb7;let _0xa60b16,_0x33c151;$('#username')['on'](_0x441c9e(0x110),function(){const _0x171fdf=_0x441c9e,_0x39b349=$(this)['val'](),_0x4d9538=$(this);clearTimeout(_0xa60b16);if(_0x39b349['length']<0x3){_0x4d9538['removeClass'](_0x171fdf(0x11a));return;}if(_0x39b349['length']>0x14){_0x4d9538[_0x171fdf(0x100)]('is-valid')['addClass'](_0x171fdf(0x11f)),_0x4d9538[_0x171fdf(0x126)](_0x171fdf(0xfe))[_0x171fdf(0x108)]('Username\x20must\x20be\x203-20\x20characters.');return;}_0xa60b16=setTimeout(()=>{checkUsernameAvailability(_0x39b349,_0x4d9538);},0x1f4);}),$(_0x441c9e(0x122))['on']('input',function(){const _0x3d9c6d=_0x441c9e,_0x372b2b=$(this)[_0x3d9c6d(0x106)](),_0x5257a0=$(this);clearTimeout(_0x33c151);if(_0x372b2b['length']===0x0){_0x5257a0['removeClass'](_0x3d9c6d(0x11a));return;}if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/[_0x3d9c6d(0x11c)](_0x372b2b)){_0x5257a0[_0x3d9c6d(0x100)](_0x3d9c6d(0x10c))[_0x3d9c6d(0x12b)](_0x3d9c6d(0x11f)),_0x5257a0[_0x3d9c6d(0x126)](_0x3d9c6d(0xfe))['text'](_0x3d9c6d(0x12d));return;}_0x33c151=setTimeout(()=>{checkEmailAvailability(_0x372b2b,_0x5257a0);},0x1f4);}),$('#password')['on'](_0x441c9e(0x110),function(){const _0x2ff85c=_0x441c9e,_0x340184=$(this)['val'](),_0x28abb0=$(this),_0x18c2bb=$(_0x2ff85c(0x10e));if(_0x340184['length']===0x0){_0x28abb0[_0x2ff85c(0x100)](_0x2ff85c(0x11a)),_0x18c2bb[_0x2ff85c(0x100)]()[_0x2ff85c(0x12b)](_0x2ff85c(0x102));return;}if(_0x340184[_0x2ff85c(0xf6)]<0x6){_0x28abb0['removeClass'](_0x2ff85c(0x10c))[_0x2ff85c(0x12b)](_0x2ff85c(0x11f)),_0x28abb0[_0x2ff85c(0x126)](_0x2ff85c(0xfe))[_0x2ff85c(0x108)](_0x2ff85c(0x103)),_0x18c2bb[_0x2ff85c(0x100)]()[_0x2ff85c(0x12b)]('password-strength-bar');return;}const _0x3a773e=calculatePasswordStrength(_0x340184);_0x18c2bb[_0x2ff85c(0x100)]()[_0x2ff85c(0x12b)](_0x2ff85c(0x129)+_0x3a773e['level']),_0x3a773e[_0x2ff85c(0x113)]>=0x3?_0x28abb0[_0x2ff85c(0x100)](_0x2ff85c(0x11f))[_0x2ff85c(0x12b)](_0x2ff85c(0x10c)):(_0x28abb0[_0x2ff85c(0x100)]('is-valid')['addClass']('is-invalid'),_0x28abb0[_0x2ff85c(0x126)](_0x2ff85c(0xfe))[_0x2ff85c(0x108)](_0x2ff85c(0xf8))),$(_0x2ff85c(0x10a))[_0x2ff85c(0x106)]()&&checkPasswordMatch();}),$('#confirm_password')['on']('input',checkPasswordMatch),$(_0x441c9e(0x105))['on']('submit',function(_0x1acbff){const _0x398fc7=_0x441c9e;_0x1acbff[_0x398fc7(0x125)]();if(!validateForm())return;const _0x15d2b1={'username':$('#username')['val']()['trim'](),'email':$(_0x398fc7(0x122))['val']()[_0x398fc7(0x115)](),'password':$(_0x398fc7(0x114))[_0x398fc7(0x106)](),'confirm_password':$(_0x398fc7(0x10a))[_0x398fc7(0x106)]()},_0x5440d7=$(_0x398fc7(0x11e)),_0x53413a=_0x5440d7[_0x398fc7(0x127)]();_0x5440d7[_0x398fc7(0x10f)](_0x398fc7(0x111),!![])[_0x398fc7(0x127)]('<i\x20class=\x22fas\x20fa-spinner\x20fa-spin\x22></i>\x20Creating\x20Account...'),$[_0x398fc7(0x12a)]({'url':'register.php','method':_0x398fc7(0xf9),'data':_0x15d2b1,'dataType':'json','success':function(_0xc7ccc1){const _0x486d51=_0x398fc7;_0xc7ccc1[_0x486d51(0x11d)]==='success'?(alert(_0x486d51(0xfd)),window[_0x486d51(0x10d)][_0x486d51(0x128)]=_0x486d51(0x10b)):(alert('Error:\x20'+_0xc7ccc1[_0x486d51(0x107)]),_0x5440d7[_0x486d51(0x10f)]('disabled',![])[_0x486d51(0x127)](_0x53413a));},'error':function(_0x82fdb7,_0x307551,_0x256b2a){const _0x890338=_0x398fc7;console[_0x890338(0x101)]('AJAX\x20error:',_0x307551,_0x256b2a),alert(_0x890338(0x109)+_0x256b2a),_0x5440d7['prop'](_0x890338(0x111),![])[_0x890338(0x127)](_0x53413a);}});});}));function checkUsernameAvailability(_0x5ba05f,_0x48121c){const _0x544b50=_0x5d5cb7;_0x48121c[_0x544b50(0x100)]('is-invalid')['addClass'](_0x544b50(0x10c));}function checkEmailAvailability(_0x380ed0,_0x12f71f){const _0x195378=_0x5d5cb7;_0x12f71f[_0x195378(0x100)](_0x195378(0x11f))[_0x195378(0x12b)](_0x195378(0x10c));}function calculatePasswordStrength(_0x16ab19){const _0x507461=_0x5d5cb7;let _0x451dc9=0x0,_0x41950e=_0x507461(0x12e);if(_0x16ab19[_0x507461(0xf6)]>=0x8)_0x451dc9++;if(_0x16ab19[_0x507461(0xf6)]>=0xc)_0x451dc9++;if(/[a-z]/[_0x507461(0x11c)](_0x16ab19))_0x451dc9++;if(/[A-Z]/[_0x507461(0x11c)](_0x16ab19))_0x451dc9++;if(/[0-9]/[_0x507461(0x11c)](_0x16ab19))_0x451dc9++;if(/[^A-Za-z0-9]/[_0x507461(0x11c)](_0x16ab19))_0x451dc9++;if(_0x451dc9<=0x2)_0x41950e='weak';else{if(_0x451dc9<=0x3)_0x41950e=_0x507461(0x119);else{if(_0x451dc9<=0x4)_0x41950e='good';else _0x41950e=_0x507461(0xfb);}}return{'score':_0x451dc9,'level':_0x41950e};}function _0x5e8c(_0x2c2679,_0x29ffd0){const _0x321d8d=_0x321d();return _0x5e8c=function(_0x5e8c07,_0x3ab3a4){_0x5e8c07=_0x5e8c07-0xf5;let _0x31b157=_0x321d8d[_0x5e8c07];return _0x31b157;},_0x5e8c(_0x2c2679,_0x29ffd0);}function checkPasswordMatch(){const _0x2ff628=_0x5d5cb7,_0x12a201=$(_0x2ff628(0x114))[_0x2ff628(0x106)](),_0x581ef0=$(_0x2ff628(0x10a))[_0x2ff628(0x106)](),_0xe1645=$(_0x2ff628(0x10a));if(_0x581ef0[_0x2ff628(0xf6)]===0x0){_0xe1645['removeClass']('is-valid\x20is-invalid');return;}_0x12a201===_0x581ef0?_0xe1645[_0x2ff628(0x100)](_0x2ff628(0x11f))[_0x2ff628(0x12b)](_0x2ff628(0x10c)):(_0xe1645[_0x2ff628(0x100)](_0x2ff628(0x10c))[_0x2ff628(0x12b)](_0x2ff628(0x11f)),_0xe1645['siblings']('.invalid-feedback')[_0x2ff628(0x108)](_0x2ff628(0xfc)));}function validateForm(){const _0x29f697=_0x5d5cb7;let _0x377c6e=!![];return $(_0x29f697(0x121))[_0x29f697(0x11b)](function(){const _0x56326a=_0x29f697;(!$(this)[_0x56326a(0xff)](_0x56326a(0x10c))||$(this)['val']()[_0x56326a(0x115)]()==='')&&(_0x377c6e=![],!$(this)[_0x56326a(0xff)](_0x56326a(0x11f))&&$(this)[_0x56326a(0x12b)](_0x56326a(0x11f)));}),_0x377c6e;}function _0x321d(){const _0x4be031=['button[type=\x22submit\x22]','is-invalid','4259952PHYgZS','.form-control[required]','#email','2611UeXpSd','503635cYFcxY','preventDefault','siblings','html','href','password-strength-bar\x20strength-','ajax','addClass','1161396AQfodZ','Please\x20enter\x20a\x20valid\x20email\x20address','weak','30xXTcEM','length','ready','Password\x20could\x20be\x20stronger','POST','439524iwwnmi','strong','Passwords\x20do\x20not\x20match','Registration\x20successful!\x20Redirecting\x20to\x20lounge...','.invalid-feedback','hasClass','removeClass','error','password-strength-bar','Password\x20must\x20be\x20at\x20least\x206\x20characters','42073rUuCzq','#registerForm','val','message','text','Connection\x20error:\x20','#confirm_password','/lounge','is-valid','location','#passwordStrengthBar','prop','input','disabled','2wFhJdK','score','#password','trim','5zNdgqg','7096TAOfVo','842652VwJXuV','fair','is-valid\x20is-invalid','each','test','status'];_0x321d=function(){return _0x4be031;};return _0x321d();}
+$(document).ready(function() {
+            let usernameCheckTimeout;
+            let emailCheckTimeout;
+            
+            $('#username').on('input', function() {
+                const username = $(this).val();
+                const field = $(this);
+                
+                clearTimeout(usernameCheckTimeout);
+                
+                if (username.length < 3) {
+                    field.removeClass('is-valid is-invalid');
+                    return;
+                }
+                
+                if (username.length > 20) {
+                    field.removeClass('is-valid').addClass('is-invalid');
+                    field.siblings('.invalid-feedback').text('Username must be 3-20 characters.');
+                    return;
+                }
+                
+                usernameCheckTimeout = setTimeout(() => {
+                    checkUsernameAvailability(username, field);
+                }, 500);
+            });
+            
+            $('#email').on('input', function() {
+                const email = $(this).val();
+                const field = $(this);
+                
+                clearTimeout(emailCheckTimeout);
+                
+                if (email.length === 0) {
+                    field.removeClass('is-valid is-invalid');
+                    return;
+                }
+                
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                    field.removeClass('is-valid').addClass('is-invalid');
+                    field.siblings('.invalid-feedback').text('Please enter a valid email address');
+                    return;
+                }
+                
+                emailCheckTimeout = setTimeout(() => {
+                    checkEmailAvailability(email, field);
+                }, 500);
+            });
+            
+            $('#password').on('input', function() {
+                const password = $(this).val();
+                const field = $(this);
+                const strengthBar = $('#passwordStrengthBar');
+                
+                if (password.length === 0) {
+                    field.removeClass('is-valid is-invalid');
+                    strengthBar.removeClass().addClass('password-strength-bar');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    field.removeClass('is-valid').addClass('is-invalid');
+                    field.siblings('.invalid-feedback').text('Password must be at least 6 characters');
+                    strengthBar.removeClass().addClass('password-strength-bar');
+                    return;
+                }
+                
+                const strength = calculatePasswordStrength(password);
+                strengthBar.removeClass().addClass('password-strength-bar strength-' + strength.level);
+                
+                if (strength.score >= 3) {
+                    field.removeClass('is-invalid').addClass('is-valid');
+                } else {
+                    field.removeClass('is-valid').addClass('is-invalid');
+                    field.siblings('.invalid-feedback').text('Password could be stronger');
+                }
+                
+                if ($('#confirm_password').val()) {
+                    checkPasswordMatch();
+                }
+            });
+            
+            $('#confirm_password').on('input', checkPasswordMatch);
+            
+            $('#registerForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                if (!validateForm()) {
+                    return;
+                }
+                
+                const formData = {
+                    username: $('#username').val().trim(),
+                    email: $('#email').val().trim(),
+                    password: $('#password').val(),
+                    confirm_password: $('#confirm_password').val()
+                };
+                
+                const submitBtn = $('button[type="submit"]');
+                const originalText = submitBtn.html();
+                submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating Account...');
+                
+                $.ajax({
+                    url: 'register.php',
+                    method: 'POST',
+                    data: formData,
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            alert('Registration successful! Redirecting to lounge...');
+                            window.location.href = '/lounge';
+                        } else {
+                            alert('Error: ' + response.message);
+                            submitBtn.prop('disabled', false).html(originalText);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX error:', status, error);
+                        alert('Connection error: ' + error);
+                        submitBtn.prop('disabled', false).html(originalText);
+                    }
+                });
+            });
+        });
+        
+        function checkUsernameAvailability(username, field) {
+            field.removeClass('is-invalid').addClass('is-valid');
+        }
+        
+        function checkEmailAvailability(email, field) {
+            field.removeClass('is-invalid').addClass('is-valid');
+        }
+        
+        function calculatePasswordStrength(password) {
+            let score = 0;
+            let level = 'weak';
+            
+            if (password.length >= 8) score++;
+            if (password.length >= 12) score++;
+            
+            if (/[a-z]/.test(password)) score++;
+            if (/[A-Z]/.test(password)) score++;
+            if (/[0-9]/.test(password)) score++;
+            if (/[^A-Za-z0-9]/.test(password)) score++;
+            
+            if (score <= 2) level = 'weak';
+            else if (score <= 3) level = 'fair';
+            else if (score <= 4) level = 'good';
+            else level = 'strong';
+            
+            return { score, level };
+        }
+        
+        function checkPasswordMatch() {
+            const password = $('#password').val();
+            const confirmPassword = $('#confirm_password').val();
+            const field = $('#confirm_password');
+            
+            if (confirmPassword.length === 0) {
+                field.removeClass('is-valid is-invalid');
+                return;
+            }
+            
+            if (password === confirmPassword) {
+                field.removeClass('is-invalid').addClass('is-valid');
+            } else {
+                field.removeClass('is-valid').addClass('is-invalid');
+                field.siblings('.invalid-feedback').text('Passwords do not match');
+            }
+        }
+        
+        function validateForm() {
+            let isValid = true;
+            
+            $('.form-control[required]').each(function() {
+                if (!$(this).hasClass('is-valid') || $(this).val().trim() === '') {
+                    isValid = false;
+                    if (!$(this).hasClass('is-invalid')) {
+                        $(this).addClass('is-invalid');
+                    }
+                }
+            });
+            
+            return isValid;
+        }

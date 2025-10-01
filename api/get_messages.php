@@ -147,7 +147,11 @@ $sql = "SELECT " . implode(', ', $select_fields) . "
         FROM messages m 
         LEFT JOIN users u ON m.user_id = u.id 
         LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id 
-            AND m.user_id_string = cu.user_id_string";  
+            AND (
+                (m.user_id IS NOT NULL AND m.user_id = cu.user_id) OR 
+                (m.user_id IS NULL AND m.guest_name = cu.guest_name) OR
+                (m.user_id IS NULL AND m.user_id_string = cu.user_id_string)
+            )";
 
 // Add reply message join if column exists
 if (in_array('reply_to_message_id', $msg_columns)) {
@@ -162,8 +166,6 @@ if (in_array('reply_to_message_id', $msg_columns)) {
 }
 
 $sql .= " WHERE m.room_id = ?";
-$sql .= " GROUP BY m.id";  // This prevents duplicate rows for same message
-
 
 // For pagination, always order by timestamp DESC and use LIMIT/OFFSET
 // The frontend will handle reversing the order if needed
@@ -186,16 +188,6 @@ $messages = [];
 
 // Process messages
 while ($row = $result->fetch_assoc()) {
-    if (empty($row['id']) || $row['id'] === null) {
-        error_log("Skipping row with NULL message ID - bad JOIN detected");
-        continue;
-    }
-    
-    // Skip if message content is missing (shouldn't happen with GROUP BY, but safety check)
-    if (!isset($row['message'])) {
-        error_log("Skipping message ID {$row['id']} - NULL message content");
-        continue;
-    }
     $avatar_hue = (int)($row['avatar_hue'] ?? 0);
     $avatar_saturation = (int)($row['avatar_saturation'] ?? 100);
     $user_color = $row['color'] ?? 'blue';

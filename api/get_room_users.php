@@ -30,14 +30,22 @@ while ($row = $users_columns_query->fetch_assoc()) {
 }
 
 // Build select fields for chatroom_users
-$select_fields = [
-    'cu.user_id',
-    'cu.user_id_string', 
-    'cu.guest_name', 
-    'cu.avatar as guest_avatar',
-    'cu.is_host',
-    'cu.last_activity'
-];
+$select_fields[] = "(
+    SELECT JSON_ARRAYAGG(
+        JSON_OBJECT(
+            'name', si.name,
+            'rarity', si.rarity,
+            'icon', si.icon
+        )
+    )
+    FROM user_inventory ui
+    JOIN shop_items si ON ui.item_id = si.item_id
+    WHERE ui.user_id = cu.user_id 
+    AND ui.is_equipped = 1 
+    AND si.type = 'title'
+    ORDER BY FIELD(si.rarity, 'legendary', 'strange', 'rare', 'common')
+    LIMIT 5
+) as equipped_titles";
 
 // Add AFK fields if they exist
 if (in_array('is_afk', $cu_columns)) {
@@ -139,37 +147,46 @@ while ($row = $result->fetch_assoc()) {
     $avatar = 'default_avatar.jpg';
     
     if ($is_registered) {
-        $username = $row['registered_username'] ?: '';
+        $username = $row['registered_username'] ?? '';
         $display_name = $username;
-        $avatar = $row['registered_avatar'] ?: 'default_avatar.jpg';
+        $avatar = $row['registered_avatar'] ?? 'default_avatar.jpg';
     } else {
-        $guest_name = $row['guest_name'] ?: '';
-        $username = $row['username'] ?: ''; // From cu.username (stored username in chatroom)
+        $guest_name = $row['guest_name'] ?? '';
+        $username = $row['username'] ?? $row['cu_username'] ?? ''; // Handle cu.username alias
         $display_name = $username ?: $guest_name;
-        $avatar = $row['guest_avatar'] ?: 'default_avatar.jpg';
+        $avatar = $row['guest_avatar'] ?? 'default_avatar.jpg';
     }
     
     // Calculate AFK duration if user is AFK
     $afk_duration_minutes = 0;
-    if ($row['is_afk'] && !empty($row['afk_since'])) {
+    if (($row['is_afk'] ?? false) && !empty($row['afk_since'])) {
         $afk_since = new DateTime($row['afk_since']);
         $now = new DateTime();
         $afk_duration_minutes = floor(($now->getTimestamp() - $afk_since->getTimestamp()) / 60);
     }
     
+    // Parse equipped titles
+    $equipped_titles = [];
+    if (!empty($row['equipped_titles'])) {
+        $titles_json = json_decode($row['equipped_titles'], true);
+        if (is_array($titles_json)) {
+            $equipped_titles = $titles_json;
+        }
+    }
+    
     $user_data = [
-        'user_id' => $row['user_id'],
-        'user_id_string' => $row['user_id_string'],
+        'user_id' => $row['user_id'] ?? null,
+        'user_id_string' => $row['user_id_string'] ?? '',
         'username' => $username,
         'guest_name' => $guest_name,
         'display_name' => $display_name,
         'avatar' => $avatar,
-        'guest_avatar' => $row['guest_avatar'],
-        'is_host' => (int)$row['is_host'],
-        'is_admin' => (int)$row['is_admin'],
-        'is_moderator' => (int)$row['is_moderator'],
+        'guest_avatar' => $row['guest_avatar'] ?? null,
+        'is_host' => (int)($row['is_host'] ?? 0),
+        'is_admin' => (int)($row['is_admin'] ?? 0),
+        'is_moderator' => (int)($row['is_moderator'] ?? 0),
         'user_type' => $is_registered ? 'registered' : 'guest',
-        'last_activity' => $row['last_activity'],
+        'last_activity' => $row['last_activity'] ?? null,
         
         // Avatar customization
         'avatar_hue' => (int)($row['avatar_hue'] ?? 0),
@@ -177,10 +194,13 @@ while ($row = $result->fetch_assoc()) {
         'color' => $row['color'] ?? 'blue',
         
         // AFK Status
-        'is_afk' => (bool)$row['is_afk'],
-        'manual_afk' => (bool)$row['manual_afk'],
-        'afk_since' => $row['afk_since'],
-        'afk_duration_minutes' => $afk_duration_minutes
+        'is_afk' => (bool)($row['is_afk'] ?? false),
+        'manual_afk' => (bool)($row['manual_afk'] ?? false),
+        'afk_since' => $row['afk_since'] ?? null,
+        'afk_duration_minutes' => $afk_duration_minutes,
+        
+        // Equipped titles
+        'equipped_titles' => $equipped_titles
     ];
     
     $users[] = $user_data;
