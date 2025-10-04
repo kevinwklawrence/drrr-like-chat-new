@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Updated query to include all customization fields
-$stmt = $conn->prepare("SELECT id, username, user_id, email, password, is_admin, is_moderator, avatar, custom_av, avatar_memory, color, avatar_hue, avatar_saturation, bubble_hue, bubble_saturation FROM users WHERE username = ?");
+$stmt = $conn->prepare("SELECT id, username, user_id, email, password, is_admin, is_moderator, avatar, custom_av, avatar_memory, color, avatar_hue, avatar_saturation, bubble_hue, bubble_saturation, dura, tokens, event_currency FROM users WHERE username = ?");
     if (!$stmt) {
         error_log("Prepare failed in login.php: " . $conn->error);
         echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
@@ -174,6 +174,9 @@ $stmt = $conn->prepare("SELECT id, username, user_id, email, password, is_admin,
     'avatar_saturation' => $final_avatar_saturation,
     'bubble_hue' => $final_bubble_hue,
     'bubble_saturation' => $final_bubble_saturation,
+    'dura' => $user['dura'] ?? 0,
+'tokens' => $user['tokens'] ?? 20,
+'event_currency' => $user['event_currency'] ?? 0,
     'ip' => $_SERVER['REMOTE_ADDR']
 ];
             
