@@ -1,35 +1,6 @@
 const DEBUG_MODE = false;
 const SHOW_SENSITIVE_DATA = false;
 
-function escapeHtml(unsafe) {
-    return (unsafe || '')
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-function validateGuestName(name) {
-    // Clean the name client-side
-    name = name.trim().replace(/[^a-zA-Z0-9_-]/g, '');
-    
-    if (name.length < 2) {
-        return { valid: false, error: 'Guest name must be at least 2 characters' };
-    }
-    
-    if (name.length > 20) {
-        return { valid: false, error: 'Guest name must be 20 characters or less' };
-    }
-    
-    // Block reserved names
-    const blocked = ['admin', 'mod', 'moderator', 'system', 'bot', 'null', 'undefined'];
-    if (blocked.includes(name.toLowerCase())) {
-        return { valid: false, error: 'This name is reserved' };
-    }
-    
-    return { valid: true, name: name };
-}
 
 function debugLog(message, data = null) {
     if (DEBUG_MODE) {
@@ -81,6 +52,7 @@ function criticalError(message, error = null) {
 
 $(document).ready(function() {
     debugLog('script.js loaded');
+    setupInputSanitization();
 
     
 
@@ -428,3 +400,102 @@ $('#guestName').on('blur', function() {
         $('#guestNameFeedback').text(`✓ Name cleaned to: "${validation.name}"`);
     }
 });
+
+
+
+// Sanitize text input (removes dangerous characters, preserves UTF-8)
+function sanitizeInput(input, maxLength = 3000) {
+    if (!input) return '';
+    
+    // Convert to string and trim
+    input = String(input).trim();
+    
+    // Truncate to max length
+    if (input.length > maxLength) {
+        input = input.substring(0, maxLength);
+    }
+    
+    // Remove null bytes and other dangerous characters
+    input = input.replace(/\0/g, '');
+    
+    return input;
+}
+
+// Validate and sanitize username (alphanumeric and underscore only)
+function sanitizeUsername(username, maxLength = 20) {
+    username = String(username).trim();
+    
+    // Remove everything except alphanumeric and underscore
+    username = username.replace(/[^a-zA-Z0-9_]/g, '');
+    
+    if (username.length > maxLength) {
+        username = username.substring(0, maxLength);
+    }
+    
+    return username;
+}
+
+// Real-time input sanitization on form fields
+function setupInputSanitization() {
+    // Sanitize text inputs on blur (when user leaves field)
+    $('input[type="text"], textarea').on('blur', function() {
+        const maxLength = parseInt($(this).attr('maxlength')) || 3000;
+        const sanitized = sanitizeInput($(this).val(), maxLength);
+        $(this).val(sanitized);
+    });
+    
+    // Sanitize username fields in real-time
+    $('input[name="username"], input[id*="username"]').on('input', function() {
+        const maxLength = parseInt($(this).attr('maxlength')) || 20;
+        const sanitized = sanitizeUsername($(this).val(), maxLength);
+        $(this).val(sanitized);
+    });
+}
+
+// Add character counter to inputs (helpful for mobile users)
+function addCharacterCounters() {
+    $('textarea, input[maxlength]').each(function() {
+        const maxLength = parseInt($(this).attr('maxlength')) || 3000;
+        const $input = $(this);
+        
+        // Create counter element
+        const $counter = $('<small class="text-muted character-counter"></small>');
+        $input.after($counter);
+        
+        // Update counter
+        const updateCounter = () => {
+            const remaining = maxLength - $input.val().length;
+            $counter.text(`${remaining} characters remaining`);
+            
+            // Change color if close to limit
+            if (remaining < 50) {
+                $counter.addClass('text-danger').removeClass('text-muted');
+            } else {
+                $counter.addClass('text-muted').removeClass('text-danger');
+            }
+        };
+        
+        // Update on input
+        $input.on('input', updateCounter);
+        updateCounter();
+    });
+}
+
+// Prevent XSS in dynamic content
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+// Initialize on document ready
+
+// Export for use in other scripts
+window.sanitizeInput = sanitizeInput;
+window.sanitizeUsername = sanitizeUsername;
+window.escapeHtml = escapeHtml;
