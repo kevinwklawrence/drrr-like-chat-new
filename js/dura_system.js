@@ -31,12 +31,6 @@ function updateDuraBalance() {
             if (response.status === 'success') {
                 currentUser.dura = response.dura;
                 currentUser.tokens = response.tokens;
-                
-                // Update event_currency if present
-                if (typeof response.event_currency !== 'undefined') {
-                    currentUser.event_currency = response.event_currency;
-                }
-                
                 updateDuraDisplay();
                 updateShopBalances();
             }
@@ -190,9 +184,6 @@ function updateShopBalances() {
     }
     if ($('#shopTokenBalance').length) {
         $('#shopTokenBalance').text((currentUser.tokens || 0).toLocaleString());
-    }
-    if ($('#shopEventBalance').length) {
-        $('#shopEventBalance').text((currentUser.event_currency || 0).toLocaleString());
     }
 }
 

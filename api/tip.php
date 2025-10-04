@@ -128,16 +128,7 @@ try {
             break;
             
         case 'get_balance':
-            // Check if event_currency column exists
-            $check_col = $conn->query("SHOW COLUMNS FROM users LIKE 'event_currency'");
-            $has_event_currency = $check_col->num_rows > 0;
-            
-            if ($has_event_currency) {
-                $stmt = $conn->prepare("SELECT dura, tokens, event_currency, last_token_grant FROM users WHERE id = ?");
-            } else {
-                $stmt = $conn->prepare("SELECT dura, tokens, last_token_grant FROM users WHERE id = ?");
-            }
-            
+            $stmt = $conn->prepare("SELECT dura, tokens, last_token_grant FROM users WHERE id = ?");
             $stmt->bind_param("i", $user_id);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -148,19 +139,12 @@ try {
             $_SESSION['user']['dura'] = $data['dura'];
             $_SESSION['user']['tokens'] = $data['tokens'];
             
-            $response = [
+            echo json_encode([
                 'status' => 'success',
                 'dura' => $data['dura'],
                 'tokens' => $data['tokens'],
                 'last_grant' => $data['last_token_grant']
-            ];
-            
-            if ($has_event_currency) {
-                $_SESSION['user']['event_currency'] = $data['event_currency'];
-                $response['event_currency'] = $data['event_currency'];
-            }
-            
-            echo json_encode($response);
+            ]);
             break;
             
         default:

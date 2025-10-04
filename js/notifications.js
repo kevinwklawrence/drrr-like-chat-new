@@ -1,63 +1,83 @@
-// js/notifications.js - Uses main SSE connection (NO polling, NO separate SSE)
 let playedNotificationIds = new Set();
 let currentNotifications = [];
+let notificationCheckInterval;
 
 function initializeNotifications() {
-    $(document).on('click', '#notificationBell', toggleNotificationsPanel);
-    $(document).on('click', '.notification-panel-close', closeNotificationsPanel);
-    $(document).on('click', '.notification-mark-all', markAllNotificationsRead);
-    $(document).on('click', '.notification-item', handleNotificationClick);
-    $(document).on('click', function(e) {
-        if (!$(e.target).closest('.notifications-panel, #notificationBell').length) {
+    notificationCheckInterval = setInterval(checkForNotifications, 5000);
+    checkForNotifications();
+    $(document).on("click", "#notificationBell", toggleNotificationsPanel);
+    $(document).on("click", ".notification-panel-close", closeNotificationsPanel);
+    $(document).on("click", ".notification-mark-all", markAllNotificationsRead);
+    $(document).on("click", ".notification-item", handleNotificationClick);
+    $(document).on("click", function(e) {
+        if (!$(e.target).closest(".notifications-panel, #notificationBell").length) {
             closeNotificationsPanel();
         }
     });
 }
 
-// Called from room.js when SSE data arrives
-window.updateGeneralNotifications = function(data) {
-    if (!data) return;
+function checkForNotifications() {
+    if (!$("#notificationBell").length) return;
     
-    currentNotifications = data.notifications || [];
-    updateNotificationBell();
-    updateNotificationsPanel();
-};
+    $.ajax({
+        url: "api/get_notifications.php",
+        method: "GET",
+        dataType: "json",
+        success: function(response) {
+            if (response.status === "success") {
+                currentNotifications = response.notifications || [];
+                updateNotificationBell();
+                updateNotificationsPanel();
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error("Notification check failed:", error);
+        }
+    });
+}
 
 function updateNotificationBell() {
-    const bell = $('#notificationBell');
-    const badge = bell.find('.notification-badge');
+    const bellElement = $("#notificationBell");
+    const badge = bellElement.find(".notification-badge");
     const count = currentNotifications.length;
     
     if (count > 0) {
-        if (!badge.length) {
-            bell.addClass('has-notifications');
-            bell.append('<span class="notification-badge"></span>');
+        bellElement.addClass("has-notifications");
+        if (badge.length === 0) {
+            bellElement.append("<span class=\"notification-badge\"></span>");
         }
-        bell.find('.notification-badge').text(count > 99 ? '99+' : count);
+        bellElement.find(".notification-badge").text(count > 99 ? "99+" : count);
     } else {
-        bell.removeClass('has-notifications');
+        bellElement.removeClass("has-notifications");
         badge.remove();
     }
 }
 
+function toggleNotificationsPanel() {
+    const panel = $(".notifications-panel");
+    if (panel.hasClass("show")) {
+        closeNotificationsPanel();
+    } else {
+        showNotificationsPanel();
+    }
+}
+
 function showNotificationsPanel() {
-    let panel = $('.notifications-panel');
-    
+    let panel = $(".notifications-panel");
     if (panel.length === 0) {
         createNotificationsPanel();
-        panel = $('.notifications-panel');
+        panel = $(".notifications-panel");
     }
-    
     updateNotificationsPanel();
-    panel.addClass('show');
+    panel.addClass("show");
 }
 
 function closeNotificationsPanel() {
-    $('.notifications-panel').removeClass('show');
+    $(".notifications-panel").removeClass("show");
 }
 
 function createNotificationsPanel() {
-    const panelHTML = `
+    const panelHtml = `
         <div class="notifications-panel">
             <div class="notifications-panel-header">
                 <h6 class="notifications-panel-title">
@@ -79,54 +99,52 @@ function createNotificationsPanel() {
             </div>
         </div>
     `;
-    
-    $('body').append(panelHTML);
+    $("body").append(panelHtml);
 }
 
 function updateNotificationsPanel() {
-    const content = $('.notifications-panel-content');
-    
+    const container = $(".notifications-panel-content");
     if (currentNotifications.length === 0) {
-        content.html('<div class="notifications-empty"><i class="fas fa-bell-slash"></i><p>No notifications</p></div>');
+        container.html(`<div class="notifications-empty"><i class="fas fa-bell-slash"></i><p>No notifications</p></div>`);
         return;
     }
     
-    let html = '';
-    
+    let html = "";
+    let shouldPlaySound = false;
     currentNotifications.forEach(notification => {
         html += createNotificationHTML(notification);
-        
-        if ((notification.type === 'mention' || notification.type === 'reply') && 
-            !playedNotificationIds.has(notification.id)) {
-            playReplyOrMentionSound();
-            playedNotificationIds.add(notification.id);
+            if ((notification.type === "reply" || notification.type === "mention") && !playedNotificationIds.has(notification.id)) {
+                playReplyOrMentionSound();
+                playedNotificationIds.add(notification.id);
         }
     });
-    
-    content.html(html);
-}
+    container.html(html);
+
+    }
+
 
 function createNotificationHTML(notification) {
     const timeAgo = getTimeAgo(notification.timestamp);
+    let iconClass = "fa-bell";
+    if (notification.type === "mention") iconClass = "fa-at";
+    else if (notification.type === "reply") iconClass = "fa-reply";
+
     
-    let iconClass = 'fa-bell';
-    if (notification.type === 'mention') iconClass = 'fa-at';
-    else if (notification.type === 'reply') iconClass = 'fa-reply';
     
     return `
         <div class="notification-item ${notification.type}" 
-             data-id="${notification.id}"
-             data-type="${notification.type}"
-             data-message-id="${notification.message_id || ''}">
+             data-id="${notification.id}" 
+             data-type="${notification.notification_type}"
+             data-message-id="${notification.message_id || ""}">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-                <img src="images/${notification.sender_avatar || ''}" 
+                <img src="images/${notification.sender_avatar}" 
                      style="width:32px;height:32px;border-radius:6px;object-fit:cover;" 
                      alt="Avatar">
                 <div style="flex:1;">
                     <div style="color:#fff;font-weight:600;font-size:0.85rem;display:flex;align-items:center;gap:6px;">
-                        <i class="fas ${iconClass}"></i> ${notification.sender_name}
+                        <i class="fas ${iconClass}"></i> ${notification.title}
                     </div>
-                    <div style="color:#b9bbbe;font-size:0.75rem;">${notification.title}</div>
+                    <div style="color:#b9bbbe;font-size:0.75rem;">${notification.sender_name}</div>
                 </div>
                 <div style="color:#72767d;font-size:0.7rem;">${timeAgo}</div>
             </div>
@@ -138,32 +156,32 @@ function createNotificationHTML(notification) {
 }
 
 function handleNotificationClick(e) {
-    const item = $(e.currentTarget);
-    const id = item.data('id');
-    const type = item.data('type');
-    const messageId = item.data('message-id');
+    const notification = $(e.currentTarget);
+    const notificationId = notification.data("id");
+    const notificationType = notification.data("type");
+    const messageId = notification.data("message-id");
     
-    markNotificationRead(id, type);
+    markNotificationRead(notificationId, notificationType);
     
-    if (type === 'mention' && messageId) {
+    if (notificationType === "mention" && messageId) {
         jumpToMessage(messageId);
     }
     
     closeNotificationsPanel();
 }
 
-function markNotificationRead(id, type) {
+function markNotificationRead(notificationId, notificationType) {
     $.ajax({
-        url: 'api/handle_notification_action.php',
-        method: 'POST',
+        url: "api/handle_notification_action.php",
+        method: "POST",
         data: {
-            action: 'mark_read',
-            notification_type: type,
-            notification_id: id
+            action: "mark_read",
+            notification_type: notificationType,
+            notification_id: notificationId
         },
-        dataType: 'json',
+        dataType: "json",
         success: function(response) {
-            currentNotifications = currentNotifications.filter(n => n.id !== id);
+            currentNotifications = currentNotifications.filter(n => n.id !== notificationId);
             updateNotificationBell();
         }
     });
@@ -171,14 +189,12 @@ function markNotificationRead(id, type) {
 
 function markAllNotificationsRead() {
     $.ajax({
-        url: 'api/handle_notification_action.php',
-        method: 'POST',
-        data: {
-            action: 'mark_all_read'
-        },
-        dataType: 'json',
+        url: "api/handle_notification_action.php",
+        method: "POST",
+        data: { action: "mark_all_read" },
+        dataType: "json",
         success: function(response) {
-            if (response.status === 'success') {
+            if (response.status === "success") {
                 currentNotifications = [];
                 updateNotificationBell();
                 updateNotificationsPanel();
@@ -187,44 +203,30 @@ function markAllNotificationsRead() {
     });
 }
 
-function toggleNotificationsPanel() {
-    const panel = $('.notifications-panel');
-    
-    if (panel.hasClass('show')) {
-        closeNotificationsPanel();
-    } else {
-        showNotificationsPanel();
-    }
-}
-
 function jumpToMessage(messageId) {
-    const message = $(`[data-message-id="${messageId}"]`);
-    
-    if (message.length > 0) {
-        const chatbox = $('#chatbox');
-        const targetPos = message.position().top + chatbox.scrollTop();
-        
-        chatbox.animate({
-            scrollTop: targetPos - 100
-        }, 300);
-        
-        message.addClass('mentioned-highlight');
+    const messageElement = $(`.chat-message[data-message-id="${messageId}"]`);
+    if (messageElement.length > 0) {
+        const chatbox = $("#chatbox");
+        const messageTop = messageElement.position().top + chatbox.scrollTop();
+        chatbox.animate({ scrollTop: messageTop - 100 }, 300);
+        messageElement.addClass("mentioned-highlight");
         setTimeout(() => {
-            message.removeClass('mentioned-highlight');
+            messageElement.removeClass("mentioned-highlight");
         }, 3000);
     }
 }
 
 function getTimeAgo(timestamp) {
     const now = new Date();
-    const then = new Date(timestamp);
-    const seconds = Math.floor((now - then) / 1000);
+    const time = new Date(timestamp);
+    const diffInSeconds = Math.floor((now - time) / 1000);
     
-    if (seconds < 60) return 'Just now';
-    if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
-    if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
-    if (seconds < 604800) return Math.floor(seconds / 86400) + 'd ago';
-    return then.toLocaleDateString();
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600) return Math.floor(diffInSeconds / 60) + "m ago";
+    if (diffInSeconds < 86400) return Math.floor(diffInSeconds / 3600) + "h ago";
+    if (diffInSeconds < 604800) return Math.floor(diffInSeconds / 86400) + "d ago";
+    
+    return time.toLocaleDateString();
 }
 
 function playReplyOrMentionSound() {
@@ -235,3 +237,4 @@ function playReplyOrMentionSound() {
 $(document).ready(function() {
     initializeNotifications();
 });
+

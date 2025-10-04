@@ -1,19 +1,18 @@
-// js/disconnect_checker.js - Backup only (room status handled by main SSE)
+// js/disconnect_checker.js - Check if user is still in room
 (function() {
-    let backupCheckInterval = null;
+    let checkInterval = null;
     let disconnectShown = false;
     
-    function backupDisconnectCheck() {
-        if (disconnectShown) return;
-        
+    function checkRoomStatus() {
         fetch('api/check_room_status.php')
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
                 if (data.status === 'not_in_room' && !disconnectShown) {
                     disconnectShown = true;
                     
-                    const overlay = document.createElement('div');
-                    overlay.innerHTML = `
+                    // Show disconnect message
+                    const modal = document.createElement('div');
+                    modal.textContent = `
                         <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:99999;display:flex;align-items:center;justify-content:center;">
                             <div style="background:white;padding:30px;border-radius:10px;text-align:center;max-width:400px;">
                                 <h2>⚠️ Disconnected</h2>
@@ -24,25 +23,28 @@
                             </div>
                         </div>
                     `;
+                    document.body.appendChild(modal);
                     
-                    document.body.appendChild(overlay);
-                    
+                    // Auto-redirect after 5 seconds
                     setTimeout(() => {
                         window.location.href = '/lounge';
                     }, 5000);
                     
-                    if (backupCheckInterval) {
-                        clearInterval(backupCheckInterval);
+                    // Stop checking
+                    if (checkInterval) {
+                        clearInterval(checkInterval);
                     }
                 }
             })
             .catch(err => console.error('Room status check failed:', err));
     }
     
-    // Backup check every 30 seconds (SSE handles primary checking)
-    backupCheckInterval = setInterval(backupDisconnectCheck, 30000);
+    // Check every 10 seconds
+    checkInterval = setInterval(checkRoomStatus, 10000);
     
-    window.addEventListener('focus', backupDisconnectCheck);
+    // Also check on window focus
+    window.addEventListener('focus', checkRoomStatus);
     
-    backupDisconnectCheck();
+    // Initial check
+    checkRoomStatus();
 })();

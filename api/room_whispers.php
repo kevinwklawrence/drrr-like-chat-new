@@ -135,6 +135,7 @@ $stmt->bind_param("issssiiiiss", $room_id, $user_id_string, $recipient_user_id_s
                 AND ((sender_user_id_string = ? AND recipient_user_id_string = ?) 
                      OR (sender_user_id_string = ? AND recipient_user_id_string = ?))
                 ORDER BY created_at ASC
+                LIMIT 50
             ");
             $stmt->bind_param("issss", $room_id, $user_id_string, $other_user_id_string, $other_user_id_string, $user_id_string);
             $stmt->execute();

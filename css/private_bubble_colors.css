@@ -169,11 +169,10 @@
 
 /* Green */
 .private-message-bubble.user-color-spooky { 
-    --user-gradient: url('../images/bat_ov.png'), linear-gradient(to bottom, rgba(160,0,0,1) 0%,rgba(144,0,0,1) 45%,rgba(126,0,0,1) 100%);
-   --user-tail-color: #ffffff;
-   --user-text-color: #ffffff;
-   --user-text-shadow-color: #000000;
-   --user-border-color: #ffffff;
+    --user-gradient:  linear-gradient(to bottom, rgba(250,208,182,1) 0%,rgba(242,80,16,1) 3%,rgba(246,140,74,1) 50%,rgba(235,95,1,1) 51%,rgba(255,162,1,1) 75%,rgba(200,80,0,1) 100%);
+    --user-tail-color: #ffffff; 
+    --user-text-color: #000000; 
+    --user-border-color: #000000; 
 }
 
 /* Green */
@@ -273,13 +272,6 @@
     --user-text-color: #ffffff; 
     --user-border-color: #e4e4e4; 
 }
-.private-message-bubble.user-color-lenn { 
-    --user-gradient: linear-gradient(to bottom, rgba(255,255,255,1) 1%,rgba(147,185,184,1) 100%);
-    --user-tail-color: #bae2e1;
-    --user-text-color: #c6491c;
-    --user-text-shadow-color: #bd7a5e9c;
-    --user-border-color: #bae2e1;
-}
 
 .private-message-bubble.user-color-darkgray { 
     --user-gradient:   linear-gradient(to bottom, rgba(92,96,102,1) 0%,rgba(92,96,102,1) 24%,rgba(89,96,102,1) 36%,rgba(40,52,59,1) 100%);
@@ -287,11 +279,4 @@
     --user-text-color: #ffffff; 
     --user-text-shadow-color: #000000;
     --user-border-color: #ffffff; 
-}
-.private-message-bubble.user-color-kisin {
-    --user-gradient: url(../images/Kisin_fire3.gif);
-    --user-tail-color: #05f6fd;
-    --user-text-color: #05f6fd;
-    --user-text-shadow-color: #5eb5bd9c;
-    --user-border-color: #05f6fd;
 }

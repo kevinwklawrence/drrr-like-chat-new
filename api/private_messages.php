@@ -222,6 +222,7 @@ $stmt->bind_param("iissiiii", $user_id, $recipient_id, $sanitized_message, $colo
     JOIN users r ON pm.recipient_id = r.id
     WHERE (pm.sender_id = ? AND pm.recipient_id = ?) OR (pm.sender_id = ? AND pm.recipient_id = ?)
     ORDER BY pm.created_at ASC
+    LIMIT 50
 ");
 $stmt->bind_param("iiii", $user_id, $other_user_id, $other_user_id, $user_id);
 $stmt->execute();
