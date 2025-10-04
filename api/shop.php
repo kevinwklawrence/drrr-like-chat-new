@@ -22,7 +22,7 @@ try {
             }
             
             // Get item details from shop_items
-            $stmt = $conn->prepare("SELECT name, cost, currency, type, rarity FROM shop_items WHERE item_id = ? AND is_available = 1");
+            $stmt = $conn->prepare("SELECT name, cost, currency, type FROM shop_items WHERE item_id = ? AND is_available = 1");
             $stmt->bind_param("s", $item_id);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -48,31 +48,22 @@ try {
             $stmt->close();
             
             // Get user balance
-            $stmt = $conn->prepare("SELECT dura, tokens, event_currency FROM users WHERE id = ?");
+            $stmt = $conn->prepare("SELECT dura, tokens FROM users WHERE id = ?");
             $stmt->bind_param("i", $user_id);
             $stmt->execute();
             $result = $stmt->get_result();
             $user_data = $result->fetch_assoc();
             $stmt->close();
             
-            // Check balance based on currency type
-            if ($item['currency'] === 'event') {
-                $balance = $user_data['event_currency'];
-            } elseif ($item['currency'] === 'dura') {
-                $balance = $user_data['dura'];
-            } else {
-                $balance = $user_data['tokens'];
-            }
-            
+            // Check balance
+            $balance = $item['currency'] === 'dura' ? $user_data['dura'] : $user_data['tokens'];
             if ($balance < $item['cost']) {
                 echo json_encode(['status' => 'error', 'message' => 'Insufficient balance']);
                 exit;
             }
             
             // Deduct currency
-            if ($item['currency'] === 'event') {
-                $stmt = $conn->prepare("UPDATE users SET event_currency = event_currency - ? WHERE id = ?");
-            } elseif ($item['currency'] === 'dura') {
+            if ($item['currency'] === 'dura') {
                 $stmt = $conn->prepare("UPDATE users SET dura = dura - ? WHERE id = ?");
             } else {
                 $stmt = $conn->prepare("UPDATE users SET tokens = tokens - ? WHERE id = ?");
@@ -93,25 +84,14 @@ try {
             $stmt->execute();
             $stmt->close();
             
-            // Calculate new balance
-            $new_balance = $balance - $item['cost'];
-            
             // Update session
-            if ($item['currency'] === 'event') {
-                $_SESSION['user']['event_currency'] = $new_balance;
-            } elseif ($item['currency'] === 'dura') {
-                $_SESSION['user']['dura'] = $new_balance;
+            if ($item['currency'] === 'dura') {
+                $_SESSION['user']['dura'] = $user_data['dura'] - $item['cost'];
             } else {
-                $_SESSION['user']['tokens'] = $new_balance;
+                $_SESSION['user']['tokens'] = $user_data['tokens'] - $item['cost'];
             }
             
-            echo json_encode([
-                'status' => 'success', 
-                'message' => 'Purchase complete!', 
-                'item_name' => $item['name'],
-                'currency' => $item['currency'],
-                'new_balance' => $new_balance
-            ]);
+            echo json_encode(['status' => 'success', 'message' => 'Purchase complete!', 'item_name' => $item['name']]);
             break;
             
         case 'get_items':
@@ -123,7 +103,7 @@ try {
                 LEFT JOIN user_inventory ui ON si.item_id = ui.item_id AND ui.user_id = ?
                 WHERE si.is_available = 1
                 ORDER BY 
-                    FIELD(si.rarity, 'common', 'rare', 'strange', 'legendary', 'event'),
+                    FIELD(si.rarity, 'common', 'rare', 'strange', 'legendary'),
                     si.cost ASC
             ");
             $stmt->bind_param("i", $user_id);
@@ -137,29 +117,6 @@ try {
             $stmt->close();
             
             echo json_encode(['status' => 'success', 'items' => $items]);
-            break;
-            
-        case 'get_event_currency_config':
-            // Get event currency configuration
-            $result = $conn->query("SELECT currency_name, currency_icon FROM event_currency_config LIMIT 1");
-            if ($result && $result->num_rows > 0) {
-                $config = $result->fetch_assoc();
-                echo json_encode([
-                    'status' => 'success', 
-                    'config' => [
-                        'name' => $config['currency_name'],
-                        'icon' => $config['currency_icon']
-                    ]
-                ]);
-            } else {
-                echo json_encode([
-                    'status' => 'success', 
-                    'config' => [
-                        'name' => 'Event Currency',
-                        'icon' => '🎉'
-                    ]
-                ]);
-            }
             break;
             
         default:

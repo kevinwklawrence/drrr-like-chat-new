@@ -430,7 +430,7 @@ function handleSSEData(data) {
                 handleInactivityStatusResponse(data.inactivity_status);
             }
 
-             /* Handle general notifications
+             // Handle general notifications
             if (data.updates.general_notifications) {
                 if (typeof window.updateGeneralNotifications === 'function') {
                     window.updateGeneralNotifications(data.updates.general_notifications);
@@ -449,7 +449,7 @@ function handleSSEData(data) {
                 if (typeof window.handleRoomStatusUpdate === 'function') {
                     window.handleRoomStatusUpdate(data.updates.room_status.status);
                 }
-            }*/
+            }
             break;
             
         case 'heartbeat':

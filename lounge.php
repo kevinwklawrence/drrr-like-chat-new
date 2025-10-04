@@ -268,7 +268,7 @@ if (!empty($user_id_string)) {
             </div>
             
             <div class="row">
-                <div class="col-lg-12 scary_thing"><p>welcome to my chatroom :D</p></div>
+                
                 <!-- User Profile Sidebar -->
                 <div class="col-lg-3">
                     <div class="user-profile-card">
@@ -408,7 +408,6 @@ I will not see them any other way.
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-12 scary_thing2"><p>boo!</p></div>
             </div>
         </div>
     </div>

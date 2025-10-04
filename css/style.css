@@ -1085,8 +1085,6 @@ body {
     color: #333;
 }
 
-
-
 /* Title Badge Styles */
 .user-title-badge {
     display: inline-block;
@@ -1288,91 +1286,4 @@ body {
 
 #inventoryContainer .col-lg-4 {
     position: relative !important;
-}
-
-/* Event Rarity Styles - Add these to css/style.css */
-
-/* Event Rarity Badge */
-.rarity-badge.event {
-    background: linear-gradient(135deg, #f76b1c 0%, #fad961 100%);
-    border-color: #f76b1c;
-    color: #fff;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-}
-
-/* Event Rarity Card Border */
-.inventory-item.event::before {
-    background: linear-gradient(90deg, #f76b1c, #fad961);
-}
-
-/* Event Rarity User Title Badge */
-.user-title-badge.event {
-    background: linear-gradient(135deg, #f76b1c, #fad961);
-    border-color: #f76b1c;
-    color: #fff;
-}
-
-.rarity-event {
-    background: linear-gradient(135deg, #f76b1c, #fad961);
-    border-color: #f76b1c;
-    color: #fff;
-}
-
-/* Shop Tab Buttons */
-.shop-tab-btn {
-    border: none;
-    border-radius: 6px;
-    padding: 8px 16px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.shop-tab-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-}
-
-.shop-tab-btn.active {
-    background: #444 !important;
-    color: #fff !important;
-}
-
-/* Mobile responsive adjustments for shop tabs */
-@media (max-width: 768px) {
-    #shopTabs {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    #shopTabs .nav-item {
-        flex-shrink: 0;
-    }
-    
-    .shop-tab-btn {
-        font-size: 0.85rem;
-        padding: 6px 12px;
-    }
-}
-
-.scary_thing {
-    height: fit-content;
-    background: url('../images/skeleton_dancing.gif');
-    background-size: contain;
-    background-repeat: round;
-    font-size: 50px;
-    text-align: center;
-    color:red;
-    text-shadow: 2px 2px 2px #ffffff
-}
-
-.scary_thing2 {
-    height: fit-content;
-    background: url('../images/dancing_skeleton3.gif');
-    background-size: contain;
-    background-repeat: round;
-    font-size: 50px;
-    text-align: center;
-    color:red;
-    text-shadow: 2px 2px 2px #ffffff
 }
