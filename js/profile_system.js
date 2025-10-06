@@ -3,6 +3,20 @@ let activeProfilePopup = null;
 let selectedAvatar = null;
 let selectedColor = null;
 
+if (typeof window.escapeHtml !== 'function') {
+    window.escapeHtml = function(text) {
+        if (!text) return '';
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return String(text).replace(/[&<>"']/g, m => map[m]);
+    };
+}
+
 function showUserProfile(userId, avatarElement) {
     if (userId == currentUser.id) {
         showProfileEditor();
@@ -68,13 +82,15 @@ function displayProfilePopup(user, avatarElement) {
                 `;
                 break;
             case 'request_received':
+                // FIXED: Don't use escapeHtml on numeric ID
                 actionsHtml += `
-                    <button class="btn btn-sm btn-info profile-action-btn" onclick="acceptFriendFromProfile(${escapeHtml(user.id)}); event.stopPropagation();">
+                    <button class="btn btn-sm btn-info profile-action-btn" onclick="acceptFriendFromProfile(${user.id}); event.stopPropagation();">
                         <i class="fas fa-user-check"></i> Accept Request
                     </button>
                 `;
                 break;
             default: // 'none'
+                // FIXED: Only escape the username string, not the ID
                 actionsHtml += `
                     <button class="btn btn-sm btn-primary profile-action-btn" onclick="addFriendFromProfile('${escapeHtml(user.username)}'); event.stopPropagation();">
                         <i class="fas fa-user-plus"></i>
@@ -84,14 +100,16 @@ function displayProfilePopup(user, avatarElement) {
         }
         
         if (isInRoom) {
+            // FIXED: Don't use escapeHtml on numeric ID
             actionsHtml += `
-                <button class="btn btn-sm btn-secondary profile-action-btn" onclick="openWhisper('user_${escapeHtml(user.id)}', '${escapeHtml(user.username)}'); event.stopPropagation();">
+                <button class="btn btn-sm btn-secondary profile-action-btn" onclick="openWhisper('user_${user.id}', '${escapeHtml(user.username)}'); event.stopPropagation();">
                     <i class="fas fa-comment"></i> Message
                 </button>
             `;
         } else {
+            // FIXED: Don't use escapeHtml on numeric ID
             actionsHtml += `
-                <button class="btn btn-sm btn-secondary profile-action-btn" onclick="openPrivateMessage(${user.id}, '${user.username}'); event.stopPropagation();">
+                <button class="btn btn-sm btn-secondary profile-action-btn" onclick="openPrivateMessage(${user.id}, '${escapeHtml(user.username)}'); event.stopPropagation();">
                     <i class="fas fa-envelope"></i> PM
                 </button>
             `;
@@ -345,6 +363,7 @@ function displayProfileEditor(user) {
                 </div>
             </div>
         `;
+        
     }
     
     const modalHtml = `
@@ -381,6 +400,13 @@ function displayProfileEditor(user) {
                     <i class="fas fa-box"></i> Inventory
                 </button>
             </li>
+            ${isRegistered ? `
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="invites-tab" data-bs-toggle="tab" data-bs-target="#invites-panel" type="button" role="tab" style="background: transparent; border: none; color: #e0e0e0;" onclick="loadInvitesAndKeys()">
+            <i class="fas fa-ticket-alt"></i> Invites & Keys
+        </button>
+    </li>
+` : ''}
 
                         </ul>
                         
@@ -707,6 +733,19 @@ function displayProfileEditor(user) {
                                 </div>
                             </div>
 
+                            ${isRegistered ? `
+    <div class="tab-pane fade" id="invites-panel" role="tabpanel">
+        <div class="p-4">
+            <div id="invitesContent">
+                <div class="text-center">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p class="mt-2">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+` : ''}
+
 
                         </div>
                     </div>
@@ -863,7 +902,6 @@ function loadColorsForEditor() {
         { name: 'palegreen', displayName: 'Pale Green' },
         { name: 'red', displayName: 'Red' },
         { name: 'toyred', displayName: 'Toy Red' },
-       // { name: 'spooky', displayName: 'Spooky' },
         { name: 'rose', displayName: 'Rose' },
         { name: 'yellow', displayName: 'Yellow' },
         { name: 'bbyellow', displayName: 'Yellow2' },
@@ -874,6 +912,12 @@ function loadColorsForEditor() {
         { name: 'babyblue', displayName: 'Babyblue' },
         { name: 'rust', displayName: 'Rust' },
         { name: 'sepia', displayName: 'Sepia' },
+        { name: 'spooky', displayName: 'Spooky' },
+        { name: 'spooky2', displayName: 'Spooky' },
+        { name: 'spooky3', displayName: 'Spooky' },
+        { name: 'spooky4', displayName: 'Spooky' },
+        { name: 'spooky5', displayName: 'Spooky' },
+        { name: 'spooky6', displayName: 'Spooky' },
     ];
     
     let html = '';
@@ -1343,4 +1387,188 @@ function resetBubbleCustomization() {
     $('#bubbleSatValue').text('100');
     
     updateBubblePreview();
+}
+
+function loadInvitesAndKeys() {
+    $.ajax({
+        url: 'api/get_invites_keys.php',
+        method: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                displayInvitesAndKeys(response);
+            }
+        },
+        error: function() {
+            $('#invitesContent').html('<div class="alert alert-danger">Failed to load invites</div>');
+        }
+    });
+}
+
+function displayInvitesAndKeys(data) {
+    let html = '';
+    
+    // Restricted warning
+    if (data.is_restricted) {
+        html += `<div class="alert alert-danger">
+            <i class="fas fa-ban me-2"></i>Your account is restricted. All codes and keys are invalid.
+        </div>`;
+    }
+    
+    // Stats
+    html += `<div class="alert alert-info">
+        <i class="fas fa-chart-line me-2"></i>
+        <strong>Stats:</strong> ${data.stats.total_invites} people used your codes | 
+        ${data.stats.accounts_created} accounts created
+    </div>`;
+    
+    // Invite Codes Section
+    html += `<div class="mb-4">
+        <h5><i class="fas fa-ticket-alt me-2"></i>Your Invite Codes</h5>
+        <p class="text-muted small">You have ${data.invite_codes.length} active codes. Share these to invite others.</p>
+        <div class="row">`;
+    
+    data.invite_codes.forEach(code => {
+        html += `
+            <div class="col-md-6 mb-3">
+                <div class="code-box" style="background: #333; border: 1px solid #555; padding: 15px; border-radius: 8px;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <code style="font-size: 1.1rem; color: #4CAF50;">${code.code}</code>
+                        <button class="btn btn-sm btn-outline-light" onclick="copyToClipboard('${code.code}')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted d-block mt-2">
+                        Regenerates: ${new Date(code.regenerates_at).toLocaleDateString()}
+                    </small>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `</div></div>`;
+    
+    // Personal Keys Section
+    html += `<div class="mb-4">
+        <h5><i class="fas fa-key me-2"></i>Personal Keys</h5>
+        <p class="text-muted small">Create custom keys for instant auto-login. Keys are alphanumeric only (6-64 chars).</p>
+        
+        <div class="mb-3">
+            <div class="input-group">
+                <input type="text" class="form-control" id="customKeyInput" placeholder="Enter custom key (letters & numbers only)" maxlength="64" style="background: #333; border: 1px solid #555; color: #fff;">
+                <button class="btn btn-primary" onclick="createCustomKey()">
+                    <i class="fas fa-plus me-1"></i>Create Key
+                </button>
+            </div>
+            <small class="text-muted">Example: MySecretKey2024</small>
+        </div>
+        
+        <div class="keys-list">`;
+    
+    if (data.personal_keys.length === 0) {
+        html += '<p class="text-muted"><em>No personal keys created yet.</em></p>';
+    } else {
+        data.personal_keys.forEach(key => {
+            html += `
+                <div class="key-item mb-2" style="background: #333; border: 1px solid #555; padding: 12px; border-radius: 8px;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <code style="color: #2196F3; font-size: 1rem;">${key.key_value}</code>
+                            <br>
+                            <small class="text-muted">
+                                Created: ${new Date(key.created_at).toLocaleDateString()}
+                                ${key.last_used ? ' | Last used: ' + new Date(key.last_used).toLocaleDateString() : ''}
+                            </small>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-light me-1" onclick="copyToClipboard('${key.key_value}')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deletePersonalKey(${key.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    html += `</div></div>`;
+    
+    $('#invitesContent').html(html);
+}
+
+function createCustomKey() {
+    const customKey = $('#customKeyInput').val().trim();
+    
+    if (!customKey) {
+        alert('Please enter a key');
+        return;
+    }
+    
+    if (!/^[a-zA-Z0-9]+$/.test(customKey)) {
+        alert('Key can only contain letters and numbers');
+        return;
+    }
+    
+    if (customKey.length < 6 || customKey.length > 64) {
+        alert('Key must be 6-64 characters long');
+        return;
+    }
+    
+    $.ajax({
+        url: 'api/create_custom_key.php',
+        method: 'POST',
+        data: { action: 'create', custom_key: customKey },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                alert('Personal key created successfully!');
+                $('#customKeyInput').val('');
+                loadInvitesAndKeys(); // Reload
+            } else {
+                alert(response.message);
+            }
+        },
+        error: function() {
+            alert('Error creating key');
+        }
+    });
+}
+
+function deletePersonalKey(keyId) {
+    if (!confirm('Delete this personal key? This cannot be undone.')) {
+        return;
+    }
+    
+    $.ajax({
+        url: 'api/create_custom_key.php',
+        method: 'POST',
+        data: { action: 'delete', key_id: keyId },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                alert('Key deleted');
+                loadInvitesAndKeys(); // Reload
+            } else {
+                alert(response.message);
+            }
+        },
+        error: function() {
+            alert('Error deleting key');
+        }
+    });
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        // Show temporary success message
+        const btn = event.target.closest('button');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        setTimeout(() => {
+            btn.innerHTML = originalHtml;
+        }, 1000);
+    });
 }

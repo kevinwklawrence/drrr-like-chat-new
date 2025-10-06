@@ -1,167 +1,167 @@
 <?php
+// Add this near the top after session_start()
 session_start();
+include 'db_connect.php';
 
-require_once 'security_config.php';
+// Check if user has temp access or already registered
+$ip_address = $_SERVER['REMOTE_ADDR'];
+$invite_code_used = null;
+$inviter_user_id = null;
 
-// Add to index.php - right after session_start()
+$stmt = $conn->prepare("SELECT code, inviter_user_id, account_created, expires_at < NOW() as is_expired 
+    FROM invite_usage 
+    WHERE invitee_ip = ? 
+    ORDER BY first_used_at DESC LIMIT 1");
+$stmt->bind_param("s", $ip_address);
+$stmt->execute();
+$result = $stmt->get_result();
 
-if (!isset($_SESSION['firewall_passed'])) {
+if ($result->num_rows > 0) {
+    $usage = $result->fetch_assoc();
+    
+    if ($usage['account_created']) {
+        // Already registered
+        $stmt->close();
+        header("Location: /login");
+        exit;
+    }
+    
+    if (!$usage['is_expired']) {
+        // Valid temp access
+        $invite_code_used = $usage['code'];
+        $inviter_user_id = $usage['inviter_user_id'];
+    } else {
+        // Force registration - expired
+        $invite_code_used = $usage['code'];
+        $inviter_user_id = $usage['inviter_user_id'];
+    }
+    $stmt->close();
+} else {
+    // No invite usage found
+    $stmt->close();
     header("Location: /firewall");
     exit;
 }
 
-if (isset($_SESSION['user'])) {
-    if (isset($_SESSION['room_id'])) {
-        header("Location: /room");
-    } else {
-        header("Location: /lounge");
-    }
-    exit;
-}
-// Include database connection
-include 'db_connect.php';
-
-// Handle POST request for registration
+// Handle registration POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    
     $username = trim($_POST['username'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
-    $confirm_password = $_POST['confirm_password'] ?? '';
-
+    
     // Validation
-    if (empty($username) || empty($email) || empty($password) || empty($confirm_password)) {
-        echo json_encode(['status' => 'error', 'message' => 'All fields are required']);
+    if (empty($username) || empty($email) || empty($password)) {
+        echo json_encode(['status' => 'error', 'message' => 'All fields required']);
         exit;
     }
-
-    if ($password !== $confirm_password) {
-        echo json_encode(['status' => 'error', 'message' => 'Passwords do not match']);
+    
+    if (strlen($username) < 3 || strlen($username) > 20) {
+        echo json_encode(['status' => 'error', 'message' => 'Username must be 3-20 characters']);
         exit;
     }
-
+    
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        echo json_encode(['status' => 'error', 'message' => 'Invalid email']);
+        exit;
+    }
+    
     if (strlen($password) < 6) {
         echo json_encode(['status' => 'error', 'message' => 'Password must be at least 6 characters']);
         exit;
     }
-
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        echo json_encode(['status' => 'error', 'message' => 'Invalid email format']);
-        exit;
-    }
-
-    // Check if username already exists
-    $stmt = $conn->prepare("SELECT id FROM users WHERE username = ?");
-    if (!$stmt) {
-        error_log("Prepare failed for username check in register.php: " . $conn->error);
-        echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
-        exit;
-    }
     
+    // Check username exists
+    $stmt = $conn->prepare("SELECT id FROM users WHERE username = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
     if ($stmt->get_result()->num_rows > 0) {
-        error_log("Username already exists: $username");
-        echo json_encode(['status' => 'error', 'message' => 'Username already exists']);
+        echo json_encode(['status' => 'error', 'message' => 'Username taken']);
         $stmt->close();
         exit;
     }
     $stmt->close();
-
-    // Check if email already exists
-    $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
-    if (!$stmt) {
-        error_log("Prepare failed for email check in register.php: " . $conn->error);
-        echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
-        exit;
-    }
     
+    // Check email exists
+    $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     if ($stmt->get_result()->num_rows > 0) {
-        error_log("Email already exists: $email");
-        echo json_encode(['status' => 'error', 'message' => 'Email already exists']);
+        echo json_encode(['status' => 'error', 'message' => 'Email already registered']);
         $stmt->close();
         exit;
     }
     $stmt->close();
-
-    // Generate unique user_id: username + "#" + 6-digit random number
+    
+    // Generate unique user_id
     $random_number = str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT);
     $user_id_string = $username . "#" . $random_number;
     
-    // Ensure user_id is unique (very unlikely collision, but safety first)
     $attempts = 0;
     while ($attempts < 10) {
         $stmt = $conn->prepare("SELECT id FROM users WHERE user_id = ?");
-        if (!$stmt) {
-            error_log("Prepare failed for user_id check in register.php: " . $conn->error);
-            echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
-            exit;
-        }
-        
         $stmt->bind_param("s", $user_id_string);
         $stmt->execute();
         if ($stmt->get_result()->num_rows === 0) {
             $stmt->close();
-            break; // user_id is unique
+            break;
         }
         $stmt->close();
-        
-        // Generate new random number if collision
         $random_number = str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT);
         $user_id_string = $username . "#" . $random_number;
         $attempts++;
     }
     
-    if ($attempts >= 10) {
-        error_log("Failed to generate unique user_id after 10 attempts");
-        echo json_encode(['status' => 'error', 'message' => 'Registration temporarily unavailable']);
+    try {
+        $conn->begin_transaction();
+        
+        // Hash password
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        $default_avatar = 'default/_u0.png';
+        
+        // Insert user with invite code
+        $stmt = $conn->prepare("INSERT INTO users (username, email, password, user_id, avatar, avatar_memory, dura, invite_code_used) 
+            VALUES (?, ?, ?, ?, ?, ?, 100, ?)");
+        $stmt->bind_param("sssssss", $username, $email, $hashed_password, $user_id_string, $default_avatar, $default_avatar, $invite_code_used);
+        $stmt->execute();
+        $new_user_id = $conn->insert_id;
+        $stmt->close();
+        
+        // Update invite_usage
+        $stmt = $conn->prepare("UPDATE invite_usage SET invitee_user_id = ?, account_created = 1 WHERE invitee_ip = ?");
+        $stmt->bind_param("is", $new_user_id, $ip_address);
+        $stmt->execute();
+        $stmt->close();
+        
+        // Give inviter 100 Dura
+        $stmt = $conn->prepare("UPDATE users SET dura = dura + 100 WHERE id = ?");
+        $stmt->bind_param("i", $inviter_user_id);
+        $stmt->execute();
+        $stmt->close();
+        
+        // Log transaction
+        $stmt = $conn->prepare("INSERT INTO dura_transactions (from_user_id, to_user_id, amount, type) VALUES (?, ?, 100, 'dura')");
+        $system_id = 0; // System reward
+        $stmt->bind_param("ii", $system_id, $inviter_user_id);
+        $stmt->execute();
+        $stmt->close();
+        
+        $stmt = $conn->prepare("INSERT INTO dura_transactions (from_user_id, to_user_id, amount, type) VALUES (?, ?, 100, 'dura')");
+        $stmt->bind_param("ii", $system_id, $new_user_id);
+        $stmt->execute();
+        $stmt->close();
+        
+        $conn->commit();
+        
+        echo json_encode(['status' => 'success', 'message' => 'Account created! Both you and your inviter received 100 Dura.']);
+        exit;
+        
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(['status' => 'error', 'message' => 'Registration failed']);
         exit;
     }
-
-    // Replace this section in register.php (around line 85-95)
-
-// Hash password
-$hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
-// UPDATED: Use new default avatar path
-$default_avatar = 'default/_u0.png';
-
-// Insert new user into database with avatar_memory initialization
-$stmt = $conn->prepare("INSERT INTO users (username, email, password, user_id, avatar, avatar_memory, is_admin) VALUES (?, ?, ?, ?, ?, ?, 0)");
-if (!$stmt) {
-    error_log("Prepare failed for user insert in register.php: " . $conn->error);
-    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
-    exit;
-}
-
-$stmt->bind_param("ssssss", $username, $email, $hashed_password, $user_id_string, $default_avatar, $default_avatar);
-if (!$stmt->execute()) {
-    error_log("Execute failed for user insert in register.php: " . $stmt->error);
-    echo json_encode(['status' => 'error', 'message' => 'Registration failed: ' . $stmt->error]);
-    $stmt->close();
-    exit;
-}
-
-$new_user_db_id = $conn->insert_id;
-$stmt->close();
-
-error_log("User registered with avatar and avatar_memory set to: $default_avatar");
-
-    // Create session for newly registered user
-    $_SESSION['user'] = [
-        'type' => 'user',
-        'id' => $new_user_db_id,
-        'username' => $username,
-        'user_id' => $user_id_string,  // This is the key field!
-        'email' => $email,
-        'is_admin' => 0,
-        'avatar' => $default_avatar
-    ];
-
-    error_log("User registered successfully: username=$username, user_id=$user_id_string, db_id=$new_user_db_id");
-    echo json_encode(['status' => 'success', 'message' => 'Registration successful']);
-    exit;
 }
 ?>
 <?php $versions = include 'config/version.php'; ?>

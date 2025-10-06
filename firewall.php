@@ -1,82 +1,188 @@
 <?php
 session_start();
-
 include 'db_connect.php';
 include 'check_site_ban.php';
 
-// Get user's IP address
 $ip_address = $_SERVER['REMOTE_ADDR'];
 
-// Check if IP has already passed the firewall
-$stmt = $conn->prepare("SELECT id FROM firewall_passes WHERE ip_address = ?");
-if ($stmt) {
-    $stmt->bind_param("s", $ip_address);
-    $stmt->execute();
-    $result = $stmt->get_result();
+// Check if user already has an active session with valid invite
+$stmt = $conn->prepare("SELECT iu.*, iu.expires_at < NOW() as is_expired 
+    FROM invite_usage iu 
+    WHERE iu.invitee_ip = ? 
+    ORDER BY iu.first_used_at DESC LIMIT 1");
+$stmt->bind_param("s", $ip_address);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    $usage = $result->fetch_assoc();
     
-    if ($result->num_rows > 0) {
-        // IP found - user has passed before, bypass firewall
+    if ($usage['account_created']) {
+        // Account created, always allow
         $_SESSION['firewall_passed'] = true;
+        $_SESSION['invite_verified'] = true;
         $stmt->close();
-        
-        // Update last_access timestamp
-        $update_stmt = $conn->prepare("UPDATE firewall_passes SET last_access = NOW() WHERE ip_address = ?");
-        if ($update_stmt) {
-            $update_stmt->bind_param("s", $ip_address);
-            $update_stmt->execute();
-            $update_stmt->close();
-        }
-        
         header("Location: /select");
         exit;
+    } elseif (!$usage['is_expired']) {
+        // Still within 1 week trial period
+        $_SESSION['firewall_passed'] = true;
+        $_SESSION['invite_verified'] = true;
+        $_SESSION['temp_access_expires'] = $usage['expires_at'];
+        $stmt->close();
+        header("Location: /select");
+        exit;
+    } else {
+        // Trial expired, redirect to register
+        $stmt->close();
+        header("Location: /register");
+        exit;
     }
-    $stmt->close();
 }
+$stmt->close();
 
-// If user already passed firewall, redirect to select
-if (isset($_SESSION['firewall_passed'])) {
+// Check if already passed
+if (isset($_SESSION['firewall_passed']) && isset($_SESSION['invite_verified'])) {
     header("Location: /select");
     exit;
 }
 
-// Handle password submission
+// Handle invite code or personal key submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $password = $_POST['password'] ?? '';
-    $site_passwords = [
-        'A7d9K2pL', 'Q4w8Z1xC', 'M3n6V5bT', 'J2k8H7sD', 'P9l3R6qW',
-        'S5f2G8mN', 'B1v7C4zX', 'T6y3U9jK', 'E8r2W5tY', 'L4p9O7aS',
-        'F3g6D1hJ', 'N2m8K5lQ', 'V7b4X1cZ', 'H6s3J9kL', 'R8q2P5wE',
-        'G5m2N8fS', 'C1z7X4vB', 'U6j3K9yT', 'W8t2Y5rE', 'O4a9S7lP', 'D4r45U', 'F4C3B00K', 'V1R3W00D', 'baccano'
-    ]; // Array of site passwords
-    
+    $password = trim($_POST['password'] ?? '');
     header('Content-Type: application/json');
     
-    if (in_array($password, $site_passwords, true)) {
-        // Check for site ban before allowing entry
-        try {
-            checkSiteBan($conn, true); // Return JSON format
-        } catch (Exception $e) {
-            // If checkSiteBan throws an exception or exits, it means user is banned
-            // This won't be reached due to exit in checkSiteBan, but kept for safety
-            echo json_encode(['status' => 'banned', 'message' => 'You are banned from this site']);
+    if (empty($password)) {
+        echo json_encode(['status' => 'error', 'message' => 'Password required']);
+        exit;
+    }
+    
+    // Check for site ban
+    try {
+        checkSiteBan($conn, true);
+    } catch (Exception $e) {
+        echo json_encode(['status' => 'banned', 'message' => 'You are banned']);
+        exit;
+    }
+    
+    // EMERGENCY: Check for bypass code
+    if ($password === 'h4mburg3r') {
+        $_SESSION['firewall_passed'] = true;
+        $_SESSION['invite_verified'] = true;
+        $_SESSION['emergency_access'] = true;
+        
+        echo json_encode(['status' => 'success', 'type' => 'emergency_bypass']);
+        exit;
+    }
+    
+    // Check if it's a personal key
+    $stmt = $conn->prepare("SELECT pk.user_id, u.restricted 
+        FROM personal_keys pk 
+        JOIN users u ON pk.user_id = u.id 
+        WHERE pk.key_value = ? AND pk.is_active = 1");
+    $stmt->bind_param("s", $password);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $key_data = $result->fetch_assoc();
+        
+        if ($key_data['restricted']) {
+            echo json_encode(['status' => 'error', 'message' => 'This key is restricted']);
+            $stmt->close();
             exit;
         }
         
-        // If we reach here, user is not banned
+        // Valid personal key - log them in directly
         $_SESSION['firewall_passed'] = true;
+        $_SESSION['invite_verified'] = true;
+        $_SESSION['auto_login_user_id'] = $key_data['user_id'];
         
-        // Store IP in database
-        $insert_stmt = $conn->prepare("INSERT INTO firewall_passes (ip_address) VALUES (?) ON DUPLICATE KEY UPDATE last_access = NOW()");
-        if ($insert_stmt) {
-            $insert_stmt->bind_param("s", $ip_address);
-            $insert_stmt->execute();
-            $insert_stmt->close();
+        // Update last used
+        $update = $conn->prepare("UPDATE personal_keys SET last_used = NOW() WHERE key_value = ?");
+        $update->bind_param("s", $password);
+        $update->execute();
+        $update->close();
+        
+        echo json_encode(['status' => 'success', 'type' => 'personal_key']);
+        $stmt->close();
+        exit;
+    }
+    $stmt->close();
+    
+    // Check if it's an invite code
+    $stmt = $conn->prepare("SELECT ic.code, ic.owner_user_id, u.restricted 
+        FROM invite_codes ic 
+        JOIN users u ON ic.owner_user_id = u.id 
+        WHERE ic.code = ? AND ic.is_active = 1");
+    $stmt->bind_param("s", $password);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $invite = $result->fetch_assoc();
+        
+        if ($invite['restricted']) {
+            echo json_encode(['status' => 'error', 'message' => 'This invite code is restricted']);
+            $stmt->close();
+            exit;
         }
         
-        echo json_encode(['status' => 'success']);
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Incorrect password']);
+        // Check if code already used by this IP
+        $check = $conn->prepare("SELECT id, expires_at < NOW() as is_expired, account_created 
+            FROM invite_usage 
+            WHERE code = ? AND invitee_ip = ?");
+        $check->bind_param("ss", $password, $ip_address);
+        $check->execute();
+        $check_result = $check->get_result();
+        
+        if ($check_result->num_rows > 0) {
+            $usage = $check_result->fetch_assoc();
+            $check->close();
+            
+            // If account already created, let them through
+            if ($usage['account_created']) {
+                $_SESSION['firewall_passed'] = true;
+                $_SESSION['invite_verified'] = true;
+                echo json_encode(['status' => 'success', 'type' => 'invite_code']);
+                $stmt->close();
+                exit;
+            }
+            
+            // If trial expired, redirect to register
+            if ($usage['is_expired']) {
+                echo json_encode(['status' => 'redirect', 'url' => '/register']);
+                $stmt->close();
+                exit;
+            }
+            
+            // Trial still active, let them through
+            $_SESSION['firewall_passed'] = true;
+            $_SESSION['invite_verified'] = true;
+            $_SESSION['invite_code_used'] = $password;
+            echo json_encode(['status' => 'success', 'type' => 'invite_code']);
+            $stmt->close();
+            exit;
+        }
+        $check->close();
+        
+        // First time using this code - record usage
+        $insert = $conn->prepare("INSERT INTO invite_usage (code, inviter_user_id, invitee_ip) VALUES (?, ?, ?)");
+        $insert->bind_param("sis", $password, $invite['owner_user_id'], $ip_address);
+        $insert->execute();
+        $insert->close();
+        
+        $_SESSION['firewall_passed'] = true;
+        $_SESSION['invite_verified'] = true;
+        $_SESSION['invite_code_used'] = $password;
+        
+        echo json_encode(['status' => 'success', 'type' => 'invite_code']);
+        $stmt->close();
+        exit;
     }
+    $stmt->close();
+    
+    echo json_encode(['status' => 'error', 'message' => 'Invalid password']);
     exit;
 }
 ?>
@@ -261,28 +367,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             .site-logo {
                 width: min(20vw, 20vh, 180px);
                 height: min(20vw, 20vh, 180px);
-            }
-        }
-        
-        /* Large desktop optimizations */
-        @media (min-width: 1400px) {
-            .logo-container {
-                width: 70vmin;
-                height: 70vmin;
-            }
-            
-            .ring::before {
-                width: 20px;
-                height: 20px;
-                top: -10px;
-                box-shadow: 0 0 30px rgba(255, 255, 255, 0.9);
-            }
-            
-            .ring::after {
-                width: 16px;
-                height: 16px;
-                bottom: -8px;
-                box-shadow: 0 0 25px rgba(255, 255, 255, 0.7);
             }
         }
         
@@ -565,6 +649,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         
                         // Load and show terms/privacy modal
                         loadTermsAndPrivacy();
+                    } else if (response.status === 'redirect') {
+                        // Trial expired - redirect to register
+                        buttonText.text('Trial Expired');
+                        spinner.hide();
+                        window.location.href = response.url;
                     } else if (response.status === 'banned') {
                         // This shouldn't happen due to checkSiteBan exit, but kept for safety
                         window.location.href = '/firewall';

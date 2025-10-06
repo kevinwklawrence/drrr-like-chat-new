@@ -41,8 +41,9 @@ if (!$is_logged_in) {
     // Add admin/moderator items
     if ($is_admin || $is_moderator) {
         $moderator_item = ['href' => 'moderator.php', 'icon' => 'fas fa-shield-alt', 'text' => 'Moderator', 'class' => 'btn-warning'];
+        $spawn_ghost_item = ['href' => 'trigger_ghost_spawn.php', 'icon' => 'fas fa-ghost-alt', 'text' => 'Spawn Ghosts', 'class' => 'btn-danger'];
         $ghost_item = ['href' => '#', 'icon' => 'fas fa-ghost', 'text' => 'Ghost Mode', 'onclick' => 'toggleGhostMode()', 'class' => 'btn-secondary'];
-        array_splice($nav_items, -1, 0, [$moderator_item, $ghost_item]);
+        array_splice($nav_items, -1, 0, [/*$spawn_ghost_item, */$moderator_item, $ghost_item]);
     }
 } elseif ($current_page === 'room') {
     // Room navigation
@@ -87,8 +88,10 @@ if (!$is_logged_in) {
     
     // Add admin/moderator items
     if ($is_admin || $is_moderator) {
+        $moderator_item = ['href' => 'moderator.php', 'icon' => 'fas fa-shield-alt', 'text' => 'Moderator', 'class' => 'btn-warning'];
+        $spawn_ghost_item = ['href' => 'trigger_ghost_spawn.php', 'icon' => 'fas fa-ghost', 'text' => 'Spawn Ghosts', 'class' => 'btn-danger'];
         $ghost_item = ['href' => '#', 'icon' => 'fas fa-ghost', 'text' => 'Ghost Mode', 'onclick' => 'toggleGhostMode()', 'class' => 'btn-secondary'];
-        array_splice($nav_items, -1, 0, [$ghost_item]);
+        array_splice($nav_items, -1, 0, [$spawn_ghost_item, $moderator_item, $ghost_item]);
     }
 }
 

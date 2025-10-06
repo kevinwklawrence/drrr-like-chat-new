@@ -1,5 +1,10 @@
 const AVATAR_COLOR_MAPPING = {
-    'time-limited/': 'spooky',
+    'time-limited/icon_bloodyghost2': 'spooky2',
+    'time-limited/icon_frankenstein2': 'spooky5',
+    'time-limited/icon_mummy2': 'spooky6',
+    'time-limited/icon_pumpkinhead2': 'spooky3',
+    'time-limited/icon_zombie2': 'spooky4',
+    'time-limited/icon_slenderman': 'negative',
     
     'default/_plain.png': 'blue',
     'default/furufu.png': 'lavender2',

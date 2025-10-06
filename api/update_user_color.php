@@ -22,7 +22,8 @@ $valid_colors = [
     'black', 'policeman2','negative','gray','tan','blue','cobalt','lavender','lavender2',
     'teal2','navy','purple','pink','orange','orange2','peach','green','urban','mudgreen',
     'palegreen','red','toyred','spooky','rose','yellow','bbyellow','brown','deepbrown',
-    'forest', 'rust', 'babyblue', 'sepia', 'chiipink', 'cnegative','cyan','caution','darkgray',
+    'forest', 'rust', 'babyblue', 'sepia', 'chiipink', 'cnegative', 'cyan', 'caution', 'darkgray',
+    'spooky2', 'spooky3', 'spooky4', 'spooky5', 'spooky6',
     'lenn'
 ];
 

@@ -15,7 +15,7 @@ if (!isset($_SESSION['user']) || !isset($_SESSION['room_id'])) {
 
 // First establish database connection
 include 'db_connect.php';
-
+include 'check_invite_access.php';
 // Then check site ban
 include 'check_site_ban.php';
 checkSiteBan($conn);
@@ -891,7 +891,8 @@ $('<style>').text(`
     <script src="js/friend_notifications.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/inactivity_warning.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/disconnect_checker.js?v=<?php echo $versions['version']; ?>"></script>
-    
+    <script src="js/ghost_hunt.js"></script>
+
     
 
 

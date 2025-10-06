@@ -3,6 +3,8 @@
 let currentShopTab = 'all';
 let allShopItems = [];
 let eventCurrencyConfig = {name: 'Event Currency', icon: '🎉'};
+let allBundles = [];
+
 
 // Load user inventory
 function loadInventory() {
@@ -50,7 +52,7 @@ function displayInventory(items) {
         html += `
             <div class="col-md-6 col-lg-4 mb-3">
                 <div class="inventory-item ${item.rarity} ${equippedClass}">
-                    <div class="inventory-item-icon">${item.icon && item.type === 'avatar' ? `<img src="images/${item.icon}" style="max-width:80px; max-height:80px;">` : (item.icon || '📦')}</div>
+                    <div class="inventory-item-icon">${item.type === 'avatar' && item.icon ? `<img src="images/${item.icon}" style="max-width:80px; max-height:80px;">` : item.type === 'color' && item.icon ? `<img class="color-${item.icon}" style="width:58px; height:58px;"></img>` : (item.icon || '📦')}</div>
                     <div class="inventory-item-name">${item.name}</div>
                     <div class="inventory-item-description">${item.description || ''}</div>
                     <div class="inventory-item-footer">
@@ -78,7 +80,7 @@ function equipItem(itemId, itemType) {
         dataType: 'json',
         success: function(response) {
             if (response.status === 'success') {
-                if (itemType === 'avatar') {
+                if (itemType === 'avatar' || itemType === 'color') {
                     // Avatar equipped - reload page to update avatar display everywhere
                     alert('✓ ' + response.item_name + ' equipped! Reloading to update your avatar...');
                     location.reload();
@@ -112,7 +114,7 @@ function unequipItem(itemId, itemType) {
         dataType: 'json',
         success: function(response) {
             if (response.status === 'success') {
-                if (itemType === 'avatar') {
+                if (itemType === 'avatar' || itemType === 'color') {
                     // Avatar unequipped - reload page
                     alert('✓ Avatar unequipped! Reloading...');
                     location.reload();
@@ -194,6 +196,11 @@ function initializeShopTabs() {
                 </button>
             </li>
             <li class="nav-item">
+                <button class="nav-link shop-tab-btn" data-tab="bundle" onclick="filterShopByTab('bundle')" style="background: transparent; color: #aaa; margin-right: 5px;">
+                    <i class="fas fa-box"></i> Bundles
+                </button>
+            </li>
+            <li class="nav-item">
                 <button class="nav-link shop-tab-btn" data-tab="title" onclick="filterShopByTab('title')" style="background: transparent; color: #aaa; margin-right: 5px;">
                     <i class="fas fa-tag"></i> Titles
                 </button>
@@ -203,6 +210,12 @@ function initializeShopTabs() {
                     <i class="fas fa-user-circle"></i> Avatars
                 </button>
             </li>
+            <li class="nav-item">
+                <button class="nav-link shop-tab-btn" data-tab="color" onclick="filterShopByTab('color')" style="background: transparent; color: #aaa; margin-right: 5px;">
+                    <i class="fas fa-palette"></i> Colors
+                </button>
+            </li>
+
             <li class="nav-item">
                 <button class="nav-link shop-tab-btn" data-tab="special" onclick="filterShopByTab('special')" style="background: transparent; color: #aaa; margin-right: 5px;">
                     <i class="fas fa-star"></i> Special
@@ -272,9 +285,126 @@ function displayShopItemsByTab(tab) {
         filteredItems = allShopItems.filter(item => item.type === 'special');
     } else if (tab === 'event') {
         filteredItems = allShopItems.filter(item => item.rarity === 'event');
+        } else if (tab === 'color') {
+        filteredItems = allShopItems.filter(item => item.type === 'color');
+        } else if (tab === 'bundle') {
+        loadAndDisplayBundles();
+        return; // Bundles have their own display function
     }
     
     displayShopItems(filteredItems);
+}
+
+function loadAndDisplayBundles() {
+    if (currentUser.type !== 'user') return;
+    
+    $.ajax({
+        url: 'api/shop.php',
+        method: 'POST',
+        data: { action: 'get_bundles' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                allBundles = response.bundles;
+                displayBundles(allBundles);
+            }
+        },
+        error: function() {
+            $('#shopItemsContainer').html('<div class="alert alert-danger">Failed to load bundles</div>');
+        }
+    });
+}
+
+function displayBundles(bundles) {
+    const container = $('#shopItemsContainer');
+    
+    if (!bundles || bundles.length === 0) {
+        container.html('<div class="text-muted">No bundles available</div>');
+        return;
+    }
+    
+    let html = '';
+    
+    bundles.forEach(bundle => {
+        let currencyIcon, currencyLabel;
+        
+        if (bundle.currency === 'event') {
+            currencyIcon = `<span style="font-size: 1.2rem;">${eventCurrencyConfig.icon}</span>`;
+            currencyLabel = eventCurrencyConfig.name;
+        } else if (bundle.currency === 'dura') {
+            currencyIcon = '<i class="fas fa-gem" style="color: #667eea;"></i>';
+            currencyLabel = 'Dura';
+        } else {
+            currencyIcon = '<i class="fas fa-ticket-alt" style="color: #f093fb;"></i>';
+            currencyLabel = 'Tokens';
+        }
+        
+        const ownedClass = bundle.owned == 1 ? 'owned' : '';
+        
+        // Build bundle contents display
+        let bundleContentsHtml = '';
+        if (bundle.bundle_contents && bundle.bundle_contents.length > 0) {
+            bundleContentsHtml = '<div style="display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap;">';
+            bundle.bundle_contents.forEach(item => {
+                let itemDisplay = '';
+                if (item.type === 'avatar' && item.icon) {
+                    itemDisplay = `<img src="images/${item.icon}" style="width:40px; height:40px; border-radius:4px; border:1px solid #555;">`;
+                } else if (item.type === 'color' && item.icon) {
+                    itemDisplay = `<img class="color-${item.icon}" style="width:40px; height:40px; border-radius:4px; border:1px solid #555;"></img>`;
+                } else {
+                    itemDisplay = `<div style="font-size:2rem;">${item.icon || '📦'}</div>`;
+                }
+                
+                bundleContentsHtml += `
+                    <div style="text-align: center; min-width: 60px;">
+                        ${itemDisplay}
+                        <div style="font-size: 0.7rem; color: #aaa; margin-top: 4px;">${item.name}</div>
+                        <div class="rarity-badge ${item.rarity}" style="font-size: 0.6rem; padding: 2px 4px; margin-top: 2px;">${item.rarity}</div>
+                    </div>
+                `;
+            });
+            bundleContentsHtml += '</div>';
+        }
+        
+        html += `
+            <div class="col-md-6 mb-3">
+                <div class="shop-item ${ownedClass}" style="background: #333; border: 2px solid #667eea; border-radius: 8px; padding: 20px; transition: all 0.2s ease;">
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="shop-item-icon" style="font-size: 2.5rem; margin-right: 15px;">
+                            ${bundle.icon || '📦'}
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <h6 style="color: #fff; margin: 0;">${bundle.name}</h6>
+                                <span class="rarity-badge ${bundle.rarity}">${bundle.rarity}</span>
+                            </div>
+                            <p style="color: #aaa; font-size: 0.9rem; margin-bottom: 12px;">${bundle.description || ''}</p>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #2a2a2a; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                        <div style="color: #667eea; font-size: 0.8rem; font-weight: 600; margin-bottom: 8px; text-transform: uppercase;">
+                            <i class="fas fa-gift"></i> Bundle Contains:
+                        </div>
+                        ${bundleContentsHtml}
+                    </div>
+                    
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="shop-item-price" style="background: #444; padding: 6px 12px; border-radius: 6px; font-weight: bold;">
+                            ${currencyIcon} ${bundle.cost.toLocaleString()} ${currencyLabel}
+                        </div>
+                        ${bundle.owned == 1 ? '' : `
+                            <button class="btn btn-sm btn-warning" onclick="purchaseShopItem('${bundle.item_id}')" style="font-weight: 500;">
+                                <i class="fas fa-shopping-cart"></i> Buy Bundle
+                            </button>
+                        `}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.html(html);
 }
 
 // Display shop items
@@ -307,6 +437,8 @@ function displayShopItems(items) {
         // Show avatar preview for avatar items
         const itemIcon = (item.type === 'avatar' && item.icon) 
             ? `<img src="images/${item.icon}" style="max-width:58px; max-height:58px;">`
+            : (item.type === 'color' && item.icon)
+            ? `<div class="color-${item.icon}" style="width:58px; height:58px; border-radius:8px; border:2px solid #555;"></div>`
             : (item.icon || '📦');
         
         html += `

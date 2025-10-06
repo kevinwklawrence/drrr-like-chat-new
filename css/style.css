@@ -39,7 +39,10 @@ body::-webkit-scrollbar {
             border: 1px solid #ccc;
             padding: 30px 50px 30px 50px;
             background: rgba(63, 63, 63, 0.75);
+            max-width: 1120px;
         }
+
+div#chatbox {}
 #userList img { margin-right: 5px; }.badge.bg-primary { background-color: #007bff !important; } /* Host badge */
 body {
     background-color: rgb(47 47 47);
@@ -1375,4 +1378,46 @@ body {
     text-align: center;
     color:red;
     text-shadow: 2px 2px 2px #ffffff
+}
+
+/* Bundle Styles */
+.shop-item[style*="border: 2px solid #667eea"] {
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.shop-item[style*="border: 2px solid #667eea"]:hover {
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+    transform: translateY(-2px);
+}
+
+/* Bundle contents on mobile */
+@media (max-width: 768px) {
+    .shop-item[style*="border: 2px solid #667eea"] {
+        padding: 15px !important;
+    }
+    
+    .shop-item[style*="border: 2px solid #667eea"] .shop-item-icon {
+        font-size: 2rem !important;
+        margin-right: 10px !important;
+    }
+    
+    /* Bundle contents container */
+    .shop-item[style*="border: 2px solid #667eea"] > div:last-of-type > div:first-child {
+        padding: 8px !important;
+    }
+    
+    /* Individual bundle items */
+    .shop-item[style*="border: 2px solid #667eea"] [style*="min-width: 60px"] {
+        min-width: 50px !important;
+    }
+    
+    .shop-item[style*="border: 2px solid #667eea"] [style*="min-width: 60px"] img,
+    .shop-item[style*="border: 2px solid #667eea"] [style*="min-width: 60px"] > div {
+        width: 35px !important;
+        height: 35px !important;
+    }
+    
+    .shop-item[style*="border: 2px solid #667eea"] [style*="font-size: 0.7rem"] {
+        font-size: 0.6rem !important;
+    }
 }

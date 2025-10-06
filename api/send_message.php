@@ -1,6 +1,7 @@
 <?php
 session_start();
 include '../db_connect.php';
+require_once __DIR__ . '/check_ghost_hunt.php';
 
 
 ini_set('display_errors', 1);
@@ -394,12 +395,39 @@ try {
         }
     }
     
+     // Check for ghost hunt match
+    $ghost_result = checkGhostHuntMatch($conn, $room_id, $message, $user_id_string, $_SESSION['user']['type'], $user_id);
+    
+    if ($ghost_result) {
+        // Update user's event currency in session
+        $balance_stmt = $conn->prepare("SELECT event_currency FROM users WHERE id = ?");
+        $balance_stmt->bind_param("i", $user_id);
+        $balance_stmt->execute();
+        $balance_result = $balance_stmt->get_result();
+        if ($balance_result->num_rows > 0) {
+            $new_balance = $balance_result->fetch_assoc()['event_currency'];
+            $_SESSION['user']['event_currency'] = $new_balance;
+            $ghost_result['new_balance'] = $new_balance;
+        }
+        $balance_stmt->close();
+    }
+    
     $conn->commit();
-    echo json_encode([
+    
+    $response = [
         'status' => 'success', 
         'message_id' => $message_id,
         'afk_cleared' => isset($afk_data) ? true : false
-    ]);
+    ];
+    
+    // Add ghost hunt data if applicable
+    if ($ghost_result) {
+        $response['ghost_caught'] = true;
+        $response['ghost_reward'] = $ghost_result['reward'];
+        $response['new_event_currency'] = $ghost_result['new_balance'];
+    }
+    
+    echo json_encode($response);
     
 } catch (Exception $e) {
     $conn->rollback();

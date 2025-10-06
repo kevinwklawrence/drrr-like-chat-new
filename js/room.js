@@ -111,6 +111,7 @@ let sseConnectionTimeout = null;
 let sseConnectionEstablished = false;
 let sseReconnectExpected = false; // ADD THIS LINE
 
+let sseLastEventId = 0;
 
 
 
@@ -243,53 +244,44 @@ function managedAjax(options) {
 }
 
 function initializeSSE() {
-    if (!sseEnabled) {
-        debugLog('❌ SSE disabled, using Ajax fallback');
+    if (sseConnection && sseConnection.readyState !== EventSource.CLOSED) {
+        debugLog('SSE already connected, skipping initialization');
         return;
     }
     
-    if (sseConnection) {
-        debugLog('⚠️ SSE already connected, closing existing connection');
-        closeSSE();
-    }
-    
-    debugLog('🔌 Initializing SSE connection...');
-    sseConnectionEstablished = false;
-    sseReconnectExpected = false; // ADD THIS LINE
+    debugLog('🚀 Initializing SSE connection with last_event_id:', sseLastEventId);
     
     const params = new URLSearchParams({
         message_limit: messageLimit,
-        check_youtube: youtubeEnabled ? '1' : '0'
+        check_youtube: youtubeEnabled ? '1' : '0',
+        last_event_id: sseLastEventId // Pass the last event ID to server
     });
     
-    // Set connection timeout - if no message received in 10s, fall back
     sseConnectionTimeout = setTimeout(() => {
         if (!sseConnectionEstablished) {
             debugLog('⏱️ SSE connection timeout - falling back to Ajax');
             closeSSE();
             sseEnabled = false;
-            startRoomUpdates(); // Start Ajax polling
+            startRoomUpdates();
         }
     }, 10000);
     
     sseConnection = new EventSource(`api/sse_room_data.php?${params.toString()}`);
     
     sseConnection.onopen = function() {
-    debugLog('✅ SSE connection established');
-    sseConnected = true;
-    sseConnectionEstablished = true;
-    sseReconnectAttempts = 0; // Reset attempts
-    sseReconnectDelay = 2000;  // Reset delay
-    
-    // Clear timeout since connection is working
-    if (sseConnectionTimeout) {
-        clearTimeout(sseConnectionTimeout);
-        sseConnectionTimeout = null;
-    }
-};
+        debugLog('✅ SSE connection established');
+        sseConnected = true;
+        sseConnectionEstablished = true;
+        sseReconnectAttempts = 0;
+        sseReconnectDelay = 2000;
+        
+        if (sseConnectionTimeout) {
+            clearTimeout(sseConnectionTimeout);
+            sseConnectionTimeout = null;
+        }
+    };
     
     sseConnection.onmessage = function(event) {
-        // Mark as established on first message
         if (!sseConnectionEstablished) {
             sseConnectionEstablished = true;
             if (sseConnectionTimeout) {
@@ -307,7 +299,7 @@ function initializeSSE() {
     };
     
     sseConnection.onerror = function(error) {
-        const state = this.readyState; // 0=CONNECTING, 1=OPEN, 2=CLOSED
+        const state = this.readyState;
 
         if (sseReconnectExpected) {
             debugLog('⏭️ Ignoring error during planned reconnection');
@@ -315,40 +307,36 @@ function initializeSSE() {
         }
 
         if (state === 2) {
-        debugLog('🔄 SSE connection closed (likely timeout), reconnecting...');
-    } else {
-        console.error('❌ SSE error:', error, 'ReadyState:', state);
-    }
+            debugLog('🔄 SSE connection closed, reconnecting...');
+        } else {
+            console.error('❌ SSE error:', error, 'ReadyState:', state);
+        }
         
         sseConnected = false;
         
-        // Clear timeout
         if (sseConnectionTimeout) {
             clearTimeout(sseConnectionTimeout);
             sseConnectionTimeout = null;
         }
         
-        // Attempt reconnection
-         if (sseReconnectAttempts < sseMaxReconnectAttempts) {
-        sseReconnectAttempts++;
-        // Use shorter delay for clean closes (state 2)
-        const delay = sseReconnectDelay;
-        debugLog(`🔄 Attempting SSE reconnect ${sseReconnectAttempts}/${sseMaxReconnectAttempts} in ${delay}ms...`);
-        
-        setTimeout(() => {
-            initializeSSE();
-        }, delay);
-        
-        // Only apply exponential backoff for actual errors (not clean closes)
-        if (state !== 2) {
-            sseReconnectDelay = Math.min(sseReconnectDelay * 2, 30000);
+        if (sseReconnectAttempts < sseMaxReconnectAttempts) {
+            sseReconnectAttempts++;
+            const delay = sseReconnectDelay;
+            debugLog(`🔄 Reconnecting (${sseReconnectAttempts}/${sseMaxReconnectAttempts}) in ${delay}ms...`);
+            
+            setTimeout(() => {
+                initializeSSE();
+            }, delay);
+            
+            if (state !== 2) {
+                sseReconnectDelay = Math.min(sseReconnectDelay * 2, 30000);
+            }
+        } else {
+            debugLog('❌ Max reconnect attempts reached, falling back to Ajax');
+            sseEnabled = false;
+            startRoomUpdates();
         }
-    } else {
-        debugLog('❌ Max SSE reconnect attempts reached, falling back to Ajax');
-        sseEnabled = false;
-        startRoomUpdates(); // Start Ajax polling
-    }
-};
+    };
 }
 
 function closeSSE() {
@@ -375,6 +363,12 @@ function handleSSEData(data) {
         console.error('Invalid SSE data:', data);
         return;
     }
+
+     if (data.last_event_id && data.last_event_id > sseLastEventId) {
+        sseLastEventId = data.last_event_id;
+        debugLog('📊 Updated sseLastEventId to:', sseLastEventId);
+    }
+    
     
     // Handle different event types
     switch (data.type) {
@@ -430,6 +424,50 @@ function handleSSEData(data) {
                 handleInactivityStatusResponse(data.inactivity_status);
             }
 
+            if (data.sound_events && typeof data.sound_events === 'object') {
+    // Don't play sounds if we're ignoring the message update
+    const messages = data.messages?.messages || [];
+    const existingMessageCount = $('.chat-message').length;
+    const isEmptyResponse = messages.length === 0 && existingMessageCount > 0 && !isInitialLoad;
+    
+    // Skip sound events if this is an empty response being ignored
+    if (isEmptyResponse) {
+        debugLog('Skipping sound events - empty message response ignored');
+    } else {
+        // System message sound (has priority)
+        if (data.sound_events.system_message) {
+            playSystemNotification();
+        }
+        // Regular new message sound
+        else if (data.sound_events.new_message) {
+            if (typeof window.playMessageNotification === 'function') {
+                window.playMessageNotification();
+            }
+        }
+        
+        // Mention/reply sound
+        if (data.sound_events.new_mention) {
+            if (typeof window.playReplyOrMentionSound === 'function') {
+                window.playReplyOrMentionSound();
+            }
+        }
+        
+        // Whisper sound
+        if (data.sound_events.new_whisper) {
+            if (typeof window.playNotificationSound === 'function') {
+                window.playNotificationSound();
+            }
+        }
+        
+        // Private message sound
+        if (data.sound_events.new_private_message) {
+            if (typeof window.playFriendNotificationSound === 'function') {
+                window.playFriendNotificationSound();
+            }
+        }
+    }
+}
+
              /* Handle general notifications
             if (data.updates.general_notifications) {
                 if (typeof window.updateGeneralNotifications === 'function') {
@@ -475,7 +513,17 @@ function handleSSEData(data) {
     }
 }
 
-console.log('SSE Connections:');
+function playSystemNotification() {
+    if (typeof userSettingsManager !== 'undefined') {
+        userSettingsManager.playNotificationSound('/sounds/system_notification.mp3');
+    } else {
+        const audio = new Audio('/sounds/system_notification.mp3');
+        audio.volume = 0.5;
+        audio.play().catch(e => console.log('Could not play system sound:', e));
+    }
+}
+
+/*console.log('SSE Connections:');
 console.log('Room SSE:', typeof sseConnection, sseConnection?.readyState);
 console.log('Notification SSE:', typeof notificationSSE);
 console.log('Friend SSE:', typeof friendStatusSSE);
@@ -484,7 +532,7 @@ console.log('Friend SSE:', typeof friendStatusSSE);
 console.log('Handlers:');
 console.log('updateGeneralNotifications:', typeof window.updateGeneralNotifications);
 console.log('updateFriendNotifications:', typeof window.updateFriendNotifications);
-console.log('handleRoomStatusUpdate:', typeof window.handleRoomStatusUpdate);
+console.log('handleRoomStatusUpdate:', typeof window.handleRoomStatusUpdate);*/
 
 // Add missing loadYouTubeAPI function
 function loadYouTubeAPI() {
@@ -722,10 +770,14 @@ function handleSettingsCheckResponse(data) {
         
         if (!sessionStorage.getItem(processedKey)) {
             sessionStorage.setItem(processedKey, 'true');
-            showToast('Room settings have been updated. Refreshing...', 'info');
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
+            
+            // Only reload if NOT the host (host already reloaded when saving)
+            if (!window.isHost) {
+                showToast('Room settings have been updated. Refreshing...', 'info');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            }
         }
     }
 }
@@ -745,7 +797,7 @@ function handleKnocksResponse(knocks) {
 
 // Simple handler for get_room_data.php response
 function handleRoomDataResponse(response) {
-    console.log('Room data response:', response);
+    //console.log('Room data response:', response);
 }
 
 
@@ -1282,6 +1334,10 @@ function sendValidatedMessage(message) {
                 removeOptimisticMessage(tempId);
                 alert('Error: ' + response.message);
             }
+
+            if (response.ghost_caught) {
+            handleGhostHuntResponse(response);
+        }
         },
         error: function(xhr, status, error) {
             // Failed - remove optimistic message
@@ -5706,4 +5762,3 @@ function checkHostStatusChange(users) {
         }
     }
 }
-$.getScript('js/inactivity_warning.js');

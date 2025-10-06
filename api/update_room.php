@@ -358,6 +358,15 @@ if ($settings_event_stmt) {
     $settings_event_stmt->execute();
     $settings_event_stmt->close();
 }
+
+// ADD THIS RIGHT AFTER (new code to trigger SSE):
+// ALSO insert into message_events so SSE picks it up
+$message_event_stmt = $conn->prepare("INSERT INTO message_events (room_id, event_type, event_data, created_at) VALUES (?, 'settings_update', ?, NOW())");
+if ($message_event_stmt) {
+    $message_event_stmt->bind_param("is", $room_id, $event_data);
+    $message_event_stmt->execute();
+    $message_event_stmt->close();
+}
     
     $response = [
         'status' => 'success',

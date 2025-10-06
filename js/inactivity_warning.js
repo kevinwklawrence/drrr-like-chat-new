@@ -1,5 +1,8 @@
 // js/inactivity_warning.js - Warning before disconnect (SSE-integrated)
-let inactivityWarned = false;
+// Use var instead of let to prevent redeclaration errors if script loads multiple times
+if (typeof inactivityWarned === 'undefined') {
+    var inactivityWarned = false;
+}
 
 // Check inactivity status every 30 seconds ONLY if SSE is not connected
 // When SSE is connected, inactivity data comes via SSE stream
@@ -34,16 +37,40 @@ function showInactivityWarning(seconds) {
     warning.id = 'inactivity-warning';
     warning.innerHTML = `
         <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:10000;display:flex;align-items:center;justify-content:center;">
-            <div style="background:white;padding:30px;border-radius:10px;text-align:center;max-width:400px;">
-                <h3>⚠️ Inactivity Warning</h3>
+            <div style="background:white;padding:30px;border-radius:10px;text-align:center;max-width:400px;width:90%;max-width:min(400px,90vw);">
+                <h3 style="margin-top:0;">⚠️ Inactivity Warning</h3>
                 <p>You will be disconnected in ${minutesLeft} minutes due to inactivity.</p>
-                <button onclick="handleInactivityResponse(true)" style="padding:10px 20px;margin:10px;background:#4CAF50;color:white;border:none;border-radius:5px;cursor:pointer;">
+                <button onclick="handleInactivityResponse()" style="padding:10px 20px;margin:10px;background:#4CAF50;color:white;border:none;border-radius:5px;cursor:pointer;font-size:16px;">
                     I'm Still Here!
                 </button>
             </div>
         </div>
     `;
     document.body.appendChild(warning);
+}
+
+function handleInactivityResponse() {
+    // Reset the inactivity timer
+    fetch('api/reset_user_activity.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Remove the warning
+            inactivityWarned = false;
+            const warning = document.getElementById('inactivity-warning');
+            if (warning) {
+                warning.remove();
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Failed to reset inactivity:', error);
+    });
 }
 
 function handleInactivityStatusResponse(data) {

@@ -207,6 +207,90 @@ try {
                 // Special items cannot be equipped - they trigger actions on purchase
                 echo json_encode(['status' => 'error', 'message' => 'Special items cannot be equipped. Their effects are applied automatically when purchased.']);
                 
+            } 
+            elseif ($item['type'] === 'color') {
+                // Colors: Only one can be equipped, works like avatars
+                
+                // Get current color and color_memory
+                $stmt = $conn->prepare("SELECT color, color_memory FROM users WHERE id = ?");
+                $stmt->bind_param("i", $user_id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $user_data = $result->fetch_assoc();
+                $current_color = $user_data['color'];
+                $color_memory = $user_data['color_memory'];
+                $stmt->close();
+                
+                // Check if user has any equipped shop colors
+                $stmt = $conn->prepare("SELECT COUNT(*) as count FROM user_inventory ui 
+                    JOIN shop_items si ON ui.item_id = si.item_id 
+                    WHERE ui.user_id = ? AND si.type = 'color' AND ui.is_equipped = 1");
+                $stmt->bind_param("i", $user_id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $count_data = $result->fetch_assoc();
+                $has_equipped_color = $count_data['count'] > 0;
+                $stmt->close();
+                
+                // If no shop color is currently equipped AND color_memory is empty, save current color
+                if (!$has_equipped_color && (empty($color_memory) || $color_memory === $current_color)) {
+                    $color_memory = $current_color;
+                }
+                
+                // Unequip all other colors
+                $stmt = $conn->prepare("UPDATE user_inventory ui 
+                    JOIN shop_items si ON ui.item_id = si.item_id 
+                    SET ui.is_equipped = 0 
+                    WHERE ui.user_id = ? AND si.type = 'color'");
+                $stmt->bind_param("i", $user_id);
+                $stmt->execute();
+                $stmt->close();
+                
+                // Equip this color
+                $stmt = $conn->prepare("UPDATE user_inventory SET is_equipped = 1 WHERE user_id = ? AND item_id = ?");
+                $stmt->bind_param("is", $user_id, $item_id);
+                $stmt->execute();
+                $stmt->close();
+                
+                // Get the color value from icon field
+                $color_value = $item['icon'];
+                
+                // Update users table - update color but preserve color_memory
+                $stmt = $conn->prepare("UPDATE users SET color = ?, color_memory = ? WHERE id = ?");
+                $stmt->bind_param("ssi", $color_value, $color_memory, $user_id);
+                $stmt->execute();
+                $stmt->close();
+                
+                // Update session
+                $_SESSION['user']['color'] = $color_value;
+                
+                // Get user_id_string for global_users and chatroom_users
+                $stmt = $conn->prepare("SELECT user_id FROM users WHERE id = ?");
+                $stmt->bind_param("i", $user_id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $user_data = $result->fetch_assoc();
+                $user_id_string = $user_data['user_id'];
+                $stmt->close();
+                
+                // Update global_users
+                $stmt = $conn->prepare("UPDATE global_users SET color = ? WHERE user_id_string = ?");
+                if ($stmt) {
+                    $stmt->bind_param("ss", $color_value, $user_id_string);
+                    $stmt->execute();
+                    $stmt->close();
+                }
+                
+                // Update chatroom_users
+                $stmt = $conn->prepare("UPDATE chatroom_users SET color = ? WHERE user_id_string = ?");
+                if ($stmt) {
+                    $stmt->bind_param("ss", $color_value, $user_id_string);
+                    $stmt->execute();
+                    $stmt->close();
+                }
+                
+                echo json_encode(['status' => 'success', 'message' => 'Color equipped', 'item_name' => $item['name']]);
+                
             } else {
                 // Other item types: standard equipping
                 $stmt = $conn->prepare("UPDATE user_inventory SET is_equipped = 1 WHERE user_id = ? AND item_id = ?");
@@ -314,6 +398,72 @@ try {
                 $stmt = $conn->prepare("UPDATE chatroom_users SET guest_avatar = ? WHERE user_id_string = ?");
                 if ($stmt) {
                     $stmt->bind_param("ss", $default_avatar, $user_id_string);
+                    $stmt->execute();
+                    $stmt->close();
+                }
+            } 
+            
+            if ($item['type'] === 'color') {
+                // Check if there's another equipped color after unequipping this one
+                $stmt = $conn->prepare("
+                    SELECT si.icon 
+                    FROM user_inventory ui 
+                    JOIN shop_items si ON ui.item_id = si.item_id 
+                    WHERE ui.user_id = ? AND si.type = 'color' AND ui.is_equipped = 1 
+                    LIMIT 1
+                ");
+                $stmt->bind_param("i", $user_id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                
+                if ($result->num_rows > 0) {
+                    // Use the other equipped color
+                    $other_color = $result->fetch_assoc();
+                    $default_color = $other_color['icon'];
+                } else {
+                    // No other equipped color, restore color_memory
+                    $stmt2 = $conn->prepare("SELECT color_memory FROM users WHERE id = ?");
+                    $stmt2->bind_param("i", $user_id);
+                    $stmt2->execute();
+                    $result2 = $stmt2->get_result();
+                    $user_data = $result2->fetch_assoc();
+                    $color_memory = $user_data['color_memory'];
+                    $stmt2->close();
+                    
+                    $default_color = !empty($color_memory) ? $color_memory : 'blue';
+                }
+                $stmt->close();
+                
+                // Update users table
+                $stmt = $conn->prepare("UPDATE users SET color = ? WHERE id = ?");
+                $stmt->bind_param("si", $default_color, $user_id);
+                $stmt->execute();
+                $stmt->close();
+                
+                // Update session
+                $_SESSION['user']['color'] = $default_color;
+                
+                // Get user_id_string
+                $stmt = $conn->prepare("SELECT user_id FROM users WHERE id = ?");
+                $stmt->bind_param("i", $user_id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $user_data = $result->fetch_assoc();
+                $user_id_string = $user_data['user_id'];
+                $stmt->close();
+                
+                // Update global_users
+                $stmt = $conn->prepare("UPDATE global_users SET color = ? WHERE user_id_string = ?");
+                if ($stmt) {
+                    $stmt->bind_param("ss", $default_color, $user_id_string);
+                    $stmt->execute();
+                    $stmt->close();
+                }
+                
+                // Update chatroom_users
+                $stmt = $conn->prepare("UPDATE chatroom_users SET color = ? WHERE user_id_string = ?");
+                if ($stmt) {
+                    $stmt->bind_param("ss", $default_color, $user_id_string);
                     $stmt->execute();
                     $stmt->close();
                 }

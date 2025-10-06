@@ -423,20 +423,36 @@ class UserSettings {
     }
 
     playNotificationSound(soundFile = '/sounds/message_notification.mp3') {
-        if (this.settings.notificationMuted || this.settings.notificationVolume === 0) {
-            return;
-        }
+    if (this.settings.notificationMuted || this.settings.notificationVolume === 0) {
+        return;
+    }
 
-        try {
-            const audio = new Audio(soundFile);
-            audio.volume = this.settings.notificationVolume / 100;
-            audio.play().catch(e => {
+    try {
+        const audio = new Audio(soundFile);
+        audio.volume = this.settings.notificationVolume / 100;
+        
+        // Make audio less intrusive
+        audio.preload = 'auto';
+        
+        // Play the sound
+        const playPromise = audio.play();
+        
+        if (playPromise !== undefined) {
+            playPromise.catch(e => {
                 console.log('Could not play notification sound:', e);
             });
-        } catch (e) {
-            console.warn('Error creating audio:', e);
         }
+        
+        // Clean up after playing to prevent memory leaks
+        audio.addEventListener('ended', function() {
+            audio.src = '';
+            audio.load();
+        });
+        
+    } catch (e) {
+        console.warn('Error creating audio:', e);
     }
+}
 
     toggleNotificationMute() {
         this.settings.notificationMuted = !this.settings.notificationMuted;

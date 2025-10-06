@@ -55,21 +55,7 @@ try {
             $user_data = $result->fetch_assoc();
             $stmt->close();
             
-            // Check balance based on currency type
-            if ($item['currency'] === 'event') {
-                $balance = $user_data['event_currency'];
-            } elseif ($item['currency'] === 'dura') {
-                $balance = $user_data['dura'];
-            } else {
-                $balance = $user_data['tokens'];
-            }
-            
-            if ($balance < $item['cost']) {
-                echo json_encode(['status' => 'error', 'message' => 'Insufficient balance']);
-                exit;
-            }
-            
-            // Deduct currency
+            // Deduct cost from user balance
             if ($item['currency'] === 'event') {
                 $stmt = $conn->prepare("UPDATE users SET event_currency = event_currency - ? WHERE id = ?");
             } elseif ($item['currency'] === 'dura') {
@@ -81,11 +67,49 @@ try {
             $stmt->execute();
             $stmt->close();
             
-            // Add to inventory
-            $stmt = $conn->prepare("INSERT INTO user_inventory (user_id, item_id) VALUES (?, ?)");
-            $stmt->bind_param("is", $user_id, $item_id);
-            $stmt->execute();
-            $stmt->close();
+            // Check if this is a bundle
+            if ($item['type'] === 'bundle') {
+                // Get all items in the bundle
+                $stmt = $conn->prepare("SELECT item_id FROM bundle_items WHERE bundle_id = ?");
+                $stmt->bind_param("s", $item_id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                
+                $bundle_items = [];
+                while ($row = $result->fetch_assoc()) {
+                    $bundle_items[] = $row['item_id'];
+                }
+                $stmt->close();
+                
+                // Add each item to inventory
+                foreach ($bundle_items as $bundled_item_id) {
+                    // Check if user already has this item
+                    $check = $conn->prepare("SELECT id FROM user_inventory WHERE user_id = ? AND item_id = ?");
+                    $check->bind_param("is", $user_id, $bundled_item_id);
+                    $check->execute();
+                    if ($check->get_result()->num_rows === 0) {
+                        // Add item to inventory
+                        $insert = $conn->prepare("INSERT INTO user_inventory (user_id, item_id) VALUES (?, ?)");
+                        $insert->bind_param("is", $user_id, $bundled_item_id);
+                        $insert->execute();
+                        $insert->close();
+                    }
+                    $check->close();
+                }
+                
+                // Also add the bundle itself to inventory (so it shows as owned)
+                $stmt = $conn->prepare("INSERT INTO user_inventory (user_id, item_id) VALUES (?, ?)");
+                $stmt->bind_param("is", $user_id, $item_id);
+                $stmt->execute();
+                $stmt->close();
+                
+            } else {
+                // Regular item - add to inventory
+                $stmt = $conn->prepare("INSERT INTO user_inventory (user_id, item_id) VALUES (?, ?)");
+                $stmt->bind_param("is", $user_id, $item_id);
+                $stmt->execute();
+                $stmt->close();
+            }
             
             // Log purchase
             $stmt = $conn->prepare("INSERT INTO shop_purchases (user_id, item_id, cost, currency, purchased_at) VALUES (?, ?, ?, ?, NOW())");
@@ -138,6 +162,50 @@ try {
             
             echo json_encode(['status' => 'success', 'items' => $items]);
             break;
+            
+
+        case 'get_bundles':
+            // Get all bundle items with their contents
+            $stmt = $conn->prepare("
+                SELECT si.*, 
+                       CASE WHEN ui.id IS NOT NULL THEN 1 ELSE 0 END as owned
+                FROM shop_items si
+                LEFT JOIN user_inventory ui ON si.item_id = ui.item_id AND ui.user_id = ?
+                WHERE si.is_available = 1 AND si.type = 'bundle'
+                ORDER BY 
+                    FIELD(si.rarity, 'common', 'rare', 'strange', 'legendary', 'event'),
+                    si.cost ASC
+            ");
+            $stmt->bind_param("i", $user_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $bundles = [];
+            while ($row = $result->fetch_assoc()) {
+                // Get items in this bundle
+                $bundle_stmt = $conn->prepare("
+                    SELECT si.item_id, si.name, si.type, si.icon, si.rarity
+                    FROM bundle_items bi
+                    JOIN shop_items si ON bi.item_id = si.item_id
+                    WHERE bi.bundle_id = ?
+                ");
+                $bundle_stmt->bind_param("s", $row['item_id']);
+                $bundle_stmt->execute();
+                $bundle_result = $bundle_stmt->get_result();
+                
+                $row['bundle_contents'] = [];
+                while ($item = $bundle_result->fetch_assoc()) {
+                    $row['bundle_contents'][] = $item;
+                }
+                $bundle_stmt->close();
+                
+                $bundles[] = $row;
+            }
+            $stmt->close();
+            
+            echo json_encode(['status' => 'success', 'bundles' => $bundles]);
+            break;
+            
             
         case 'get_event_currency_config':
             // Get event currency configuration

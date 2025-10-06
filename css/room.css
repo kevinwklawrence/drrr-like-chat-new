@@ -1843,3 +1843,14 @@
         opacity: 0.85;
     }
 }
+
+.message-bubble:has(.ghost-hunt-message) {
+    background: linear-gradient(135deg, rgba(255,107,0,0.2), rgba(255,165,0,0.2)) !important;
+    border-color: #ff6b00 !important;
+    animation: ghostPulse 2s ease-in-out infinite;
+}
+
+@keyframes ghostPulse {
+    0%, 100% { box-shadow: 0 2px 8px rgba(255,107,0,0.3); }
+    50% { box-shadow: 0 2px 20px rgba(255,107,0,0.6); }
+}

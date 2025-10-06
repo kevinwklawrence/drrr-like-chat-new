@@ -1,20 +1,62 @@
 <?php
 session_start();
+include 'db_connect.php';
 
-// Check if user passed firewall
-if (!isset($_SESSION['firewall_passed'])) {
+// Check firewall
+if (!isset($_SESSION['firewall_passed']) || !isset($_SESSION['invite_verified'])) {
     header("Location: /firewall");
     exit;
 }
 
-// If user is already logged in, redirect appropriately
-if (isset($_SESSION['user'])) {
-    if (isset($_SESSION['room_id'])) {
-        header("Location: /room");
-    } else {
+// Check if auto-login required (personal key used)
+if (isset($_SESSION['auto_login_user_id'])) {
+    $user_id = $_SESSION['auto_login_user_id'];
+    
+    $stmt = $conn->prepare("SELECT id, username, user_id, email, is_admin, avatar, custom_av, avatar_memory, color, 
+                                   avatar_hue, avatar_saturation, bubble_hue, bubble_saturation, dura, tokens 
+                            FROM users WHERE id = ?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $user = $result->fetch_assoc();
+        
+        $_SESSION['user'] = [
+            'id' => $user['id'],
+            'username' => $user['username'],
+            'user_id' => $user['user_id'],
+            'email' => $user['email'],
+            'type' => 'user',
+            'is_admin' => $user['is_admin'],
+            'avatar' => $user['avatar'] ?? 'default/_u0.png',
+            'custom_av' => $user['custom_av'],
+            'avatar_memory' => $user['avatar_memory'] ?? 'default/_u0.png',
+            'color' => $user['color'] ?? '#ffffff',
+            'avatar_hue' => $user['avatar_hue'] ?? 0,
+            'avatar_saturation' => $user['avatar_saturation'] ?? 100,
+            'bubble_hue' => $user['bubble_hue'] ?? 0,
+            'bubble_saturation' => $user['bubble_saturation'] ?? 100,
+            'dura' => $user['dura'] ?? 0,
+            'tokens' => $user['tokens'] ?? 20,
+            'ip' => $_SERVER['REMOTE_ADDR']
+        ];
+        
+        unset($_SESSION['auto_login_user_id']);
+        $stmt->close();
         header("Location: /lounge");
+        exit;
     }
-    exit;
+    $stmt->close();
+}
+
+// Check if trial period expired
+if (isset($_SESSION['temp_access_expires'])) {
+    $expires = strtotime($_SESSION['temp_access_expires']);
+    if (time() > $expires) {
+        header("Location: /register");
+        exit;
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -161,7 +203,13 @@ if (isset($_SESSION['user'])) {
 </head>
 <body>
     <div class="select-container">
-        <h1 class="title">Select Page</h1>
+        <h1 class="title">Welcome to Duranu!</h1>
+        <?php if (isset($_SESSION['temp_access_expires'])): ?>
+        <div class="alert alert-warning text-center">
+            <i class="fas fa-clock me-2"></i>
+            Trial access expires: <?php echo date('M d, Y H:i', strtotime($_SESSION['temp_access_expires'])); ?>
+        </div>
+        <?php endif; ?>
         <div class="button-grid">
             <a href="/member" class="select-btn member-btn">
                 <i class="fas fa-user"></i>

@@ -4,7 +4,7 @@ session_start();
 require_once 'security_config.php';
 
 include 'db_connect.php';
-
+include 'check_invite_access.php';
 include 'check_site_ban.php';
 checkSiteBan($conn);
 

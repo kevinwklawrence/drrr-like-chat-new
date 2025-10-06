@@ -1,5 +1,6 @@
 <?php
 session_start();
+
 require_once 'security_config.php';
 
 // Add to index.php - right after session_start()
@@ -26,6 +27,7 @@ if (!file_exists('db_connect.php')) {
     error_log("db_connect.php not found in " . __DIR__);
     die("Error: Database connection file not found.");
 }
+include 'check_invite_access.php';
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);

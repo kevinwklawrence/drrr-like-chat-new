@@ -28,7 +28,7 @@ if (isset($_SESSION['user'])) {
 }
 
 include 'db_connect.php';
-
+include 'check_invite_access.php';
 ?>
 <?php $versions = include 'config/version.php'; ?>
 <!DOCTYPE html>

@@ -28,7 +28,14 @@ require_once __DIR__ . '/../config/inactivity_config.php';
 $message_limit = isset($_GET['message_limit']) ? min(max((int)$_GET['message_limit'], 1), 100) : 50;
 $check_youtube = isset($_GET['check_youtube']) ? (bool)$_GET['check_youtube'] : false;
 
-echo "data: " . json_encode(['type' => 'connected', 'room_id' => $room_id]) . "\n\n";
+$last_event_id = isset($_GET['last_event_id']) ? (int)$_GET['last_event_id'] : 0;
+
+
+echo "data: " . json_encode([
+    'type' => 'connected', 
+    'room_id' => $room_id,
+    'last_event_id' => $last_event_id
+]) . "\n\n";
 flush();
 
 $max_duration = 55; // CHANGE FROM 50 to 25 seconds
@@ -41,9 +48,9 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
     $has_events = false;
     
     try {
-        // Check for new events since last check
+        // Check for new events since last_event_id (from client)
         $event_stmt = $conn->prepare("
-            SELECT id, event_type, event_data 
+            SELECT id, event_type, event_data, created_at
             FROM message_events 
             WHERE id > ? AND (room_id = ? OR room_id = 0)
             ORDER BY id ASC
@@ -53,19 +60,83 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
         $event_result = $event_stmt->get_result();
         
         $events = [];
+        $new_last_event_id = $last_event_id;
+        
         while ($event = $event_result->fetch_assoc()) {
             $events[] = $event;
-            $last_event_id = max($last_event_id, (int)$event['id']);
+            $new_last_event_id = max($new_last_event_id, (int)$event['id']);
         }
         $event_stmt->close();
         
         // If we have events, fetch and send the updated data
         if (!empty($events)) {
             $has_events = true;
-            $all_data = ['type' => 'room_data', 'timestamp' => time()];
+            $all_data = [
+                'type' => 'room_data', 
+                'timestamp' => time(),
+                'last_event_id' => $new_last_event_id // Send back to client
+            ];
+            
+            // Update for next iteration
+            $last_event_id = $new_last_event_id;
             
             // Determine what data needs to be fetched based on event types
             $event_types = array_unique(array_column($events, 'event_type'));
+
+            // Track which sound events to send
+// Track which sound events to send
+$sound_events = [];
+
+// Only process events created AFTER this connection started
+$new_events_for_sounds = array_filter($events, function($event) use ($start_time) {
+    if (isset($event['created_at'])) {
+        $event_time = strtotime($event['created_at']);
+        return $event_time >= $start_time;
+    }
+    return false;
+});
+
+// Only send sounds if we have genuinely new events
+if (!empty($new_events_for_sounds)) {
+    $new_event_types = array_unique(array_column($new_events_for_sounds, 'event_type'));
+    
+    // Detect system messages
+    $has_system_message = false;
+    if (in_array('message', $new_event_types)) {
+        foreach ($new_events_for_sounds as $event) {
+            if ($event['event_type'] === 'message') {
+                $event_data = json_decode($event['event_data'], true);
+                if (isset($event_data['type']) && 
+                    ($event_data['type'] === 'system' || $event_data['type'] === 'announcement')) {
+                    $has_system_message = true;
+                    break;
+                }
+            }
+        }
+        
+        if ($has_system_message) {
+            $sound_events['system_message'] = true;
+        } else {
+            $sound_events['new_message'] = true;
+        }
+    }
+    
+    if (in_array('mention', $new_event_types)) {
+        $sound_events['new_mention'] = true;
+    }
+    
+    if (in_array('whisper', $new_event_types)) {
+        $sound_events['new_whisper'] = true;
+    }
+    
+    if (in_array('private_message', $new_event_types)) {
+        $sound_events['new_private_message'] = true;
+    }
+}
+
+if (!empty($sound_events)) {
+    $all_data['sound_events'] = $sound_events;
+}
             
             // MESSAGES
             if (in_array('message', $event_types)) {
@@ -490,31 +561,31 @@ if (in_array('private_message', $event_types) && $user_id) {
             }
             
             // SETTINGS CHECK
-            if (in_array('settings_update', $event_types)) {
-                $settings_stmt = $conn->prepare("
-                    SELECT id, UNIX_TIMESTAMP(created_at) as timestamp
-                    FROM room_events 
-                    WHERE room_id = ? AND event_type = 'settings_update' 
-                    AND created_at > DATE_SUB(NOW(), INTERVAL 5 SECOND)
-                    ORDER BY created_at DESC LIMIT 1
-                ");
-                $settings_stmt->bind_param("i", $room_id);
-                $settings_stmt->execute();
-                $settings_result = $settings_stmt->get_result();
-                
-                if ($settings_result->num_rows > 0) {
-                    $event = $settings_result->fetch_assoc();
-                    $all_data['settings_check'] = [
-                        'status' => 'success',
-                        'settings_changed' => true,
-                        'event_id' => $event['id'],
-                        'timestamp' => $event['timestamp']
-                    ];
-                } else {
-                    $all_data['settings_check'] = ['status' => 'success', 'settings_changed' => false];
-                }
-                $settings_stmt->close();
-            }
+           error_log("DEBUG SSE: Checking for settings updates (always check mode)");
+
+$settings_stmt = $conn->prepare("
+    SELECT id, UNIX_TIMESTAMP(created_at) as timestamp
+    FROM room_events 
+    WHERE room_id = ? AND event_type = 'settings_update' 
+    AND created_at > DATE_SUB(NOW(), INTERVAL 10 SECOND)
+    ORDER BY created_at DESC LIMIT 1
+");
+$settings_stmt->bind_param("i", $room_id);
+$settings_stmt->execute();
+$settings_result = $settings_stmt->get_result();
+
+if ($settings_result->num_rows > 0) {
+    $event = $settings_result->fetch_assoc();
+    error_log("DEBUG SSE: Found settings event, id: " . $event['id']);
+    $all_data['settings_check'] = [
+        'status' => 'success',
+        'settings_changed' => true,
+        'event_id' => $event['id'],
+        'timestamp' => $event['timestamp']
+    ];
+    $has_events = true;
+}
+$settings_stmt->close();
             
             // INACTIVITY STATUS (send with every update)
             $inactivity_stmt = $conn->prepare("
@@ -550,11 +621,15 @@ if (in_array('private_message', $event_types) && $user_id) {
         error_log("SSE Error: " . $e->getMessage());
     }
     
-    // Send heartbeat every 30 seconds
-    if ($iteration % 15 == 0) {
-        echo "data: " . json_encode(['type' => 'heartbeat']) . "\n\n";
-        flush();
-    }
+    // Heartbeat
+if (!$has_events && $iteration % 10 == 0) {
+    echo "data: " . json_encode([
+        'type' => 'heartbeat', 
+        'timestamp' => time(),
+        'last_event_id' => $last_event_id
+    ]) . "\n\n";
+    flush();
+}
     
     $iteration++;
     
@@ -569,6 +644,13 @@ if (in_array('private_message', $event_types) && $user_id) {
         break;
     }
 }
+
+// Send reconnect signal with the last event ID
+echo "data: " . json_encode([
+    'type' => 'reconnect',
+    'last_event_id' => $last_event_id
+]) . "\n\n";
+flush();
 
 $conn->close();
 ?>
