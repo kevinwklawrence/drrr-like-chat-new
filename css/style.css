@@ -27,7 +27,7 @@ body::-webkit-scrollbar {
         }
 .chatroom { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
 #chatbox { height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
-#chatbox img {margin-right: 5px;height:58px;width:58px;z-index: 100;}
+#chatbox img { margin-right: 5px; height:58px; width:58px; }
 #chatbox .system-message { 
     color: #6c757d; 
     font-style: italic;
@@ -42,8 +42,7 @@ body::-webkit-scrollbar {
             max-width: 1120px;
         }
 
-div#chatbox {
-}
+div#chatbox {}
 #userList img { margin-right: 5px; }.badge.bg-primary { background-color: #007bff !important; } /* Host badge */
 body {
     background-color: rgb(47 47 47);
@@ -968,7 +967,7 @@ body {
         }
 /* Version Text in Navbar */
 .navbar::after {
-    content: 'BETA C_0.1.4';
+    content: 'BETA C_0.1.35_';
     position: fixed;
     text-align:center;
     left: 158px;
@@ -1048,7 +1047,6 @@ body {
 @media (max-width: 768px) {
     .currency-card {
         margin-bottom: 15px;
-        padding: 6px !important;
     }
     
     .shop-item {
@@ -1056,10 +1054,7 @@ body {
     }
     
     .shop-item .d-flex {
-        /* flex-direction: column; */
-        flex-wrap: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        flex-direction: column;
     }
     
     .shop-item-icon {
@@ -1122,7 +1117,6 @@ body {
     letter-spacing: 0.5px;
     border: 2px solid;
     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    overflow: hidden;
 }
 
 .rarity-badge.common {
@@ -1349,7 +1343,7 @@ body {
 /* Mobile responsive adjustments for shop tabs */
 @media (max-width: 768px) {
     #shopTabs {
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
@@ -1419,38 +1413,11 @@ body {
     
     .shop-item[style*="border: 2px solid #667eea"] [style*="min-width: 60px"] img,
     .shop-item[style*="border: 2px solid #667eea"] [style*="min-width: 60px"] > div {
-        /* width: 35px !important; */
-        /* height: 35px !important; */
+        width: 35px !important;
+        height: 35px !important;
     }
     
     .shop-item[style*="border: 2px solid #667eea"] [style*="font-size: 0.7rem"] {
         font-size: 0.6rem !important;
     }
-}
-
-/* RP Message (Roleplay /me command) */
-.rp-message {
-    margin: 16px 0;
-    padding: 8px 16px;
-    background: rgba(255, 193, 7, 0.1);
-    border-radius: 20px;
-    border: 1px solid rgba(255, 193, 7, 0.2);
-    color: #ffc107;
-    font-style: italic;
-    font-size: 0.9rem;
-    display: flex;
-    
-}
-
-.rp-message * {
-    align-items: center;
-    margin: 0;
-}
-
-.rp-message img {
-    width: 30px !important;
-    height: 30px !important;
-    margin-right: 8px;
-    vertical-align: middle;
-    border-radius: 2px;
 }

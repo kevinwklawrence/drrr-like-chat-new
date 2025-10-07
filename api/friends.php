@@ -85,68 +85,52 @@ try {
             break;
             
         case 'accept':
-    $request_id = (int)($_POST['friend_id'] ?? 0);
-    
-    if ($request_id <= 0) {
-        echo json_encode(['status' => 'error', 'message' => 'Invalid request ID']);
-        exit;
-    }
-    
-    try {
-        // Start transaction
-        $conn->begin_transaction();
-        
-        // Fetch and validate request
-        $stmt = $conn->prepare("SELECT user_id, friend_id FROM friends WHERE id = ? AND status = 'pending' FOR UPDATE");
-        $stmt->bind_param("i", $request_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($result->num_rows === 0) {
+            $request_id = (int)($_POST['friend_id'] ?? 0);
+            
+            if ($request_id <= 0) {
+                echo json_encode(['status' => 'error', 'message' => 'Invalid request ID']);
+                exit;
+            }
+            
+            // FIXED: Corrected SQL query - remove friend_id filter
+            $stmt = $conn->prepare("SELECT user_id, friend_id FROM friends WHERE id = ? AND status = 'pending'");
+            $stmt->bind_param("i", $request_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows === 0) {
+                echo json_encode(['status' => 'error', 'message' => 'No pending request found']);
+                exit;
+            }
+            
+            $request_data = $result->fetch_assoc();
+            $sender_id = $request_data['user_id'];
+            $receiver_id = $request_data['friend_id'];
             $stmt->close();
-            $conn->rollback();
-            echo json_encode(['status' => 'error', 'message' => 'No pending request found']);
-            exit;
-        }
-        
-        $request_data = $result->fetch_assoc();
-        $sender_id = $request_data['user_id'];
-        $receiver_id = $request_data['friend_id'];
-        $stmt->close();
-        
-        // Verify authorization
-        if ($receiver_id != $user_id) {
-            $conn->rollback();
-            echo json_encode(['status' => 'error', 'message' => 'Not authorized']);
-            exit;
-        }
-        
-        // Update original request
-        $stmt = $conn->prepare("UPDATE friends SET status = 'accepted' WHERE id = ?");
-        $stmt->bind_param("i", $request_id);
-        $stmt->execute();
-        $stmt->close();
-        
-        // Add reverse friendship
-        $stmt = $conn->prepare("INSERT INTO friends (user_id, friend_id, status) VALUES (?, ?, 'accepted') ON DUPLICATE KEY UPDATE status = 'accepted'");
-        $stmt->bind_param("ii", $user_id, $sender_id);
-        $stmt->execute();
-        $stmt->close();
-        
-        // Commit transaction
-        $conn->commit();
-        
-        // Create notification (outside transaction)
-        createNotification($conn, $sender_id, $user_id, 'friend_accepted', $_SESSION['user']['username'] . ' accepted your friend request');
-        
-        echo json_encode(['status' => 'success', 'message' => 'Friend request accepted']);
-        
-    } catch (Exception $e) {
-        if ($conn) $conn->rollback();
-        error_log("Accept friend error: " . $e->getMessage());
-        echo json_encode(['status' => 'error', 'message' => 'Database error occurred']);
-    }
-    break;
+            
+            // FIXED: Verify user is authorized to accept this request
+            if ($receiver_id != $user_id) {
+                echo json_encode(['status' => 'error', 'message' => 'Not authorized to accept this request']);
+                exit;
+            }
+            
+            // Update the original request
+            $stmt = $conn->prepare("UPDATE friends SET status = 'accepted' WHERE id = ?");
+            $stmt->bind_param("i", $request_id);
+            $stmt->execute();
+            $stmt->close();
+            
+            // Add reverse friendship
+            $stmt = $conn->prepare("INSERT INTO friends (user_id, friend_id, status) VALUES (?, ?, 'accepted') ON DUPLICATE KEY UPDATE status = 'accepted'");
+            $stmt->bind_param("ii", $user_id, $sender_id);
+            $stmt->execute();
+            $stmt->close();
+            
+            // FIXED: Optional notification creation
+            createNotification($conn, $sender_id, $user_id, 'friend_accepted', $_SESSION['user']['username'] . ' accepted your friend request');
+            
+            echo json_encode(['status' => 'success', 'message' => 'Friend request accepted']);
+            break;
             
         case 'get_notifications':
             // FIXED: Check if table exists before querying

@@ -7,7 +7,6 @@ if (file_exists('db_connect.php')) {
     
     if (isset($_SESSION['user'])) {
         $user_id_string = $_SESSION['user']['user_id'] ?? '';
-        $user_id = $_SESSION['user']['id'] ?? 0;
         
         // Remove user from all rooms
         if (!empty($user_id_string)) {
@@ -17,7 +16,9 @@ if (file_exists('db_connect.php')) {
                 $stmt->execute();
                 $stmt->close();
             }
-            
+        }
+        // Remove user from all rooms
+        if (!empty($user_id_string)) {
             $stmt = $conn->prepare("DELETE FROM global_users WHERE user_id_string = ?");
             if ($stmt) {
                 $stmt->bind_param("s", $user_id_string);
@@ -25,28 +26,23 @@ if (file_exists('db_connect.php')) {
                 $stmt->close();
             }
         }
-        
-        // Clear remember token from database
-        if ($user_id > 0) {
-            $stmt = $conn->prepare("UPDATE users SET remember_token = NULL WHERE id = ?");
-            if ($stmt) {
-                $stmt->bind_param("i", $user_id);
-                $stmt->execute();
-                $stmt->close();
-            }
-        }
     }
 }
 
-// Clear persistent cookie
-if (isset($_COOKIE['duranu_remember'])) {
-    setcookie('duranu_remember', '', time() - 3600, '/', '', true, true);
+// Preserve firewall session while clearing user data
+$preserve_firewall = $_SESSION['firewall_passed'] ?? false;
+
+// Clear user-specific session data only
+unset($_SESSION['user']);
+unset($_SESSION['room_id']);
+unset($_SESSION['pending_invite']);
+
+// Restore firewall session
+if ($preserve_firewall) {
+    $_SESSION['firewall_passed'] = true;
 }
 
-// Clear all session data
-session_destroy();
-
-// Redirect to firewall
-header("Location: /firewall");
+// Redirect to index page (user can now use guest login)
+header("Location: index.php");
 exit;
 ?>

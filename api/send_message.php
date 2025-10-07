@@ -202,11 +202,6 @@ $room_id = isset($_POST['room_id']) ? (int)$_POST['room_id'] : 0;
 $message = isset($_POST['message']) ? trim($_POST['message']) : '';
 $reply_to_message_id = isset($_POST['reply_to']) ? (int)$_POST['reply_to'] : null;
 
-error_log("=== RP DEBUG START ===");
-error_log("Original message: " . $message);
-error_log("First 4 chars: " . substr($message, 0, 4));
-error_log("Is /me: " . (substr($message, 0, 4) === '/me ' ? 'YES' : 'NO'));
-
 if ($room_id <= 0 || empty($message)) {
     error_log("Missing room_id or message in send_message.php: room_id=$room_id, message=$message");
     echo json_encode(['status' => 'error', 'message' => 'Room ID and message are required']);
@@ -247,17 +242,6 @@ resetInactivityTimer($conn, $room_id, $user_id_string);
 
 error_log("Inserting message: room_id=$room_id, user_id=$user_id, guest_name=$guest_name, avatar=$avatar, user_id_string=$user_id_string, message=$message, reply_to=$reply_to_message_id");
 
-
-
-
-$is_rp_message = false;
-if (substr($message, 0, 4) === '/me ') {
-    $is_rp_message = true;
-    $message = substr($message, 4); // Remove "/me " prefix
-    error_log("RP MESSAGE DETECTED! Message after removal: " . $message);
-} else {
-    error_log("NOT an RP message");
-}
 // Process mentions
 $mentions = processMentions($message, $conn, $room_id);
 $mentionsJson = !empty($mentions) ? json_encode($mentions) : null;
@@ -265,9 +249,6 @@ $mentionsJson = !empty($mentions) ? json_encode($mentions) : null;
 // Apply markdown and mention highlighting
 $sanitized_message = sanitizeMarkup($message);
 $sanitized_message = highlightMentions($sanitized_message, $mentions);
-
-error_log("Is RP message flag: " . ($is_rp_message ? 'TRUE' : 'FALSE'));
-
 
 $color = $_SESSION['user']['color'] ?? 'blue';
 $avatar_hue = (int)($_SESSION['user']['avatar_hue'] ?? 0);
@@ -329,32 +310,6 @@ try {
     }
     
     // Insert the actual message
-    if ($is_rp_message) {
-    error_log("Using RP INSERT with type='rp'");
-    // RP message - include type field
-    $stmt = $conn->prepare("
-        INSERT INTO messages (
-            room_id, user_id, username, guest_name, message, avatar, user_id_string, 
-            color, avatar_hue, avatar_saturation, bubble_hue, bubble_saturation,
-            reply_to_message_id, mentions, type
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ");
-    
-    if (!$stmt) {
-        throw new Exception("Prepare failed: " . $conn->error);
-    }
-    
-    $rp_type = 'rp';
-    error_log("Binding with type = 'rp'");
-    $stmt->bind_param(
-        "iissssssiiiiiss", 
-        $room_id, $user_id, $username, $guest_name, $sanitized_message, $avatar, $user_id_string, 
-        $color, $avatar_hue, $avatar_saturation, $bubble_hue, $bubble_saturation,
-        $reply_to_message_id, $mentionsJson, $rp_type
-    );
-} else {
-    error_log("Using REGULAR INSERT without type field");
-    // Regular message
     $stmt = $conn->prepare("
         INSERT INTO messages (
             room_id, user_id, username, guest_name, message, avatar, user_id_string, 
@@ -373,7 +328,6 @@ try {
         $color, $avatar_hue, $avatar_saturation, $bubble_hue, $bubble_saturation,
         $reply_to_message_id, $mentionsJson
     );
-}
     
     if (!$stmt->execute()) {
         throw new Exception("Execute failed: " . $stmt->error);
