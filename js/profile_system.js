@@ -162,68 +162,59 @@ function displayProfilePopup(user, avatarElement) {
     }, 100);
 }
 
-function acceptFriendFromProfile(userId) {
-    if (!confirm('Accept this friend request?')) return;
+function acceptFriend(friendId) {
+    // Disable button to prevent double-clicks
+    const acceptBtn = $(`button[onclick="acceptFriend(${friendId})"]`);
+    const originalHtml = acceptBtn.html();
+    acceptBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
     
-    // Show loading state
-    showNotification('Processing friend request...', 'info');
-    
-    $.ajax({
+    managedAjax({
         url: 'api/friends.php',
-        method: 'GET', 
-        data: { action: 'get' },
+        method: 'POST',
+        data: {
+            action: 'accept',
+            friend_id: friendId
+        },
         dataType: 'json',
         timeout: 10000,
         success: function(response) {
             if (response.status === 'success') {
-                const pendingRequest = response.friends.find(friend => 
-                    friend.friend_user_id == userId && 
-                    friend.status === 'pending' && 
-                    friend.request_type === 'received'
-                );
+                showNotification('Friend request accepted!', 'success');
                 
-                if (pendingRequest) {
-                    $.ajax({
-                        url: 'api/friends.php',
-                        method: 'POST',
-                        data: {
-                            action: 'accept',
-                            friend_id: pendingRequest.id
-                        },
-                        dataType: 'json',
-                        timeout: 10000,
-                        success: function(acceptResponse) {
-                            if (acceptResponse.status === 'success') {
-                                showNotification('Friend request accepted!', 'success');
-                                closeProfilePopup();
-                                
-                                // Update UI
-                                if (typeof clearFriendshipCache === 'function') {
-                                    clearFriendshipCache();
-                                }
-                                if (typeof loadUsers === 'function') {
-                                    loadUsers();
-                                }
-                                if (typeof loadOnlineUsers === 'function') {
-                                    loadOnlineUsers();
-                                }
-                            } else {
-                                showNotification('Error: ' + (acceptResponse.message || 'Unknown error'), 'error');
-                            }
-                        },
-                        error: function(xhr, status, error) {
-                            showNotification('Error accepting friend request', 'error');
-                        }
-                    });
-                } else {
-                    showNotification('Friend request not found', 'error');
+                if (typeof clearFriendshipCache === 'function') {
+                    clearFriendshipCache();
+                }
+                if (typeof loadUsers === 'function') {
+                    loadUsers();
+                }
+                
+                // Update friends list
+                if (friends && Array.isArray(friends)) {
+                    updateFriendsPanel();
                 }
             } else {
-                showNotification('Error loading friend requests', 'error');
+                showNotification('Error: ' + (response.message || 'Unknown error'), 'error');
+                acceptBtn.prop('disabled', false).html(originalHtml);
             }
         },
         error: function(xhr, status, error) {
-            showNotification('Error loading friend data', 'error');
+            console.error('Accept friend error:', {xhr, status, error});
+            let errorMsg = 'Network error occurred';
+            
+            if (status === 'timeout') {
+                errorMsg = 'Request timed out. Please try again.';
+            } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            }
+            
+            showNotification('Error: ' + errorMsg, 'error');
+            acceptBtn.prop('disabled', false).html(originalHtml);
+        },
+        complete: function() {
+            // Always re-enable button after request completes
+            setTimeout(() => {
+                acceptBtn.prop('disabled', false).html(originalHtml);
+            }, 100);
         }
     });
 }
@@ -473,7 +464,7 @@ function displayProfileEditor(user) {
                 <input type="range" 
                        class="form-range avatar-slider" 
                        id="avatarSatSlider" 
-                       min="0" 
+                       min="1" 
                        max="200" 
                        value="${currentUser.avatar_saturation || 100}"
                        oninput="updateAvatarSaturation(this.value)"
@@ -612,7 +603,7 @@ function displayProfileEditor(user) {
                                                     <input type="range" 
                                                            class="form-range bubble-slider" 
                                                            id="bubbleSatSlider" 
-                                                           min="0" 
+                                                           min="1" 
                                                            max="200" 
                                                            value="${currentUser.bubble_saturation || 100}"
                                                            oninput="updateBubbleSaturation(this.value)"
@@ -789,6 +780,7 @@ function loadAvatarsForEditor(isRegistered) {
         dataType: 'json',
         success: function(response) {
             displayAvatarsInEditor(response, isRegistered);
+          //  loadPurchasedAvatarsAndColors();
         },
         error: function() {
             $('#avatarGridContainer').html(`
@@ -838,6 +830,12 @@ function displayAvatarsInEditor(avatarData, isRegistered) {
     }
     
     $('#avatarGridContainer').html(html);
+    
+    // Load and display purchased avatars AFTER the regular avatars
+    if (isRegistered) {
+        loadPurchasedAvatarsAndColors();
+    }
+    
     updateAvatarStats();
     
     const currentAvatarPath = currentUser.avatar || 'default_avatar.jpg';
@@ -920,9 +918,9 @@ function loadColorsForEditor() {
         { name: 'spooky6', displayName: 'Spooky' },
     ];
     
-    let html = '';
+     let html = '';
     colors.forEach(color => {
-        const isSelected = currentUser.color === color.name ? 'selected' : '';
+        const isSelected = (selectedColor || currentUser.color) === color.name ? 'selected' : '';
         html += `
             <div class="color-option color-${color.name} ${isSelected}" 
                  data-color="${color.name}" 
@@ -941,6 +939,12 @@ function loadColorsForEditor() {
     });
     
     $('#colorGrid').html(html);
+    
+    // Load and display purchased colors AFTER the default colors
+    if (currentUser.type === 'user') {
+      //  loadPurchasedAvatarsAndColors();
+    }
+    
     updateColorPreview();
 }
 
@@ -982,8 +986,8 @@ function updateColorPreview() {
     $('#colorPreviewCircle').removeClass().addClass(`color-${color}`);
     $('#colorPreviewName').text(color.charAt(0).toUpperCase() + color.slice(1));
     
-    const bubbleHue = selectedBubbleHue !== null ? selectedBubbleHue : (currentUser.bubble_hue || 0);
-    const bubbleSat = selectedBubbleSaturation !== null ? selectedBubbleSaturation : (currentUser.bubble_saturation || 100);
+    const bubbleHue = selectedBubbleHue !== null ? selectedBubbleHue : (currentUser.bubble_hue ?? 0);
+    const bubbleSat = selectedBubbleSaturation !== null ? selectedBubbleSaturation : (currentUser.bubble_saturation ?? 100);
     
     $('#sampleMessageBubble').removeClass().addClass(`mini-message-bubble user-color-${color}`)
         .css('filter', `hue-rotate(${bubbleHue}deg) saturate(${bubbleSat}%)`);
@@ -1042,22 +1046,22 @@ function saveProfileChanges() {
         hasChanges = true;
     }
     
-    if (selectedAvatarHue !== null && selectedAvatarHue !== (currentUser.avatar_hue || 0)) {
+    if (selectedAvatarHue !== null && selectedAvatarHue !== (currentUser.avatar_hue ?? 0)) {
         changes.avatar_hue = selectedAvatarHue;
         hasChanges = true;
     }
     
-    if (selectedAvatarSaturation !== null && selectedAvatarSaturation !== (currentUser.avatar_saturation || 100)) {
+    if (selectedAvatarSaturation !== null && selectedAvatarSaturation !== (currentUser.avatar_saturation ?? 100)) {
         changes.avatar_saturation = selectedAvatarSaturation;
         hasChanges = true;
     }
     
-    if (selectedBubbleHue !== null && selectedBubbleHue !== (currentUser.bubble_hue || 0)) {
+    if (selectedBubbleHue !== null && selectedBubbleHue !== (currentUser.bubble_hue ?? 0)) {
         changes.bubble_hue = selectedBubbleHue;
         hasChanges = true;
     }
     
-    if (selectedBubbleSaturation !== null && selectedBubbleSaturation !== (currentUser.bubble_saturation || 100)) {
+    if (selectedBubbleSaturation !== null && selectedBubbleSaturation !== (currentUser.bubble_saturation ?? 100)) {
         changes.bubble_saturation = selectedBubbleSaturation;
         hasChanges = true;
     }
@@ -1348,8 +1352,8 @@ function updateBubbleSaturation(value) {
 }
 
 function updateAvatarPreview() {
-    const hue = selectedAvatarHue !== null ? selectedAvatarHue : (currentUser.avatar_hue || 0);
-    const saturation = selectedAvatarSaturation !== null ? selectedAvatarSaturation : (currentUser.avatar_saturation || 100);
+    const hue = selectedAvatarHue !== null ? selectedAvatarHue : (currentUser.avatar_hue ?? 0);
+    const saturation = selectedAvatarSaturation !== null ? selectedAvatarSaturation : (currentUser.avatar_saturation ?? 100);
     
     const filterValue = `hue-rotate(${hue}deg) saturate(${saturation}%)`;
     $('#selectedAvatarPreview').css('filter', filterValue);
@@ -1358,8 +1362,8 @@ function updateAvatarPreview() {
 }
 
 function updateBubblePreview() {
-    const hue = selectedBubbleHue !== null ? selectedBubbleHue : (currentUser.bubble_hue || 0);
-    const saturation = selectedBubbleSaturation !== null ? selectedBubbleSaturation : (currentUser.bubble_saturation || 100);
+    const hue = selectedBubbleHue !== null ? selectedBubbleHue : (currentUser.bubble_hue ?? 0);
+    const saturation = selectedBubbleSaturation !== null ? selectedBubbleSaturation : (currentUser.bubble_saturation ?? 100);
     
     const filterValue = `hue-rotate(${hue}deg) saturate(${saturation}%)`;
     $('#sampleMessageBubble').css('filter', filterValue);
@@ -1571,4 +1575,108 @@ function copyToClipboard(text) {
             btn.innerHTML = originalHtml;
         }, 1000);
     });
+}
+
+// Load purchased avatars and colors
+function loadPurchasedAvatarsAndColors() {
+    if (currentUser.type !== 'user') return;
+    
+    $.ajax({
+        url: 'api/inventory.php',
+        method: 'GET',
+        data: { action: 'get_purchased_avatars_colors' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                // Store purchased items
+                window.purchasedAvatars = response.avatars || [];
+                window.purchasedColors = response.colors || [];
+                
+                // Reload the editor displays if they're open
+                if ($('#avatarGridContainer').length > 0) {
+                    displayPurchasedAvatarsInEditor();
+                }
+                if ($('#colorGrid').length > 0) {
+                    displayPurchasedColorsInEditor();
+                }
+            }
+        },
+        error: function() {
+            console.error('Failed to load purchased avatars and colors');
+        }
+    });
+}
+
+// Display purchased avatars at the top of avatar grid
+function displayPurchasedAvatarsInEditor() {
+    const purchasedAvatars = window.purchasedAvatars || [];
+    
+    if (purchasedAvatars.length === 0) {
+        return; // No purchased section if empty
+    }
+    
+    let html = `
+        <div class="avatar-section mb-4" data-folder="purchased">
+            <h6 style="color: #f39c12; font-weight: 600; margin-bottom: 15px; padding: 8px 12px; background: #333; border-radius: 6px;">
+                <i class="fas fa-shopping-bag"></i> Purchased 
+                <span class="badge bg-warning text-dark ms-2">${purchasedAvatars.length}</span>
+            </h6>
+            <div class="d-flex flex-wrap justify-content-center">
+    `;
+    
+    purchasedAvatars.forEach(avatar => {
+        html += `
+            <img src="images/${avatar.icon}" 
+                 class="editor-avatar" 
+                 data-avatar="${avatar.icon}"
+                 onclick="selectAvatarInEditor('${avatar.icon}')"
+                 style="width: 60px; height: 60px; margin: 3px; border: 2px solid #555; border-radius: 6px; cursor: pointer; transition: all 0.2s ease;"
+                 onmouseover="this.style.borderColor='#007bff'; this.style.transform='scale(1.05)'"
+                 onmouseout="this.style.borderColor='#555'; this.style.transform='scale(1)'"
+                 alt="${avatar.name}">
+        `;
+    });
+    
+    html += `</div></div>`;
+    
+    // Prepend to avatar grid container
+    $('#avatarGridContainer').prepend(html);
+}
+
+// Display purchased colors at the top of color grid
+function displayPurchasedColorsInEditor() {
+    const purchasedColors = window.purchasedColors || [];
+    
+    if (purchasedColors.length === 0) {
+        return; // No purchased section if empty
+    }
+    
+    let html = ` 
+    `;
+    
+    purchasedColors.forEach(colorItem => {
+        const colorName = colorItem.icon;
+        const isSelected = (selectedColor || currentUser.color) === colorName;
+        
+        html += `
+            <div class="color-option color-${colorName} ${isSelected ? 'selected' : ''}" 
+                 data-color="${colorName}" 
+                 onclick="selectColorInEditor('${colorName}')"
+                 style="position: relative; width: 70px; height: 70px; border-radius: 8px; border: 3px solid ${isSelected ? '#fff' : 'rgba(255,255,255,0.4)'}; cursor: pointer; display: flex; align-items: center; justify-content: center; background-size: 200% 200%; background-position: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.2s ease;">
+                <div class="color-name" style="background: rgba(0,0,0,0.5); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">
+                    ${colorItem.name}
+                </div>
+                ${isSelected ? `
+                <div class="selected-indicator" style="position: absolute; top: -8px; right: -8px; background: #28a745; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; border: 2px solid #2a2a2a;">
+                    <i class="fas fa-check"></i>
+                </div>
+                ` : ''}
+            </div>
+        `;
+    });
+    
+    html += ``;
+    
+    // Prepend to color grid
+    $('#colorGrid').prepend(html);
 }

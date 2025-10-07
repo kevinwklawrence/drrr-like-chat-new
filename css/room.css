@@ -1015,6 +1015,8 @@
     gap: 8px;
     max-width: calc(100% - 60px);
     box-sizing: border-box;
+    z-index: 100;
+    position: relative;
 }
 
 .message-header-external .message-header-left {
@@ -1231,6 +1233,7 @@
     max-height: 600px;
     overflow: visible; /* FIXED: Changed from auto/hidden to visible */
     background-size: contain;
+    z-index: 100;
 }
 
 .message-bubble::before {
@@ -1844,13 +1847,125 @@
     }
 }
 
-.message-bubble:has(.ghost-hunt-message) {
-    background: linear-gradient(135deg, rgba(255,107,0,0.2), rgba(255,165,0,0.2)) !important;
-    border-color: #ff6b00 !important;
-    animation: ghostPulse 2s ease-in-out infinite;
+/* DO Message (Environmental actions /do) */
+.do-message {
+    text-align: center;
+    margin: 16px 0;
+    padding: 8px 16px;
+    background: rgba(156, 39, 176, 0.1);
+    border-radius: 20px;
+    border: 1px solid rgba(156, 39, 176, 0.2);
+    color: #ab47bc;
+    font-style: italic;
+    font-size: 0.9rem;
 }
 
-@keyframes ghostPulse {
-    0%, 100% { box-shadow: 0 2px 8px rgba(255,107,0,0.3); }
-    50% { box-shadow: 0 2px 20px rgba(255,107,0,0.6); }
+.do-message img {
+    width: 30px !important;
+    height: 30px !important;
+    margin-right: 8px;
+    vertical-align: middle;
+    border-radius: 2px;
 }
+
+/* Flip Message (Coin flip /flip) */
+.flip-message {
+    text-align: center;
+    margin: 16px 0;
+    padding: 8px 16px;
+    background: rgba(255, 152, 0, 0.1);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 152, 0, 0.2);
+    color: #ff9800;
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+.flip-message img {
+    width: 30px !important;
+    height: 30px !important;
+    margin-right: 8px;
+    vertical-align: middle;
+    border-radius: 2px;
+}
+
+.flip-result {
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #ffa726;
+}
+
+/* 8ball Message (Magic 8 ball /8ball) */
+.eightball-message {
+    text-align: center;
+    margin: 16px 0;
+    padding: 8px 16px;
+    background: rgba(63, 81, 181, 0.1);
+    border-radius: 20px;
+    border: 1px solid rgba(63, 81, 181, 0.2);
+    color: #5c6bc0;
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+.eightball-message img {
+    width: 30px !important;
+    height: 30px !important;
+    margin-right: 8px;
+    vertical-align: middle;
+    border-radius: 2px;
+}
+
+.eightball-result {
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #7986cb;
+}
+
+/* NPC Message (NPC dialogue /npc) */
+.npc-message {
+    text-align: center;
+    margin: 16px 0;
+    padding: 8px 16px;
+    background: rgba(0, 188, 212, 0.1);
+    border-radius: 20px;
+    border: 1px solid rgba(0, 188, 212, 0.2);
+    color: #00bcd4;
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+.npc-message img {
+    width: 30px !important;
+    height: 30px !important;
+    margin-right: 8px;
+    vertical-align: middle;
+    border-radius: 2px;
+}
+
+.npc-name {
+    font-weight: bold;
+    color: #26c6da;
+}
+
+/* Narrator Message (Narrator voice /nar - host only) */
+.narrator-message {
+    text-align: center;
+    margin: 16px 0;
+    padding: 12px 20px;
+    background: rgba(255, 193, 7, 0.15);
+    border-radius: 20px;
+    border: 2px solid rgba(255, 193, 7, 0.3);
+    color: #ffc107;
+    font-style: italic;
+    font-size: 1rem;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2);
+}
+
+.narrator-message::before {
+    content: "📖 ";
+    font-size: 1.2em;
+}
+
+/* No avatar or username for narrator messages */

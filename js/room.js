@@ -1632,6 +1632,126 @@ function renderMessage(msg) {
             </div>
         `;
     }
+
+// Handle RP (/me) messages
+if (msg.type === 'rp') {
+    const rpHue = msg.avatar_hue || msg.user_avatar_hue || 0;
+    const rpSat = msg.avatar_saturation || msg.user_avatar_saturation || 100;
+    
+    let rpName = 'Unknown';
+    if (msg.username) {
+        rpName = msg.username;
+    } else if (msg.guest_name) {
+        rpName = msg.guest_name;
+    }
+    
+    return `
+        <div class="rp-message">
+            <img src="images/${avatar}" 
+                 style="filter: hue-rotate(${rpHue}deg) saturate(${rpSat}%);"
+                 alt="${rpName}">
+            <span><strong>${rpName}</strong> ${msg.message}</span>
+        </div>
+    `;
+}
+
+// Handle Roll (/roll) messages
+if (msg.type === 'roll') {
+    const rollHue = msg.avatar_hue || msg.user_avatar_hue || 0;
+    const rollSat = msg.avatar_saturation || msg.user_avatar_saturation || 100;
+    
+    return `
+        <div class="roll-message">
+            <img src="images/${avatar}" 
+                 style="filter: hue-rotate(${rollHue}deg) saturate(${rollSat}%);"
+                 alt="Dice Roll">
+            <span>🎲 <span class="roll-result">${msg.message}</span></span>
+        </div>
+    `;
+}
+
+// Handle DO (/do) messages - Environmental actions
+if (msg.type === 'do') {
+    const doHue = msg.avatar_hue || msg.user_avatar_hue || 0;
+    const doSat = msg.avatar_saturation || msg.user_avatar_saturation || 100;
+    
+    let doName = 'Unknown';
+    if (msg.username) {
+        doName = msg.username;
+    } else if (msg.guest_name) {
+        doName = msg.guest_name;
+    }
+    
+    return `
+        <div class="do-message">
+            <img src="images/${avatar}" 
+                 style="filter: hue-rotate(${doHue}deg) saturate(${doSat}%);"
+                 alt="${doName}">
+            <span>${msg.message}</span>
+        </div>
+    `;
+}
+
+// Handle Flip (/flip) messages - Coin flip
+if (msg.type === 'flip') {
+    const flipHue = msg.avatar_hue || msg.user_avatar_hue || 0;
+    const flipSat = msg.avatar_saturation || msg.user_avatar_saturation || 100;
+    
+    return `
+        <div class="flip-message">
+            <img src="images/${avatar}" 
+                 style="filter: hue-rotate(${flipHue}deg) saturate(${flipSat}%);"
+                 alt="Coin Flip">
+            <span>🪙 <span class="flip-result">${msg.message}</span></span>
+        </div>
+    `;
+}
+
+// Handle 8ball (/8ball) messages - Magic 8 ball
+if (msg.type === 'eightball') {
+    const eightballHue = msg.avatar_hue || msg.user_avatar_hue || 0;
+    const eightballSat = msg.avatar_saturation || msg.user_avatar_saturation || 100;
+    
+    return `
+        <div class="eightball-message">
+            <img src="images/${avatar}" 
+                 style="filter: hue-rotate(${eightballHue}deg) saturate(${eightballSat}%);"
+                 alt="Magic 8 Ball">
+            <span><span class="eightball-result">${msg.message}</span></span>
+        </div>
+    `;
+}
+
+// Handle NPC (/npc) messages - NPC dialogue
+if (msg.type === 'npc') {
+    const npcHue = msg.avatar_hue || msg.user_avatar_hue || 0;
+    const npcSat = msg.avatar_saturation || msg.user_avatar_saturation || 100;
+    
+    let npcController = 'Unknown';
+    if (msg.username) {
+        npcController = msg.username;
+    } else if (msg.guest_name) {
+        npcController = msg.guest_name;
+    }
+    
+    return `
+        <div class="npc-message">
+            <img src="images/${avatar}" 
+                 style="filter: hue-rotate(${npcHue}deg) saturate(${npcSat}%);"
+                 alt="${npcController}">
+            <span>${msg.message}</span>
+        </div>
+    `;
+}
+
+// Handle Narrator (/nar) messages - Narrator voice (no avatar/name)
+if (msg.type === 'narrator') {
+    return `
+        <div class="narrator-message">
+            <span>${msg.message}</span>
+        </div>
+    `;
+}
     
     const userColorClass = getUserColor(msg);
     const timestamp = (() => {
@@ -1677,9 +1797,7 @@ function renderMessage(msg) {
     if (msg.is_host) {
         badges += '<span class="user-badge badge-host"><i class="fas fa-crown"></i> Host</span>';
     }
-    if (msg.user_id && !msg.is_admin && !msg.is_moderator) {
-        badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle"></i> Verified</span>';
-    } else if (!msg.user_id) {
+     else if (!msg.user_id) {
         badges += '<span class="user-badge badge-guest"><i class="fas fa-user"></i> Guest</span>';
     }
 
@@ -1881,9 +1999,7 @@ function renderUser(user) {
         badges += '<span class="user-badge badge-host"><i class="fas fa-crown" title="Host"></i></span>';
     }
 
-    if (isRegisteredUser && !user.is_admin && !user.is_moderator) {
-        badges += '<span class="user-badge badge-verified"><i class="fas fa-check-circle" title="Member"></i></span>';
-    } else if (!isRegisteredUser) {
+     else if (!isRegisteredUser) {
         badges += '<span class="user-badge badge-guest"><i class="fas fa-user" title="Guest"></i></span>';
     }
 
@@ -4509,25 +4625,25 @@ function acceptFriend(friendId) {
             friend_id: friendId
         },
         dataType: 'json',
-        timeout: 10000, // 10 second timeout
+        timeout: 10000,
         success: function(response) {
             if (response.status === 'success') {
-    showNotification('Friend request accepted!', 'success');
-    // SSE will automatically update friends - no need to call loadFriends()
-    
-    if (typeof clearFriendshipCache === 'function') {
-        clearFriendshipCache();
-    }
-    if (typeof loadUsers === 'function') {
-        loadUsers();
-    }
-    
-    // Just update the UI with current SSE data
-    if (friends && Array.isArray(friends)) {
-        updateFriendsPanel();
-    }
-} else {
+                showNotification('Friend request accepted!', 'success');
+                
+                if (typeof clearFriendshipCache === 'function') {
+                    clearFriendshipCache();
+                }
+                if (typeof loadUsers === 'function') {
+                    loadUsers();
+                }
+                
+                // Update friends list
+                if (friends && Array.isArray(friends)) {
+                    updateFriendsPanel();
+                }
+            } else {
                 showNotification('Error: ' + (response.message || 'Unknown error'), 'error');
+                acceptBtn.prop('disabled', false).html(originalHtml);
             }
         },
         error: function(xhr, status, error) {
@@ -4540,11 +4656,14 @@ function acceptFriend(friendId) {
                 errorMsg = xhr.responseJSON.message;
             }
             
-            showNotification('Error accepting friend request: ' + errorMsg, 'error');
+            showNotification('Error: ' + errorMsg, 'error');
+            acceptBtn.prop('disabled', false).html(originalHtml);
         },
         complete: function() {
-            // Re-enable button
-            acceptBtn.prop('disabled', false).html(originalHtml);
+            // Always re-enable button after request completes
+            setTimeout(() => {
+                acceptBtn.prop('disabled', false).html(originalHtml);
+            }, 100);
         }
     });
 }
@@ -5744,7 +5863,7 @@ function updateNavigationForHostChange(isNowHost) {
 // Add this to your handleUsersResponse function or loadUsers success callback:
 // Check if current user's host status changed
 function checkHostStatusChange(users) {
-    const currentUser = users.find(u => u.user_id_string === currentUserIdString);
+    /*const currentUser = users.find(u => u.user_id_string === currentUserIdString);
     if (currentUser) {
         const wasHost = window.isHost;
         const isNowHost = currentUser.is_host === 1 || currentUser.is_host === true;
@@ -5760,5 +5879,5 @@ function checkHostStatusChange(users) {
                 console.log('You are now the host!');
             }
         }
-    }
+    }*/
 }

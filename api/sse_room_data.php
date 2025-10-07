@@ -1,5 +1,5 @@
 <?php
-// api/sse_room_data.php - Event-driven SSE
+// api/sse_room_data_optimized.php - COMPLETE performance optimized SSE
 session_start();
 
 if (!isset($_SESSION['user']) || !isset($_SESSION['room_id'])) {
@@ -27,9 +27,7 @@ require_once __DIR__ . '/../config/inactivity_config.php';
 
 $message_limit = isset($_GET['message_limit']) ? min(max((int)$_GET['message_limit'], 1), 100) : 50;
 $check_youtube = isset($_GET['check_youtube']) ? (bool)$_GET['check_youtube'] : false;
-
 $last_event_id = isset($_GET['last_event_id']) ? (int)$_GET['last_event_id'] : 0;
-
 
 echo "data: " . json_encode([
     'type' => 'connected', 
@@ -38,22 +36,23 @@ echo "data: " . json_encode([
 ]) . "\n\n";
 flush();
 
-$max_duration = 55; // CHANGE FROM 50 to 25 seconds
+$max_duration = 55;
 $start_time = time();
-$last_event_id = 0;
 $iteration = 0;
-$max_iterations = 110; // CHANGE FROM 60 to 50
+$max_iterations = 110;
+$consecutive_empty = 0;
 
 while ((time() - $start_time) < $max_duration && connection_status() == CONNECTION_NORMAL) {
     $has_events = false;
     
     try {
-        // Check for new events since last_event_id (from client)
+        // OPTIMIZED: Indexed event lookup with LIMIT
         $event_stmt = $conn->prepare("
             SELECT id, event_type, event_data, created_at
             FROM message_events 
             WHERE id > ? AND (room_id = ? OR room_id = 0)
             ORDER BY id ASC
+            LIMIT 50
         ");
         $event_stmt->bind_param("ii", $last_event_id, $room_id);
         $event_stmt->execute();
@@ -68,230 +67,168 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
         }
         $event_stmt->close();
         
-        // If we have events, fetch and send the updated data
         if (!empty($events)) {
             $has_events = true;
+            $consecutive_empty = 0;
             $all_data = [
                 'type' => 'room_data', 
                 'timestamp' => time(),
-                'last_event_id' => $new_last_event_id // Send back to client
+                'last_event_id' => $new_last_event_id
             ];
             
-            // Update for next iteration
             $last_event_id = $new_last_event_id;
-            
-            // Determine what data needs to be fetched based on event types
             $event_types = array_unique(array_column($events, 'event_type'));
 
-            // Track which sound events to send
-// Track which sound events to send
-$sound_events = [];
+            // Sound events
+            $sound_events = [];
+            $new_events_for_sounds = array_filter($events, function($event) use ($start_time) {
+                return isset($event['created_at']) && strtotime($event['created_at']) >= $start_time;
+            });
 
-// Only process events created AFTER this connection started
-$new_events_for_sounds = array_filter($events, function($event) use ($start_time) {
-    if (isset($event['created_at'])) {
-        $event_time = strtotime($event['created_at']);
-        return $event_time >= $start_time;
-    }
-    return false;
-});
-
-// Only send sounds if we have genuinely new events
-if (!empty($new_events_for_sounds)) {
-    $new_event_types = array_unique(array_column($new_events_for_sounds, 'event_type'));
-    
-    // Detect system messages
-    $has_system_message = false;
-    if (in_array('message', $new_event_types)) {
-        foreach ($new_events_for_sounds as $event) {
-            if ($event['event_type'] === 'message') {
-                $event_data = json_decode($event['event_data'], true);
-                if (isset($event_data['type']) && 
-                    ($event_data['type'] === 'system' || $event_data['type'] === 'announcement')) {
-                    $has_system_message = true;
-                    break;
+            if (!empty($new_events_for_sounds)) {
+                $new_event_types = array_unique(array_column($new_events_for_sounds, 'event_type'));
+                
+                if (in_array('message', $new_event_types)) {
+                    $has_system = false;
+                    foreach ($new_events_for_sounds as $event) {
+                        if ($event['event_type'] === 'message') {
+                            $event_data = json_decode($event['event_data'], true);
+                            if (isset($event_data['type']) && in_array($event_data['type'], ['system', 'announcement'])) {
+                                $has_system = true;
+                                break;
+                            }
+                        }
+                    }
+                    $sound_events[$has_system ? 'system_message' : 'new_message'] = true;
                 }
+                
+                if (in_array('mention', $new_event_types)) $sound_events['new_mention'] = true;
+                if (in_array('whisper', $new_event_types)) $sound_events['new_whisper'] = true;
+                if (in_array('private_message', $new_event_types)) $sound_events['new_private_message'] = true;
             }
-        }
-        
-        if ($has_system_message) {
-            $sound_events['system_message'] = true;
-        } else {
-            $sound_events['new_message'] = true;
-        }
-    }
-    
-    if (in_array('mention', $new_event_types)) {
-        $sound_events['new_mention'] = true;
-    }
-    
-    if (in_array('whisper', $new_event_types)) {
-        $sound_events['new_whisper'] = true;
-    }
-    
-    if (in_array('private_message', $new_event_types)) {
-        $sound_events['new_private_message'] = true;
-    }
-}
 
-if (!empty($sound_events)) {
-    $all_data['sound_events'] = $sound_events;
-}
+            if (!empty($sound_events)) $all_data['sound_events'] = $sound_events;
             
-            // MESSAGES
+            // 1. MESSAGES - OPTIMIZED
             if (in_array('message', $event_types)) {
-    $message_limit = 100;
-    $messages_stmt = $conn->prepare("
-    SELECT m.*,
-           u.username,
-           u.is_admin,
-           u.is_moderator,
-           cu.ip_address,
-           cu.is_host,
-           cu.guest_avatar,
-           (SELECT JSON_ARRAYAGG(
-               JSON_OBJECT(
-                   'name', si.name,
-                   'rarity', si.rarity,
-                   'icon', si.icon
-               )
-           )
-           FROM user_inventory ui
-           JOIN shop_items si ON ui.item_id = si.item_id
-           WHERE ui.user_id = m.user_id 
-           AND ui.is_equipped = 1 
-           AND si.type = 'title'
-           ORDER BY FIELD(si.rarity, 'legendary', 'strange', 'rare', 'common')
-           LIMIT 5) as equipped_titles,
-           rm.id as reply_original_id,
-           rm.message as reply_original_message,
-           rm.user_id_string as reply_original_user_id_string,
-           rm.guest_name as reply_original_guest_name,
-           rm.avatar as reply_original_avatar,
-           rm.avatar_hue as reply_original_avatar_hue,
-           rm.avatar_saturation as reply_original_avatar_saturation,
-           rm.bubble_hue as reply_original_bubble_hue,
-           rm.bubble_saturation as reply_original_bubble_saturation,
-           rm.color as reply_original_color,
-           ru.username as reply_original_registered_username,
-           ru.avatar as reply_original_registered_avatar,
-           rcu.username as reply_original_chatroom_username
-    FROM messages m
-    LEFT JOIN users u ON m.user_id = u.id
-    LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id 
-        AND m.user_id_string = cu.user_id_string
-    LEFT JOIN messages rm ON m.reply_to_message_id = rm.id
-    LEFT JOIN users ru ON rm.user_id = ru.id
-    LEFT JOIN chatroom_users rcu ON rm.room_id = rcu.room_id 
-        AND (
-            (rm.user_id IS NOT NULL AND rm.user_id = rcu.user_id) OR 
-            (rm.user_id IS NULL AND rm.guest_name = rcu.guest_name) OR
-            (rm.user_id IS NULL AND rm.user_id_string = rcu.user_id_string)
-        )
-    WHERE m.room_id = ?
-    GROUP BY m.id
-    ORDER BY m.id DESC 
-    LIMIT ?
-");
-    $messages_stmt->bind_param("ii", $room_id, $message_limit);
-    $messages_stmt->execute();
-    $messages_result = $messages_stmt->get_result();
-    $messages = [];
-    while ($msg = $messages_result->fetch_assoc()) {
-        if (empty($msg['id']) || !isset($msg['message'])) {
-        error_log("SSE: Skipping invalid message");
-        continue;
-    }
-    
-    // Normalize keys to lowercase
-    $msg = array_change_key_case($msg, CASE_LOWER);
-        
-        // Parse equipped titles
-        $equipped_titles = [];
-        if (!empty($msg['equipped_titles'])) {
-            $titles_json = json_decode($msg['equipped_titles'], true);
-            if (is_array($titles_json)) {
-                $equipped_titles = $titles_json;
+                $messages_stmt = $conn->prepare("
+                    SELECT m.*, u.username, u.is_admin, u.is_moderator,
+                           cu.ip_address, cu.is_host, cu.guest_avatar,
+                           rm.id as reply_original_id, rm.message as reply_original_message,
+                           rm.user_id_string as reply_original_user_id_string,
+                           rm.guest_name as reply_original_guest_name,
+                           rm.avatar as reply_original_avatar, rm.avatar_hue as reply_original_avatar_hue,
+                           rm.avatar_saturation as reply_original_avatar_saturation,
+                           rm.bubble_hue as reply_original_bubble_hue,
+                           rm.bubble_saturation as reply_original_bubble_saturation,
+                           rm.color as reply_original_color,
+                           ru.username as reply_original_registered_username,
+                           ru.avatar as reply_original_registered_avatar,
+                           rcu.username as reply_original_chatroom_username
+                    FROM messages m
+                    LEFT JOIN users u ON m.user_id = u.id
+                    LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id AND m.user_id_string = cu.user_id_string
+                    LEFT JOIN messages rm ON m.reply_to_message_id = rm.id
+                    LEFT JOIN users ru ON rm.user_id = ru.id
+                    LEFT JOIN chatroom_users rcu ON rm.room_id = rcu.room_id 
+                        AND ((rm.user_id IS NOT NULL AND rm.user_id = rcu.user_id) OR 
+                             (rm.user_id IS NULL AND rm.guest_name = rcu.guest_name) OR
+                             (rm.user_id IS NULL AND rm.user_id_string = rcu.user_id_string))
+                    WHERE m.room_id = ?
+                    GROUP BY m.id
+                    ORDER BY m.id DESC 
+                    LIMIT ?
+                ");
+                $messages_stmt->bind_param("ii", $room_id, $message_limit);
+                $messages_stmt->execute();
+                $messages_result = $messages_stmt->get_result();
+                
+                $messages = [];
+                while ($msg = $messages_result->fetch_assoc()) {
+                    if (empty($msg['id']) || !isset($msg['message'])) continue;
+                    
+                    $msg = array_change_key_case($msg, CASE_LOWER);
+                    
+                    // OPTIMIZED: Fetch titles separately
+                    if ($msg['user_id']) {
+                        $titles_stmt = $conn->prepare("
+                            SELECT si.name, si.rarity, si.icon
+                            FROM user_inventory ui
+                            JOIN shop_items si ON ui.item_id = si.item_id
+                            WHERE ui.user_id = ? AND ui.is_equipped = 1 AND si.type = 'title'
+                            ORDER BY FIELD(si.rarity, 'legendary', 'strange', 'rare', 'common')
+                            LIMIT 5
+                        ");
+                        $titles_stmt->bind_param("i", $msg['user_id']);
+                        $titles_stmt->execute();
+                        $titles_result = $titles_stmt->get_result();
+                        
+                        $equipped_titles = [];
+                        while ($title = $titles_result->fetch_assoc()) {
+                            $equipped_titles[] = $title;
+                        }
+                        $titles_stmt->close();
+                        $msg['equipped_titles'] = $equipped_titles;
+                    } else {
+                        $msg['equipped_titles'] = [];
+                    }
+                    
+                    $msg['ip_address'] = $msg['ip_address'] ?? null;
+                    $messages[] = $msg;
+                }
+                $messages_stmt->close();
+                $all_data['messages'] = ['status' => 'success', 'messages' => array_reverse($messages)];
             }
-        }
-        $msg['equipped_titles'] = $equipped_titles;
-        
-        // Ensure ip_address has a value (even if NULL)
-        $msg['ip_address'] = $msg['ip_address'] ?? null;
-        
-        $messages[] = $msg;
-    }
-    $messages_stmt->close();
-    $all_data['messages'] = ['status' => 'success', 'messages' => array_reverse($messages)];
-}
             
-            // USERS (send with every event)
+            // 2. USERS
             $users_stmt = $conn->prepare("
-    SELECT cu.*,
-           u.username as registered_username,
-           u.avatar as registered_avatar,
-           u.is_admin,
-           u.is_moderator,
-           (SELECT JSON_ARRAYAGG(
-               JSON_OBJECT(
-                   'name', si.name,
-                   'rarity', si.rarity,
-                   'icon', si.icon
-               )
-           )
-           FROM user_inventory ui
-           JOIN shop_items si ON ui.item_id = si.item_id
-           WHERE ui.user_id = cu.user_id 
-           AND ui.is_equipped = 1 
-           AND si.type = 'title'
-           ORDER BY FIELD(si.rarity, 'legendary', 'strange', 'rare', 'common')
-           LIMIT 5) as equipped_titles
-    FROM chatroom_users cu
-    LEFT JOIN users u ON cu.user_id = u.id
-    WHERE cu.room_id = ?
-    ORDER BY cu.is_host DESC, cu.last_activity DESC
-");
-$users_stmt->bind_param("i", $room_id);
-$users_stmt->execute();
-$users_result = $users_stmt->get_result();
-$users = [];
-while ($u = $users_result->fetch_assoc()) {
-    // Parse equipped titles
-    $equipped_titles = [];
-    if (!empty($u['equipped_titles'])) {
-        $titles_json = json_decode($u['equipped_titles'], true);
-        if (is_array($titles_json)) {
-            $equipped_titles = $titles_json;
-        }
-    }
-    $u['equipped_titles'] = $equipped_titles;
-    $users[] = $u;
-}
-$users_stmt->close();
-$all_data['users'] = $users;
+                SELECT cu.user_id, cu.user_id_string, cu.guest_name, cu.avatar as guest_avatar, 
+                       cu.is_host, cu.last_activity, cu.is_afk, cu.manual_afk, cu.afk_since, 
+                       cu.username, cu.avatar_hue, cu.avatar_saturation, cu.color,
+                       u.username as registered_username, u.avatar as registered_avatar, 
+                       u.is_admin, u.is_moderator
+                FROM chatroom_users cu 
+                LEFT JOIN users u ON cu.user_id = u.id 
+                WHERE cu.room_id = ?
+            ");
+            $users_stmt->bind_param("i", $room_id);
+            $users_stmt->execute();
+            $users_result = $users_stmt->get_result();
             
-            // MENTIONS
+            $users = [];
+            while ($user = $users_result->fetch_assoc()) {
+                $users[] = $user;
+            }
+            $users_stmt->close();
+            $all_data['users'] = ['status' => 'success', 'users' => $users];
+            
+            // 3. MENTIONS
             if (in_array('mention', $event_types)) {
                 $mentions_stmt = $conn->prepare("
-    SELECT um.*, m.message, UNIX_TIMESTAMP(m.timestamp) * 1000 as timestamp, m.user_id_string as sender_user_id_string,
-           u.username as sender_username, cu.guest_name as sender_guest_name
-    FROM user_mentions um
-    JOIN messages m ON um.message_id = m.id
-    LEFT JOIN users u ON m.user_id = u.id
-    LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id AND m.user_id_string = cu.user_id_string
-    WHERE um.room_id = ? AND um.mentioned_user_id_string = ? AND um.is_read = 0
-    ORDER BY um.created_at DESC
-");
+                    SELECT um.*, m.message, UNIX_TIMESTAMP(m.timestamp) * 1000 as timestamp, 
+                           m.user_id_string as sender_user_id_string,
+                           u.username as sender_username, cu.guest_name as sender_guest_name
+                    FROM user_mentions um
+                    JOIN messages m ON um.message_id = m.id
+                    LEFT JOIN users u ON m.user_id = u.id
+                    LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id AND m.user_id_string = cu.user_id_string
+                    WHERE um.room_id = ? AND um.mentioned_user_id_string = ? AND um.is_read = 0
+                    ORDER BY um.created_at DESC
+                    LIMIT 10
+                ");
                 $mentions_stmt->bind_param("is", $room_id, $user_id_string);
                 $mentions_stmt->execute();
                 $mentions_result = $mentions_stmt->get_result();
+                
                 $mentions = [];
-                while ($mention = $mentions_result->fetch_assoc()) { $mentions[] = $mention; }
+                while ($mention = $mentions_result->fetch_assoc()) {
+                    $mentions[] = $mention;
+                }
                 $mentions_stmt->close();
                 $all_data['mentions'] = ['status' => 'success', 'mentions' => $mentions];
             }
             
-            // WHISPERS
+            // 4. WHISPERS
             if (in_array('whisper', $event_types)) {
                 $whisper_stmt = $conn->prepare("
                     SELECT DISTINCT 
@@ -307,7 +244,11 @@ $all_data['users'] = $users;
                 while ($row = $whisper_result->fetch_assoc()) {
                     $other_user_id = $row['other_user_id_string'];
                     
-                    $user_stmt = $conn->prepare("SELECT username, guest_name FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");
+                    $user_stmt = $conn->prepare("
+                        SELECT username, guest_name 
+                        FROM chatroom_users 
+                        WHERE room_id = ? AND user_id_string = ?
+                    ");
                     $user_stmt->bind_param("is", $room_id, $other_user_id);
                     $user_stmt->execute();
                     $user_result = $user_stmt->get_result();
@@ -338,73 +279,74 @@ $all_data['users'] = $users;
                 $all_data['whispers'] = ['status' => 'success', 'conversations' => $whispers];
             }
             
-            // PRIVATE MESSAGES
-if (in_array('private_message', $event_types) && $user_id) {
-    $pm_stmt = $conn->prepare("
-        SELECT DISTINCT 
-            CASE WHEN sender_id = ? THEN recipient_id ELSE sender_id END as other_user_id
-        FROM private_messages 
-        WHERE sender_id = ? OR recipient_id = ?
-    ");
-    $pm_stmt->bind_param("iii", $user_id, $user_id, $user_id);
-    $pm_stmt->execute();
-    $pm_result = $pm_stmt->get_result();
-    
-    $pms = [];
-    while ($row = $pm_result->fetch_assoc()) {
-        $other_user_id = $row['other_user_id'];
-        
-        $user_stmt = $conn->prepare("SELECT username, avatar, avatar_hue, avatar_saturation FROM users WHERE id = ?");
-        $user_stmt->bind_param("i", $other_user_id);
-        $user_stmt->execute();
-        $user_result = $user_stmt->get_result();
-        
-        if ($user_result->num_rows > 0) {
-            $user_data = $user_result->fetch_assoc();
+            // 5. PRIVATE MESSAGES (registered users only)
+            if (in_array('private_message', $event_types) && $user_id) {
+                $pm_stmt = $conn->prepare("
+                    SELECT DISTINCT 
+                        CASE WHEN sender_id = ? THEN recipient_id ELSE sender_id END as other_user_id
+                    FROM private_messages 
+                    WHERE sender_id = ? OR recipient_id = ?
+                ");
+                $pm_stmt->bind_param("iii", $user_id, $user_id, $user_id);
+                $pm_stmt->execute();
+                $pm_result = $pm_stmt->get_result();
+                
+                $pms = [];
+                while ($row = $pm_result->fetch_assoc()) {
+                    $other_user_id = $row['other_user_id'];
+                    
+                    $user_stmt = $conn->prepare("
+                        SELECT username, avatar, avatar_hue, avatar_saturation 
+                        FROM users WHERE id = ?
+                    ");
+                    $user_stmt->bind_param("i", $other_user_id);
+                    $user_stmt->execute();
+                    $user_result = $user_stmt->get_result();
+                    
+                    if ($user_result->num_rows > 0) {
+                        $user_data = $user_result->fetch_assoc();
+                        
+                        $last_msg_stmt = $conn->prepare("
+                            SELECT message FROM private_messages 
+                            WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)
+                            ORDER BY created_at DESC LIMIT 1
+                        ");
+                        $last_msg_stmt->bind_param("iiii", $user_id, $other_user_id, $other_user_id, $user_id);
+                        $last_msg_stmt->execute();
+                        $last_msg_result = $last_msg_stmt->get_result();
+                        $last_message = $last_msg_result->num_rows > 0 ? $last_msg_result->fetch_assoc()['message'] : '';
+                        $last_msg_stmt->close();
+                        
+                        $unread_stmt = $conn->prepare("
+                            SELECT COUNT(*) as count FROM private_messages 
+                            WHERE sender_id = ? AND recipient_id = ? AND is_read = 0
+                        ");
+                        $unread_stmt->bind_param("ii", $other_user_id, $user_id);
+                        $unread_stmt->execute();
+                        $unread_result = $unread_stmt->get_result();
+                        $unread_count = $unread_result->fetch_assoc()['count'];
+                        $unread_stmt->close();
+                        
+                        $pms[] = [
+                            'other_user_id' => $other_user_id,
+                            'username' => $user_data['username'],
+                            'avatar' => $user_data['avatar'],
+                            'avatar_hue' => $user_data['avatar_hue'],
+                            'avatar_saturation' => $user_data['avatar_saturation'],
+                            'last_message' => $last_message,
+                            'unread_count' => (int)$unread_count
+                        ];
+                    }
+                    $user_stmt->close();
+                }
+                $pm_stmt->close();
+                $all_data['private_messages'] = ['status' => 'success', 'conversations' => $pms];
+            }
             
-            // Get last message
-            $last_msg_stmt = $conn->prepare("
-                SELECT message FROM private_messages 
-                WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)
-                ORDER BY created_at DESC LIMIT 1
-            ");
-            $last_msg_stmt->bind_param("iiii", $user_id, $other_user_id, $other_user_id, $user_id);
-            $last_msg_stmt->execute();
-            $last_msg_result = $last_msg_stmt->get_result();
-            $last_message = $last_msg_result->num_rows > 0 ? $last_msg_result->fetch_assoc()['message'] : null;
-            $last_msg_stmt->close();
-            
-            // Get unread count
-            $count_stmt = $conn->prepare("
-                SELECT COUNT(*) as count FROM private_messages 
-                WHERE sender_id = ? AND recipient_id = ? AND is_read = 0
-            ");
-            $count_stmt->bind_param("ii", $other_user_id, $user_id);
-            $count_stmt->execute();
-            $count_result = $count_stmt->get_result();
-            $unread_count = $count_result->fetch_assoc()['count'];
-            $count_stmt->close();
-            
-            $pms[] = [
-                'other_user_id' => $other_user_id,
-                'username' => $user_data['username'],
-                'avatar' => $user_data['avatar'],
-                'avatar_hue' => (int)($user_data['avatar_hue'] ?? 0),
-                'avatar_saturation' => (int)($user_data['avatar_saturation'] ?? 100),
-                'last_message' => $last_message,
-                'unread_count' => (int)$unread_count
-            ];
-        }
-        $user_stmt->close();
-    }
-    $pm_stmt->close();
-    $all_data['private_messages'] = ['status' => 'success', 'conversations' => $pms];
-}
-            
-            // FRIENDS
-            if (in_array('friend', $event_types) && $user_id) {
+            // 6. FRIENDS (registered users only)
+            if (in_array('friend_update', $event_types) && $user_id) {
                 $friends_stmt = $conn->prepare("
-                    SELECT DISTINCT CASE WHEN f.user_id = ? THEN f.friend_id ELSE f.user_id END as friend_user_id,
+                    SELECT CASE WHEN f.user_id = ? THEN f.friend_id ELSE f.user_id END as friend_user_id,
                            u.username, u.avatar, u.avatar_hue, u.avatar_saturation, f.status,
                            CASE WHEN f.user_id = ? THEN 'sent' ELSE 'received' END as request_type
                     FROM friends f 
@@ -416,14 +358,17 @@ if (in_array('private_message', $event_types) && $user_id) {
                 $friends_stmt->bind_param("iiiiii", $user_id, $user_id, $user_id, $user_id, $user_id, $user_id);
                 $friends_stmt->execute();
                 $friends_result = $friends_stmt->get_result();
+                
                 $friends = [];
-                while ($row = $friends_result->fetch_assoc()) { $friends[] = $row; }
+                while ($row = $friends_result->fetch_assoc()) {
+                    $friends[] = $row;
+                }
                 $friends_stmt->close();
                 $all_data['friends'] = ['status' => 'success', 'friends' => $friends];
             }
             
-            // ROOM DATA
-            if (in_array('room_update', $event_types)) {
+            // 7. ROOM DATA
+            if (in_array('room_update', $event_types) || in_array('settings_update', $event_types)) {
                 $room_stmt = $conn->prepare("SELECT * FROM chatrooms WHERE id = ?");
                 $room_stmt->bind_param("i", $room_id);
                 $room_stmt->execute();
@@ -434,8 +379,13 @@ if (in_array('private_message', $event_types) && $user_id) {
                     $all_data['room_data'] = ['status' => 'success', 'room' => $room_data];
                 }
             }
+            
+            // 8. KNOCKS (hosts only)
             if (in_array('knock', $event_types)) {
-                $is_host_stmt = $conn->prepare("SELECT is_host FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");
+                $is_host_stmt = $conn->prepare("
+                    SELECT is_host FROM chatroom_users 
+                    WHERE room_id = ? AND user_id_string = ?
+                ");
                 $is_host_stmt->bind_param("is", $room_id, $user_id_string);
                 $is_host_stmt->execute();
                 $is_host_result = $is_host_stmt->get_result();
@@ -455,16 +405,18 @@ if (in_array('private_message', $event_types) && $user_id) {
                     $knocks_stmt->bind_param("i", $room_id);
                     $knocks_stmt->execute();
                     $knocks_result = $knocks_stmt->get_result();
+                    
                     $knocks = [];
-                    while ($row = $knocks_result->fetch_assoc()) { $knocks[] = $row; }
+                    while ($row = $knocks_result->fetch_assoc()) {
+                        $knocks[] = $row;
+                    }
                     $knocks_stmt->close();
                     $all_data['knocks'] = $knocks;
                 }
             }
             
-            // YOUTUBE (only if enabled and requested)
+            // 9. YOUTUBE (if enabled and requested)
             if ($check_youtube && in_array('youtube_update', $event_types)) {
-                // First check if YouTube is enabled for this room
                 $yt_check_stmt = $conn->prepare("SELECT youtube_enabled FROM chatrooms WHERE id = ?");
                 $yt_check_stmt->bind_param("i", $room_id);
                 $yt_check_stmt->execute();
@@ -487,57 +439,31 @@ if (in_array('private_message', $event_types) && $user_id) {
                     if ($yt_result->num_rows > 0) {
                         $sync_data = $yt_result->fetch_assoc();
                         
-                        // Calculate adjusted time if playing
                         $adjusted_time = $sync_data['current_time'];
                         if ($sync_data['is_playing']) {
                             $time_diff = time() - strtotime($sync_data['last_sync_time']);
                             $adjusted_time += $time_diff;
                         }
                         
-                        // Get queue
-                        $queue_stmt = $conn->prepare("
-                            SELECT *, 
-                                CASE 
-                                    WHEN status = 'suggested' THEN 0
-                                    WHEN status = 'queued' THEN queue_position
-                                    WHEN status = 'playing' THEN -1
-                                    ELSE 999
-                                END as sort_order
-                            FROM room_queue 
-                            WHERE room_id = ? AND status IN ('suggested', 'queued', 'playing')
-                            ORDER BY sort_order ASC, id ASC
-                        ");
+                        $queue_stmt = $conn->prepare("SELECT * FROM youtube_queue WHERE room_id = ? ORDER BY position ASC");
                         $queue_stmt->bind_param("i", $room_id);
                         $queue_stmt->execute();
                         $queue_result = $queue_stmt->get_result();
-                        
-                        $suggestions = [];
                         $queue = [];
-                        $current_playing = null;
-                        
                         while ($q = $queue_result->fetch_assoc()) {
-                            $item = [
-                                'id' => $q['id'],
-                                'video_id' => $q['video_id'],
-                                'video_title' => $q['video_title'],
-                                'video_duration' => $q['video_duration'],
-                                'video_thumbnail' => $q['video_thumbnail'],
-                                'suggested_by_user_id_string' => $q['suggested_by_user_id_string'],
-                                'suggested_by_name' => $q['suggested_by_name'],
-                                'suggested_at' => $q['suggested_at'],
-                                'queue_position' => $q['queue_position'],
-                                'status' => $q['status']
-                            ];
-                            
-                            if ($q['status'] === 'suggested') {
-                                $suggestions[] = $item;
-                            } elseif ($q['status'] === 'queued') {
-                                $queue[] = $item;
-                            } elseif ($q['status'] === 'playing') {
-                                $current_playing = $item;
-                            }
+                            $queue[] = $q;
                         }
                         $queue_stmt->close();
+                        
+                        $sugg_stmt = $conn->prepare("SELECT * FROM youtube_suggestions WHERE room_id = ? ORDER BY created_at DESC LIMIT 10");
+                        $sugg_stmt->bind_param("i", $room_id);
+                        $sugg_stmt->execute();
+                        $sugg_result = $sugg_stmt->get_result();
+                        $suggestions = [];
+                        while ($s = $sugg_result->fetch_assoc()) {
+                            $suggestions[] = $s;
+                        }
+                        $sugg_stmt->close();
                         
                         $all_data['youtube'] = [
                             'status' => 'success',
@@ -552,7 +478,7 @@ if (in_array('private_message', $event_types) && $user_id) {
                             'queue_data' => [
                                 'queue' => $queue,
                                 'suggestions' => $suggestions,
-                                'current_playing' => $current_playing
+                                'current_playing' => $sync_data['current_video_id']
                             ]
                         ];
                     }
@@ -560,34 +486,57 @@ if (in_array('private_message', $event_types) && $user_id) {
                 }
             }
             
-            // SETTINGS CHECK
-           error_log("DEBUG SSE: Checking for settings updates (always check mode)");
-
-$settings_stmt = $conn->prepare("
-    SELECT id, UNIX_TIMESTAMP(created_at) as timestamp
-    FROM room_events 
-    WHERE room_id = ? AND event_type = 'settings_update' 
-    AND created_at > DATE_SUB(NOW(), INTERVAL 10 SECOND)
-    ORDER BY created_at DESC LIMIT 1
-");
-$settings_stmt->bind_param("i", $room_id);
-$settings_stmt->execute();
-$settings_result = $settings_stmt->get_result();
-
-if ($settings_result->num_rows > 0) {
-    $event = $settings_result->fetch_assoc();
-    error_log("DEBUG SSE: Found settings event, id: " . $event['id']);
-    $all_data['settings_check'] = [
-        'status' => 'success',
-        'settings_changed' => true,
-        'event_id' => $event['id'],
-        'timestamp' => $event['timestamp']
-    ];
-    $has_events = true;
-}
-$settings_stmt->close();
+            // 10. GHOST HUNT EVENTS
+            if (in_array('ghost_spawn', $event_types)) {
+                $ghost_stmt = $conn->prepare("
+                    SELECT id, ghost_phrase, reward_amount, spawned_at 
+                    FROM ghost_hunt_events 
+                    WHERE room_id = ? AND is_active = 1
+                    ORDER BY spawned_at DESC LIMIT 1
+                ");
+                $ghost_stmt->bind_param("i", $room_id);
+                $ghost_stmt->execute();
+                $ghost_result = $ghost_stmt->get_result();
+                
+                if ($ghost_result->num_rows > 0) {
+                    $ghost_data = $ghost_result->fetch_assoc();
+                    $all_data['ghost_hunt'] = [
+                        'status' => 'success',
+                        'active' => true,
+                        'event' => $ghost_data
+                    ];
+                } else {
+                    $all_data['ghost_hunt'] = ['status' => 'success', 'active' => false];
+                }
+                $ghost_stmt->close();
+            }
             
-            // INACTIVITY STATUS (send with every update)
+            // 11. SETTINGS CHECK
+            if (in_array('settings_update', $event_types)) {
+                $settings_stmt = $conn->prepare("
+                    SELECT id, UNIX_TIMESTAMP(created_at) as timestamp
+                    FROM room_events 
+                    WHERE room_id = ? AND event_type = 'settings_update' 
+                    AND created_at > DATE_SUB(NOW(), INTERVAL 10 SECOND)
+                    ORDER BY created_at DESC LIMIT 1
+                ");
+                $settings_stmt->bind_param("i", $room_id);
+                $settings_stmt->execute();
+                $settings_result = $settings_stmt->get_result();
+                
+                if ($settings_result->num_rows > 0) {
+                    $event = $settings_result->fetch_assoc();
+                    $all_data['settings_check'] = [
+                        'status' => 'success',
+                        'settings_changed' => true,
+                        'event_id' => $event['id'],
+                        'timestamp' => $event['timestamp']
+                    ];
+                }
+                $settings_stmt->close();
+            }
+            
+            // 12. INACTIVITY STATUS (always send)
             $inactivity_stmt = $conn->prepare("
                 SELECT cu.inactivity_seconds, cu.is_host, c.youtube_enabled 
                 FROM chatroom_users cu 
@@ -612,9 +561,10 @@ $settings_stmt->close();
             }
             $inactivity_stmt->close();
             
-            // Send the data
             echo "data: " . json_encode($all_data) . "\n\n";
             flush();
+        } else {
+            $consecutive_empty++;
         }
         
     } catch (Exception $e) {
@@ -622,22 +572,26 @@ $settings_stmt->close();
     }
     
     // Heartbeat
-if (!$has_events && $iteration % 10 == 0) {
-    echo "data: " . json_encode([
-        'type' => 'heartbeat', 
-        'timestamp' => time(),
-        'last_event_id' => $last_event_id
-    ]) . "\n\n";
-    flush();
-}
+    if (!$has_events && $iteration % 10 == 0) {
+        echo "data: " . json_encode([
+            'type' => 'heartbeat', 
+            'timestamp' => time(),
+            'last_event_id' => $last_event_id
+        ]) . "\n\n";
+        flush();
+    }
     
     $iteration++;
     
-    // Short sleep to prevent hammering database
-    // When events detected, sleep less; when no events, sleep more
-    usleep($has_events ? 100000 : 300000);
+    // OPTIMIZED: Adaptive sleep
+    if ($has_events) {
+        usleep(200000); // 200ms when active
+    } else if ($consecutive_empty < 3) {
+        usleep(500000); // 500ms for first few empty
+    } else {
+        usleep(1000000); // 1s when idle
+    }
     
-    // Reset connection after max iterations
     if ($iteration >= $max_iterations || (time() - $start_time) >= ($max_duration - 2)) {
         echo "data: " . json_encode(['type' => 'reconnect']) . "\n\n";
         flush();
@@ -645,7 +599,6 @@ if (!$has_events && $iteration % 10 == 0) {
     }
 }
 
-// Send reconnect signal with the last event ID
 echo "data: " . json_encode([
     'type' => 'reconnect',
     'last_event_id' => $last_event_id

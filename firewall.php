@@ -5,59 +5,59 @@ include 'check_site_ban.php';
 
 $ip_address = $_SERVER['REMOTE_ADDR'];
 
-// Check if user already has an active session with valid invite
-$stmt = $conn->prepare("SELECT iu.*, iu.expires_at < NOW() as is_expired 
-    FROM invite_usage iu 
-    WHERE iu.invitee_ip = ? 
-    ORDER BY iu.first_used_at DESC LIMIT 1");
-$stmt->bind_param("s", $ip_address);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    $usage = $result->fetch_assoc();
+// Check persistent login cookie
+if (!isset($_SESSION['user']) && isset($_COOKIE['duranu_remember'])) {
+    $remember_token = $_COOKIE['duranu_remember'];
     
-    if ($usage['account_created']) {
-        // Account created, always allow
+    $stmt = $conn->prepare("SELECT * FROM users WHERE remember_token = ? AND remember_token IS NOT NULL");
+    $stmt->bind_param("s", $remember_token);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $user = $result->fetch_assoc();
+        
+        $_SESSION['user'] = [
+            'type' => 'user',
+            'id' => $user['id'],
+            'username' => $user['username'],
+            'user_id' => $user['user_id'],
+            'avatar' => $user['avatar'],
+            'is_admin' => $user['is_admin'],
+            'is_moderator' => $user['is_moderator'] ?? 0,
+            'color' => $user['color'] ?? 'blue',
+            'avatar_hue' => $user['avatar_hue'] ?? 0,
+            'avatar_saturation' => $user['avatar_saturation'] ?? 100,
+            'bubble_hue' => $user['bubble_hue'] ?? 0,
+            'bubble_saturation' => $user['bubble_saturation'] ?? 100
+        ];
         $_SESSION['firewall_passed'] = true;
         $_SESSION['invite_verified'] = true;
         $stmt->close();
-        header("Location: /select");
-        exit;
-    } elseif (!$usage['is_expired']) {
-        // Still within 1 week trial period
-        $_SESSION['firewall_passed'] = true;
-        $_SESSION['invite_verified'] = true;
-        $_SESSION['temp_access_expires'] = $usage['expires_at'];
-        $stmt->close();
-        header("Location: /select");
-        exit;
-    } else {
-        // Trial expired, redirect to register
-        $stmt->close();
-        header("Location: /register");
+        header("Location: /lounge");
         exit;
     }
+    $stmt->close();
 }
-$stmt->close();
 
-// Check if already passed
-if (isset($_SESSION['firewall_passed']) && isset($_SESSION['invite_verified'])) {
-    header("Location: /select");
+// Check if already logged in
+if (isset($_SESSION['user']) && isset($_SESSION['firewall_passed'])) {
+    header("Location: /lounge");
     exit;
 }
 
-// Handle invite code or personal key submission
+// Check if already passed firewall
+if (isset($_SESSION['firewall_passed']) && isset($_SESSION['invite_verified'])) {
+    header("Location: /lounge");
+    exit;
+}
+
+// Handle POST requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $password = trim($_POST['password'] ?? '');
     header('Content-Type: application/json');
     
-    if (empty($password)) {
-        echo json_encode(['status' => 'error', 'message' => 'Password required']);
-        exit;
-    }
+    $action = $_POST['action'] ?? 'password';
     
-    // Check for site ban
     try {
         checkSiteBan($conn, true);
     } catch (Exception $e) {
@@ -65,21 +65,370 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
     
-    // EMERGENCY: Check for bypass code
+    // Member login with DEBUG
+    if ($action === 'member_login') {
+        $username = trim($_POST['username'] ?? '');
+        $password = $_POST['password'] ?? '';
+        
+        // DEBUG LOG
+        error_log("DEBUG LOGIN: Username='$username', Password length=" . strlen($password));
+        
+        if (empty($username) || empty($password)) {
+            echo json_encode(['status' => 'error', 'message' => 'Username and password required']);
+            exit;
+        }
+        
+        // Query users table - try username only first for debugging
+        $stmt = $conn->prepare("SELECT id, username, email, password, is_admin, is_moderator, user_id, avatar, color, avatar_hue, avatar_saturation, bubble_hue, bubble_saturation FROM users WHERE username = ?");
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        // DEBUG LOG
+        error_log("DEBUG LOGIN: Query executed, rows found=" . $result->num_rows);
+        
+        if ($result->num_rows > 0) {
+            $user = $result->fetch_assoc();
+            
+            // DEBUG LOG
+            error_log("DEBUG LOGIN: User found - ID=" . $user['id'] . ", Username=" . $user['username']);
+            error_log("DEBUG LOGIN: Password hash from DB length=" . strlen($user['password']));
+            error_log("DEBUG LOGIN: Password hash starts with=" . substr($user['password'], 0, 10));
+            
+            // Try password verification
+            $verify_result = password_verify($password, $user['password']);
+            
+            // DEBUG LOG
+            error_log("DEBUG LOGIN: password_verify result=" . ($verify_result ? 'TRUE' : 'FALSE'));
+            
+            if ($verify_result) {
+                // Create remember token
+                $remember_token = bin2hex(random_bytes(32));
+                $update = $conn->prepare("UPDATE users SET remember_token = ? WHERE id = ?");
+                $update->bind_param("si", $remember_token, $user['id']);
+                $update->execute();
+                $update->close();
+                
+                // Set persistent cookie (30 days)
+                setcookie('duranu_remember', $remember_token, time() + (30 * 24 * 60 * 60), '/', '', true, true);
+                
+                $_SESSION['user'] = [
+                    'type' => 'user',
+                    'id' => $user['id'],
+                    'username' => $user['username'],
+                    'user_id' => $user['user_id'],
+                    'avatar' => $user['avatar'],
+                    'is_admin' => $user['is_admin'],
+                    'is_moderator' => $user['is_moderator'] ?? 0,
+                    'color' => $user['color'] ?? 'blue',
+                    'avatar_hue' => $user['avatar_hue'] ?? 0,
+                    'avatar_saturation' => $user['avatar_saturation'] ?? 100,
+                    'bubble_hue' => $user['bubble_hue'] ?? 0,
+                    'bubble_saturation' => $user['bubble_saturation'] ?? 100
+                ];
+                $_SESSION['firewall_passed'] = true;
+                $_SESSION['invite_verified'] = true;
+                
+                error_log("DEBUG LOGIN: SUCCESS - Session created");
+                echo json_encode(['status' => 'success']);
+            } else {
+                error_log("DEBUG LOGIN: FAILED - password_verify returned false");
+                echo json_encode(['status' => 'error', 'message' => 'Invalid password']);
+            }
+        } else {
+            error_log("DEBUG LOGIN: FAILED - No user found with username '$username'");
+            echo json_encode(['status' => 'error', 'message' => 'User not found']);
+        }
+        $stmt->close();
+        exit;
+    }
+    
+    // ... rest of the code stays the same ...
+    
+    // Invite code submission
+    if ($action === 'invite_code') {
+        $invite_code = trim($_POST['invite_code'] ?? '');
+        
+        if (empty($invite_code)) {
+            echo json_encode(['status' => 'error', 'message' => 'Invite code required']);
+            exit;
+        }
+        
+        $stmt = $conn->prepare("SELECT ic.code, ic.owner_user_id, ic.id as code_id, u.restricted 
+            FROM invite_codes ic 
+            JOIN users u ON ic.owner_user_id = u.id 
+            WHERE ic.code = ? AND ic.is_active = 1");
+        $stmt->bind_param("s", $invite_code);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows > 0) {
+            $invite = $result->fetch_assoc();
+            
+            if ($invite['restricted']) {
+                echo json_encode(['status' => 'error', 'message' => 'This invite code is restricted']);
+                $stmt->close();
+                exit;
+            }
+            
+            $_SESSION['pending_invite'] = [
+                'code' => $invite_code,
+                'owner_id' => $invite['owner_user_id'],
+                'code_id' => $invite['code_id']
+            ];
+            
+            echo json_encode(['status' => 'success', 'next' => 'tos']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid invite code']);
+        }
+        $stmt->close();
+        exit;
+    }
+    
+    // Registration
+    if ($action === 'register') {
+        if (!isset($_SESSION['pending_invite'])) {
+            echo json_encode(['status' => 'error', 'message' => 'No invite code found']);
+            exit;
+        }
+        
+        $username = trim($_POST['username'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $confirm_password = $_POST['confirm_password'] ?? '';
+        $custom_key = trim($_POST['custom_key'] ?? '');
+        
+        if (empty($username) || empty($password) || empty($custom_key)) {
+            echo json_encode(['status' => 'error', 'message' => 'All fields required']);
+            exit;
+        }
+        
+        if (strlen($username) < 3 || strlen($username) > 20) {
+            echo json_encode(['status' => 'error', 'message' => 'Username must be 3-20 characters']);
+            exit;
+        }
+        
+        if (strlen($password) < 6) {
+            echo json_encode(['status' => 'error', 'message' => 'Password must be at least 6 characters']);
+            exit;
+        }
+        
+        if ($password !== $confirm_password) {
+            echo json_encode(['status' => 'error', 'message' => 'Passwords do not match']);
+            exit;
+        }
+        
+        if (!preg_match('/^[a-zA-Z0-9]+$/', $custom_key)) {
+            echo json_encode(['status' => 'error', 'message' => 'Key can only contain letters and numbers']);
+            exit;
+        }
+        
+        if (strlen($custom_key) < 6 || strlen($custom_key) > 64) {
+            echo json_encode(['status' => 'error', 'message' => 'Key must be 6-64 characters']);
+            exit;
+        }
+        
+        // Check username
+        $stmt = $conn->prepare("SELECT id FROM users WHERE username = ?");
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        if ($stmt->get_result()->num_rows > 0) {
+            echo json_encode(['status' => 'error', 'message' => 'Username taken']);
+            $stmt->close();
+            exit;
+        }
+        $stmt->close();
+        
+        // Check custom key
+        $stmt = $conn->prepare("SELECT id FROM personal_keys WHERE key_value = ?");
+        $stmt->bind_param("s", $custom_key);
+        $stmt->execute();
+        if ($stmt->get_result()->num_rows > 0) {
+            echo json_encode(['status' => 'error', 'message' => 'This key is already taken']);
+            $stmt->close();
+            exit;
+        }
+        $stmt->close();
+        
+        // Generate unique user_id
+        $random_number = str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT);
+        $user_id_string = $username . "#" . $random_number;
+        
+        $attempts = 0;
+        while ($attempts < 10) {
+            $stmt = $conn->prepare("SELECT id FROM users WHERE user_id = ?");
+            $stmt->bind_param("s", $user_id_string);
+            $stmt->execute();
+            if ($stmt->get_result()->num_rows === 0) {
+                $stmt->close();
+                break;
+            }
+            $stmt->close();
+            $random_number = str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT);
+            $user_id_string = $username . "#" . $random_number;
+            $attempts++;
+        }
+        
+        try {
+            $conn->begin_transaction();
+            
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            $default_avatar = 'default/_u0.png';
+            $invite_code_used = $_SESSION['pending_invite']['code'];
+            $inviter_id = $_SESSION['pending_invite']['owner_id'];
+            
+            $remember_token = bin2hex(random_bytes(32));
+            
+            // Check what columns exist in users table
+            $columns_check = $conn->query("SHOW COLUMNS FROM users");
+            $existing_columns = [];
+            while ($col = $columns_check->fetch_assoc()) {
+                $existing_columns[] = $col['Field'];
+            }
+            
+            error_log("DEBUG REGISTER: Available columns: " . implode(', ', $existing_columns));
+            
+            // Build INSERT query based on available columns
+            $insert_fields = ['username', 'password', 'user_id', 'avatar', 'avatar_memory', 'dura', 'invite_code_used', 'remember_token'];
+            $insert_placeholders = ['?', '?', '?', '?', '?', '100', '?', '?'];
+            $param_types = 'sssssss';
+            $param_values = [$username, $hashed_password, $user_id_string, $default_avatar, $default_avatar, $invite_code_used, $remember_token];
+            
+            // Add email if column exists - use NULL to avoid duplicate empty string issue
+            if (in_array('email', $existing_columns)) {
+                $insert_fields[] = 'email';
+                $insert_placeholders[] = 'NULL';  // Use NULL instead of empty string
+                // Don't add to param_types or param_values since we're using literal NULL
+            }
+            
+            $sql = "INSERT INTO users (" . implode(', ', $insert_fields) . ") VALUES (" . implode(', ', $insert_placeholders) . ")";
+            error_log("DEBUG REGISTER: SQL = $sql");
+            
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare failed: " . $conn->error);
+            }
+            
+            $stmt->bind_param($param_types, ...$param_values);
+            
+            if (!$stmt->execute()) {
+                throw new Exception("Execute failed: " . $stmt->error);
+            }
+            
+            $new_user_id = $conn->insert_id;
+            error_log("DEBUG REGISTER: New user created with ID: $new_user_id");
+            $stmt->close();
+            
+            // Create personal key
+            $stmt = $conn->prepare("INSERT INTO personal_keys (user_id, key_value) VALUES (?, ?)");
+            if (!$stmt) {
+                throw new Exception("Personal key prepare failed: " . $conn->error);
+            }
+            $stmt->bind_param("is", $new_user_id, $custom_key);
+            if (!$stmt->execute()) {
+                throw new Exception("Personal key insert failed: " . $stmt->error);
+            }
+            $stmt->close();
+            error_log("DEBUG REGISTER: Created personal key");
+            
+            // Delete invite code (one-time use)
+            $stmt = $conn->prepare("DELETE FROM invite_codes WHERE id = ?");
+            if (!$stmt) {
+                throw new Exception("Delete invite code prepare failed: " . $conn->error);
+            }
+            $stmt->bind_param("i", $_SESSION['pending_invite']['code_id']);
+            if (!$stmt->execute()) {
+                throw new Exception("Delete invite code failed: " . $stmt->error);
+            }
+            $stmt->close();
+            error_log("DEBUG REGISTER: Deleted invite code");
+            
+            // Give inviter 100 Dura
+            $stmt = $conn->prepare("UPDATE users SET dura = dura + 100 WHERE id = ?");
+            if (!$stmt) {
+                throw new Exception("Inviter dura update prepare failed: " . $conn->error);
+            }
+            $stmt->bind_param("i", $inviter_id);
+            if (!$stmt->execute()) {
+                throw new Exception("Inviter dura update failed: " . $stmt->error);
+            }
+            $stmt->close();
+            error_log("DEBUG REGISTER: Gave inviter 100 Dura");
+            
+            // Log transactions (check if table exists first)
+            $table_check = $conn->query("SHOW TABLES LIKE 'dura_transactions'");
+            if ($table_check && $table_check->num_rows > 0) {
+                $system_id = 0;
+                $stmt = $conn->prepare("INSERT INTO dura_transactions (from_user_id, to_user_id, amount, type) VALUES (?, ?, 100, 'dura')");
+                if ($stmt) {
+                    $stmt->bind_param("ii", $system_id, $inviter_id);
+                    $stmt->execute();
+                    $stmt->close();
+                    
+                    $stmt = $conn->prepare("INSERT INTO dura_transactions (from_user_id, to_user_id, amount, type) VALUES (?, ?, 100, 'dura')");
+                    $stmt->bind_param("ii", $system_id, $new_user_id);
+                    $stmt->execute();
+                    $stmt->close();
+                    error_log("DEBUG REGISTER: Logged dura transactions");
+                }
+            } else {
+                error_log("DEBUG REGISTER: dura_transactions table not found, skipping transaction logs");
+            }
+            
+            $conn->commit();
+            
+            // Set cookie
+            setcookie('duranu_remember', $remember_token, time() + (30 * 24 * 60 * 60), '/', '', true, true);
+            
+            // Auto-login
+            $_SESSION['user'] = [
+                'type' => 'user',
+                'id' => $new_user_id,
+                'username' => $username,
+                'user_id' => $user_id_string,
+                'avatar' => $default_avatar,
+                'is_admin' => 0,
+                'is_moderator' => 0,
+                'color' => 'blue',
+                'avatar_hue' => 0,
+                'avatar_saturation' => 100,
+                'bubble_hue' => 0,
+                'bubble_saturation' => 100
+            ];
+            $_SESSION['firewall_passed'] = true;
+            $_SESSION['invite_verified'] = true;
+            $_SESSION['show_introduction'] = true;
+            unset($_SESSION['pending_invite']);
+            
+            echo json_encode(['status' => 'success']);
+            
+        } catch (Exception $e) {
+            $conn->rollback();
+            error_log("DEBUG REGISTER ERROR: " . $e->getMessage());
+            echo json_encode(['status' => 'error', 'message' => 'Registration failed: ' . $e->getMessage()]);
+        }
+        exit;
+    }
+    
+    // Original password check (for personal keys and invite codes entered in main form)
+    $password = trim($_POST['password'] ?? '');
+    
+    if (empty($password)) {
+        echo json_encode(['status' => 'error', 'message' => 'Password required']);
+        exit;
+    }
+    
+    // EMERGENCY bypass
     if ($password === 'h4mburg3r') {
         $_SESSION['firewall_passed'] = true;
         $_SESSION['invite_verified'] = true;
         $_SESSION['emergency_access'] = true;
-        
         echo json_encode(['status' => 'success', 'type' => 'emergency_bypass']);
         exit;
     }
     
-    // Check if it's a personal key
-    $stmt = $conn->prepare("SELECT pk.user_id, u.restricted 
-        FROM personal_keys pk 
-        JOIN users u ON pk.user_id = u.id 
-        WHERE pk.key_value = ? AND pk.is_active = 1");
+    // Check personal key
+    $stmt = $conn->prepare("SELECT pk.user_id, u.restricted FROM personal_keys pk 
+        JOIN users u ON pk.user_id = u.id WHERE pk.key_value = ? AND pk.is_active = 1");
     $stmt->bind_param("s", $password);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -93,28 +442,91 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
         
-        // Valid personal key - log them in directly
-        $_SESSION['firewall_passed'] = true;
-        $_SESSION['invite_verified'] = true;
-        $_SESSION['auto_login_user_id'] = $key_data['user_id'];
+        // Store key in session for username confirmation
+        $_SESSION['pending_personal_key'] = [
+            'key_value' => $password,
+            'user_id' => $key_data['user_id']
+        ];
         
-        // Update last used
-        $update = $conn->prepare("UPDATE personal_keys SET last_used = NOW() WHERE key_value = ?");
-        $update->bind_param("s", $password);
-        $update->execute();
-        $update->close();
-        
-        echo json_encode(['status' => 'success', 'type' => 'personal_key']);
+        echo json_encode(['status' => 'success', 'type' => 'personal_key_confirm']);
         $stmt->close();
         exit;
     }
     $stmt->close();
     
-    // Check if it's an invite code
-    $stmt = $conn->prepare("SELECT ic.code, ic.owner_user_id, u.restricted 
-        FROM invite_codes ic 
-        JOIN users u ON ic.owner_user_id = u.id 
-        WHERE ic.code = ? AND ic.is_active = 1");
+    // Personal key username confirmation
+    if ($action === 'personal_key_login') {
+        if (!isset($_SESSION['pending_personal_key'])) {
+            echo json_encode(['status' => 'error', 'message' => 'No personal key found']);
+            exit;
+        }
+        
+        $username = trim($_POST['username'] ?? '');
+        
+        if (empty($username)) {
+            echo json_encode(['status' => 'error', 'message' => 'Username required']);
+            exit;
+        }
+        
+        // Verify username matches the user_id for this key
+        $user_id = $_SESSION['pending_personal_key']['user_id'];
+        $key_value = $_SESSION['pending_personal_key']['key_value'];
+        
+        $stmt = $conn->prepare("SELECT * FROM users WHERE id = ? AND username = ?");
+        $stmt->bind_param("is", $user_id, $username);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows === 0) {
+            echo json_encode(['status' => 'error', 'message' => 'Username does not match this key']);
+            $stmt->close();
+            exit;
+        }
+        
+        $user = $result->fetch_assoc();
+        $stmt->close();
+        
+        // Create remember token
+        $remember_token = bin2hex(random_bytes(32));
+        $update = $conn->prepare("UPDATE users SET remember_token = ? WHERE id = ?");
+        $update->bind_param("si", $remember_token, $user['id']);
+        $update->execute();
+        $update->close();
+        
+        setcookie('duranu_remember', $remember_token, time() + (30 * 24 * 60 * 60), '/', '', true, true);
+        
+        $_SESSION['firewall_passed'] = true;
+        $_SESSION['invite_verified'] = true;
+        $_SESSION['user'] = [
+            'type' => 'user',
+            'id' => $user['id'],
+            'username' => $user['username'],
+            'user_id' => $user['user_id'],
+            'avatar' => $user['avatar'],
+            'is_admin' => $user['is_admin'],
+            'is_moderator' => $user['is_moderator'] ?? 0,
+            'color' => $user['color'] ?? 'blue',
+            'avatar_hue' => $user['avatar_hue'] ?? 0,
+            'avatar_saturation' => $user['avatar_saturation'] ?? 100,
+            'bubble_hue' => $user['bubble_hue'] ?? 0,
+            'bubble_saturation' => $user['bubble_saturation'] ?? 100
+        ];
+        
+        // Update last used
+        $update = $conn->prepare("UPDATE personal_keys SET last_used = NOW() WHERE key_value = ?");
+        $update->bind_param("s", $key_value);
+        $update->execute();
+        $update->close();
+        
+        unset($_SESSION['pending_personal_key']);
+        
+        echo json_encode(['status' => 'success']);
+        exit;
+    }
+    
+    // Check invite code
+    $stmt = $conn->prepare("SELECT ic.code, ic.owner_user_id, u.restricted FROM invite_codes ic 
+        JOIN users u ON ic.owner_user_id = u.id WHERE ic.code = ? AND ic.is_active = 1");
     $stmt->bind_param("s", $password);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -128,49 +540,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
         
-        // Check if code already used by this IP
-        $check = $conn->prepare("SELECT id, expires_at < NOW() as is_expired, account_created 
-            FROM invite_usage 
-            WHERE code = ? AND invitee_ip = ?");
-        $check->bind_param("ss", $password, $ip_address);
-        $check->execute();
-        $check_result = $check->get_result();
-        
-        if ($check_result->num_rows > 0) {
-            $usage = $check_result->fetch_assoc();
-            $check->close();
-            
-            // If account already created, let them through
-            if ($usage['account_created']) {
-                $_SESSION['firewall_passed'] = true;
-                $_SESSION['invite_verified'] = true;
-                echo json_encode(['status' => 'success', 'type' => 'invite_code']);
-                $stmt->close();
-                exit;
-            }
-            
-            // If trial expired, redirect to register
-            if ($usage['is_expired']) {
-                echo json_encode(['status' => 'redirect', 'url' => '/register']);
-                $stmt->close();
-                exit;
-            }
-            
-            // Trial still active, let them through
-            $_SESSION['firewall_passed'] = true;
-            $_SESSION['invite_verified'] = true;
-            $_SESSION['invite_code_used'] = $password;
-            echo json_encode(['status' => 'success', 'type' => 'invite_code']);
-            $stmt->close();
-            exit;
-        }
-        $check->close();
-        
-        // First time using this code - record usage
-        $insert = $conn->prepare("INSERT INTO invite_usage (code, inviter_user_id, invitee_ip) VALUES (?, ?, ?)");
-        $insert->bind_param("sis", $password, $invite['owner_user_id'], $ip_address);
-        $insert->execute();
-        $insert->close();
+        // Store for registration
+        $_SESSION['pending_invite'] = [
+            'code' => $password,
+            'owner_id' => $invite['owner_user_id']
+        ];
         
         $_SESSION['firewall_passed'] = true;
         $_SESSION['invite_verified'] = true;
@@ -205,8 +579,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin: 0;
             padding: 0;
             min-height: 100vh;
-           /* background: url('images/bgo.png') center repeat; */
-           background: black;
+            background: black;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -247,7 +620,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             filter: drop-shadow(0 0 30px rgba(46, 46, 46, 0.4));
         }
         
-        /* Animated Rings - Much Larger */
         .ring {
             position: absolute;
             border: 2px solid rgba(255, 255, 255, 0.3);
@@ -268,33 +640,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .ring-2 {
             width: min(50vw, 50vh);
             height: min(50vw, 50vh);
-            border-bottom: 3px solid rgba(255, 255, 255, 0.6);
-            border-left: 3px solid rgba(255, 255, 255, 0.1);
-            animation: rotate-ccw 12s linear infinite;
+            border-bottom: 4px solid rgba(255, 255, 255, 0.7);
+            border-left: 4px solid rgba(255, 255, 255, 0.1);
+            animation: rotate-ccw 10s linear infinite;
         }
         
         .ring-3 {
             width: min(60vw, 60vh);
             height: min(60vw, 60vh);
-            border-top: 3px solid rgba(255, 255, 255, 0.4);
-            border-right: 3px solid rgba(255, 255, 255, 0.1);
-            animation: rotate-cw 15s linear infinite;
+            border-top: 3px solid rgba(255, 255, 255, 0.5);
+            animation: rotate-cw 12s linear infinite;
         }
         
         .ring-4 {
             width: min(70vw, 70vh);
             height: min(70vw, 70vh);
-            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
-            border-left: 2px solid rgba(255, 255, 255, 0.1);
-            animation: rotate-ccw 20s linear infinite;
+            border-bottom: 3px solid rgba(255, 255, 255, 0.4);
+            animation: rotate-ccw 14s linear infinite;
         }
         
         .ring-5 {
             width: min(80vw, 80vh);
             height: min(80vw, 80vh);
-            border-top: 2px solid rgba(255, 255, 255, 0.2);
-            border-right: 2px solid rgba(255, 255, 255, 0.05);
-            animation: rotate-cw 25s linear infinite;
+            border-top: 2px solid rgba(255, 255, 255, 0.3);
+            animation: rotate-cw 16s linear infinite;
         }
         
         @keyframes rotate-cw {
@@ -303,71 +672,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         @keyframes rotate-ccw {
-            from { transform: translate(-50%, -50%) rotate(0deg); }
-            to { transform: translate(-50%, -50%) rotate(-360deg); }
-        }
-        
-        /* Enhanced ring effects - Responsive */
-        .ring::before {
-            content: '';
-            position: absolute;
-            width: min(2vw, 2vh, 16px);
-            height: min(2vw, 2vh, 16px);
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 50%;
-            top: min(-1vw, -1vh, -8px);
-            left: 50%;
-            transform: translateX(-50%);
-            box-shadow: 0 0 min(3vw, 25px) rgba(255, 255, 255, 0.8);
-        }
-        
-        .ring::after {
-            content: '';
-            position: absolute;
-            width: min(1.5vw, 1.5vh, 12px);
-            height: min(1.5vw, 1.5vh, 12px);
-            background: rgba(255, 255, 255, 0.6);
-            border-radius: 50%;
-            bottom: min(-0.75vw, -0.75vh, -6px);
-            right: 20%;
-            box-shadow: 0 0 min(2vw, 20px) rgba(255, 255, 255, 0.6);
-        }
-        
-        /* Mobile optimizations */
-        @media (max-width: 768px) {
-            .logo-container {
-                width: 95vw;
-                height: 95vw;
-                margin-bottom: 1rem;
-            }
-            
-            .site-logo {
-                width: min(30vw, 150px);
-            }
-            
-            .ring-1 { width: 45vw; height: 45vw; }
-            .ring-2 { width: 55vw; height: 55vw; }
-            .ring-3 { width: 65vw; height: 65vw; }
-            .ring-4 { width: 75vw; height: 75vw; }
-            .ring-5 { width: 85vw; height: 85vw; }
-            
-            .password-form {
-                margin: 0 1rem;
-                padding: 1.5rem;
-            }
-        }
-        
-        /* Tablet optimizations */
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .logo-container {
-                width: 90vmin;
-                height: 90vmin;
-            }
-            
-            .site-logo {
-                width: min(20vw, 20vh, 180px);
-                height: min(20vw, 20vh, 180px);
-            }
+            from { transform: translate(-50%, -50%) rotate(360deg); }
+            to { transform: translate(-50%, -50%) rotate(0deg); }
         }
         
         .password-form {
@@ -431,6 +737,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             box-shadow: 0 8px 20px rgba(255, 255, 255, 0.1);
         }
         
+        .btn-link-firewall {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+            padding: 8px;
+            margin-top: 10px;
+            cursor: pointer;
+            text-decoration: underline;
+            transition: color 0.3s ease;
+        }
+        
+        .btn-link-firewall:hover {
+            color: #ffffff;
+        }
+        
         .error-message {
             color: #ff6b6b;
             margin-top: 1rem;
@@ -456,7 +778,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             to { transform: rotate(360deg); }
         }
         
-        /* Floating particles - Responsive */
         .particle {
             position: absolute;
             width: clamp(1px, 0.3vw, 3px);
@@ -478,36 +799,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         
-        /* Ultra-wide screen adjustments */
-        @media (min-aspect-ratio: 21/9) {
-            .logo-container {
-                width: 60vh;
-                height: 60vh;
-            }
+        .modal-content {
+            background: #1a1a1a;
+            color: #e0e0e0;
+            border: 1px solid #333;
         }
         
-        /* Portrait orientation adjustments */
-        @media (orientation: portrait) {
+        .modal-header {
+            border-bottom: 1px solid #333;
+        }
+        
+        .modal-footer {
+            border-top: 1px solid #333;
+        }
+        
+        @media (max-width: 768px) {
             .logo-container {
-                width: 80vw;
-                height: 80vw;
+                width: 95vw;
+                height: 95vw;
+                margin-bottom: 1rem;
             }
             
-            .ring-1 { width: 40vw; height: 40vw; }
-            .ring-2 { width: 50vw; height: 50vw; }
-            .ring-3 { width: 60vw; height: 60vw; }
-            .ring-4 { width: 70vw; height: 70vw; }
-            .ring-5 { width: 80vw; height: 80vw; }
-        }
-        
-        /* Landscape orientation adjustments */
-        @media (orientation: landscape) and (max-height: 600px) {
-            .logo-container {
-                width: 70vh;
-                height: 70vh;
+            .site-logo {
+                width: min(30vw, 150px);
             }
             
             .password-form {
+                margin: 0 1rem;
                 padding: 1.5rem;
             }
         }
@@ -530,169 +848,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </h2>
             
             <form id="firewallForm">
-                <input type="password" 
-                       class="form-control" 
-                       id="password" 
-                       name="password" 
-                       placeholder="Enter site password..." 
-                       required 
-                       autocomplete="off">
                 
-                <button type="submit" class="btn btn-firewall">
-                    <div class="loading-spinner" id="loadingSpinner"></div>
-                    <i class="fas fa-unlock" id="unlockIcon"></i>
-                    <span id="buttonText">Authenticate</span>
-                </button>
             </form>
+            
+            <div style="margin-top: 15px; display: flex; justify-content: center; gap: 15px;">
+                <button type="button" class="btn-firewall" onclick="showInviteModal()">
+                    Invite
+                </button>
+                <button type="button" class="btn-firewall" onclick="showMemberModal()">
+                    Login
+                </button>
+            </div>
             
             <div id="errorMessage" class="error-message" style="display: none;"></div>
         </div>
     </div>
 
-    <!-- Terms and Privacy Modal -->
-    <div class="modal fade" id="termsPrivacyModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content" style="background: #1a1a1a; color: #e0e0e0; border: 1px solid #333;">
-                <div class="modal-header" style="border-bottom: 1px solid #333;">
-                    <h5 class="modal-title">
-                        <i class="fas fa-file-contract"></i> Terms of Service & Privacy Policy
-                    </h5>
+    <!-- Member Login Modal -->
+    <div class="modal fade" id="memberModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-sign-in-alt"></i> Member Login</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
                 </div>
-                <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-                    <!-- Terms and Privacy content will be loaded here -->
-                    <div id="termsPrivacyContent"></div>
-                </div>
-                <div class="modal-footer" style="border-top: 1px solid #333;">
-                    <div class="form-check mb-0">
-                        <input class="form-check-input" type="checkbox" id="acceptTerms">
-                        <label class="form-check-label" for="acceptTerms">
-                            I have read and agree to the Terms of Service and Privacy Policy
-                        </label>
-                    </div>
-                    <button type="button" class="btn btn-primary ms-3" id="continueBtn" disabled onclick="continueToSite()">
-                        <i class="fas fa-arrow-right"></i> Continue to Site
-                    </button>
+                <div class="modal-body">
+                    <form id="memberLoginForm">
+                        <div class="mb-3">
+                            <label class="form-label">Username or Email</label>
+                            <input type="text" class="form-control" id="member_username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-control" id="member_password" required>
+                        </div>
+                        <div id="memberError" class="error-message" style="display: none;"></div>
+                        <button type="submit" class="btn btn-firewall">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Create floating particles
-        function createParticles() {
-            // Determine number of particles based on screen size and performance
-            const isMobile = window.innerWidth < 768;
-            const isTablet = window.innerWidth >= 768 && window.innerWidth < 1200;
-            const isDesktop = window.innerWidth >= 1200;
-            
-            let particleCount = 20; // Mobile default
-            if (isTablet) particleCount = 40;
-            if (isDesktop) particleCount = 60;
-            
-            for (let i = 0; i < particleCount; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.style.left = Math.random() * 100 + 'vw';
-                particle.style.top = Math.random() * 100 + 'vh';
-                particle.style.animationDelay = Math.random() * 6 + 's';
-                particle.style.animationDuration = (Math.random() * 3 + 4) + 's';
-                
-                document.body.appendChild(particle);
-            }
-        }
-        
-        // Initialize particles
-        createParticles();
-        
-        // Recreate particles on resize for better performance
-        let resizeTimeout;
-        window.addEventListener('resize', function() {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(function() {
-                // Remove existing particles
-                document.querySelectorAll('.particle').forEach(p => p.remove());
-                // Create new particles
-                createParticles();
-            }, 250);
-        });
-        
-        // Handle form submission
-        $('#firewallForm').on('submit', function(e) {
-            e.preventDefault();
-            
-            const password = $('#password').val();
-            const button = $(this).find('button[type="submit"]');
-            const spinner = $('#loadingSpinner');
-            const icon = $('#unlockIcon');
-            const buttonText = $('#buttonText');
-            const errorDiv = $('#errorMessage');
-            
-            // Show loading state
-            button.prop('disabled', true);
-            spinner.show();
-            icon.hide();
-            buttonText.text('Authenticating...');
-            errorDiv.hide();
-            
-            $.ajax({
-                url: 'firewall.php',
-                method: 'POST',
-                data: { password: password },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.status === 'success') {
-                        buttonText.text('Access Granted');
-                        icon.removeClass('fa-unlock').addClass('fa-check').show();
-                        spinner.hide();
-                        
-                        // Load and show terms/privacy modal
-                        loadTermsAndPrivacy();
-                    } else if (response.status === 'redirect') {
-                        // Trial expired - redirect to register
-                        buttonText.text('Trial Expired');
-                        spinner.hide();
-                        window.location.href = response.url;
-                    } else if (response.status === 'banned') {
-                        // This shouldn't happen due to checkSiteBan exit, but kept for safety
-                        window.location.href = '/firewall';
-                    } else {
-                        showError(response.message || 'Authentication failed');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    if (xhr.status === 200 && xhr.responseText.includes('banned')) {
-                        // User is banned - page already shown by checkSiteBan
-                        return;
-                    }
-                    showError('Connection error. Please try again.');
-                },
-                complete: function() {
-                    if (!$('#termsPrivacyModal').hasClass('show')) {
-                        button.prop('disabled', false);
-                        spinner.hide();
-                        icon.show();
-                        buttonText.text('Authenticate');
-                    }
-                }
-            });
-        });
-        
-        function showError(message) {
-            const errorDiv = $('#errorMessage');
-            errorDiv.text(message).show();
-            
-            // Reset form state
-            $('#firewallForm button').prop('disabled', false);
-            $('#loadingSpinner').hide();
-            $('#unlockIcon').removeClass('fa-check').addClass('fa-unlock').show();
-            $('#buttonText').text('Authenticate');
-        }
-        
-        function loadTermsAndPrivacy() {
-            const content = `
-                <div class="terms-privacy-content">
+    <!-- Invite Code Modal -->
+    <div class="modal fade" id="inviteModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-ticket-alt"></i> Enter Invite Code</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="inviteForm">
+                        <div class="mb-3">
+                            <label class="form-label">Invite Code</label>
+                            <input type="text" class="form-control" id="invite_code_input" required>
+                        </div>
+                        <div id="inviteError" class="error-message" style="display: none;"></div>
+                        <button type="submit" class="btn btn-firewall">
+                            <i class="fas fa-arrow-right"></i> Continue
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ToS Modal -->
+    <div class="modal fade" id="tosModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-file-contract"></i> Terms & Privacy</h5>
+                </div>
+                <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
                     <h6><i class="fas fa-gavel"></i> Terms of Service</h6>
                     <div class="mb-4" style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 8px;">
                         <p class="lead"><strong>By using this chat service, you agree to the following terms:</strong></p>
@@ -810,36 +1041,247 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <strong>Contact Us:</strong> If you have questions about this privacy policy or wish to exercise your data rights, please contact the site administrators. This policy may be updated periodically, and continued use of the service constitutes acceptance of any changes.
                         </div>
                     </div>
+                    <div class="form-check mt-3">
+                        <input class="form-check-input" type="checkbox" id="acceptTos">
+                        <label class="form-check-label" for="acceptTos">I accept the Terms and Privacy Policy</label>
+                    </div>
                 </div>
-            `;
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-firewall" id="tosAcceptBtn" disabled onclick="showRegisterModal()">Continue</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration Modal -->
+    <div class="modal fade" id="registerModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-user-plus"></i> Create Account</h5>
+                </div>
+                <div class="modal-body">
+                    <form id="registerForm">
+                        <div class="mb-3">
+                            <label class="form-label">Username</label>
+                            <input type="text" class="form-control" id="reg_username" required maxlength="20">
+                            <small class="text-muted">3-20 characters</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-control" id="reg_password" required>
+                            <small class="text-muted">At least 6 characters</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="reg_confirm" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Personal Key</label>
+                            <input type="text" class="form-control" id="reg_key" required maxlength="64">
+                            <small class="text-muted">6-64 chars, letters & numbers only</small>
+                        </div>
+                        <div id="registerError" class="error-message" style="display: none;"></div>
+                        <button type="submit" class="btn btn-firewall">Create Account</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terms and Privacy Modal (existing) -->
+    <div class="modal fade" id="termsPrivacyModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-file-contract"></i> Terms of Service & Privacy Policy
+                    </h5>
+                </div>
+                <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+                    <div id="termsPrivacyContent"></div>
+                </div>
+                <div class="modal-footer">
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" id="acceptTerms">
+                        <label class="form-check-label" for="acceptTerms">
+                            I have read and agree to the Terms of Service and Privacy Policy
+                        </label>
+                    </div>
+                    <button type="button" class="btn btn-firewall ms-3" id="continueBtn" disabled onclick="continueToSite()">
+                        <i class="fas fa-arrow-right"></i> Continue to Site
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        createParticles();
+        
+        function createParticles() {
+            const isMobile = window.innerWidth < 768;
+            const particleCount = isMobile ? 20 : 60;
             
-            $('#termsPrivacyContent').html(content);
-            $('#termsPrivacyModal').modal('show');
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + 'vw';
+                particle.style.top = Math.random() * 100 + 'vh';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 3 + 4) + 's';
+                document.body.appendChild(particle);
+            }
         }
         
-        // Enable continue button when checkbox is checked
+        function showMemberModal() {
+            $('#memberModal').modal('show');
+        }
+        
+        function showInviteModal() {
+            $('#inviteModal').modal('show');
+        }
+        
+        function showRegisterModal() {
+            $('#tosModal').modal('hide');
+            $('#registerModal').modal('show');
+        }
+        
+        $('#acceptTos').on('change', function() {
+            $('#tosAcceptBtn').prop('disabled', !this.checked);
+        });
+        
+        // Member login
+        $('#memberLoginForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            $.ajax({
+                url: 'firewall.php',
+                method: 'POST',
+                data: {
+                    action: 'member_login',
+                    username: $('#member_username').val(),
+                    password: $('#member_password').val()
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        window.location.href = '/lounge';
+                    } else {
+                        $('#memberError').text(response.message).show();
+                    }
+                }
+            });
+        });
+        
+        // Invite code
+        $('#inviteForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            $.ajax({
+                url: 'firewall.php',
+                method: 'POST',
+                data: {
+                    action: 'invite_code',
+                    invite_code: $('#invite_code_input').val()
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        $('#inviteModal').modal('hide');
+                        $('#tosModal').modal('show');
+                    } else {
+                        $('#inviteError').text(response.message).show();
+                    }
+                }
+            });
+        });
+        
+        // Registration
+        $('#registerForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            $.ajax({
+                url: 'firewall.php',
+                method: 'POST',
+                data: {
+                    action: 'register',
+                    username: $('#reg_username').val(),
+                    password: $('#reg_password').val(),
+                    confirm_password: $('#reg_confirm').val(),
+                    custom_key: $('#reg_key').val()
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        window.location.href = '/lounge';
+                    } else {
+                        $('#registerError').text(response.message).show();
+                    }
+                }
+            });
+        });
+        
+        // Original form (personal keys/invite codes)
+        $('#firewallForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            const button = $(this).find('button[type="submit"]');
+            const spinner = $('#loadingSpinner');
+            const icon = $('#unlockIcon');
+            const buttonText = $('#buttonText');
+            const errorDiv = $('#errorMessage');
+            
+            button.prop('disabled', true);
+            spinner.show();
+            icon.hide();
+            buttonText.text('Authenticating...');
+            errorDiv.hide();
+            
+            $.ajax({
+                url: 'firewall.php',
+                method: 'POST',
+                data: { password: $('#password').val() },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        buttonText.text('Access Granted');
+                        icon.removeClass('fa-unlock').addClass('fa-check').show();
+                        spinner.hide();
+                        
+                        setTimeout(() => {
+                            window.location.href = '/lounge';
+                        }, 500);
+                    } else {
+                        errorDiv.text(response.message || 'Authentication failed').show();
+                        button.prop('disabled', false);
+                        spinner.hide();
+                        icon.show();
+                        buttonText.text('Authenticate');
+                    }
+                },
+                error: function() {
+                    errorDiv.text('Connection error').show();
+                    button.prop('disabled', false);
+                    spinner.hide();
+                    icon.show();
+                    buttonText.text('Authenticate');
+                }
+            });
+        });
+        
         $('#acceptTerms').on('change', function() {
             $('#continueBtn').prop('disabled', !this.checked);
         });
         
         function continueToSite() {
-            $('#continueBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Loading...');
-            
-            setTimeout(() => {
-                window.location.href = '/select';
-            }, 1000);
+            window.location.href = '/lounge';
         }
         
-        // Auto-focus password input
         $(document).ready(function() {
             $('#password').focus();
-        });
-        
-        // Enter key handling
-        $(document).on('keypress', function(e) {
-            if (e.which === 13 && !$('#termsPrivacyModal').hasClass('show')) {
-                $('#firewallForm').submit();
-            }
         });
     </script>
 </body>
