@@ -607,14 +607,14 @@ $all_data['users'] = $users; // CHANGED: Send array directly instead of wrapped 
     
     $iteration++;
     
-    // OPTIMIZED: Adaptive sleep
-    if ($has_events) {
-        usleep(200000); // 200ms when active
-    } else if ($consecutive_empty < 3) {
-        usleep(500000); // 500ms for first few empty
-    } else {
-        usleep(1000000); // 1s when idle
-    }
+    // OPTIMIZED: Aggressive polling for near-instant message delivery
+if ($has_events) {
+    usleep(10000); // 10ms when active (10x faster)
+} else if ($consecutive_empty < 5) {
+    usleep(25000); // 25ms for first few empty checks (10x faster)
+} else {
+    usleep(100000); // 100ms when truly idle (5x faster)
+}
     
     if ($iteration >= $max_iterations || (time() - $start_time) >= ($max_duration - 2)) {
         echo "data: " . json_encode(['type' => 'reconnect']) . "\n\n";

@@ -1614,6 +1614,9 @@ function getUserColor(msg) {
 }
 
 function renderMessage(msg) {
+     if (typeof isUserMuted === 'function' && isUserMuted(msg.user_id_string)) {
+        return '';
+    }
     const avatar = msg.avatar || msg.guest_avatar || 'default_avatar.jpg';
     const name = msg.username || msg.guest_name || 'Unknown';
     const userIdString = msg.user_id_string || msg.user_id || 'unknown';
@@ -2058,6 +2061,21 @@ function renderUser(user) {
                     actions += `
                         <button class="btn friend-btn" onclick="sendFriendRequest(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
                             <i class="fas fa-user-plus"></i>
+                        </button>
+                    `;
+                }
+                 // Mute button
+                const isMuted = isUserMuted(user.user_id_string);
+                if (isMuted) {
+                    actions += `
+                        <button class="btn btn-secondary" onclick="unmuteUser('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-volume-mute"></i>
+                        </button>
+                    `;
+                } else {
+                    actions += `
+                        <button class="btn btn-warning" onclick="muteUser('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-volume-up"></i>
                         </button>
                     `;
                 }
@@ -3863,6 +3881,10 @@ function createSafeId(str) {
 
 function openWhisper(userIdString, username) {
     debugLog('Opening whisper for user:', userIdString, username);
+
+     if (typeof isUserMuted === 'function' && isUserMuted(userIdString)) {
+        return;
+    }
     
     if (openWhispers.has(userIdString)) {
         showWhisperTab(userIdString);
@@ -3971,6 +3993,10 @@ function closeWhisper(userIdString) {
 }
 
 function sendWhisper(recipientUserIdString) {
+    if (typeof isUserMuted === 'function' && isUserMuted(recipientUserIdString)) {
+        alert('You cannot whisper to a muted user.');
+        return false;
+    }
     const data = openWhispers.get(recipientUserIdString);
     if (!data) return false;
     
@@ -4251,7 +4277,7 @@ window.debugPagination = function() {
 
 $(document).ready(function() {
     debugLog('🏠 Room loaded, roomId:', roomId);
-
+    loadMutedUsers();
 
     if (!roomId) {
         console.error('❌ Invalid room ID, redirecting to lounge');

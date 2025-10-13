@@ -378,6 +378,11 @@ function displayProfileEditor(user) {
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
+        <button class="nav-link" id="presets-tab" data-bs-toggle="tab" data-bs-target="#presets-panel" type="button" role="tab" onclick="loadPresetsTab()" style="background: transparent; border: none; color: #e0e0e0;">
+            <i class="fas fa-bookmark"></i> Presets
+        </button>
+    </li>
+                            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="shop-tab" data-bs-toggle="tab" data-bs-target="#shop-panel" type="button" role="tab" style="background: transparent; border: none; color: #e0e0e0;" onclick="loadShopItems()">
                     <i class="fas fa-store"></i> Shop
                 </button>
@@ -638,6 +643,26 @@ function displayProfileEditor(user) {
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="tab-pane fade" id="presets-panel" role="tabpanel">
+        <div class="p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0"><i class="fas fa-bookmark"></i> Your Presets</h5>
+                <button class="btn btn-sm btn-success" onclick="saveCurrentAsPreset()">
+                    <i class="fas fa-save"></i> Save Current as Preset
+                </button>
+            </div>
+            <div class="alert alert-info" style="background: rgba(13,110,253,0.1); border-color: #0d6efd; color: #6ea8fe;">
+                <i class="fas fa-info-circle"></i> Save your favorite avatar and color combinations for quick switching
+            </div>
+            <div id="presetsContainer">
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p class="mt-2">Loading presets...</p>
+                </div>
+            </div>
+        </div>
+    </div>
                             <!-- Shop Panel -->
                             <div class="tab-pane fade" id="shop-panel" role="tabpanel">
                                 <div class="row g-0">
@@ -1675,4 +1700,185 @@ function displayPurchasedColorsInEditor() {
     
     // Prepend to color grid
     $('#colorGrid').prepend(html);
+}
+
+// Profile Preset Functions
+
+function loadPresetsTab() {
+    if (currentUser.type !== 'user') return;
+    
+    $.ajax({
+        url: 'api/manage_presets.php',
+        method: 'POST',
+        data: { action: 'load' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                displayPresets(response.presets);
+            }
+        }
+    });
+}
+
+function displayPresets(presets) {
+    const container = $('#presetsContainer');
+    
+    if (presets.length === 0) {
+        container.html(`
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-bookmark fa-3x mb-3" style="opacity: 0.3;"></i>
+                <p>No presets saved yet</p>
+                <p class="small">Configure your avatar and color, then click "Save as Preset"</p>
+            </div>
+        `);
+        return;
+    }
+    
+    let html = '<div class="row g-3">';
+    presets.forEach(preset => {
+        html += `
+            <div class="col-md-6 col-lg-4">
+                <div class="preset-card" data-preset-id="${preset.id}" style="background: #333; border: 2px solid #555; border-radius: 8px; padding: 15px; cursor: pointer; transition: all 0.2s;">
+                    <div class="d-flex align-items-center mb-2">
+                        <img src="images/${preset.avatar}" alt="Avatar" style="width: 58px; height: 58px; filter: hue-rotate(${preset.avatar_hue}deg) saturate(${preset.avatar_saturation}%);">
+                        <div class="ms-3 flex-grow-1">
+                            <div class="fw-bold text-white">${escapeHtml(preset.preset_name)}</div>
+                            <div class="small">
+                                <span class="badge color-${preset.color}" style="padding: 4px 8px; filter: hue-rotate(${preset.bubble_hue}deg) saturate(${preset.bubble_saturation}%);">This is your bubble</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 mt-2">
+                        <button class="btn btn-sm btn-primary flex-grow-1" onclick="applyPreset(${preset.id})">
+                            <i class="fas fa-check"></i> Apply
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deletePreset(${preset.id}, event)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    
+    container.html(html);
+    
+    // Add hover effects
+    $('.preset-card').hover(
+        function() { $(this).css({'border-color': '#007bff', 'transform': 'translateY(-2px)'}); },
+        function() { $(this).css({'border-color': '#555', 'transform': 'translateY(0)'}); }
+    );
+}
+
+function saveCurrentAsPreset() {
+    const presetName = prompt('Enter a name for this preset:');
+    if (!presetName || !presetName.trim()) return;
+    
+    const currentAvatar = selectedAvatar || currentUser.avatar;
+    const currentColor = selectedColor || currentUser.color;
+    const currentAvatarHue = selectedAvatarHue !== null ? selectedAvatarHue : (currentUser.avatar_hue || 0);
+    const currentAvatarSat = selectedAvatarSaturation !== null ? selectedAvatarSaturation : (currentUser.avatar_saturation || 100);
+    const currentBubbleHue = selectedBubbleHue !== null ? selectedBubbleHue : (currentUser.bubble_hue || 0);
+    const currentBubbleSat = selectedBubbleSaturation !== null ? selectedBubbleSaturation : (currentUser.bubble_saturation || 100);
+    
+    $.ajax({
+        url: 'api/manage_presets.php',
+        method: 'POST',
+        data: {
+            action: 'save',
+            preset_name: presetName.trim(),
+            avatar: currentAvatar,
+            color: currentColor,
+            avatar_hue: currentAvatarHue,
+            avatar_saturation: currentAvatarSat,
+            bubble_hue: currentBubbleHue,
+            bubble_saturation: currentBubbleSat
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                showToast('Preset saved!', 'success');
+                loadPresetsTab();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function() {
+            alert('Failed to save preset');
+        }
+    });
+}
+
+function applyPreset(presetId) {
+    $.ajax({
+        url: 'api/manage_presets.php',
+        method: 'POST',
+        data: { action: 'load' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                const preset = response.presets.find(p => p.id == presetId);
+                if (preset) {
+                    // Apply avatar and color
+                    selectAvatarInEditor(preset.avatar);
+                    selectColorInEditor(preset.color);
+                    
+                    // Apply customization values
+                    selectedAvatarHue = parseInt(preset.avatar_hue);
+                    selectedAvatarSaturation = parseInt(preset.avatar_saturation);
+                    selectedBubbleHue = parseInt(preset.bubble_hue);
+                    selectedBubbleSaturation = parseInt(preset.bubble_saturation);
+                    
+                    // Update sliders
+                    $('#avatarHueSlider').val(selectedAvatarHue);
+                    $('#avatarHueValue').text(selectedAvatarHue + '°');
+                    $('#avatarSaturationSlider').val(selectedAvatarSaturation);
+                    $('#avatarSaturationValue').text(selectedAvatarSaturation + '%');
+                    $('#bubbleHueSlider').val(selectedBubbleHue);
+                    $('#bubbleHueValue').text(selectedBubbleHue + '°');
+                    $('#bubbleSaturationSlider').val(selectedBubbleSaturation);
+                    $('#bubbleSaturationValue').text(selectedBubbleSaturation + '%');
+                    
+                    // Update previews
+                    updateAvatarPreview();
+                    updateColorPreview();
+                    
+                    showToast('Preset applied!', 'success');
+                }
+            }
+        }
+    });
+}
+
+function deletePreset(presetId, event) {
+    event.stopPropagation();
+    if (!confirm('Delete this preset?')) return;
+    
+    $.ajax({
+        url: 'api/manage_presets.php',
+        method: 'POST',
+        data: {
+            action: 'delete',
+            preset_id: presetId
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                showToast('Preset deleted', 'success');
+                loadPresetsTab();
+            }
+        }
+    });
+}
+
+function showToast(message, type) {
+    const bgColor = type === 'success' ? '#28a745' : '#dc3545';
+    const toast = $(`
+        <div style="position: fixed; top: 20px; right: 20px; background: ${bgColor}; color: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10000; animation: slideInRight 0.3s;">
+            <i class="fas fa-${type === 'success' ? 'check' : 'times'}-circle me-2"></i>${message}
+        </div>
+    `);
+    $('body').append(toast);
+    setTimeout(() => toast.fadeOut(300, () => toast.remove()), 2000);
 }

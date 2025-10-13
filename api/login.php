@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     'teal2','navy','purple','pink','orange','orange2','peach','green','urban','mudgreen',
     'palegreen','red','toyred','spooky','rose','yellow','bbyellow','brown','deepbrown',
     'forest', 'rust', 'babyblue', 'sepia', 'chiipink', 'cnegative', 'cyan', 'caution', 'darkgray',
-    'spooky2', 'spooky3', 'spooky4', 'spooky5', 'spooky6',
+    'spooky2', 'spooky3', 'spooky4', 'spooky5', 'spooky6', 'rainbow',
     'lenn', 'kisin'
 ];
 

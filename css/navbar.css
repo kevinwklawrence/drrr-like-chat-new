@@ -251,9 +251,9 @@ body {
     
     /* Mobile devices */
     .col-lg-4 {
-        position: fixed;
+        /* position: fixed; */
         bottom: 0;
-        background: #0e0e0e;
+        /* background: #0e0e0e; */
     }
     
     body {

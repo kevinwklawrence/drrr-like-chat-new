@@ -211,3 +211,50 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* Profile Presets Styles */
+.preset-card {
+    transition: all 0.2s ease;
+}
+
+.preset-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+}
+
+.preset-card img {
+    transition: transform 0.2s ease;
+}
+
+.preset-card:hover img {
+    transform: scale(1.05);
+}
+
+/* Toast animation */
+@keyframes slideInRight {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Mobile responsive presets */
+@media (max-width: 768px) {
+    .preset-card {
+        padding: 12px !important;
+    }
+    
+    .preset-card img {
+        width: 40px !important;
+        height: 40px !important;
+    }
+    
+    .preset-card .btn-sm {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+    }
+}

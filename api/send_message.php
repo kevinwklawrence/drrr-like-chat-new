@@ -8,6 +8,138 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+function checkSpamProtection($conn, $user_id_string, $room_id, $message) {
+    $MAX_LENGTH = 5000;
+    $BURST_LIMIT = 5;
+    $SHORT_LIMIT = 10;
+    $MEDIUM_LIMIT = 15;
+    $DUPLICATE_WINDOW = 5;
+    
+    // Message length check
+    if (mb_strlen($message, 'UTF-8') > $MAX_LENGTH) {
+        logSpamViolation($conn, $user_id_string, $room_id, 'message_too_long', $message);
+        return [
+            'blocked' => true,
+            'reason' => "Message too long. Maximum $MAX_LENGTH characters allowed."
+        ];
+    }
+    
+    // 10 second burst check
+    $stmt = $conn->prepare("
+        SELECT COUNT(*) as msg_count 
+        FROM messages 
+        WHERE room_id = ? AND user_id_string = ? 
+        AND timestamp > DATE_SUB(NOW(), INTERVAL 10 SECOND)
+    ");
+    $stmt->bind_param("is", $room_id, $user_id_string);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    
+    if ($result['msg_count'] >= $BURST_LIMIT) {
+        logSpamViolation($conn, $user_id_string, $room_id, 'burst_limit', $message);
+        return [
+            'blocked' => true,
+            'reason' => 'Sending messages too quickly. Please wait a moment.'
+        ];
+    }
+    
+    // 30 second rate check
+    $stmt = $conn->prepare("
+        SELECT COUNT(*) as msg_count 
+        FROM messages 
+        WHERE room_id = ? AND user_id_string = ? 
+        AND timestamp > DATE_SUB(NOW(), INTERVAL 20 SECOND)
+    ");
+    $stmt->bind_param("is", $room_id, $user_id_string);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    
+    if ($result['msg_count'] >= $SHORT_LIMIT) {
+        logSpamViolation($conn, $user_id_string, $room_id, 'short_rate_limit', $message);
+        return [
+            'blocked' => true,
+            'reason' => 'Too many messages in a short time. Please slow down.'
+        ];
+    }
+    
+    // 60 second rate check
+    $stmt = $conn->prepare("
+        SELECT COUNT(*) as msg_count 
+        FROM messages 
+        WHERE room_id = ? AND user_id_string = ? 
+        AND timestamp > DATE_SUB(NOW(), INTERVAL 30 SECOND)
+    ");
+    $stmt->bind_param("is", $room_id, $user_id_string);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    
+    if ($result['msg_count'] >= $MEDIUM_LIMIT) {
+        logSpamViolation($conn, $user_id_string, $room_id, 'sustained_rate_limit', $message);
+        return [
+            'blocked' => true,
+            'reason' => 'Message rate limit reached. Please wait before sending more.'
+        ];
+    }
+    
+    // Duplicate message check
+    $stmt = $conn->prepare("
+        SELECT message FROM messages 
+        WHERE room_id = ? AND user_id_string = ? 
+        AND timestamp > DATE_SUB(NOW(), INTERVAL ? SECOND)
+        ORDER BY timestamp DESC LIMIT 3
+    ");
+    $stmt->bind_param("isi", $room_id, $user_id_string, $DUPLICATE_WINDOW);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    while ($row = $result->fetch_assoc()) {
+        if (trim($message) === trim($row['message'])) {
+            $stmt->close();
+            logSpamViolation($conn, $user_id_string, $room_id, 'duplicate_message', $message);
+            return [
+                'blocked' => true,
+                'reason' => 'Please avoid sending duplicate messages.'
+            ];
+        }
+    }
+    $stmt->close();
+    
+    return ['blocked' => false];
+}
+
+function logSpamViolation($conn, $user_id_string, $room_id, $violation_type, $message_content) {
+    $create_table = "CREATE TABLE IF NOT EXISTS spam_violations (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id_string VARCHAR(255) NOT NULL,
+        room_id INT NOT NULL,
+        violation_type VARCHAR(50) NOT NULL,
+        message_preview TEXT,
+        ip_address VARCHAR(45),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_user_violations (user_id_string, created_at),
+        INDEX idx_room_violations (room_id, created_at)
+    )";
+    $conn->query($create_table);
+    
+    $stmt = $conn->prepare("
+        INSERT INTO spam_violations 
+        (user_id_string, room_id, violation_type, message_preview, ip_address) 
+        VALUES (?, ?, ?, ?, ?)
+    ");
+    
+    $message_preview = mb_substr($message_content, 0, 100, 'UTF-8');
+    $ip_address = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    
+    $stmt->bind_param("sisss", $user_id_string, $room_id, $violation_type, $message_preview, $ip_address);
+    $stmt->execute();
+    $stmt->close();
+    
+    error_log("SPAM_VIOLATION: user=$user_id_string, room=$room_id, type=$violation_type");
+}
+
 // Ensure avatar customization and color columns exist in messages table
 $check_color_col = $conn->query("SHOW COLUMNS FROM messages LIKE 'color'");
 if ($check_color_col->num_rows === 0) {
@@ -69,14 +201,16 @@ function sanitizeMarkup($message) {
         return $matches[0];
     }, $message);
     
-    $message = preg_replace_callback('/\[([^\]]+)\]\(([^)]+)\)/', function($matches) use ($validateUrl) {
-        $text = htmlspecialchars($matches[1], ENT_QUOTES, 'UTF-8');
-        $url = trim($matches[2]);
-        if ($validateUrl($url)) {
-            return '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" class="messagelink" target="_blank" rel="noopener noreferrer">' . $text . '</a>';
-        }
-        return $matches[0];
-    }, $message);
+    // NEW (fixed) - validates any http/https URL
+$message = preg_replace_callback('/\[([^\]]+)\]\(([^)]+)\)/', function($matches) {
+    $text = htmlspecialchars($matches[1], ENT_QUOTES, 'UTF-8');
+    $url = trim($matches[2]);
+    // Validate any http/https URL for links
+    if (preg_match('/^https?:\/\//', $url) && filter_var($url, FILTER_VALIDATE_URL) !== false) {
+        return '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" class="messagelink" target="_blank" rel="noopener noreferrer">' . $text . '</a>';
+    }
+    return $matches[0];
+}, $message);
     
     $message = preg_replace('/^### (.*$)/m', '<h3>$1</h3>', $message);
     $message = preg_replace('/^## (.*$)/m', '<h2>$1</h2>', $message);
@@ -207,6 +341,18 @@ if ($verify_result->num_rows === 0) {
         'message' => 'You have been disconnected from the room',
         'redirect' => '/lounge'
     ]);
+    exit;
+}
+
+// Check spam protection
+$spam_check = checkSpamProtection($conn, $user_id_string, $room_id, $message);
+if ($spam_check['blocked']) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => $spam_check['reason'],
+        'spam_blocked' => true
+    ]);
+    $conn->close();
     exit;
 }
 
@@ -521,6 +667,18 @@ try {
         }
         $balance_stmt->close();
     }
+
+    $event_data = json_encode([
+    'message_id' => $message_id,
+    'type' => $message_type ?? 'message' // or 'rp', 'system', etc.
+]);
+
+$message_event_stmt = $conn->prepare("INSERT INTO message_events (room_id, event_type, event_data, created_at) VALUES (?, 'message', ?, NOW())");
+if ($message_event_stmt) {
+    $message_event_stmt->bind_param("is", $room_id, $event_data);
+    $message_event_stmt->execute();
+    $message_event_stmt->close();
+}
     
     $conn->commit();
     

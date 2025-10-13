@@ -883,6 +883,7 @@ $('<style>').text(`
 `).appendTo('head');
 </script>
     <script src="js/room.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/mute_system.js"></script>
     <script src="js/dura_system.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/inventory_system.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/profile_system.js?v=<?php echo $versions['version']; ?>"></script>
@@ -892,6 +893,9 @@ $('<style>').text(`
     <script src="js/inactivity_warning.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/disconnect_checker.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/ghost_hunt.js"></script>
+    <script src="js/pumpkin_smash.js"></script>
+    <script src="js/trick_or_treat.js"></script>
+
 
     
 
