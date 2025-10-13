@@ -73,9 +73,25 @@ function checkSiteBan($conn, $return_json = false) {
                 $ban_message .= "\n\nReason: " . htmlspecialchars($ban['reason']);
             }
             
-            // Check if this is an AJAX request (for join_lounge.php)
-            if ($return_json || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest')) {
-                header('Content-Type: application/json');
+            // AUTO-DETECT: Check if this is an API/AJAX request
+            $is_ajax = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest');
+            $is_api_path = (strpos($_SERVER['SCRIPT_NAME'], '/api/') !== false);
+            $content_type_set = false;
+            
+            // Check if JSON content type already set
+            $headers = headers_list();
+            foreach ($headers as $header) {
+                if (stripos($header, 'Content-Type: application/json') !== false) {
+                    $content_type_set = true;
+                    break;
+                }
+            }
+            
+            // Return JSON if: explicitly requested, AJAX request, API path, or JSON header already set
+            if ($return_json || $is_ajax || $is_api_path || $content_type_set) {
+                if (!$content_type_set && !headers_sent()) {
+                    header('Content-Type: application/json');
+                }
                 echo json_encode([
                     'status' => 'error',
                     'message' => $ban_message,
@@ -110,48 +126,49 @@ function showSiteBanPage($message, $ban_details) {
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
         <style>
             body {
-                background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+                background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+                color: #e0e0e0;
+                font-family: 'Roboto Flex', Arial, sans-serif;
                 min-height: 100vh;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                color: #fff;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             }
             .ban-container {
                 max-width: 600px;
+                background: #2a2a2a;
+                border: 1px solid #404040;
+                border-radius: 12px;
+                padding: 40px;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.3);
                 text-align: center;
-                padding: 2rem;
-                background: rgba(255, 255, 255, 0.1);
-                border-radius: 20px;
-                backdrop-filter: blur(10px);
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             }
             .ban-icon {
-                font-size: 4rem;
+                font-size: 64px;
                 color: #dc3545;
-                margin-bottom: 1rem;
+                margin-bottom: 20px;
             }
             .ban-message {
-                white-space: pre-line;
+                font-size: 16px;
+                margin: 20px 0;
                 line-height: 1.6;
-                margin-bottom: 2rem;
             }
             .ban-details {
-                background: rgba(0, 0, 0, 0.3);
-                padding: 1rem;
-                border-radius: 10px;
-                margin-top: 1rem;
+                background: rgba(255,255,255,0.05);
+                border: 1px solid #404040;
+                border-radius: 8px;
+                padding: 20px;
+                margin-top: 30px;
                 text-align: left;
             }
             .detail-row {
                 display: flex;
                 justify-content: space-between;
-                margin-bottom: 0.5rem;
+                padding: 8px 0;
+                border-bottom: 1px solid #404040;
             }
             .detail-row:last-child {
-                margin-bottom: 0;
+                border-bottom: none;
             }
         </style>
     </head>
@@ -194,6 +211,7 @@ function showSiteBanPage($message, $ban_details) {
     </body>
     </html>
     <?php
+    exit;
 }
 
 // Clean up expired bans

@@ -14,7 +14,7 @@ include 'db_connect.php';
 
 // Include site ban check
 include 'check_site_ban.php';
-checkSiteBan($conn);
+checkSiteBan($conn, true);
 
 // Check if user is moderator or admin
 $user_id = $_SESSION['user']['id'];
@@ -132,8 +132,14 @@ cleanupExpiredSiteBans($conn);
         <small class="text-muted">Welcome back, <?php echo htmlspecialchars($username); ?></small>
     </div>
     <div class="text-center">
+        <a href="/restrict_user" class="btn logout-btn">
+            <i class="fas fa-arrow-left"></i> Restrict User Invites
+        </a>
         <a href="/lounge" class="btn logout-btn">
             <i class="fas fa-arrow-left"></i> Back to Lounge
+        </a>
+        <a href="/room" class="btn logout-btn">
+            <i class="fas fa-arrow-left"></i> Back to Room
         </a>
     </div>
 </div>

@@ -44,6 +44,11 @@ function displayInventory(items) {
     let html = '<div class="row">';
     
     items.forEach(item => {
+        // Skip avatars and colors - they're managed in profile editor
+        if (item.type === 'avatar' || item.type === 'color' || item.type === 'special' || item.type === 'bundle') {
+            return;
+        }
+        
         const equippedClass = item.is_equipped == 1 ? 'equipped' : '';
         const actionBtn = item.is_equipped == 1 
             ? `<button class="btn btn-sm btn-secondary" onclick="unequipItem('${item.item_id}', '${item.type}')">Unequip</button>`
@@ -52,7 +57,7 @@ function displayInventory(items) {
         html += `
             <div class="col-md-6 col-lg-4 mb-3">
                 <div class="inventory-item ${item.rarity} ${equippedClass}">
-                    <div class="inventory-item-icon">${item.type === 'avatar' && item.icon ? `<img src="images/${item.icon}" style="max-width:80px; max-height:80px;">` : item.type === 'color' && item.icon ? `<img class="color-${item.icon}" style="width:58px; height:58px;"></img>` : (item.icon || '📦')}</div>
+                    <div class="inventory-item-icon">${item.icon || '📦'}</div>
                     <div class="inventory-item-name">${item.name}</div>
                     <div class="inventory-item-description">${item.description || ''}</div>
                     <div class="inventory-item-footer">
@@ -65,6 +70,17 @@ function displayInventory(items) {
     });
     
     html += '</div>';
+    
+    if (html === '<div class="row"></div>') {
+        html = `
+            <div class="empty-inventory">
+                <i class="fas fa-box-open"></i>
+                <h5>No equippable items</h5>
+                <p>Avatars and colors are managed in the Profile Editor. Visit the Shop for more items!</p>
+            </div>
+        `;
+    }
+    
     container.html(html);
 }
 

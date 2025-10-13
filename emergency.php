@@ -37,7 +37,7 @@ try {
         }
         
         // Generate 3 unique 8-character codes per user
-        for ($i = 0; $i < 3; $i++) {
+        for ($i = 0; $i < 10; $i++) {
             $attempts = 0;
             while ($attempts < 50) {
                 $code = generateCode();

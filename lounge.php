@@ -6,7 +6,7 @@ require_once 'security_config.php';
 include 'db_connect.php';
 include 'check_invite_access.php';
 include 'check_site_ban.php';
-checkSiteBan($conn);
+checkSiteBan($conn, true);
 
 if (!isset($_SESSION['user'])) {
     header("Location: /guest");
@@ -422,6 +422,86 @@ I will not see them any other way.
         Loading friends...
     </div>
 </div>
+
+
+<!-- Introduction Modal (Add before closing </body> in lounge.php) -->
+<div class="modal fade" id="introductionModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="background: #2a2a2a; color: #e0e0e0; border: 1px solid #444;">
+            <div class="modal-header" style="border-bottom: 1px solid #444;">
+                <h5 class="modal-title">
+                    <i class="fas fa-rocket"></i> Welcome to Duranu Chat!
+                </h5>
+            </div>
+            <div class="modal-body" style="max-height: 500px; overflow-y: auto;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <i class="fas fa-user-check" style="font-size: 4rem; color: #4CAF50;"></i>
+                    <h4 style="margin-top: 15px; color: #4CAF50;">Account Created Successfully!</h4>
+                    <p class="text-muted">Let's get you started with the basics</p>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px; margin-bottom: 15px;">
+                    <h6><i class="fas fa-user-edit"></i> Edit Your Profile</h6>
+                    <p style="margin-bottom: 0;">Click the <strong>Settings</strong> button in the navigation to customize your profile. You can:</p>
+                    <ul style="line-height: 1.8; margin-top: 10px;">
+                        <li>Change your avatar</li>
+                        <li>Customize avatar and bubble colors</li>
+                        <li>View and manage your invite codes</li>
+                        <li>Create personal keys for quick login</li>
+                    </ul>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px; margin-bottom: 15px;">
+                    <h6><i class="fas fa-door-open"></i> Create Your First Room</h6>
+                    <p style="margin-bottom: 0;">Click the <strong>Create Room</strong> button to start your own chat room. You can:</p>
+                    <ul style="line-height: 1.8; margin-top: 10px;">
+                        <li>Set a custom name and description</li>
+                        <li>Add password protection</li>
+                        <li>Control who can join (friends only, members only)</li>
+                        <li>Customize room themes</li>
+                    </ul>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px; margin-bottom: 15px;">
+                    <h6><i class="fas fa-comments"></i> Join Existing Rooms</h6>
+                    <p style="margin-bottom: 0;">Browse the room list below and click <strong>Join</strong> to start chatting!</p>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px;">
+                    <h6><i class="fas fa-user-friends"></i> Make Friends</h6>
+                    <p style="margin-bottom: 0;">Click on any user's avatar to view their profile and send them a friend request. Friends can:</p>
+                    <ul style="line-height: 1.8; margin-top: 10px;">
+                        <li>Send private messages</li>
+                        <li>Join friends-only rooms</li>
+                        <li>See when each other is online</li>
+                    </ul>
+                </div>
+
+                <div class="alert" style="background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); color: #a5d6a7; margin-top: 20px;">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Pro Tip:</strong> You received your own personal key during registration. Use it to log in quickly without entering your username and password!
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid #444;">
+                <button type="button" class="btn btn-success btn-lg w-100" data-bs-dismiss="modal">
+                    <i class="fas fa-check me-2"></i>Let's Go!
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Show introduction modal if flag is set
+<?php if (isset($_SESSION['show_introduction']) && $_SESSION['show_introduction']): ?>
+$(document).ready(function() {
+    $('#introductionModal').modal('show');
+    
+    // Remove flag after showing
+    $.post('api/clear_introduction_flag.php');
+});
+<?php endif; ?>
+</script>
     
     <!-- Knock notifications will appear here -->
     <div id="knockNotifications"></div>

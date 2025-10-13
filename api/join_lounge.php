@@ -102,7 +102,7 @@ $valid_colors = [
     'palegreen','red','toyred','spooky','rose','yellow','bbyellow','brown','deepbrown',
     'forest', 'rust', 'babyblue', 'sepia', 'chiipink', 'cnegative', 'cyan', 'caution', 'darkgray',
     'spooky2', 'spooky3', 'spooky4', 'spooky5', 'spooky6',
-    'lenn'
+    'lenn', 'kisin'
 ];
 
 if (!in_array($color, $valid_colors)) {

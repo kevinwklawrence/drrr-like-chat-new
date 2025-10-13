@@ -4,7 +4,7 @@
 // Timeouts in seconds
 define('AFK_TIMEOUT', 900);           // 15 minutes
 define('DEFAULT_DISCONNECT', 3600);   // 60 minutes
-define('EXTENDED_DISCONNECT', 7200);  // 120 minutes (YouTube/hosts)
+define('EXTENDED_DISCONNECT', 999999999999999);  // 120 minutes (YouTube/hosts)
 
 // Cron runs this
 define('CRON_INTERVAL', 120); // 2 minutes

@@ -54,6 +54,21 @@ try {
             $result = $stmt->get_result();
             $user_data = $result->fetch_assoc();
             $stmt->close();
+
+            // Check if user has sufficient funds
+$balance = 0;
+if ($item['currency'] === 'event') {
+    $balance = $user_data['event_currency'];
+} elseif ($item['currency'] === 'dura') {
+    $balance = $user_data['dura'];
+} else {
+    $balance = $user_data['tokens'];
+}
+
+if ($balance < $item['cost']) {
+    echo json_encode(['status' => 'error', 'message' => 'Insufficient funds']);
+    exit;
+}
             
             // Deduct cost from user balance
             if ($item['currency'] === 'event') {

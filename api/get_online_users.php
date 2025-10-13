@@ -224,7 +224,7 @@ try {
             'last_activity' => $row['last_activity'],
             'seconds_since_activity' => $seconds_since,
             'activity_status' => $activity_status,
-            'equipped_titles' => $equipped_titles,
+            'equipped_titles' => json_decode($row['equipped_titles'] ?? '[]', true) ?? [],
             'avatar_hue' => (int)($row['avatar_hue'] ?? 0),
             
             'avatar_saturation' => (int)($row['avatar_saturation'] ?? 100)

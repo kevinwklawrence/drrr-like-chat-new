@@ -1,34 +1,43 @@
 <?php
-// check_invite_access.php - Middleware to verify invite system access
+// check_invite_access.php - Middleware to verify firewall access
 // Include at top of protected pages (lounge.php, room.php, etc.)
 
-if (!isset($_SESSION['firewall_passed']) || !isset($_SESSION['invite_verified'])) {
-    header("Location: /firewall");
-    exit;
-}
-
-// If not logged in as registered user, check if trial expired
-if (!isset($_SESSION['user']) || $_SESSION['user']['type'] !== 'user') {
-    $ip_address = $_SERVER['REMOTE_ADDR'];
+// Check persistent login cookie if not in session
+if (!isset($_SESSION['user']) && isset($_COOKIE['duranu_remember'])) {
+    $remember_token = $_COOKIE['duranu_remember'];
     
-    $stmt = $conn->prepare("SELECT expires_at < NOW() as is_expired, account_created 
-        FROM invite_usage 
-        WHERE invitee_ip = ? 
-        ORDER BY first_used_at DESC LIMIT 1");
-    $stmt->bind_param("s", $ip_address);
+    $stmt = $conn->prepare("SELECT u.* FROM users u WHERE u.remember_token = ? AND u.remember_token IS NOT NULL");
+    $stmt->bind_param("s", $remember_token);
     $stmt->execute();
     $result = $stmt->get_result();
     
     if ($result->num_rows > 0) {
-        $usage = $result->fetch_assoc();
+        $user = $result->fetch_assoc();
         
-        if (!$usage['account_created'] && $usage['is_expired']) {
-            // Trial expired, force registration
-            $stmt->close();
-            header("Location: /register");
-            exit;
-        }
+        // Log them in automatically
+        $_SESSION['user'] = [
+            'type' => 'user',
+            'id' => $user['id'],
+            'username' => $user['username'],
+            'user_id' => $user['user_id'],
+            'avatar' => $user['avatar'],
+            'is_admin' => $user['is_admin'],
+            'is_moderator' => $user['is_moderator'] ?? 0,
+            'color' => $user['color'] ?? 'blue',
+            'avatar_hue' => $user['avatar_hue'] ?? 0,
+            'avatar_saturation' => $user['avatar_saturation'] ?? 100,
+            'bubble_hue' => $user['bubble_hue'] ?? 0,
+            'bubble_saturation' => $user['bubble_saturation'] ?? 100
+        ];
+        $_SESSION['firewall_passed'] = true;
+        $_SESSION['invite_verified'] = true;
     }
     $stmt->close();
+}
+
+// Check if user is logged in
+if (!isset($_SESSION['user']) || !isset($_SESSION['firewall_passed'])) {
+    header("Location: /firewall");
+    exit;
 }
 ?>

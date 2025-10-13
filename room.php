@@ -18,7 +18,7 @@ include 'db_connect.php';
 include 'check_invite_access.php';
 // Then check site ban
 include 'check_site_ban.php';
-checkSiteBan($conn);
+checkSiteBan($conn, true);
 
 $room_id = (int)$_SESSION['room_id'];
 error_log("room_id in room.php: $room_id"); // Debug

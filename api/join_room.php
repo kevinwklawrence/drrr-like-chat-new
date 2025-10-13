@@ -51,7 +51,7 @@ resetInactivityTimer($conn, $room_id, $user_id_string);
     
     // Only check site ban for non-staff members
     if (!$is_admin && !$is_moderator) {
-        checkSiteBan($conn);
+        checkSiteBan($conn, true);
     }
 
     $room_id = (int)($_POST['room_id'] ?? 0);

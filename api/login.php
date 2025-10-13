@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     'palegreen','red','toyred','spooky','rose','yellow','bbyellow','brown','deepbrown',
     'forest', 'rust', 'babyblue', 'sepia', 'chiipink', 'cnegative', 'cyan', 'caution', 'darkgray',
     'spooky2', 'spooky3', 'spooky4', 'spooky5', 'spooky6',
-    'lenn'
+    'lenn', 'kisin'
 ];
 
     if (!empty($selected_color) && !in_array($selected_color, $valid_colors)) {

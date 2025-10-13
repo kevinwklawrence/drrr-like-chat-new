@@ -57,7 +57,7 @@ try {
             }
             
             // Verify recipient is a registered user (not a guest)
-            $stmt = $conn->prepare("SELECT id FROM users WHERE id = ?");
+            $stmt = $conn->prepare("SELECT id, username FROM users WHERE id = ?");
             $stmt->bind_param("i", $to_user_id);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -66,13 +66,16 @@ try {
                 $stmt->close();
                 exit;
             }
+            $to_user_data = $result->fetch_assoc();
+            $to_username = $to_user_data['username'];
             $stmt->close();
             
             // Get current user data
-            $stmt = $conn->prepare("SELECT dura, tokens FROM users WHERE id = ?");
+            $stmt = $conn->prepare("SELECT dura, tokens, username FROM users WHERE id = ?");
             $stmt->bind_param("i", $user_id);
             $stmt->execute();
             $from_data = $stmt->get_result()->fetch_assoc();
+            $from_username = $from_data['username'];
             $stmt->close();
             
             if ($tip_type === 'token') {
@@ -123,6 +126,17 @@ try {
             $stmt->bind_param("iiis", $user_id, $to_user_id, $amount, $tip_type);
             $stmt->execute();
             $stmt->close();
+            
+            // Add system message if user is in a room
+            if (isset($_SESSION['room_id']) && $_SESSION['room_id'] > 0) {
+                $room_id = (int)$_SESSION['room_id'];
+                $system_message = "$from_username tipped $to_username 💎 $amount Dura";
+                
+                $stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, '', ?, 1, NOW(), 'default_avatar.jpg', 'system')");
+                $stmt->bind_param("is", $room_id, $system_message);
+                $stmt->execute();
+                $stmt->close();
+            }
             
             echo json_encode(['status' => 'success', 'message' => 'Tip sent!']);
             break;

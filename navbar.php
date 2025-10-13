@@ -48,6 +48,7 @@ if (!$is_logged_in) {
 } elseif ($current_page === 'room') {
     // Room navigation
     $nav_items = [
+        ['href' => '#', 'icon' => 'fas fa-book-open', 'text' => 'Commands/Help', 'onclick' => 'openCommandsModal()', 'class' => 'btn-warning'],
         ['href' => '#', 'icon' => 'fas fa-plane-departure', 'text' => 'AFK', 'onclick' => 'toggleAFK()', 'class' => 'btn-warning'],
         ['href' => '#', 'icon' => 'fas fa-user', 'text' => 'Users', 'onclick' => 'toggleMobileUsers()'],
       //  ['id' => 'notificationBell', 'href' => '#', 'icon' => 'fas fa-bell', 'text' => 'Notifications', 'onclick' => 'markAllNotificationsRead()'],

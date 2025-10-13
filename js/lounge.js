@@ -395,7 +395,6 @@ function displayRoomsWithUsers(rooms) {
                                         <div class="fw-bold" style="color: #e0e0e0;">${hostName}</div>
                                         <div class="small">
                                             ${parseInt(host.is_admin) === 1 ? '<span class="user-badge badge-admin"><i class="fas fa-shield-alt" title="Admin"></i></span>' : ''}
-                                            ${host.user_type === 'registered' || host.user_id ? '<span class="badge bg-success badge-sm">Verified</span>' : '<span class="badge bg-secondary badge-sm">Guest</span>'}
                                             ${isPermanent ? '<span class="badge bg-warning badge-sm">Offline Host</span>' : ''}
                                         </div>
                                     </div>
@@ -436,7 +435,6 @@ function displayRoomsWithUsers(rooms) {
                                         <div class="user-name">${userName}</div>
                                         <div class="user-badges">
                                             ${parseInt(user.is_admin) === 1 ? '<span class="badge bg-danger badge-sm">Admin</span>' : ''}
-                                            ${user.user_type === 'registered' || user.user_id ? '<span class="badge bg-success badge-sm">Verified</span>' : '<span class="badge bg-secondary badge-sm">Guest</span>'}
                                         </div>
                                     </div>
                                 </div>
@@ -1617,12 +1615,11 @@ function addFriend() {
 }
 
 function acceptFriend(friendId) {
-    // Disable button to prevent double-clicks
     const acceptBtn = $(`button[onclick="acceptFriend(${friendId})"]`);
     const originalHtml = acceptBtn.html();
     acceptBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
     
-    $.ajax({
+    managedAjax({
         url: 'api/friends.php',
         method: 'POST',
         data: {
@@ -1630,22 +1627,23 @@ function acceptFriend(friendId) {
             friend_id: friendId
         },
         dataType: 'json',
-        timeout: 10000, // 10 second timeout
+        timeout: 10000,
         success: function(response) {
             if (response.status === 'success') {
-                // Success - show brief feedback then reload
                 showNotification('Friend request accepted!', 'success');
-                loadFriends();
                 
-                // Update other UI elements if they exist
                 if (typeof clearFriendshipCache === 'function') {
                     clearFriendshipCache();
                 }
                 if (typeof loadUsers === 'function') {
                     loadUsers();
                 }
+                
+                // Reload friends list from server
+                loadFriends();
             } else {
                 showNotification('Error: ' + (response.message || 'Unknown error'), 'error');
+                acceptBtn.prop('disabled', false).html(originalHtml);
             }
         },
         error: function(xhr, status, error) {
@@ -1658,11 +1656,13 @@ function acceptFriend(friendId) {
                 errorMsg = xhr.responseJSON.message;
             }
             
-            showNotification('Error accepting friend request: ' + errorMsg, 'error');
+            showNotification('Error: ' + errorMsg, 'error');
+            acceptBtn.prop('disabled', false).html(originalHtml);
         },
         complete: function() {
-            // Re-enable button
-            acceptBtn.prop('disabled', false).html(originalHtml);
+            setTimeout(() => {
+                acceptBtn.prop('disabled', false).html(originalHtml);
+            }, 100);
         }
     });
 }

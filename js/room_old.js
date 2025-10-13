@@ -872,46 +872,29 @@ function handleMessagesResponse(data) {
     }
 }
 
-function handleUsersResponse(data) {
-    // FIXED: Handle both SSE format (direct array) and Ajax format (wrapped object)
-    let users = data;
-    
-    // If it's an object with a users property, extract the array
-    if (data && typeof data === 'object' && !Array.isArray(data)) {
-        if (data.status === 'success' && Array.isArray(data.users)) {
-            users = data.users;
-        } else if (data.users) {
-            users = data.users;
-        }
-    }
-    
-    // Now check if we have a valid array
-    if (!Array.isArray(users)) {
-        console.error('Invalid users data:', data);
-        return;
-    }
-    
+function handleUsersResponse(users) {
     checkHostStatusChange(users);
-    
-    let html = '';
-    
-    if (users.length === 0) {
-        html = '<div class="empty-users"><i class="fas fa-users"></i><p>No users in room</p></div>';
-    } else {
-        users.sort((a, b) => {
-            if (a.is_host && !b.is_host) return -1;
-            if (!a.is_host && b.is_host) return 1;
-            const nameA = a.display_name || a.username || a.guest_name || 'Unknown';
-            const nameB = b.display_name || b.username || b.guest_name || 'Unknown';
-            return nameA.localeCompare(nameB);
-        });
+    if (Array.isArray(users)) {
+        let html = '';
         
-        users.forEach(user => {
-            html += renderUser(user);
-        });
+        if (users.length === 0) {
+            html = '<div class="empty-users"><i class="fas fa-users"></i><p>No users in room</p></div>';
+        } else {
+            users.sort((a, b) => {
+                if (a.is_host && !b.is_host) return -1;
+                if (!a.is_host && b.is_host) return 1;
+                const nameA = a.display_name || a.username || a.guest_name || 'Unknown';
+                const nameB = b.display_name || b.username || b.guest_name || 'Unknown';
+                return nameA.localeCompare(nameB);
+            });
+            
+            users.forEach(user => {
+                html += renderUser(user);
+            });
+        }
+        
+        $('#userList').html(html);
     }
-    
-    $('#userList').html(html);
 }
 
 function handleMentionsResponse(response) {
@@ -1649,126 +1632,6 @@ function renderMessage(msg) {
             </div>
         `;
     }
-
-// Handle RP (/me) messages
-if (msg.type === 'rp') {
-    const rpHue = msg.avatar_hue || msg.user_avatar_hue || 0;
-    const rpSat = msg.avatar_saturation || msg.user_avatar_saturation || 100;
-    
-    let rpName = 'Unknown';
-    if (msg.username) {
-        rpName = msg.username;
-    } else if (msg.guest_name) {
-        rpName = msg.guest_name;
-    }
-    
-    return `
-        <div class="rp-message">
-            <img src="images/${avatar}" 
-                 style="filter: hue-rotate(${rpHue}deg) saturate(${rpSat}%);"
-                 alt="${rpName}">
-            <span><strong>${rpName}</strong> ${msg.message}</span>
-        </div>
-    `;
-}
-
-// Handle Roll (/roll) messages
-if (msg.type === 'roll') {
-    const rollHue = msg.avatar_hue || msg.user_avatar_hue || 0;
-    const rollSat = msg.avatar_saturation || msg.user_avatar_saturation || 100;
-    
-    return `
-        <div class="roll-message">
-            <img src="images/${avatar}" 
-                 style="filter: hue-rotate(${rollHue}deg) saturate(${rollSat}%);"
-                 alt="Dice Roll">
-            <span class="roll-result"> 🎲 ${msg.message}</span>
-        </div>
-    `;
-}
-
-// Handle DO (/do) messages - Environmental actions
-if (msg.type === 'do') {
-    const doHue = msg.avatar_hue || msg.user_avatar_hue || 0;
-    const doSat = msg.avatar_saturation || msg.user_avatar_saturation || 100;
-    
-    let doName = 'Unknown';
-    if (msg.username) {
-        doName = msg.username;
-    } else if (msg.guest_name) {
-        doName = msg.guest_name;
-    }
-    
-    return `
-        <div class="do-message">
-            <img src="images/${avatar}" 
-                 style="filter: hue-rotate(${doHue}deg) saturate(${doSat}%);"
-                 alt="${doName}">
-            <span>${msg.message}</span>
-        </div>
-    `;
-}
-
-// Handle Flip (/flip) messages - Coin flip
-if (msg.type === 'flip') {
-    const flipHue = msg.avatar_hue || msg.user_avatar_hue || 0;
-    const flipSat = msg.avatar_saturation || msg.user_avatar_saturation || 100;
-    
-    return `
-        <div class="flip-message">
-            <img src="images/${avatar}" 
-                 style="filter: hue-rotate(${flipHue}deg) saturate(${flipSat}%);"
-                 alt="Coin Flip">
-            <span><span class="flip-result">${msg.message}</span></span>
-        </div>
-    `;
-}
-
-// Handle 8ball (/8ball) messages - Magic 8 ball
-if (msg.type === 'eightball') {
-    const eightballHue = msg.avatar_hue || msg.user_avatar_hue || 0;
-    const eightballSat = msg.avatar_saturation || msg.user_avatar_saturation || 100;
-    
-    return `
-        <div class="eightball-message">
-            <img src="images/${avatar}" 
-                 style="filter: hue-rotate(${eightballHue}deg) saturate(${eightballSat}%);"
-                 alt="Magic 8 Ball">
-            <span><span class="eightball-result">${msg.message}</span></span>
-        </div>
-    `;
-}
-
-// Handle NPC (/npc) messages - NPC dialogue
-if (msg.type === 'npc') {
-    const npcHue = msg.avatar_hue || msg.user_avatar_hue || 0;
-    const npcSat = msg.avatar_saturation || msg.user_avatar_saturation || 100;
-    
-    let npcController = 'Unknown';
-    if (msg.username) {
-        npcController = msg.username;
-    } else if (msg.guest_name) {
-        npcController = msg.guest_name;
-    }
-    
-    return `
-        <div class="npc-message">
-            <img src="images/${avatar}" 
-                 style="filter: hue-rotate(${npcHue}deg) saturate(${npcSat}%);"
-                 alt="${npcController}">
-            <span>${msg.message}</span>
-        </div>
-    `;
-}
-
-// Handle Narrator (/nar) messages - Narrator voice (no avatar/name)
-if (msg.type === 'narrator') {
-    return `
-        <div class="narrator-message">
-            <span>${msg.message}</span>
-        </div>
-    `;
-}
     
     const userColorClass = getUserColor(msg);
     const timestamp = (() => {
@@ -4633,7 +4496,6 @@ function addFriend() {
 }
 
 function acceptFriend(friendId) {
-    // Disable button to prevent double-clicks
     const acceptBtn = $(`button[onclick="acceptFriend(${friendId})"]`);
     const originalHtml = acceptBtn.html();
     acceptBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
@@ -4658,10 +4520,8 @@ function acceptFriend(friendId) {
                     loadUsers();
                 }
                 
-                // Update friends list
-                if (friends && Array.isArray(friends)) {
-                    updateFriendsPanel();
-                }
+                // Reload friends list from server
+                loadFriends();
             } else {
                 showNotification('Error: ' + (response.message || 'Unknown error'), 'error');
                 acceptBtn.prop('disabled', false).html(originalHtml);
@@ -4681,7 +4541,6 @@ function acceptFriend(friendId) {
             acceptBtn.prop('disabled', false).html(originalHtml);
         },
         complete: function() {
-            // Always re-enable button after request completes
             setTimeout(() => {
                 acceptBtn.prop('disabled', false).html(originalHtml);
             }, 100);
@@ -5884,7 +5743,7 @@ function updateNavigationForHostChange(isNowHost) {
 // Add this to your handleUsersResponse function or loadUsers success callback:
 // Check if current user's host status changed
 function checkHostStatusChange(users) {
-    /*const currentUser = users.find(u => u.user_id_string === currentUserIdString);
+    const currentUser = users.find(u => u.user_id_string === currentUserIdString);
     if (currentUser) {
         const wasHost = window.isHost;
         const isNowHost = currentUser.is_host === 1 || currentUser.is_host === true;
@@ -5900,436 +5759,5 @@ function checkHostStatusChange(users) {
                 console.log('You are now the host!');
             }
         }
-    }*/
-}
-
-function openCommandsModal() {
-    const modalHtml = `
-        <div class="modal fade" id="commandsModal" tabindex="-1">
-            <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                <div class="modal-content" style="background: #2a2a2a; border: 1px solid #444; color: #fff;">
-                    <div class="modal-header" style="background: #333; border-bottom: 1px solid #444;">
-                        <h5 class="modal-title">
-                            <i class="fas fa-keyboard"></i> Formatting & Commands Guide
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-                        <!-- Tabs -->
-                        <ul class="nav nav-tabs mb-3" id="commandsTabs" role="tablist" style="border-bottom: 1px solid #444;">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="formatting-tab" data-bs-toggle="tab" 
-                                        data-bs-target="#formatting" type="button" role="tab"
-                                        style="color: #fff; background: transparent;">
-                                    <i class="fas fa-font"></i> Text Formatting
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="rp-tab" data-bs-toggle="tab" 
-                                        data-bs-target="#rp" type="button" role="tab"
-                                        style="color: #fff; background: transparent;">
-                                    <i class="fas fa-theater-masks"></i> RP Commands
-                                </button>
-                            </li>
-                        </ul>
-
-                        <div class="tab-content" id="commandsTabsContent">
-                            <!-- TEXT FORMATTING TAB -->
-                            <div class="tab-pane fade show active" id="formatting" role="tabpanel">
-                                <div class="command-section">
-                                    <h6 class="command-category">
-                                        <i class="fas fa-bold"></i> Text Styles
-                                    </h6>
-                                    
-                                    <div class="command-item">
-                                        <div class="command-name">Bold</div>
-                                        <div class="command-syntax"><code>**bold text**</code></div>
-                                        <div class="command-example">
-                                            <strong>Result:</strong> <strong>bold text</strong>
-                                        </div>
-                                    </div>
-
-                                    <div class="command-item">
-                                        <div class="command-name">Italic</div>
-                                        <div class="command-syntax"><code>*italic text*</code></div>
-                                        <div class="command-example">
-                                            <strong>Result:</strong> <em>italic text</em>
-                                        </div>
-                                    </div>
-
-                                    <div class="command-item">
-                                        <div class="command-name">Underline</div>
-                                        <div class="command-syntax"><code>__underlined text__</code></div>
-                                        <div class="command-example">
-                                            <strong>Result:</strong> <u>underlined text</u>
-                                        </div>
-                                    </div>
-
-                                    <div class="command-item">
-                                        <div class="command-name">Strikethrough</div>
-                                        <div class="command-syntax"><code>~~crossed out~~</code></div>
-                                        <div class="command-example">
-                                            <strong>Result:</strong> <del>crossed out</del>
-                                        </div>
-                                    </div>
-
-                                    <div class="command-item">
-                                        <div class="command-name">Inline Code</div>
-                                        <div class="command-syntax"><code>\`code here\`</code></div>
-                                        <div class="command-example">
-                                            <strong>Result:</strong> <code>code here</code>
-                                        </div>
-                                    </div>
-
-                                    <div class="command-item">
-                                        <div class="command-name">Code Block</div>
-                                        <div class="command-syntax"><code>\`\`\`<br>multiple lines<br>of code<br>\`\`\`</code></div>
-                                        <div class="command-example">
-                                            <strong>Result:</strong><br>
-                                            <pre style="background: #1a1a1a; padding: 8px; border-radius: 4px; margin-top: 4px;"><code>multiple lines
-of code</code></pre>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <hr style="border-color: #444;">
-
-                                <div class="command-section">
-                                    <h6 class="command-category">
-                                        <i class="fas fa-heading"></i> Structure
-                                    </h6>
-
-                                    <div class="command-item">
-                                        <div class="command-name">Headers</div>
-                                        <div class="command-syntax">
-                                            <code># Large Header</code><br>
-                                            <code>## Medium Header</code><br>
-                                            <code>### Small Header</code>
-                                        </div>
-                                        <div class="command-example">
-                                            <strong>Result:</strong><br>
-                                            <h1 style="font-size: 1.5rem; margin: 4px 0;">Large Header</h1>
-                                            <h2 style="font-size: 1.3rem; margin: 4px 0;">Medium Header</h2>
-                                            <h3 style="font-size: 1.1rem; margin: 4px 0;">Small Header</h3>
-                                        </div>
-                                    </div>
-
-                                    <div class="command-item">
-                                        <div class="command-name">Blockquote</div>
-                                        <div class="command-syntax"><code>&gt; quoted text</code></div>
-                                        <div class="command-example">
-                                            <strong>Result:</strong><br>
-                                            <blockquote style="border-left: 3px solid #666; padding-left: 10px; margin: 4px 0; color: #aaa;">quoted text</blockquote>
-                                        </div>
-                                    </div>
-
-                                    <div class="command-item">
-                                        <div class="command-name">Horizontal Rule</div>
-                                        <div class="command-syntax"><code>---</code> or <code>***</code> or <code>___</code></div>
-                                        <div class="command-example">
-                                            <strong>Result:</strong><br>
-                                            <hr style="border-color: #666; margin: 8px 0;">
-                                        </div>
-                                    </div>
-
-                                    <div class="command-item">
-                                        <div class="command-name">Unordered List</div>
-                                        <div class="command-syntax">
-                                            <code>- Item 1</code><br>
-                                            <code>- Item 2</code><br>
-                                            <code>- Item 3</code>
-                                        </div>
-                                        <div class="command-example">
-                                            <strong>Result:</strong>
-                                            <ul style="margin: 4px 0; padding-left: 20px;">
-                                                <li>Item 1</li>
-                                                <li>Item 2</li>
-                                                <li>Item 3</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-
-                                    <div class="command-item">
-                                        <div class="command-name">Ordered List</div>
-                                        <div class="command-syntax">
-                                            <code>1. First</code><br>
-                                            <code>2. Second</code><br>
-                                            <code>3. Third</code>
-                                        </div>
-                                        <div class="command-example">
-                                            <strong>Result:</strong>
-                                            <ol style="margin: 4px 0; padding-left: 20px;">
-                                                <li>First</li>
-                                                <li>Second</li>
-                                                <li>Third</li>
-                                            </ol>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <hr style="border-color: #444;">
-
-                                <div class="command-section">
-                                    <h6 class="command-category">
-                                        <i class="fas fa-link"></i> Links & Images
-                                    </h6>
-
-                                    <div class="command-item">
-                                        <div class="command-name">Link</div>
-                                        <div class="command-syntax"><code>[Link Text](https://example.com)</code></div>
-                                        <div class="command-example">
-                                            <strong>Result:</strong> <a href="#" style="color: #4a9eff;">Link Text</a>
-                                        </div>
-                                    </div>
-
-                                    <div class="command-item">
-                                        <div class="command-name">Image</div>
-                                        <div class="command-syntax"><code>![Alt Text](image-url.jpg)</code></div>
-                                        <div class="command-example">
-                                            <strong>Note:</strong> Displays an embedded image
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- RP COMMANDS TAB -->
-                            <div class="tab-pane fade" id="rp" role="tabpanel">
-                                <div class="alert alert-info" style="background: rgba(13, 110, 253, 0.1); border: 1px solid rgba(13, 110, 253, 0.3);">
-                                    <i class="fas fa-info-circle"></i> <strong>Roleplay Commands</strong><br>
-                                    These commands create special message types for roleplaying scenarios.
-                                </div>
-
-                                <div class="command-section">
-                                    <h6 class="command-category">
-                                        <i class="fas fa-running"></i> Action Commands
-                                    </h6>
-
-                                    <div class="command-item rp-command">
-                                        <div class="command-name">/me</div>
-                                        <div class="command-syntax"><code>/me draws their sword</code></div>
-                                        <div class="command-description">
-                                            Perform an action in third person. Creates an italicized action message.
-                                        </div>
-                                        <div class="command-example">
-                                            <strong>Result:</strong> <em>Username draws their sword</em>
-                                        </div>
-                                    </div>
-
-                                    <div class="command-item rp-command">
-                                        <div class="command-name">/do</div>
-                                        <div class="command-syntax"><code>/do The door creaks open slowly</code></div>
-                                        <div class="command-description">
-                                            Describe environmental actions or events happening around characters.
-                                        </div>
-                                        <div class="command-example">
-                                            <strong>Result:</strong> <span style="color: #ab47bc; font-style: italic;">The door creaks open slowly</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="command-item rp-command">
-                                        <div class="command-name">/nar</div>
-                                        <div class="command-syntax"><code>/nar The ancient temple rumbles ominously...</code></div>
-                                        <div class="command-description">
-                                            <span class="badge bg-warning text-dark">Host Only</span> Narrator voice for scene-setting. No avatar or username shown.
-                                        </div>
-                                        <div class="command-example">
-                                            <strong>Result:</strong> <span style="color: #ffc107; font-style: italic;">📖 The ancient temple rumbles ominously...</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="command-item rp-command">
-                                        <div class="command-name">/npc</div>
-                                        <div class="command-syntax"><code>/npc Guard: Halt! Who goes there?</code></div>
-                                        <div class="command-description">
-                                            Control NPC (Non-Player Character) dialogue. Format: <code>/npc [Name]: [dialogue]</code>
-                                        </div>
-                                        <div class="command-example">
-                                            <strong>Result:</strong> <span style="color: #00bcd4;"><strong>Guard:</strong> "Halt! Who goes there?" <em>(by Username)</em></span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <hr style="border-color: #444;">
-
-                                <div class="command-section">
-                                    <h6 class="command-category">
-                                        <i class="fas fa-dice"></i> Dice & Random
-                                    </h6>
-
-                                    <div class="command-item rp-command">
-                                        <div class="command-name">/roll</div>
-                                        <div class="command-syntax">
-                                            <code>/roll</code> (rolls 1d20)<br>
-                                            <code>/roll 2d6</code> (rolls 2 six-sided dice)<br>
-                                            <code>/roll 3d10</code> (rolls 3 ten-sided dice)
-                                        </div>
-                                        <div class="command-description">
-                                            Roll dice for skill checks, attacks, or random outcomes. Format: <code>/roll [number]d[sides]</code>
-                                            <br><small class="text-muted">• 1-10 dice allowed • 2-100 sides allowed • Defaults to 1d20</small>
-                                        </div>
-                                        <div class="command-example">
-                                            <strong>Examples:</strong><br>
-                                            <span style="color: #4caf50;">🎲 Username rolled 15 (1d20)</span><br>
-                                            <span style="color: #4caf50;">🎲 Username rolled 9 [4, 5] (2d6)</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="command-item rp-command">
-                                        <div class="command-name">/flip</div>
-                                        <div class="command-syntax"><code>/flip</code></div>
-                                        <div class="command-description">
-                                            Flip a coin for a 50/50 decision. Results in Heads or Tails.
-                                        </div>
-                                        <div class="command-example">
-                                            <strong>Result:</strong> <span style="color: #ff9800;">🪙 Username flipped: Heads</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="command-item rp-command">
-                                        <div class="command-name">/8ball</div>
-                                        <div class="command-syntax"><code>/8ball Will we succeed?</code></div>
-                                        <div class="command-description">
-                                            Ask the Magic 8 Ball a yes/no question and get a mystical answer.
-                                        </div>
-                                        <div class="command-example">
-                                            <strong>Result:</strong> <span style="color: #5c6bc0;">🎱 Username asked: "Will we succeed?" — Signs point to yes</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="alert alert-warning mt-3" style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3);">
-                                    <i class="fas fa-lightbulb"></i> <strong>Pro Tip:</strong> Commands can be combined with text formatting! Try <code>**/me carefully examines the **ancient artifact****</code>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer" style="border-top: 1px solid #444;">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <i class="fas fa-times"></i> Close
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Add CSS for command items if not already present
-    if ($('#commandsModalCSS').length === 0) {
-        const css = `
-            <style id="commandsModalCSS">
-            .command-section {
-                margin-bottom: 20px;
-            }
-
-            .command-category {
-                color: #4a9eff;
-                margin-bottom: 15px;
-                padding-bottom: 8px;
-                border-bottom: 2px solid #333;
-                font-weight: 600;
-            }
-
-            .command-item {
-                background: #1a1a1a;
-                padding: 12px;
-                margin-bottom: 12px;
-                border-radius: 6px;
-                border-left: 3px solid #444;
-            }
-
-            .command-item.rp-command {
-                border-left-color: #4a9eff;
-            }
-
-            .command-name {
-                color: #4a9eff;
-                font-weight: 600;
-                font-size: 1.1rem;
-                margin-bottom: 6px;
-            }
-
-            .command-syntax {
-                background: #0a0a0a;
-                padding: 8px;
-                border-radius: 4px;
-                margin: 8px 0;
-                font-family: 'Courier New', monospace;
-                font-size: 0.9rem;
-            }
-
-            .command-syntax code {
-                color: #faa61a;
-                background: transparent;
-                padding: 0;
-            }
-
-            .command-description {
-                color: #bbb;
-                margin: 8px 0;
-                font-size: 0.95rem;
-            }
-
-            .command-example {
-                margin-top: 8px;
-                padding: 8px;
-                background: #2a2a2a;
-                border-radius: 4px;
-                font-size: 0.9rem;
-            }
-
-            .command-example strong {
-                color: #4caf50;
-            }
-
-            #commandsModal .nav-link {
-                border: none;
-                border-bottom: 2px solid transparent;
-            }
-
-            #commandsModal .nav-link.active {
-                background: transparent !important;
-                border-bottom-color: #4a9eff;
-                color: #4a9eff !important;
-            }
-
-            #commandsModal .nav-link:hover {
-                background: rgba(74, 158, 255, 0.1);
-                border-bottom-color: #4a9eff;
-            }
-
-            #commandsModal .modal-body {
-                scrollbar-width: thin;
-                scrollbar-color: #4a9eff #1a1a1a;
-            }
-
-            #commandsModal .modal-body::-webkit-scrollbar {
-                width: 8px;
-            }
-
-            #commandsModal .modal-body::-webkit-scrollbar-track {
-                background: #1a1a1a;
-            }
-
-            #commandsModal .modal-body::-webkit-scrollbar-thumb {
-                background: #4a9eff;
-                border-radius: 4px;
-            }
-
-            #commandsModal .modal-body::-webkit-scrollbar-thumb:hover {
-                background: #3a8eef;
-            }
-            </style>
-        `;
-        $('head').append(css);
     }
-
-    // Remove existing modal if present
-    $('#commandsModal').remove();
-    
-    // Add modal to body
-    $('body').append(modalHtml);
-    
-    // Show the modal
-    const modal = new bootstrap.Modal(document.getElementById('commandsModal'));
-    modal.show();
 }

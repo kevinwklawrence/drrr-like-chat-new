@@ -24,7 +24,7 @@ $valid_colors = [
     'palegreen','red','toyred','spooky','rose','yellow','bbyellow','brown','deepbrown',
     'forest', 'rust', 'babyblue', 'sepia', 'chiipink', 'cnegative', 'cyan', 'caution', 'darkgray',
     'spooky2', 'spooky3', 'spooky4', 'spooky5', 'spooky6',
-    'lenn'
+    'lenn', 'kisin'
 ];
 
 if (!in_array($new_color, $valid_colors)) {
@@ -33,7 +33,7 @@ if (!in_array($new_color, $valid_colors)) {
 }
 
 $user = $_SESSION['user'];
-$user_id = $user['user_id'] ?? null;
+$user_id = $user['id'] ?? null;
 $user_id_string = $user['user_id_string'] ?? null;
 
 try {
