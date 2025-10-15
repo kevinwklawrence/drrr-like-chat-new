@@ -44,7 +44,7 @@ function displayInventory(items) {
     let html = '<div class="row">';
     
     items.forEach(item => {
-        // Skip avatars and colors - they're managed in profile editor
+        // Skip avatars, colors, special items, and bundles - managed elsewhere
         if (item.type === 'avatar' || item.type === 'color' || item.type === 'special' || item.type === 'bundle') {
             return;
         }
@@ -54,10 +54,16 @@ function displayInventory(items) {
             ? `<button class="btn btn-sm btn-secondary" onclick="unequipItem('${item.item_id}', '${item.type}')">Unequip</button>`
             : `<button class="btn btn-sm btn-success" onclick="equipItem('${item.item_id}', '${item.type}')">Equip</button>`;
         
+        // Show appropriate icon for effects
+        let displayIcon = item.icon || '📦';
+        if (item.type === 'effect') {
+            displayIcon = getEffectPreview(item.item_id);
+        }
+        
         html += `
             <div class="col-md-6 col-lg-4 mb-3">
-                <div class="inventory-item ${item.rarity} ${equippedClass}">
-                    <div class="inventory-item-icon">${item.icon || '📦'}</div>
+                <div class="inventory-item ${item.type === 'effect' ? 'effect-card' : ''} ${item.rarity} ${equippedClass}">
+                    <div class="inventory-item-icon">${displayIcon}</div>
                     <div class="inventory-item-name">${item.name}</div>
                     <div class="inventory-item-description">${item.description || ''}</div>
                     <div class="inventory-item-footer">
@@ -76,7 +82,7 @@ function displayInventory(items) {
             <div class="empty-inventory">
                 <i class="fas fa-box-open"></i>
                 <h5>No equippable items</h5>
-                <p>Avatars and colors are managed in the Profile Editor. Visit the Shop for more items!</p>
+                <p>Avatars and colors are managed in the Profile Editor. Purchase effects and titles in the Shop!</p>
             </div>
         `;
     }
@@ -96,17 +102,20 @@ function equipItem(itemId, itemType) {
         dataType: 'json',
         success: function(response) {
             if (response.status === 'success') {
-                if (itemType === 'avatar' || itemType === 'color') {
-                    // Avatar equipped - reload page to update avatar display everywhere
-                    alert('✓ ' + response.item_name + ' equipped! Reloading to update your avatar...');
-                    location.reload();
-                } else {
-                    // Non-avatar item (titles, etc.)
-                    loadInventory();
-                    if (window.userTitlesCache && currentUser.id) {
-                        window.userTitlesCache.delete(currentUser.id);
-                    }
-                    alert('✓ ' + response.item_name + ' equipped!');
+        // NEW: Clear effects cache for effects
+        if (itemType === 'effect' && typeof userEffectsCache !== 'undefined' && currentUser.id) {
+            userEffectsCache.delete(currentUser.id);
+        }
+        
+        if (itemType === 'avatar' || itemType === 'color') {
+            alert('✓ ' + response.item_name + ' equipped! Reloading...');
+            location.reload();
+        } else {
+            loadInventory();
+            if (window.userTitlesCache && currentUser.id) {
+                window.userTitlesCache.delete(currentUser.id);
+            }
+            alert('✓ ' + response.item_name + ' equipped!');
                 }
             } else {
                 alert('Failed to equip item: ' + response.message);
@@ -231,7 +240,11 @@ function initializeShopTabs() {
                     <i class="fas fa-palette"></i> Colors
                 </button>
             </li>
-
+            <li class="nav-item">
+                <button class="nav-link shop-tab-btn" data-tab="effect" onclick="filterShopByTab('effect')" style="background: transparent; color: #aaa; margin-right: 5px;">
+                    <i class="fas fa-magic"></i> Effects
+                </button>
+            </li>
             <li class="nav-item">
                 <button class="nav-link shop-tab-btn" data-tab="special" onclick="filterShopByTab('special')" style="background: transparent; color: #aaa; margin-right: 5px;">
                     <i class="fas fa-star"></i> Special
@@ -301,9 +314,12 @@ function displayShopItemsByTab(tab) {
         filteredItems = allShopItems.filter(item => item.type === 'special');
     } else if (tab === 'event') {
         filteredItems = allShopItems.filter(item => item.rarity === 'event');
-        } else if (tab === 'color') {
+    } else if (tab === 'color') {
         filteredItems = allShopItems.filter(item => item.type === 'color');
-        } else if (tab === 'bundle') {
+    } else if (tab === 'effect') {
+        // FIXED: Was filtering for 'color', now correctly filters for 'effect'
+        filteredItems = allShopItems.filter(item => item.type === 'effect');
+    } else if (tab === 'bundle') {
         loadAndDisplayBundles();
         return; // Bundles have their own display function
     }
@@ -423,7 +439,6 @@ function displayBundles(bundles) {
     container.html(html);
 }
 
-// Display shop items
 function displayShopItems(items) {
     const container = $('#shopItemsContainer');
     
@@ -450,16 +465,22 @@ function displayShopItems(items) {
         
         const ownedClass = item.owned == 1 ? 'owned' : '';
         
-        // Show avatar preview for avatar items
-        const itemIcon = (item.type === 'avatar' && item.icon) 
-            ? `<img src="images/${item.icon}" style="max-width:58px; max-height:58px;">`
-            : (item.type === 'color' && item.icon)
-            ? `<div class="color-${item.icon}" style="width:58px; height:58px; border-radius:8px; border:2px solid #555;"></div>`
-            : (item.icon || '📦');
+        // Show appropriate preview based on item type
+        let itemIcon;
+        if (item.type === 'avatar' && item.icon) {
+            itemIcon = `<img src="images/${item.icon}" style="max-width:58px; max-height:58px;">`;
+        } else if (item.type === 'color' && item.icon) {
+            itemIcon = `<div class="color-${item.icon}" style="width:58px; height:58px; border-radius:8px; border:2px solid #555;"></div>`;
+        } else if (item.type === 'effect') {
+            // NEW: Effect preview with animation
+            itemIcon = getEffectPreview(item.item_id);
+        } else {
+            itemIcon = item.icon || '📦';
+        }
         
         html += `
             <div class="col-md-6 mb-3">
-                <div class="shop-item ${ownedClass}" style="background: #333; border: 1px solid #555; border-radius: 8px; padding: 20px; transition: all 0.2s ease;">
+                <div class="shop-item ${item.type === 'effect' ? 'effect-card' : ''} ${ownedClass}" style="background: #333; border: 1px solid #555; border-radius: 8px; padding: 20px; transition: all 0.2s ease;">
                     <div class="d-flex align-items-start">
                         <div class="shop-item-icon" style="font-size: 2.5rem; margin-right: 15px;">
                             ${itemIcon}
@@ -536,6 +557,197 @@ function purchaseShopItem(itemId) {
         },
         error: function() {
             alert('Failed to purchase item');
+        }
+    });
+}
+
+// Helper function to get effect preview icon/animation
+// Enhanced effect preview function with more detailed visuals
+function getEffectPreview(effectItemId) {
+    const parts = effectItemId.split('_');
+    if (parts.length < 3) return '<div class="effect-preview">✨</div>';
+    
+    const effectType = parts[1]; // glow, overlay, bubble
+    const effectName = parts.slice(2).join('_'); // fire, rainbow, etc.
+    
+    let previewHtml = '';
+    
+    if (effectType === 'glow') {
+        // Show a circular avatar-like shape with the glow effect
+        previewHtml = `
+            <div class="effect-preview effect-preview-glow" style="position: relative; width: 58px; height: 58px; display: flex; align-items: center; justify-content: center;">
+                <div class="avatar-glow glow-${effectName}" style="position: absolute; top: 0px; left: 0px; right: 0px; bottom: 0px; border-radius: 4px;"></div>
+                <div style="
+                    width: 58px; 
+                    height: 58px; 
+                    background: url('../images/default/_u0.png') no-repeat center/cover;
+                    border-radius: 4px; 
+                    position: relative; 
+                    z-index: 1;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: #aaa;
+                    font-size: 1.5rem;
+                "></div>
+            </div>
+        `;
+        
+    } else if (effectType === 'overlay') {
+        // Show a circular avatar with the overlay on top
+        const overlayIcons = {
+            'crown': '👑',
+            'halo': '😇',
+            'cat_ears': '🐱',
+            'devil_horns': '😈',
+            'sparkles': '✨',
+            'hearts': '💕',
+            'snow': '❄️',
+            'witch_hat': '🧙',
+            'party_hat': '🎉'
+        };
+        
+        const centerIcon = overlayIcons[effectName] || '';
+        
+        previewHtml = `
+            <div class="effect-preview effect-preview-overlay" style="position: relative; width: 58px; height: 58px; display: inline-block;">
+                <div style="
+                    width: 58px; 
+                    height: 58px; 
+                    background: url('../images/default/_u0.png') no-repeat center/cover;
+                    border-radius: 4px; 
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: #aaa;
+                    font-size: 1.5rem;
+                "></div>
+                <div class="avatar-overlay overlay-${effectName}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></div>
+            </div>
+        `;
+        
+    } else if (effectType === 'bubble') {
+        // Show a mini message bubble with the animation effect
+        const bubbleIcons = {
+            'float': '💬',
+            'shake': '📳',
+            'rainbow': '🌈',
+            'glow': '✨',
+            'fire': '🔥',
+            'frost': '❄️',
+            'neon': '💡',
+            'sparkles': '✨',
+            'bounce': '⚾'
+        };
+        
+        const bubbleIcon = bubbleIcons[effectName] || '💬';
+        
+        previewHtml = `
+            <div class="effect-preview effect-preview-bubble" style="position: relative; width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; padding: 5px;">
+                <div class="bubble-effect-${effectName}" style="
+                    width: 100%; 
+                    min-height: 42px; 
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    border-radius: 12px;
+                    border: 2px solid rgba(255,255,255,0.3);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 1.3rem;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                "></div>
+            </div>
+        `;
+    } else {
+        // Fallback for unknown types
+        previewHtml = `
+            <div class="effect-preview" style="
+                width: 58px; 
+                height: 58px; 
+                background: #444; 
+                border-radius: 8px; 
+                border: 2px solid #666;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.5rem;
+            "></div>
+        `;
+    }
+    
+    return previewHtml;
+}
+
+// Optional: Function to get effect description text
+function getEffectDescription(effectItemId) {
+    const parts = effectItemId.split('_');
+    if (parts.length < 3) return 'Special visual effect';
+    
+    const effectType = parts[1];
+    const effectName = parts.slice(2).join(' ');
+    
+    const descriptions = {
+        'glow': `A ${effectName} aura that glows around your avatar`,
+        'overlay': `A ${effectName} overlay that appears on top of your avatar`,
+        'bubble': `Your message bubbles will have a ${effectName} effect`
+    };
+    
+    return descriptions[effectType] || 'Special visual effect';
+}
+
+
+// Function to apply effects to avatars in the UI
+function applyAvatarEffects(userId, avatarElement) {
+    // This would fetch user's equipped effects and apply them
+    // Implementation depends on how you store equipped effects
+    
+    // Example:
+    $.ajax({
+        url: 'api/get_equipped_effects.php',
+        method: 'GET',
+        data: { user_id: userId },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                const effects = response.effects;
+                
+                // Wrap avatar if not already wrapped
+                if (!avatarElement.parent().hasClass('avatar-with-effects')) {
+                    avatarElement.wrap('<div class="avatar-with-effects"></div>');
+                }
+                
+                const wrapper = avatarElement.parent();
+                
+                // Clear existing effects
+                wrapper.find('.avatar-glow, .avatar-overlay').remove();
+                
+                // Apply glow effect
+                if (effects.avatar_glow) {
+                    wrapper.prepend(`<div class="avatar-glow glow-${effects.avatar_glow}"></div>`);
+                }
+                
+                // Apply overlay effect
+                if (effects.avatar_overlay) {
+                    wrapper.append(`<div class="avatar-overlay overlay-${effects.avatar_overlay}"></div>`);
+                }
+            }
+        }
+    });
+}
+
+// Function to apply effects to message bubbles
+function applyBubbleEffect(userId, bubbleElement) {
+    // Fetch and apply bubble effect
+    $.ajax({
+        url: 'api/get_equipped_effects.php',
+        method: 'GET',
+        data: { user_id: userId },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success' && response.effects.bubble_effect) {
+                const effectClass = `bubble-effect-${response.effects.bubble_effect}`;
+                bubbleElement.addClass(effectClass);
+            }
         }
     });
 }

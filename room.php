@@ -232,7 +232,7 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
         <link href="css/ghost_mode.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
         <link rel="stylesheet" href="css/notifications.css?v=<?php echo $versions['version']; ?>">
         <link rel="stylesheet" href="css/friend_notifications.css?v=<?php echo $versions['version']; ?>">
-        
+        <link rel="stylesheet" href="css/effects.css?v=<?php echo $versions['version']; ?>">
 
 
 

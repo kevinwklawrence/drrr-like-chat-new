@@ -1,0 +1,475 @@
+/* ============================================
+   EFFECTS SYSTEM CSS
+   Add to css/style.css
+   ============================================ */
+
+/* Avatar Effect Container - wraps avatar for effects */
+.avatar-with-effects {
+    position: absolute;
+    top: 30px;
+    width: 58px;
+    height: 58px;
+    border-radius: 4px;
+}
+
+/* ============================================
+   AVATAR OVERLAYS
+   PNG images that layer on top of avatars
+   ============================================ */
+
+.avatar-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 101;
+}
+
+/* Specific overlay effects */
+.overlay-keepout {
+    background: url('../images/effects/keepout.png') no-repeat center top;
+    background-size: 100%;
+}
+
+.overlay-kisin {
+    background: url('../images/effects/kisinfire.gif') no-repeat center top;
+    background-size: 100%;
+}
+
+.overlay-pumpgif {
+    background: url('../images/effects/pumpgif.gif') no-repeat center top;
+    background-size: 100%;
+}
+
+.overlay-blackborder {
+    background: url('../images/effects/black_border.png') no-repeat center top;
+    background-size: 100%;
+}
+
+.overlay-dwborder {
+    background: url('../images/effects/dw_border.png') no-repeat center top;
+    background-size: 100%;
+}
+
+.overlay-fireborder {
+    background: url('../images/effects/fire_border.png') no-repeat center top;
+    background-size: 100%;
+}
+.overlay-halloweenborder {
+    background: url('../images/effects/halloween_border.png') no-repeat center top;
+    background-size: 100%;
+}
+
+.overlay-oceanborder {
+    background: url('../images/effects/ocean_border.png') no-repeat center top;
+    background-size: 100%;
+}
+
+.overlay-rainbowborder {
+    background: url('../images/effects/rainbow_border.png') no-repeat center top;
+    background-size: 100%;
+}
+.overlay-sunsetborder {
+    background: url('../images/effects/sunset_border.png') no-repeat center top;
+    background-size: 100%;
+}
+.overlay-warningborder {
+    background: url('../images/effects/warning_border.png') no-repeat center top;
+    background-size: 100%;
+}
+
+.overlay-crown {
+    background: url('../images/effects/crown_overlay.png') no-repeat center top;
+    background-size: 80%;
+}
+
+.overlay-halo {
+    background: url('../images/effects/halo_overlay.png') no-repeat center top;
+    background-size: 100%;
+    animation: float 3s ease-in-out infinite;
+}
+
+.overlay-devil-horns {
+    background: url('../images/effects/devil_horns.png') no-repeat center top;
+    background-size: 80%;
+}
+
+.overlay-cat-ears {
+    background: url('../images/effects/cat_ears.png') no-repeat center top;
+    background-size: 70%;
+}
+
+.overlay-sparkles {
+    background: url('../images/effects/sparkles.png') no-repeat center;
+    background-size: 120%;
+    animation: sparkle 2s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+}
+
+@keyframes sparkle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* ============================================
+   AVATAR GLOWS
+   Colored glows around avatars
+   ============================================ */
+
+.avatar-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Glow colors */
+.glow-gold {
+    box-shadow: 
+        0 0 10px rgb(183 152 24 / 60%),
+        0 0 20px rgba(183 152 24 / 40%),
+        0 0 30px rgba(183 152 24 / 20%);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.glow-white {
+    box-shadow: 
+        0 0 10px rgb(255 255 255 / 60%),
+        0 0 20px rgb(255 255 255 / 40%),
+        0 0 30px rgb(255 255 255 / 20%);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.glow-purple {
+    box-shadow: 
+        0 0 10px rgb(137 0 255 / 60%),
+        0 0 20px rgba(137 0 255 / 40%),
+        0 0 30px rgba(137 0 255 / 20%);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.glow-blue {
+    box-shadow: 
+        0 0 10px rgb(0 55 255 / 60%),
+        0 0 20px rgba(0 55 255 / 40%),
+        0 0 30px rgba(0 55 255 / 20%);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.glow-green {
+    box-shadow: 
+        0 0 10px rgb(0 255 16 / 60%),
+        0 0 20px rgba(0 255 16 / 40%),
+        0 0 30px rgba(0 255 16 / 20%);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.glow-yellow {
+    box-shadow: 
+        0 0 10px rgb(246 255 85 / 60%),
+        0 0 20px rgba(246 255 85 / 40%),
+        0 0 30px rgba(246 255 85 / 20%);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.glow-orange {
+    box-shadow: 
+        0 0 10px rgb(255 173 0 / 60%),
+        0 0 20px rgba(255 173 0 / 40%),
+        0 0 30px rgba(255 173 0 / 20%);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.glow-red {
+    box-shadow: 
+        0 0 10px rgb(255 0 0 / 60%),
+        0 0 20px rgba(255 0 0 / 40%),
+        0 0 30px rgba(255 0 0 / 20%);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.glow-cyan {
+    box-shadow: 
+        0 0 10px rgb(0 255 241 / 60%),
+        0 0 20px rgba(0 255 241 / 40%),
+        0 0 30px rgba(0 255 241 / 20%);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.glow-pink {
+    box-shadow: 
+        0 0 10px rgb(244 0 255 / 60%),
+        0 0 20px rgba(244 0 255 / 40%),
+        0 0 30px rgba(244 0 255 / 20%);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.glow-black {
+    box-shadow: 
+        0 0 10px rgb(0 0 0 / 60%),
+        0 0 20px rgb(0 0 0 / 40%),
+        0 0 30px rgb(0 0 0 / 20%);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.glow-rainbow {
+    box-shadow: 
+        0 0 10px rgba(255, 0, 0, 0.6),
+        0 0 20px rgba(0, 255, 0, 0.4),
+        0 0 30px rgba(0, 0, 255, 0.2);
+    animation: rainbow-glow 3s linear infinite;
+}
+
+.glow-fire {
+    box-shadow: 
+        0 0 15px rgba(255, 69, 0, 0.8),
+        0 0 30px rgba(255, 140, 0, 0.5),
+        0 0 45px rgba(255, 69, 0, 0.3);
+    animation: flicker 1.5s ease-in-out infinite;
+}
+
+.glow-ice {
+    box-shadow: 
+        0 0 15px rgba(173, 216, 230, 0.8),
+        0 0 30px rgba(135, 206, 250, 0.5),
+        0 0 45px rgba(0, 191, 255, 0.3);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.glow-shadow {
+    box-shadow: 
+        0 0 20px rgba(75, 0, 130, 0.8),
+        0 0 40px rgba(128, 0, 128, 0.5),
+        0 0 60px rgba(75, 0, 130, 0.3);
+    animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.glow-electric {
+    box-shadow: 
+        0 0 10px rgba(0, 255, 255, 0.8),
+        0 0 20px rgba(0, 200, 255, 0.6),
+        0 0 30px rgba(0, 150, 255, 0.4);
+    animation: electric-pulse 0.5s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+@keyframes rainbow-glow {
+    0% { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+}
+
+@keyframes flicker {
+    0%, 100% { opacity: 1; }
+    25% { opacity: 0.8; }
+    50% { opacity: 1; }
+    75% { opacity: 0.9; }
+}
+
+@keyframes electric-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* ============================================
+   BUBBLE EFFECTS
+   Animated effects for message bubbles
+   ============================================ */
+
+/* Glowing bubble border */
+.bubble-effect-glow {
+    animation: bubble-glow 2s ease-in-out infinite !important;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3) !important;
+}
+
+@keyframes bubble-glow {
+    0%, 100% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.3); }
+    50% { box-shadow: 0 0 25px rgba(255, 255, 255, 0.6); }
+}
+
+/* Shaking bubble */
+.bubble-effect-shake {
+    animation: bubble-shake 0.5s ease-in-out infinite !important;
+}
+
+@keyframes bubble-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    75% { transform: translateX(2px); }
+}
+
+/* Floating bubble */
+.bubble-effect-float {
+    animation: bubble-float 3s ease-in-out infinite !important;
+}
+
+@keyframes bubble-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+/* Rainbow border effect */
+.bubble-effect-rainbow {
+    border: 2px solid transparent !important;
+    background: 
+        linear-gradient(var(--user-gradient), var(--user-gradient)) padding-box,
+        linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet) border-box !important;
+    animation: rainbow-rotate 3s linear infinite !important;
+}
+
+@keyframes rainbow-rotate {
+    0% { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+}
+
+/* Sparkle trail effect */
+.bubble-effect-sparkles::after {
+    content: 'âœ¨';
+    position: absolute;
+    right: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    animation: sparkle-trail 1s ease-in-out infinite;
+}
+
+@keyframes sparkle-trail {
+    0%, 100% { opacity: 0; right: -20px; }
+    50% { opacity: 1; right: -15px; }
+}
+
+/* Fire effect */
+.bubble-effect-fire {
+    box-shadow: 
+        0 0 10px rgba(255, 69, 0, 0.5),
+        0 0 20px rgba(255, 140, 0, 0.3) !important;
+    animation: bubble-fire 1s ease-in-out infinite !important;
+}
+
+@keyframes bubble-fire {
+    0%, 100% { box-shadow: 0 0 10px rgba(255, 69, 0, 0.5), 0 0 20px rgba(255, 140, 0, 0.3); }
+    50% { box-shadow: 0 0 20px rgba(255, 69, 0, 0.7), 0 0 30px rgba(255, 140, 0, 0.5); }
+}
+
+/* Ice/Frost effect */
+.bubble-effect-frost {
+    box-shadow: 
+        0 0 10px rgba(173, 216, 230, 0.6),
+        0 0 20px rgba(135, 206, 250, 0.4) !important;
+    border: 2px solid rgba(173, 216, 230, 0.5) !important;
+}
+
+/* Neon glow effect */
+.bubble-effect-neon {
+    box-shadow: 
+        0 0 5px var(--user-border-color),
+        0 0 10px var(--user-border-color),
+        0 0 15px var(--user-border-color) !important;
+    animation: neon-pulse 1.5s ease-in-out infinite !important;
+}
+
+@keyframes neon-pulse {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.5); }
+}
+
+/* ============================================
+   MOBILE RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .avatar-with-effects {
+    position: absolute;
+    top: 30px;
+    width: 48px;
+    height: 48px;
+    border-radius: 4px;
+}
+    
+    .avatar-glow {
+        top: 0px;
+        left: 0px;
+        right: 0px;
+        bottom: 0px;
+    }
+    
+    /* Reduce glow intensity on mobile */
+    .glow-gold, .glow-rainbow, .glow-fire, 
+    .glow-ice, .glow-shadow, .glow-electric {
+        opacity: 0.8;
+    }
+    
+    /* Reduce animation intensity */
+    .bubble-effect-shake {
+        animation: bubble-shake-mobile 0.5s ease-in-out infinite !important;
+    }
+    
+    @keyframes bubble-shake-mobile {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-1px); }
+        75% { transform: translateX(1px); }
+    }
+}
+
+/* ============================================
+   EFFECT RARITY STYLING (for inventory/shop)
+   ============================================ */
+
+.effect-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.effect-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #9775fa, #845ef7);
+}
+
+.effect-preview {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    background: #2a2a2a;
+    /* border: 2px solid #555; */
+}
+
+/* Preview animations for shop display */
+.effect-preview.preview-glow {
+    animation: preview-glow 2s ease-in-out infinite;
+}
+
+.effect-preview.preview-shake {
+    animation: preview-shake 0.5s ease-in-out infinite;
+}
+
+@keyframes preview-glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.3); }
+    50% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.6); }
+}
+
+@keyframes preview-shake {
+    0%, 100% { transform: translateX(0) rotate(0deg); }
+    25% { transform: translateX(-2px) rotate(-2deg); }
+    75% { transform: translateX(2px) rotate(2deg); }
+}

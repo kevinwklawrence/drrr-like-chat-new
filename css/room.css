@@ -223,7 +223,7 @@
         .message-avatar {
             position: absolute;
             left: 0;
-            top: 30px;
+            /* top: 30px; */
             width: 58px;
             height: 58px;
             border-radius: 4px; /* FIXED: Changed from 50% to 4px */
@@ -1813,7 +1813,7 @@
 
 /* Small clock icon to indicate pending status */
 .pending-message .message-time::after {
-    content: ' â±';
+    content: ' Ã¢ÂÂ±';
     font-size: 0.85em;
     opacity: 0.6;
     margin-left: 4px;

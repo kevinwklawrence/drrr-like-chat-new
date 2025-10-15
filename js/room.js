@@ -137,9 +137,60 @@ if (typeof debugLog === 'undefined') {
     };
 }
 
+// Global cache for user effects
+const userEffectsCache = new Map();
 
+function getUserEffects(userId) {
+    if (userEffectsCache.has(userId)) {
+        return Promise.resolve(userEffectsCache.get(userId));
+    }
+    
+    return $.ajax({
+        url: 'api/get_equipped_effects.php',
+        method: 'GET',
+        data: { user_id: userId },
+        dataType: 'json'
+    }).then(response => {
+        if (response.status === 'success') {
+            userEffectsCache.set(userId, response.effects);
+            return response.effects;
+        }
+        return null;
+    }).catch(() => null);
+}
 
-// Add this to the top of room.js, after the global variables
+// Synchronous version that uses cached data only
+function applyEffectsToMessage(messageEl, userId) {
+    if (!userId || !userEffectsCache.has(userId)) return;
+    
+    const effects = userEffectsCache.get(userId);
+    if (!effects) return;
+    
+    const avatarEl = messageEl.find('.message-avatar');
+    const bubbleEl = messageEl.find('.message-bubble');
+    
+    // Apply avatar effects
+    if (avatarEl.length > 0) {
+        if (!avatarEl.parent().hasClass('avatar-with-effects')) {
+            avatarEl.wrap('<div class="avatar-with-effects"></div>');
+        }
+        
+        const wrapper = avatarEl.parent();
+        wrapper.find('.avatar-glow, .avatar-overlay').remove();
+        
+        if (effects.avatar_glow) {
+            wrapper.prepend(`<div class="avatar-glow glow-${effects.avatar_glow}"></div>`);
+        }
+        if (effects.avatar_overlay) {
+            wrapper.append(`<div class="avatar-overlay overlay-${effects.avatar_overlay}"></div>`);
+        }
+    }
+    
+    // Apply bubble effects
+    if (bubbleEl.length > 0 && effects.bubble_effect) {
+        bubbleEl.addClass(`bubble-effect-${effects.bubble_effect}`);
+    }
+}
 
 // Request Management System
 class RequestManager {
@@ -827,17 +878,19 @@ function handleMessagesResponse(data) {
         return;
     }
     
-    // Check for pending messages that are now confirmed
+    // Check for pending messages
     messages.forEach(msg => {
-        // Find any pending message from this user with similar content/timestamp
         pendingMessages.forEach((pendingMsg, tempId) => {
             if (pendingMsg.message === msg.message && 
                 pendingMsg.user_id_string === msg.user_id_string) {
-                // This pending message is now confirmed - remove it
                 removeOptimisticMessage(tempId);
             }
         });
     });
+    
+    // PREFETCH effects and get promises
+    const uniqueUserIds = [...new Set(messages.map(m => m.user_id).filter(id => id))];
+    const effectPromises = uniqueUserIds.map(userId => getUserEffects(userId));
     
     let html = '';
     
@@ -858,6 +911,18 @@ function handleMessagesResponse(data) {
         const wasAtBottom = isInitialLoad || (chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20);
         
         chatbox.html(html);
+        
+        // WAIT for all effects to load, THEN apply
+        Promise.all(effectPromises).then(() => {
+            messages.forEach(msg => {
+                if (msg && msg.user_id) {
+                    const messageEl = $(`.chat-message[data-message-id="${msg.id}"]`);
+                    if (messageEl.length > 0) {
+                        applyEffectsToMessage(messageEl, msg.user_id);
+                    }
+                }
+            });
+        });
         
         if (wasAtBottom || isInitialLoad) {
             setTimeout(() => {
@@ -1383,6 +1448,19 @@ function addOptimisticMessage(msg) {
     // Add pending styling
     const messageEl = $(`.chat-message[data-message-id="${msg.id}"]`);
     messageEl.addClass('pending-message');
+
+     // Apply effects IMMEDIATELY
+    if (msg.user_id) {
+        applyEffectsToMessage(messageEl, msg.user_id);
+    }
+    
+    if (wasAtBottom) {
+        chatbox.scrollTop(chatbox[0].scrollHeight);
+    }
+    
+    if (typeof applyAllAvatarFilters === 'function') {
+        applyAllAvatarFilters();
+    }
     
     // Scroll to bottom if user was at bottom
     if (wasAtBottom) {
@@ -1902,9 +1980,11 @@ if (msg.reply_to_message_id && msg.reply_original_message) {
     
     let processedMessage = processMentionsInContent(msg.message, msg.user_id_string);
     
-    return `
+     // Store the HTML in a variable instead of returning directly
+    const messageHtml = `
         <div class="chat-message ${userColorClass} ${msg.reply_to_message_id ? 'has-reply' : ''}" 
              data-message-id="${msg.id}" 
+             data-user-id="${msg.user_id || ''}"
              data-type="${msg.type || 'chat'}"
              style="position: relative;">
             ${messageActions}
@@ -1924,17 +2004,19 @@ if (msg.reply_to_message_id && msg.reply_original_message) {
             </div>
             
             <!-- Message bubble with filters, but content isolated from filters -->
-            <div class="message-bubble " style="filter: hue-rotate(${bubbleHue}deg) saturate(${bubbleSat}%);">
+            <div class="message-bubble" style="filter: hue-rotate(${bubbleHue}deg) saturate(${bubbleSat}%);">
                 ${replyContent}
                 <!-- Message content wrapper that resets filters -->
                 <div class="message-content-wrapper" style="filter: hue-rotate(${-bubbleHue}deg) saturate(${bubbleSat > 0 ? (10000/bubbleSat) : 100}%);">
                     <div class="message-content">${processedMessage}</div>
-                    ${adminInfo}
-                    ${moderatorActions}
                 </div>
             </div>
         </div>
     `;
+    
+   
+    
+    return messageHtml;
 }
 
 function processMentionsInContent(content, senderUserId) {

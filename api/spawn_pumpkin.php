@@ -21,6 +21,40 @@ if (!isset($conn) || $conn->connect_error) {
 }
 
 try {
+    // Clear expired pumpkins before spawning new ones
+    log_spawn("Checking for expired pumpkins...");
+    $cleanup_stmt = $conn->prepare("
+        SELECT id, room_id 
+        FROM pumpkin_smash_events 
+        WHERE is_active = 1 
+        AND spawned_at < DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+    ");
+    $cleanup_stmt->execute();
+    $cleanup_result = $cleanup_stmt->get_result();
+    
+    $cleaned = 0;
+    while ($expired = $cleanup_result->fetch_assoc()) {
+        $expired_id = $expired['id'];
+        $room_id = $expired['room_id'];
+        
+        $deactivate_stmt = $conn->prepare("UPDATE pumpkin_smash_events SET is_active = 0 WHERE id = ?");
+        $deactivate_stmt->bind_param("i", $expired_id);
+        $deactivate_stmt->execute();
+        $deactivate_stmt->close();
+        
+        $escape_message = "🎃 <span style='color: #ffa500;'>The pumpkin got away! Too slow!</span> 👻";
+        $msg_stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, 'PUMPKIN_SMASH', ?, 1, NOW(), 'pumpkin.png', 'system')");
+        $msg_stmt->bind_param("is", $room_id, $escape_message);
+        $msg_stmt->execute();
+        $msg_stmt->close();
+        
+        $cleaned++;
+        log_spawn("Cleared expired pumpkin in room $room_id");
+    }
+    $cleanup_stmt->close();
+    log_spawn("Expired pumpkins cleared: $cleaned");
+    
+    // Get all rooms
     $rooms_stmt = $conn->prepare("SELECT id FROM chatrooms");
     $rooms_stmt->execute();
     $rooms_result = $rooms_stmt->get_result();
@@ -41,7 +75,7 @@ try {
         }
         $check_stmt->close();
         
-        // 35% spawn chance
+        // 35% spawn chance (change 100 to 35 for normal operation)
         if (rand(1, 100) <= 100) {
             $reward = rand(5, 20);
             
@@ -68,7 +102,7 @@ try {
     
     $rooms_stmt->close();
     log_spawn("Spawn complete. Pumpkins spawned: $spawned_count");
-    echo json_encode(['status' => 'success', 'spawned' => $spawned_count]);
+    echo json_encode(['status' => 'success', 'spawned' => $spawned_count, 'cleaned' => $cleaned]);
     
 } catch (Exception $e) {
     log_spawn("ERROR: " . $e->getMessage());

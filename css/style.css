@@ -206,7 +206,7 @@ body {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-    #chatbox img {height: 48px;width: 48px;top: 48px; border-radius:2px; left:8px;}
+    #chatbox img {height: 48px;width: 48px;/* top: 48px; */border-radius:2px;left: 0px;}
     #chatbox {padding: 10px;}
     .knock-notification {
         position: fixed;
@@ -1109,7 +1109,7 @@ body {
     vertical-align: middle;
     border: 1px solid;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    text-transform: uppercase;
+    /* text-transform: uppercase; */
     letter-spacing: 0.5px;
 }
 

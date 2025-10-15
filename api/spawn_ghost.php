@@ -72,6 +72,39 @@ $ghost_phrases = [
 ];
 
 try {
+    // Clear expired ghosts before spawning new ones
+    log_spawn("Checking for expired ghosts...");
+    $cleanup_stmt = $conn->prepare("
+        SELECT id, room_id 
+        FROM ghost_hunt_events 
+        WHERE is_active = 1 
+        AND spawned_at < DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+    ");
+    $cleanup_stmt->execute();
+    $cleanup_result = $cleanup_stmt->get_result();
+    
+    $cleaned = 0;
+    while ($expired = $cleanup_result->fetch_assoc()) {
+        $expired_id = $expired['id'];
+        $room_id = $expired['room_id'];
+        
+        $deactivate_stmt = $conn->prepare("UPDATE ghost_hunt_events SET is_active = 0 WHERE id = ?");
+        $deactivate_stmt->bind_param("i", $expired_id);
+        $deactivate_stmt->execute();
+        $deactivate_stmt->close();
+        
+        $escape_message = "👻 <span style='color: #9b59b6;'>The ghost vanished into the shadows...</span> 💨";
+        $msg_stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, 'GHOST_HUNT', ?, 1, NOW(), 'ghost.png', 'system')");
+        $msg_stmt->bind_param("is", $room_id, $escape_message);
+        $msg_stmt->execute();
+        $msg_stmt->close();
+        
+        $cleaned++;
+        log_spawn("Cleared expired ghost in room $room_id");
+    }
+    $cleanup_stmt->close();
+    log_spawn("Expired ghosts cleared: $cleaned");
+    
     // Get all active rooms
     $rooms_stmt = $conn->prepare("SELECT id FROM chatrooms");
     $rooms_stmt->execute();
@@ -142,6 +175,7 @@ try {
     echo "\nSUMMARY:\n";
     echo "- Rooms checked: $room_count\n";
     echo "- Ghosts spawned: $spawned_count\n";
+    echo "- Expired cleaned: $cleaned\n";
     echo "- Success!\n";
     
 } catch (Exception $e) {
