@@ -940,15 +940,7 @@ window.showCreateRoomModal = function() {
                                             </div>
                                         </div>
                                         ${currentUser.type === 'user' ? `
-                                        <div class="mb-3">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="membersOnly">
-                                                <label class="form-check-label" for="membersOnly">
-                                                    <i class="fas fa-user-check"></i> Members Only
-                                                </label>
-                                            </div>
-                                            <small class="text-muted">Only registered users can join</small>
-                                        </div>
+                                        
                                     </div>
                                     <div class="col-md-6">
                                         

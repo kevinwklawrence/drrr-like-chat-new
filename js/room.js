@@ -113,7 +113,11 @@ let sseReconnectExpected = false; // ADD THIS LINE
 
 let sseLastEventId = 0;
 
-
+let sseReconnectTimer = null;
+let userActive = false;
+let activityTimer = null;
+let sseIdleTimeout = null;
+let sseMaxIdleTime = 3000; // Close connection if no data for 3 seconds
 
 
 let sseFeatures = {
@@ -131,10 +135,68 @@ let sseFeatures = {
 };
 
 
-if (typeof debugLog === 'undefined') {
-    window.debugLog = function(...args) {
-        console.log('[DEBUG]', ...args);
+// ============================================================================
+// Micro-SSE: User Activity Tracking
+// ============================================================================
+document.addEventListener('keydown', () => markUserActive());
+document.addEventListener('click', () => markUserActive());
+document.addEventListener('mousemove', throttle(() => markUserActive(), 5000));
+
+function markUserActive() {
+    userActive = true;
+    clearTimeout(activityTimer);
+    activityTimer = setTimeout(() => {
+        userActive = false;
+    }, 30000);
+}
+
+function throttle(func, limit) {
+    let inThrottle;
+    return function() {
+        if (!inThrottle) {
+            func.apply(this, arguments);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+        }
     };
+}
+
+function resetIdleTimeout() {
+    clearTimeout(sseIdleTimeout);
+    sseIdleTimeout = setTimeout(() => {
+        if (sseConnection && sseConnection.readyState === EventSource.OPEN) {
+            debugLog('⏱️ SSE idle timeout - closing connection');
+            sseConnection.close();
+            scheduleReconnect();
+        }
+    }, sseMaxIdleTime);
+}
+
+function forceReconnectNow() {
+    clearTimeout(sseReconnectTimer);
+    clearTimeout(sseIdleTimeout);
+    
+    if (sseConnection && sseConnection.readyState === EventSource.OPEN) {
+        sseConnection.close();
+    }
+    
+    sseReconnectDelay = 100;
+    debugLog('⚡ Forcing immediate reconnect');
+    setTimeout(() => initializeSSE(), 100);
+}
+
+function scheduleReconnect() {
+    clearTimeout(sseReconnectTimer);
+    
+    if (document.hidden) {
+        debugLog('⏸️ Tab hidden, delaying reconnect');
+        return;
+    }
+    
+    debugLog(`⏱️ Reconnecting in ${sseReconnectDelay}ms`);
+    sseReconnectTimer = setTimeout(() => {
+        initializeSSE();
+    }, sseReconnectDelay);
 }
 
 // Global cache for user effects
@@ -296,16 +358,17 @@ function managedAjax(options) {
 
 function initializeSSE() {
     if (sseConnection && sseConnection.readyState !== EventSource.CLOSED) {
-        debugLog('SSE already connected, skipping initialization');
-        return;
+        sseConnection.close();
     }
+    
+    clearTimeout(sseIdleTimeout);
     
     debugLog('🚀 Initializing SSE connection with last_event_id:', sseLastEventId);
     
     const params = new URLSearchParams({
         message_limit: messageLimit,
         check_youtube: youtubeEnabled ? '1' : '0',
-        last_event_id: sseLastEventId // Pass the last event ID to server
+        last_event_id: sseLastEventId
     });
     
     sseConnectionTimeout = setTimeout(() => {
@@ -319,12 +382,13 @@ function initializeSSE() {
     
     sseConnection = new EventSource(`api/sse_room_data.php?${params.toString()}`);
     
+    resetIdleTimeout();
+    
     sseConnection.onopen = function() {
-        debugLog('✅ SSE connection established');
+        debugLog('✅ Micro-SSE connected');
         sseConnected = true;
         sseConnectionEstablished = true;
         sseReconnectAttempts = 0;
-        sseReconnectDelay = 2000;
         
         if (sseConnectionTimeout) {
             clearTimeout(sseConnectionTimeout);
@@ -341,6 +405,8 @@ function initializeSSE() {
             }
         }
         
+        resetIdleTimeout();
+        
         try {
             const data = JSON.parse(event.data);
             handleSSEData(data);
@@ -350,50 +416,69 @@ function initializeSSE() {
     };
     
     sseConnection.onerror = function(error) {
-        const state = this.readyState;
-
-        if (sseReconnectExpected) {
-            debugLog('⏭️ Ignoring error during planned reconnection');
-            return;
+    const state = this.readyState;
+    
+    clearTimeout(sseIdleTimeout);
+    
+    if (sseReconnectExpected) {
+        debugLog('⏭️ Ignoring error during planned reconnection');
+        return;
+    }
+    
+   // console.error('❌ SSE error:', error, 'ReadyState:', state);
+    sseConnected = false;
+    sseConnection.close();
+    
+    if (sseConnectionTimeout) {
+        clearTimeout(sseConnectionTimeout);
+        sseConnectionTimeout = null;
+    }
+    
+    // CRITICAL: Restart the idle timeout to reconnect after a delay
+    debugLog('⏳ Connection error - will retry in 3 seconds');
+    setTimeout(() => {
+        if (sseEnabled && !document.hidden) {
+            debugLog('🔄 Retrying after error');
+            initializeSSE();
         }
-
-        if (state === 2) {
-            debugLog('🔄 SSE connection closed, reconnecting...');
-        } else {
-            console.error('❌ SSE error:', error, 'ReadyState:', state);
-        }
-        
-        sseConnected = false;
-        
-        if (sseConnectionTimeout) {
-            clearTimeout(sseConnectionTimeout);
-            sseConnectionTimeout = null;
-        }
-        
-        if (sseReconnectAttempts < sseMaxReconnectAttempts) {
-            sseReconnectAttempts++;
-            const delay = sseReconnectDelay;
-            debugLog(`🔄 Reconnecting (${sseReconnectAttempts}/${sseMaxReconnectAttempts}) in ${delay}ms...`);
-            
-            setTimeout(() => {
-                initializeSSE();
-            }, delay);
-            
-            if (state !== 2) {
-                sseReconnectDelay = Math.min(sseReconnectDelay * 2, 30000);
-            }
-        } else {
-            debugLog('❌ Max reconnect attempts reached, falling back to Ajax');
-            sseEnabled = false;
-            startRoomUpdates();
-        }
-    };
+    }, 3000); // Wait 3 seconds before retrying
+};
 }
+
+// ============================================================================
+// ADD THIS NEW scheduleReconnect FUNCTION
+// ============================================================================
+
+function scheduleReconnect() {
+    clearTimeout(sseReconnectTimer);
+    
+    // Don't reconnect if tab is hidden (save resources)
+    if (document.hidden) {
+        debugLog('⏸️ Tab hidden, delaying reconnect');
+        return;
+    }
+    
+    debugLog(`⏱️ Reconnecting in ${sseReconnectDelay}ms`);
+    sseReconnectTimer = setTimeout(() => {
+        initializeSSE();
+    }, sseReconnectDelay);
+}
+
 
 function closeSSE() {
     if (sseConnectionTimeout) {
         clearTimeout(sseConnectionTimeout);
         sseConnectionTimeout = null;
+    }
+    
+    if (sseReconnectTimer) {
+        clearTimeout(sseReconnectTimer);
+        sseReconnectTimer = null;
+    }
+    
+    if (sseIdleTimeout) {
+        clearTimeout(sseIdleTimeout);
+        sseIdleTimeout = null;
     }
     
     if (sseConnection) {
@@ -404,6 +489,7 @@ function closeSSE() {
         sseConnectionEstablished = false;
     }
 }
+
 
 // ============================================================================
 // SSE Data Handler
@@ -427,133 +513,123 @@ function handleSSEData(data) {
             debugLog('📡 SSE connected to room:', data.room_id);
             break;
             
-        case 'room_data':
-            // Process each data category
-            if (data.messages && sseFeatures.messages) {
-                handleMessagesResponse(data.messages);
-            }
-            
-            if (data.users && sseFeatures.users) {
-                handleUsersResponse(data.users);
-            }
-            
-            if (data.mentions && sseFeatures.mentions) {
-                handleMentionsResponse(data.mentions);
-            }
-            
-            if (data.whispers && sseFeatures.whispers) {
-                handleWhispersResponse(data.whispers);
-            }
-            
-            if (data.private_messages && sseFeatures.private_messages) {
-                handleConversationsResponse(data.private_messages);
-            }
-            
-            if (data.friends && sseFeatures.friends) {
-                handleFriendsResponse(data.friends);
-            }
-            
-            if (data.room_data && sseFeatures.room_data) {
-                handleRoomDataResponse(data.room_data);
-            }
-
-            if (data.knocks && sseFeatures.knocks) {
-                handleKnocksResponse(data.knocks);
-            }
-            
-            if (data.youtube && sseFeatures.youtube) {
-                handleYouTubeResponse(data.youtube);
-            }
-            
-            // NEW: Handle settings check
-            if (data.settings_check && sseFeatures.settings_check) {
-                handleSettingsCheckResponse(data.settings_check);
-            }
-            
-            // NEW: Handle inactivity status
-            if (data.inactivity_status && sseFeatures.inactivity_status) {
-                handleInactivityStatusResponse(data.inactivity_status);
-            }
-
-            if (data.sound_events && typeof data.sound_events === 'object') {
-    // Don't play sounds if we're ignoring the message update
-    const messages = data.messages?.messages || [];
-    const existingMessageCount = $('.chat-message').length;
-    const isEmptyResponse = messages.length === 0 && existingMessageCount > 0 && !isInitialLoad;
+      /*  case 'reconnect':
+    debugLog('🔄 Reconnect signal:', data.reason);
+    sseLastEventId = data.last_event_id;
+    clearTimeout(sseIdleTimeout);
+    sseConnection.close();
     
-    // Skip sound events if this is an empty response being ignored
-    if (isEmptyResponse) {
-        debugLog('Skipping sound events - empty message response ignored');
+    if (data.reason === 'data_sent') {
+        sseReconnectDelay = userActive ? 300 : 800;
+    } else if (data.reason === 'no_events') {
+        sseReconnectDelay = userActive ? 2000 : 5000;
     } else {
-        // System message sound (has priority)
-        if (data.sound_events.system_message) {
-            playSystemNotification();
-        }
-        // Regular new message sound
-        else if (data.sound_events.new_message) {
-            if (typeof window.playMessageNotification === 'function') {
-                window.playMessageNotification();
-            }
-        }
+        sseReconnectDelay = userActive ? 1000 : 2500;
+    }
+    
+    scheduleReconnect();
+    break; */
+    
+case 'room_data':
+    debugLog('📦 Received room data');
+    sseLastEventId = data.last_event_id;
+    
+    // Process all data categories
+    if (data.messages && sseFeatures.messages) {
+        handleMessagesResponse(data.messages);
+    }
+    
+    if (data.users && sseFeatures.users) {
+        handleUsersResponse(data.users);
+    }
+    
+    if (data.mentions && sseFeatures.mentions) {
+        handleMentionsResponse(data.mentions);
+    }
+    
+    if (data.whispers && sseFeatures.whispers) {
+        handleWhispersResponse(data.whispers);
+    }
+    
+    if (data.private_messages && sseFeatures.private_messages) {
+        handleConversationsResponse(data.private_messages);
+    }
+    
+    if (data.friends && sseFeatures.friends) {
+        handleFriendsResponse(data.friends);
+    }
+    
+    if (data.room_data && sseFeatures.room_data) {
+        handleRoomDataResponse(data.room_data);
+    }
+
+    if (data.knocks && sseFeatures.knocks) {
+        handleKnocksResponse(data.knocks);
+    }
+    
+    if (data.youtube && sseFeatures.youtube) {
+        handleYouTubeResponse(data.youtube);
+    }
+    
+    if (data.settings_check && sseFeatures.settings_check) {
+        handleSettingsCheckResponse(data.settings_check);
+    }
+    
+    if (data.inactivity_status && sseFeatures.inactivity_status) {
+        handleInactivityStatusResponse(data.inactivity_status);
+    }
+
+    if (data.sound_events && typeof data.sound_events === 'object') {
+        const messages = data.messages?.messages || [];
+        const existingMessageCount = $('.chat-message').length;
+        const isEmptyResponse = messages.length === 0 && existingMessageCount > 0 && !isInitialLoad;
         
-        // Mention/reply sound
-        if (data.sound_events.new_mention) {
-            if (typeof window.playReplyOrMentionSound === 'function') {
-                window.playReplyOrMentionSound();
+        if (!isEmptyResponse) {
+            if (data.sound_events.system_message) {
+                playSystemNotification();
+            } else if (data.sound_events.new_message) {
+                if (typeof window.playMessageNotification === 'function') {
+                    window.playMessageNotification();
+                }
             }
-        }
-        
-        // Whisper sound
-        if (data.sound_events.new_whisper) {
-            if (typeof window.playNotificationSound === 'function') {
-                window.playNotificationSound();
+            
+            if (data.sound_events.new_mention) {
+                if (typeof window.playReplyOrMentionSound === 'function') {
+                    window.playReplyOrMentionSound();
+                }
             }
-        }
-        
-        // Private message sound
-        if (data.sound_events.new_private_message) {
-            if (typeof window.playFriendNotificationSound === 'function') {
-                window.playFriendNotificationSound();
+            
+            if (data.sound_events.new_whisper) {
+                if (typeof window.playNotificationSound === 'function') {
+                    window.playNotificationSound();
+                }
+            }
+            
+            if (data.sound_events.new_private_message) {
+                if (typeof window.playFriendNotificationSound === 'function') {
+                    window.playFriendNotificationSound();
+                }
             }
         }
     }
-}
+    
+    // CRITICAL: Close connection immediately after processing
+clearTimeout(sseIdleTimeout);
+sseConnection.close();
 
-             /* Handle general notifications
-            if (data.updates.general_notifications) {
-                if (typeof window.updateGeneralNotifications === 'function') {
-                    window.updateGeneralNotifications(data.updates.general_notifications);
-                }
-            }
-            
-            // Handle friend notifications
-            if (data.updates.friend_notifications) {
-                if (typeof window.updateFriendNotifications === 'function') {
-                    window.updateFriendNotifications(data.updates.friend_notifications);
-                }
-            }
-            
-            // Handle room status
-            if (data.updates.room_status) {
-                if (typeof window.handleRoomStatusUpdate === 'function') {
-                    window.handleRoomStatusUpdate(data.updates.room_status.status);
-                }
-            }*/
-            break;
+// Reconnect quickly to check for more events (500ms)
+// This ensures we catch events that arrived while processing
+setTimeout(() => {
+    if (!document.hidden && sseEnabled) {
+        debugLog('🔄 Quick reconnect after data');
+        initializeSSE();
+    }
+}, 500);
+break;
             
         case 'heartbeat':
             // Connection keepalive, no action needed
             break;
-            
-        case 'reconnect':
-    debugLog('🔄 Server requested reconnect');
-    sseReconnectExpected = true; // ADD THIS LINE
-    closeSSE();
-    setTimeout(() => {
-        sseReconnectExpected = false; // ADD THIS LINE
-        initializeSSE();
-    }, 500); // CHANGED FROM 1000 to 500
-    break;
             
         case 'error':
             console.error('❌ SSE error from server:', data.message);
@@ -561,16 +637,6 @@ function handleSSEData(data) {
             
         default:
             debugLog('⚠️ Unknown SSE event type:', data.type);
-    }
-}
-
-function playSystemNotification() {
-    if (typeof userSettingsManager !== 'undefined') {
-        userSettingsManager.playNotificationSound('/sounds/system_notification.mp3');
-    } else {
-        const audio = new Audio('/sounds/system_notification.mp3');
-        audio.volume = 0.5;
-        audio.play().catch(e => console.log('Could not play system sound:', e));
     }
 }
 
@@ -605,6 +671,21 @@ function loadYouTubeAPI() {
     
     debugLog('🎬 Loading YouTube API...');
 }
+
+// Visibility change handling - pause when hidden
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        debugLog('👁️ Tab hidden - pausing SSE');
+        clearTimeout(sseReconnectTimer);
+        if (sseConnection) {
+            sseConnection.close();
+        }
+    } else {
+        debugLog('👁️ Tab visible - resuming SSE');
+        markUserActive();
+        initializeSSE();
+    }
+});
 
 
 
@@ -874,7 +955,7 @@ function handleMessagesResponse(data) {
     
     const existingMessageCount = $('.chat-message').length;
     if (messages.length === 0 && existingMessageCount > 0 && !isInitialLoad) {
-        console.warn('⚠️ Ignoring empty message response - keeping existing messages');
+     //   console.warn('⚠️ Ignoring empty message response - keeping existing messages');
         return;
     }
     
@@ -1246,6 +1327,7 @@ function sendMessage() {
     });
     
     return false;
+
 }
 
 async function validateImagesInMessage(message) {
@@ -1392,6 +1474,10 @@ function sendValidatedMessage(message) {
         data: sendData,
         dataType: 'json',
         success: function(response) {
+            if (sseEnabled && typeof forceReconnectNow === 'function') {
+    forceReconnectNow();
+}
+
             if (response.status === 'not_in_room') {
                 // Remove optimistic message
                 removeOptimisticMessage(tempId);
@@ -4112,6 +4198,7 @@ function sendWhisper(recipientUserIdString) {
     });
     
     return false;
+
 }
 
 function loadWhisperMessages(otherUserIdString) {
@@ -4474,25 +4561,16 @@ $(document).ready(function() {
 
     // Initialize SSE connection
     if (sseEnabled) {
-        debugLog('🚀 Starting SSE mode');
-        debugLog('📡 SSE Features: Messages=' + sseFeatures.messages + 
-                 ', Users=' + sseFeatures.users +
-                 ', Mentions=' + sseFeatures.mentions +
-                 ', Whispers=' + sseFeatures.whispers + 
-                 ', PrivateMessages=' + sseFeatures.private_messages +
-                 ', Friends=' + sseFeatures.friends +
-                 ', RoomData=' + sseFeatures.room_data);
-        initializeSSE();
-        
-        // Start room updates (will skip SSE-enabled features)
-        startRoomUpdates();
-        
-        debugLog('✅ Room initialization complete with SSE + Ajax hybrid mode');
-    } else {
-        debugLog('🚀 Starting Ajax-only mode');
-        startRoomUpdates();
-        debugLog('✅ Room initialization complete with Ajax-only mode');
-    }
+    debugLog('🚀 Starting Micro-SSE system');
+    markUserActive(); // User is active when starting
+    initializeSSE();
+    startRoomUpdates();
+    debugLog('✅ Room initialization complete with SSE + Ajax hybrid mode');
+} else {
+    debugLog('🚀 Starting Ajax-only mode');
+    startRoomUpdates();
+    debugLog('✅ Room initialization complete with Ajax-only mode');
+}
 
     // Keep only essential intervals at lower frequencies
     //setTimeout(checkUserStatus, 1000);
@@ -4505,18 +4583,25 @@ $(document).ready(function() {
 });
 
 $(window).on('beforeunload', function() {
-    stopRoomUpdates(); // Stop managed updates
+    stopRoomUpdates();
     
     if (mentionCheckInterval) {
         clearInterval(mentionCheckInterval);
         mentionCheckInterval = null;
     }
-    closeSSE(); // Close SSE connection
+    
+    closeSSE();
+    
+    if (activityTimer) {
+        clearTimeout(activityTimer);
+        activityTimer = null;
+    }
 
     stopYouTubePlayer();
     stopActivityTracking();
     stopKickDetection();
 });
+
 
 window.toggleSSE = function(feature = null) {
     if (feature === null) {

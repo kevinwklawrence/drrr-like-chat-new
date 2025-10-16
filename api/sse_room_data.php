@@ -1,5 +1,5 @@
 <?php
-// api/sse_room_data_optimized.php - COMPLETE performance optimized SSE
+// api/sse_room_data.php - MICRO-SSE: Event-driven, immediate worker release
 session_start();
 
 if (!isset($_SESSION['user']) || !isset($_SESSION['room_id'])) {
@@ -25,6 +25,56 @@ header('X-Accel-Buffering: no');
 include '../db_connect.php';
 require_once __DIR__ . '/../config/inactivity_config.php';
 
+function hasUsersChanged($conn, $room_id) {
+    // Get current user state
+    $stmt = $conn->prepare("
+        SELECT user_id_string, is_afk, manual_afk, is_host
+        FROM chatroom_users 
+        WHERE room_id = ?
+        ORDER BY user_id_string
+    ");
+    $stmt->bind_param("i", $room_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $users = [];
+    while ($row = $result->fetch_assoc()) {
+        $users[] = $row;
+    }
+    $stmt->close();
+    
+    // Create hash of current state
+    $currentHash = md5(json_encode($users));
+    
+    // Get last known hash
+    $stmt = $conn->prepare("
+        SELECT state_hash 
+        FROM room_state_cache 
+        WHERE room_id = ? AND state_type = 'users'
+    ");
+    $stmt->bind_param("i", $room_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $lastHash = $result->num_rows > 0 ? $result->fetch_assoc()['state_hash'] : null;
+    $stmt->close();
+    
+    // If state changed, update cache
+    if ($currentHash !== $lastHash) {
+        $stmt = $conn->prepare("
+            INSERT INTO room_state_cache (room_id, state_type, state_hash, updated_at)
+            VALUES (?, 'users', ?, NOW())
+            ON DUPLICATE KEY UPDATE state_hash = VALUES(state_hash), updated_at = NOW()
+        ");
+        $stmt->bind_param("is", $room_id, $currentHash);
+        $stmt->execute();
+        $stmt->close();
+        
+        return true; // Changed
+    }
+    
+    return false; // No change
+}
+
 $message_limit = isset($_GET['message_limit']) ? min(max((int)$_GET['message_limit'], 1), 100) : 50;
 $check_youtube = isset($_GET['check_youtube']) ? (bool)$_GET['check_youtube'] : false;
 $last_event_id = isset($_GET['last_event_id']) ? (int)$_GET['last_event_id'] : 0;
@@ -36,47 +86,54 @@ echo "data: " . json_encode([
 ]) . "\n\n";
 flush();
 
-$max_duration = 55;
+// MICRO-SSE: Only check 3-5 times, then release worker
+$max_checks = 5;
+$check_interval = 300000; // 300ms between checks
 $start_time = time();
-$iteration = 0;
-$max_iterations = 110;
-$consecutive_empty = 0;
 
-while ((time() - $start_time) < $max_duration && connection_status() == CONNECTION_NORMAL) {
-    $has_events = false;
-    
+for ($check = 0; $check < $max_checks; $check++) {
     try {
-        // OPTIMIZED: Indexed event lookup with LIMIT
-        $event_stmt = $conn->prepare("
-            SELECT id, event_type, event_data, created_at
-            FROM message_events 
+        // STEP 1: Lightning-fast event check (indexed, <10ms)
+        $event_check = $conn->prepare("
+            SELECT id FROM message_events 
             WHERE id > ? AND (room_id = ? OR room_id = 0)
-            ORDER BY id ASC
-            LIMIT 50
+            LIMIT 1
         ");
-        $event_stmt->bind_param("ii", $last_event_id, $room_id);
-        $event_stmt->execute();
-        $event_result = $event_stmt->get_result();
+        $event_check->bind_param("ii", $last_event_id, $room_id);
+        $event_check->execute();
+        $has_events = $event_check->get_result()->num_rows > 0;
+        $event_check->close();
         
-        $events = [];
-        $new_last_event_id = $last_event_id;
-        
-        while ($event = $event_result->fetch_assoc()) {
-            $events[] = $event;
-            $new_last_event_id = max($new_last_event_id, (int)$event['id']);
-        }
-        $event_stmt->close();
-        
-        if (!empty($events)) {
-            $has_events = true;
-            $consecutive_empty = 0;
+        if ($has_events) {
+            // EVENTS DETECTED! Fetch everything and send immediately
+            
+            // Fetch all new events
+            $event_stmt = $conn->prepare("
+                SELECT id, event_type, event_data, created_at
+                FROM message_events 
+                WHERE id > ? AND (room_id = ? OR room_id = 0)
+                ORDER BY id ASC
+                LIMIT 50
+            ");
+            $event_stmt->bind_param("ii", $last_event_id, $room_id);
+            $event_stmt->execute();
+            $event_result = $event_stmt->get_result();
+            
+            $events = [];
+            $new_last_event_id = $last_event_id;
+            
+            while ($event = $event_result->fetch_assoc()) {
+                $events[] = $event;
+                $new_last_event_id = max($new_last_event_id, (int)$event['id']);
+            }
+            $event_stmt->close();
+            
             $all_data = [
                 'type' => 'room_data', 
                 'timestamp' => time(),
                 'last_event_id' => $new_last_event_id
             ];
             
-            $last_event_id = $new_last_event_id;
             $event_types = array_unique(array_column($events, 'event_type'));
 
             // Sound events
@@ -109,7 +166,7 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
 
             if (!empty($sound_events)) $all_data['sound_events'] = $sound_events;
             
-            // 1. MESSAGES - OPTIMIZED
+            // MESSAGES
             if (in_array('message', $event_types)) {
                 $messages_stmt = $conn->prepare("
                     SELECT m.*, u.username, u.is_admin, u.is_moderator,
@@ -135,6 +192,7 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
                              (rm.user_id IS NULL AND rm.guest_name = rcu.guest_name) OR
                              (rm.user_id IS NULL AND rm.user_id_string = rcu.user_id_string))
                     WHERE m.room_id = ?
+                    AND m.timestamp >= DATE_SUB(NOW(), INTERVAL 60 MINUTE)
                     GROUP BY m.id
                     ORDER BY m.id DESC 
                     LIMIT ?
@@ -149,7 +207,6 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
                     
                     $msg = array_change_key_case($msg, CASE_LOWER);
                     
-                    // OPTIMIZED: Fetch titles separately
                     if ($msg['user_id']) {
                         $titles_stmt = $conn->prepare("
                             SELECT si.name, si.rarity, si.icon
@@ -180,53 +237,67 @@ while ((time() - $start_time) < $max_duration && connection_status() == CONNECTI
                 $all_data['messages'] = ['status' => 'success', 'messages' => array_reverse($messages)];
             }
             
-            // 2. USERS - FIXED to include equipped titles
-$users_stmt = $conn->prepare("
-    SELECT cu.user_id, cu.user_id_string, cu.guest_name, cu.avatar as guest_avatar, 
-           cu.is_host, cu.last_activity, cu.is_afk, cu.manual_afk, cu.afk_since, 
-           cu.username, cu.avatar_hue, cu.avatar_saturation, cu.color,
-           u.username as registered_username, u.avatar as registered_avatar, 
-           u.is_admin, u.is_moderator
-    FROM chatroom_users cu 
-    LEFT JOIN users u ON cu.user_id = u.id 
-    WHERE cu.room_id = ?
-");
-$users_stmt->bind_param("i", $room_id);
-$users_stmt->execute();
-$users_result = $users_stmt->get_result();
+            // USERS (only send if actually changed OR on specific events)
+$should_send_users = false;
 
-$users = [];
-while ($user = $users_result->fetch_assoc()) {
-    // ADDED: Fetch equipped titles for each registered user
-    if ($user['user_id']) {
-        $titles_stmt = $conn->prepare("
-            SELECT si.name, si.rarity, si.icon
-            FROM user_inventory ui
-            JOIN shop_items si ON ui.item_id = si.item_id
-            WHERE ui.user_id = ? AND ui.is_equipped = 1 AND si.type = 'title'
-            ORDER BY FIELD(si.rarity, 'legendary', 'strange', 'rare', 'common')
-            LIMIT 5
-        ");
-        $titles_stmt->bind_param("i", $user['user_id']);
-        $titles_stmt->execute();
-        $titles_result = $titles_stmt->get_result();
-        
-        $equipped_titles = [];
-        while ($title = $titles_result->fetch_assoc()) {
-            $equipped_titles[] = $title;
-        }
-        $titles_stmt->close();
-        $user['equipped_titles'] = $equipped_titles;
-    } else {
-        $user['equipped_titles'] = [];
+// Always send on these event types (someone joined/left/state changed)
+if (in_array('message', $event_types) || 
+    in_array('user_update', $event_types) ||
+    in_array('user_join', $event_types) ||
+    in_array('user_leave', $event_types)) {
+    // Check if users actually changed
+    if (hasUsersChanged($conn, $room_id)) {
+        $should_send_users = true;
     }
-    
-    $users[] = $user;
 }
-$users_stmt->close();
-$all_data['users'] = $users; // CHANGED: Send array directly instead of wrapped object
+
+if ($should_send_users) {
+    $users_stmt = $conn->prepare("
+        SELECT cu.user_id, cu.user_id_string, cu.guest_name, cu.avatar as guest_avatar, 
+               cu.is_host, cu.last_activity, cu.is_afk, cu.manual_afk, cu.afk_since, 
+               cu.username, cu.avatar_hue, cu.avatar_saturation, cu.color,
+               u.username as registered_username, u.avatar as registered_avatar, 
+               u.is_admin, u.is_moderator
+        FROM chatroom_users cu 
+        LEFT JOIN users u ON cu.user_id = u.id 
+        WHERE cu.room_id = ?
+    ");
+    $users_stmt->bind_param("i", $room_id);
+    $users_stmt->execute();
+    $users_result = $users_stmt->get_result();
+
+    $users = [];
+    while ($user = $users_result->fetch_assoc()) {
+        if ($user['user_id']) {
+            $titles_stmt = $conn->prepare("
+                SELECT si.name, si.rarity, si.icon
+                FROM user_inventory ui
+                JOIN shop_items si ON ui.item_id = si.item_id
+                WHERE ui.user_id = ? AND ui.is_equipped = 1 AND si.type = 'title'
+                ORDER BY FIELD(si.rarity, 'legendary', 'strange', 'rare', 'common')
+                LIMIT 5
+            ");
+            $titles_stmt->bind_param("i", $user['user_id']);
+            $titles_stmt->execute();
+            $titles_result = $titles_stmt->get_result();
             
-            // 3. MENTIONS
+            $equipped_titles = [];
+            while ($title = $titles_result->fetch_assoc()) {
+                $equipped_titles[] = $title;
+            }
+            $titles_stmt->close();
+            $user['equipped_titles'] = $equipped_titles;
+        } else {
+            $user['equipped_titles'] = [];
+        }
+        
+        $users[] = $user;
+    }
+    $users_stmt->close();
+    $all_data['users'] = $users;
+}
+            
+            // MENTIONS
             if (in_array('mention', $event_types)) {
                 $mentions_stmt = $conn->prepare("
                     SELECT um.*, m.message, UNIX_TIMESTAMP(m.timestamp) * 1000 as timestamp, 
@@ -252,7 +323,7 @@ $all_data['users'] = $users; // CHANGED: Send array directly instead of wrapped 
                 $all_data['mentions'] = ['status' => 'success', 'mentions' => $mentions];
             }
             
-            // 4. WHISPERS
+            // WHISPERS
             if (in_array('whisper', $event_types)) {
                 $whisper_stmt = $conn->prepare("
                     SELECT DISTINCT 
@@ -303,7 +374,7 @@ $all_data['users'] = $users; // CHANGED: Send array directly instead of wrapped 
                 $all_data['whispers'] = ['status' => 'success', 'conversations' => $whispers];
             }
             
-            // 5. PRIVATE MESSAGES (registered users only)
+            // PRIVATE MESSAGES
             if (in_array('private_message', $event_types) && $user_id) {
                 $pm_stmt = $conn->prepare("
                     SELECT DISTINCT 
@@ -367,7 +438,7 @@ $all_data['users'] = $users; // CHANGED: Send array directly instead of wrapped 
                 $all_data['private_messages'] = ['status' => 'success', 'conversations' => $pms];
             }
             
-            // 6. FRIENDS (registered users only)
+            // FRIENDS
             if (in_array('friend_update', $event_types) && $user_id) {
                 $friends_stmt = $conn->prepare("
                     SELECT CASE WHEN f.user_id = ? THEN f.friend_id ELSE f.user_id END as friend_user_id,
@@ -391,7 +462,7 @@ $all_data['users'] = $users; // CHANGED: Send array directly instead of wrapped 
                 $all_data['friends'] = ['status' => 'success', 'friends' => $friends];
             }
             
-            // 7. ROOM DATA
+            // ROOM DATA
             if (in_array('room_update', $event_types) || in_array('settings_update', $event_types)) {
                 $room_stmt = $conn->prepare("SELECT * FROM chatrooms WHERE id = ?");
                 $room_stmt->bind_param("i", $room_id);
@@ -404,7 +475,7 @@ $all_data['users'] = $users; // CHANGED: Send array directly instead of wrapped 
                 }
             }
             
-            // 8. KNOCKS (hosts only)
+            // KNOCKS
             if (in_array('knock', $event_types)) {
                 $is_host_stmt = $conn->prepare("
                     SELECT is_host FROM chatroom_users 
@@ -439,7 +510,7 @@ $all_data['users'] = $users; // CHANGED: Send array directly instead of wrapped 
                 }
             }
             
-            // 9. YOUTUBE (if enabled and requested)
+            // YOUTUBE
             if ($check_youtube && in_array('youtube_update', $event_types)) {
                 $yt_check_stmt = $conn->prepare("SELECT youtube_enabled FROM chatrooms WHERE id = ?");
                 $yt_check_stmt->bind_param("i", $room_id);
@@ -510,7 +581,7 @@ $all_data['users'] = $users; // CHANGED: Send array directly instead of wrapped 
                 }
             }
             
-            // 10. GHOST HUNT EVENTS
+            // GHOST HUNT
             if (in_array('ghost_spawn', $event_types)) {
                 $ghost_stmt = $conn->prepare("
                     SELECT id, ghost_phrase, reward_amount, spawned_at 
@@ -535,7 +606,7 @@ $all_data['users'] = $users; // CHANGED: Send array directly instead of wrapped 
                 $ghost_stmt->close();
             }
             
-            // 11. SETTINGS CHECK
+            // SETTINGS CHECK
             if (in_array('settings_update', $event_types)) {
                 $settings_stmt = $conn->prepare("
                     SELECT id, UNIX_TIMESTAMP(created_at) as timestamp
@@ -560,7 +631,7 @@ $all_data['users'] = $users; // CHANGED: Send array directly instead of wrapped 
                 $settings_stmt->close();
             }
             
-            // 12. INACTIVITY STATUS (always send)
+            // INACTIVITY STATUS (always send)
             $inactivity_stmt = $conn->prepare("
                 SELECT cu.inactivity_seconds, cu.is_host, c.youtube_enabled 
                 FROM chatroom_users cu 
@@ -585,49 +656,36 @@ $all_data['users'] = $users; // CHANGED: Send array directly instead of wrapped 
             }
             $inactivity_stmt->close();
             
+            // SEND DATA AND CLOSE IMMEDIATELY
             echo "data: " . json_encode($all_data) . "\n\n";
             flush();
-        } else {
-            $consecutive_empty++;
+            
+            echo "data: " . json_encode([
+                'type' => 'reconnect',
+                'last_event_id' => $new_last_event_id,
+                'reason' => 'data_sent'
+            ]) . "\n\n";
+            flush();
+            
+            $conn->close();
+            exit; // CRITICAL: Release worker immediately after sending data!
+        }
+        
+        // No events found - wait before next check (unless it's the last check)
+        if ($check < $max_checks - 1) {
+            usleep($check_interval);
         }
         
     } catch (Exception $e) {
         error_log("SSE Error: " . $e->getMessage());
     }
-    
-    // Heartbeat
-    if (!$has_events && $iteration % 10 == 0) {
-        echo "data: " . json_encode([
-            'type' => 'heartbeat', 
-            'timestamp' => time(),
-            'last_event_id' => $last_event_id
-        ]) . "\n\n";
-        flush();
-    }
-    
-    $iteration++;
-    
-    // OPTIMIZED: Aggressive polling for near-instant message delivery
-if ($has_events) {
-    usleep(10000); // 10ms when active (10x faster)
-} else if ($consecutive_empty < 5) {
-    usleep(25000); // 25ms for first few empty checks (10x faster)
-} else {
-    usleep(100000); // 100ms when truly idle (5x faster)
-}
-    
-    if ($iteration >= $max_iterations || (time() - $start_time) >= ($max_duration - 2)) {
-        echo "data: " . json_encode(['type' => 'reconnect']) . "\n\n";
-        flush();
-        break;
-    }
 }
 
-echo "data: " . json_encode([
-    'type' => 'reconnect',
-    'last_event_id' => $last_event_id
-]) . "\n\n";
+// No events after all checks - close connection gracefully
+// Send a keep-alive comment so the connection doesn't error
+echo ": keepalive\n\n";
 flush();
 
 $conn->close();
+exit;
 ?>
