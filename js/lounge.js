@@ -77,6 +77,30 @@ $(document).ready(function() {
     });
 }*/
 
+function deleteRoom(roomId, roomName) {
+    if (!confirm(`Are you sure you want to delete the room "${roomName}"? This action cannot be undone.`)) {
+        return;
+    }
+    
+    $.ajax({
+        url: 'api/delete_room.php',
+        method: 'POST',
+        data: { room_id: roomId },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                showToast('Room deleted successfully', 'success');
+                loadRoomsWithUsers();
+            } else {
+                showToast(response.message || 'Failed to delete room', 'error');
+            }
+        },
+        error: function() {
+            showToast('Error deleting room', 'error');
+        }
+    });
+}
+
 function cleanupInactiveUsers() {
     debugLog('Requesting cleanup of inactive users...');
     $.ajax({
@@ -272,7 +296,9 @@ function displayRoomsWithUsers(rooms) {
         `;
     } else {
         // FILTER OUT INVITE-ONLY ROOMS HERE
-        let visibleRooms = rooms.filter(room => !room.invite_only);
+         const isAdminOrMod = currentUser && (currentUser.is_admin || currentUser.is_moderator);
+        let visibleRooms = isAdminOrMod ? rooms : rooms.filter(room => !room.invite_only);
+
         
         if (visibleRooms.length === 0) {
             html = `
@@ -469,7 +495,17 @@ function displayRoomsWithUsers(rooms) {
                                             </div>
                                             
                                         </div>
-                                        <div class="action-buttons">${actionButtons}</div>
+                                        <div class="action-buttons">
+                                            ${actionButtons}
+                                            ${isAdminOrMod ? `<button class="btn btn-danger btn-sm ms-1" onclick="deleteRoom(${room.id}, '${room.name.replace(/'/g, "\\'")}')"><i class="fas fa-trash"></i>Delete Room</button>` : ''}
+                                        </div>
+
+                                         ${inviteOnly && isAdminOrMod && room.invite_code ? `
+                                            <div style="font-size: 0.85rem; color: #ffc107; margin-top: 4px;">
+                                                <i class="fas fa-key"></i> Code: <code style="background: #333; padding: 2px 6px; border-radius: 3px;">${room.invite_code}</code>
+                                            </div>
+                                            ` : ''}
+
                                     </div>
                                     ${featureIndicators ? `<div class="room-features mt-2">${featureIndicators}</div>` : ''}
                                     ${hasKey ? '<div class="mt-2"><span class="badge bg-success"><i class="fas fa-key"></i> Access Granted</span></div>' : ''}
@@ -1909,7 +1945,8 @@ function storeAndDisplayRooms(rooms) {
 // Apply all filters
 function applyFilters() {
     // Start with all rooms, filter out invite-only
-    let filtered = roomFilters.allRooms.filter(room => !room.invite_only);
+    const isAdminOrMod = currentUser && (currentUser.is_admin || currentUser.is_moderator);
+    let filtered = isAdminOrMod ? roomFilters.allRooms : roomFilters.allRooms.filter(room => !room.invite_only);
     
     // Text filters
     if (roomFilters.name) {
@@ -1968,7 +2005,7 @@ function applyFilters() {
     });
     
     // Update result count
-    const visibleTotal = roomFilters.allRooms.filter(r => !r.invite_only).length;
+     const visibleTotal = isAdminOrMod ? roomFilters.allRooms.length : roomFilters.allRooms.filter(r => !r.invite_only).length;
     const showing = filtered.length;
     const filterCount = $('#filterResultCount');
     

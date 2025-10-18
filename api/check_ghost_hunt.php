@@ -38,8 +38,8 @@ function checkGhostHuntMatch($conn, $room_id, $message, $user_id_string, $user_t
         $claim_stmt->close();
         
         // Award event currency to user
-        $award_stmt = $conn->prepare("UPDATE users SET event_currency = event_currency + ? WHERE id = ?");
-        $award_stmt->bind_param("ii", $reward, $user_id);
+        $award_stmt = $conn->prepare("UPDATE users SET event_currency = event_currency + ?, lifetime_event_currency = lifetime_event_currency + ? WHERE id = ?");
+$award_stmt->bind_param("iii", $reward, $reward, $user_id);
         $award_stmt->execute();
         $award_stmt->close();
         

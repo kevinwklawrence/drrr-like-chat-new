@@ -343,7 +343,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             error_log("DEBUG REGISTER: Deleted invite code");
             
             // Give inviter 100 Dura
-            $stmt = $conn->prepare("UPDATE users SET dura = dura + 100 WHERE id = ?");
+            $stmt = $conn->prepare("INSERT INTO users (..., dura, lifetime_dura, ...) VALUES (..., 100, 100, ...)");
             if (!$stmt) {
                 throw new Exception("Inviter dura update prepare failed: " . $conn->error);
             }

@@ -329,13 +329,21 @@ if (!empty($user_id_string)) {
                             </div>
                         </div>
                     </div>
-                    <div class="notice"><h4>Notice:</h4><small>SSE Update is successfully *partially* implemented.
-If you experience any bugs, contact: <a class="notice-link" href="mailto:bugs@duranu.net">bugs@duranu.net</a>.
-I will not see them any other way.
+                    <div class="notice"><h4>Notice:</h4><small>Want to support us? Consider donating.
+                        <script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
+<script>
+  kofiWidgetOverlay.draw('duranu', {
+    'type': 'floating-chat',
+    'floating-chat.donateButton.text': 'Donate',
+    'floating-chat.donateButton.background-color': '#323842',
+    'floating-chat.donateButton.text-color': '#fff'
+  });
+</script>
 <br>Contact directly at: <a class="notice-link" href="mailto:admin@duranu.net">admin@duranu.net</a>.
 <br>Report bugs at: <a class="notice-link" href="mailto:bugs@duranu.net">bugs@duranu.net</a>.
 <br>Send feature requests at: <a class="notice-link" href="mailto:request@duranu.net">request@duranu.net</a>.
 </small>
+
 </div>
                 </div>
                 
@@ -672,6 +680,8 @@ document.addEventListener('DOMContentLoaded', function() {
     <script src="js/profile_system.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/loading.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/friend_notifications.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/leaderboard.js?v=<?php echo $versions['version']; ?>"></script>
+
 <?php include 'user_settings.php'; ?>
 </body>
 </html>

@@ -66,7 +66,29 @@ try {
         FROM global_users gu
         LEFT JOIN chatroom_users cu ON gu.user_id_string = cu.user_id_string
         WHERE cu.user_id_string IS NULL
-        ORDER BY gu.last_activity DESC
+        
+        UNION
+        
+        SELECT 
+            cu.user_id_string,
+            cu.username,
+            cu.guest_name,
+            cu.avatar,
+            cu.avatar_hue,
+            cu.avatar_saturation,
+            cu.color,
+            0 as is_admin,
+            cu.last_activity,
+            'in_lounge' as status,
+            NULL as room_name,
+            0 as is_host,
+            0 as is_afk,
+            TIMESTAMPDIFF(SECOND, cu.last_activity, NOW()) as seconds_inactive
+        FROM chatroom_users cu
+        LEFT JOIN global_users gu ON cu.user_id_string = gu.user_id_string
+        WHERE gu.user_id_string IS NULL
+        
+        ORDER BY last_activity DESC
     ";
     
     $lounge_stmt = $conn->prepare($lounge_users_sql);

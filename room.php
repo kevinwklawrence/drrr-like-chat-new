@@ -895,7 +895,16 @@ $('<style>').text(`
     <script src="js/ghost_hunt.js"></script>
     <script src="js/pumpkin_smash.js"></script>
     <script src="js/trick_or_treat.js"></script>
+    <script src="js/leaderboard.js?v=<?php echo $versions['version']; ?>"></script>
 
+<script>
+  kofiWidgetOverlay.draw('duranu', {
+    'type': 'floating-chat',
+    'floating-chat.donateButton.text': 'Donate',
+    'floating-chat.donateButton.background-color': '#323842',
+    'floating-chat.donateButton.text-color': '#fff'
+  });
+</script>
 
     
 

@@ -182,10 +182,24 @@ while ($row = $result->fetch_assoc()) {
         'afk_since' => $row['afk_since'],
         'afk_duration_minutes' => $afk_duration_minutes
     ];
+
     
-    $users[] = $user_data;
+    
+    // ADMIN/MODERATOR AUTO-HOST PRIVILEGES
+// Only check for registered users (guest users don't have is_admin/is_moderator)
+if ($is_registered && $row['user_id'] > 0) {
+    $is_admin = (int)($row['is_admin'] ?? 0);
+    $is_moderator = (int)($row['is_moderator'] ?? 0);
+    
+    if ($is_admin == 1 || $is_moderator == 1) {
+        // Automatically grant host privileges to admins/moderators
+        $user_data['is_host'] = 1;
+        $user_data['has_elevated_privileges'] = true; // Flag for UI (optional)
+    }
 }
 
+$users[] = $user_data;
+}
 $stmt->close();
 
 error_log("Retrieved " . count($users) . " users for room_id=$room_id");

@@ -6,7 +6,15 @@
 /* Avatar Effect Container - wraps avatar for effects */
 .avatar-with-effects {
     position: absolute;
-    top: 30px;
+    top: 40px;
+    width: 58px;
+    height: 58px;
+    border-radius: 4px;
+}
+
+.has-reply .avatar-with-effects {
+    position: relative;
+    /* top: 58px; */
     width: 58px;
     height: 58px;
     border-radius: 4px;
@@ -18,7 +26,7 @@
    ============================================ */
 
 .avatar-overlay {
-    position: absolute;
+    position: absolute !important;
     top: 0;
     left: 0;
     width: 100%;
@@ -79,6 +87,10 @@
     background: url('../images/effects/warning_border.png') no-repeat center top;
     background-size: 100%;
 }
+.overlay-goldenborder {
+    background: url('../images/effects/golden_border.png') no-repeat center top;
+    background-size: 100%;
+}
 
 .overlay-crown {
     background: url('../images/effects/crown_overlay.png') no-repeat center top;
@@ -123,7 +135,7 @@
    ============================================ */
 
 .avatar-glow {
-    position: absolute;
+    position: absolute !important;
     top: 0;
     left: 0;
     right: 0;
@@ -136,9 +148,9 @@
 /* Glow colors */
 .glow-gold {
     box-shadow: 
-        0 0 10px rgb(183 152 24 / 60%),
-        0 0 20px rgba(183 152 24 / 40%),
-        0 0 30px rgba(183 152 24 / 20%);
+        0 0 2px 1px rgb(183 152 24 / 80%),
+        0 0 4px 2px rgba(183 152 24 / 60%),
+        0 0 6px 3px rgba(183 152 24 / 40%);
     animation: pulse-glow 2s ease-in-out infinite;
 }
 
@@ -392,7 +404,15 @@
 @media (max-width: 768px) {
     .avatar-with-effects {
     position: absolute;
-    top: 30px;
+    top: 40px;
+    width: 48px;
+    height: 48px;
+    border-radius: 4px;
+}
+
+    .has-reply .avatar-with-effects {
+    position: absolute;
+    top: 110px;
     width: 48px;
     height: 48px;
     border-radius: 4px;

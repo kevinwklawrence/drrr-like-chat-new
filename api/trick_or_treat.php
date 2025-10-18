@@ -62,8 +62,8 @@ try {
         }
         
         // Award currency
-        $stmt = $conn->prepare("UPDATE users SET event_currency = event_currency + ?, last_trick_treat = NOW() WHERE id = ?");
-        $stmt->bind_param("ii", $reward, $user_id);
+        $stmt = $conn->prepare("UPDATE users SET event_currency = event_currency + ?, lifetime_event_currency = lifetime_event_currency + ?, last_trick_treat = NOW() WHERE id = ?");
+$stmt->bind_param("iii", $reward, $reward, $user_id);
         $stmt->execute();
         $stmt->close();
         

@@ -127,53 +127,75 @@ try {
                 $other_result = $other_users_check->get_result();
                 
                 if ($other_result->num_rows > 0) {
-                    // Transfer host to another user
-                    $new_host = $other_result->fetch_assoc();
-                    $new_host_name = $new_host['username'] ?: $new_host['guest_name'] ?: 'Unknown User';
-                    $other_users_check->close();
-                    
-                    logActivity("Transferring host to: $new_host_name");
-                    
-                    // Remove old host
-                    $remove_host = $conn->prepare("DELETE FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");
-                    $remove_host->bind_param("is", $room_id, $user_id_string);
-                    $remove_host->execute();
-                    $remove_host->close();
-                    
-                    // Set new host
-                    $set_new_host = $conn->prepare("UPDATE chatroom_users SET is_host = 1 WHERE room_id = ? AND user_id_string = ?");
-                    $set_new_host->bind_param("is", $room_id, $new_host['user_id_string']);
-                    $set_new_host->execute();
-                    $set_new_host->close();
-                    
-                    // Update room host record
-                    $update_room_host = $conn->prepare("UPDATE chatrooms SET host_user_id_string = ? WHERE id = ?");
-                    if ($update_room_host) {
-                        $update_room_host->bind_param("si", $new_host['user_id_string'], $room_id);
-                        $update_room_host->execute();
-                        $update_room_host->close();
-                    }
-                    
-                    // Add system message
-                    $transfer_message = "$display_name disconnected due to inactivity. Host privileges transferred to $new_host_name.";
-                    $add_system_message = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, '', ?, 1, NOW(), 'disconnect.png', 'system')");
-                    if ($add_system_message) {
-                        $add_system_message->bind_param("is", $room_id, $transfer_message);
-                        $add_system_message->execute();
-                        $add_system_message->close();
-                    }
-                    
-                    $host_transfers[] = [
-                        'room_id' => $room_id,
-                        'room_name' => $user['room_name'],
-                        'old_host' => $display_name,
-                        'new_host' => $new_host_name,
-                        'inactive_minutes' => $inactive_minutes
-                    ];
-                    
-                    logActivity("✅ Host transfer completed: $display_name → $new_host_name");
-                    
-                } else {
+    // PERMANENT ROOM CHECK: Do not transfer host in permanent rooms
+    if ($is_permanent) {
+        // Just remove the host but keep the room
+        $other_users_check->close();
+        
+        $remove_host = $conn->prepare("DELETE FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");
+        $remove_host->bind_param("is", $room_id, $user_id_string);
+        $remove_host->execute();
+        $remove_host->close();
+        
+        // Add system message
+        $perm_message = "$display_name (Host) disconnected due to inactivity. Room remains available.";
+        $add_system_message = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, '', ?, 1, NOW(), 'disconnect.png', 'system')");
+        if ($add_system_message) {
+            $add_system_message->bind_param("is", $room_id, $perm_message);
+            $add_system_message->execute();
+            $add_system_message->close();
+        }
+        
+        logActivity("✅ Host removed from permanent room: {$user['room_name']} (no transfer)");
+        
+    } else {
+        // Transfer host to another user (non-permanent rooms only)
+        $new_host = $other_result->fetch_assoc();
+        $new_host_name = $new_host['username'] ?: $new_host['guest_name'] ?: 'Unknown User';
+        $other_users_check->close();
+        
+        logActivity("Transferring host to: $new_host_name");
+        
+        // Remove old host
+        $remove_host = $conn->prepare("DELETE FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");
+        $remove_host->bind_param("is", $room_id, $user_id_string);
+        $remove_host->execute();
+        $remove_host->close();
+        
+        // Set new host
+        $set_new_host = $conn->prepare("UPDATE chatroom_users SET is_host = 1 WHERE room_id = ? AND user_id_string = ?");
+        $set_new_host->bind_param("is", $room_id, $new_host['user_id_string']);
+        $set_new_host->execute();
+        $set_new_host->close();
+        
+        // Update room host record
+        $update_room_host = $conn->prepare("UPDATE chatrooms SET host_user_id_string = ? WHERE id = ?");
+        if ($update_room_host) {
+            $update_room_host->bind_param("si", $new_host['user_id_string'], $room_id);
+            $update_room_host->execute();
+            $update_room_host->close();
+        }
+        
+        // Add system message
+        $transfer_message = "$display_name disconnected due to inactivity. Host privileges transferred to $new_host_name.";
+        $add_system_message = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, '', ?, 1, NOW(), 'disconnect.png', 'system')");
+        if ($add_system_message) {
+            $add_system_message->bind_param("is", $room_id, $transfer_message);
+            $add_system_message->execute();
+            $add_system_message->close();
+        }
+        
+        $host_transfers[] = [
+            'room_id' => $room_id,
+            'room_name' => $user['room_name'],
+            'old_host' => $display_name,
+            'new_host' => $new_host_name,
+            'inactive_minutes' => $inactive_minutes
+        ];
+        
+        logActivity("✅ Host transfer completed: $display_name → $new_host_name");
+    }
+} else {
                     // No other users, handle based on room type
                     $other_users_check->close();
                     

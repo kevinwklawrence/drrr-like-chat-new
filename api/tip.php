@@ -92,8 +92,8 @@ try {
                 $stmt->close();
                 
                 // Add dura to recipient (1 token = 1 dura)
-                $stmt = $conn->prepare("UPDATE users SET dura = dura + ? WHERE id = ?");
-                $stmt->bind_param("ii", $amount, $to_user_id);
+                $stmt = $conn->prepare("UPDATE users SET dura = dura + ?, lifetime_dura = lifetime_dura + ? WHERE id = ?");
+$stmt->bind_param("iii", $amount, $amount, $to_user_id);
                 $stmt->execute();
                 $stmt->close();
                 
@@ -113,8 +113,8 @@ try {
                 $stmt->close();
                 
                 // Add dura to recipient
-                $stmt = $conn->prepare("UPDATE users SET dura = dura + ? WHERE id = ?");
-                $stmt->bind_param("ii", $amount, $to_user_id);
+                $stmt = $conn->prepare("UPDATE users SET dura = dura + ?, lifetime_dura = lifetime_dura + ? WHERE id = ?");
+$stmt->bind_param("iii", $amount, $amount, $to_user_id);
                 $stmt->execute();
                 $stmt->close();
                 

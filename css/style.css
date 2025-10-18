@@ -38,7 +38,7 @@ body::-webkit-scrollbar {
             overflow-y: auto;
             border: 1px solid #ccc;
             padding: 30px 50px 30px 50px;
-            background: rgba(63, 63, 63, 0.75);
+            background: rgb(63 63 63 / 75%);
             max-width: 1120px;
         }
 
@@ -206,8 +206,8 @@ body {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-    #chatbox img {height: 48px;width: 48px;/* top: 48px; */border-radius:2px;left: 0px;}
-    #chatbox {padding: 10px;}
+    #chatbox img {height: inherit;width: inherit;/* top: 48px; */border-radius:2px;left: 0px;}
+    #chatbox {padding: 10px;background: rgb(63 63 63 / 100%);border: none;}
     .knock-notification {
         position: fixed;
         top: 10px;
@@ -970,7 +970,7 @@ body {
         }
 /* Version Text in Navbar */
 .navbar::after {
-    content: 'BETA C_0.1.4';
+    content: 'BETA C_0.1.5';
     position: fixed;
     text-align:center;
     left: 158px;

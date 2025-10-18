@@ -1,35 +1,6 @@
 const DEBUG_MODE = false;
 const SHOW_SENSITIVE_DATA = false;
 
-const addMaximumScaleToMetaViewport = () => {
-  const el = document.querySelector('meta[name=viewport]');
-
-  if (el !== null) {
-    let content = el.getAttribute('content');
-    let re = /maximum\-scale=[0-9\.]+/g;
-
-    if (re.test(content)) {
-        content = content.replace(re, 'maximum-scale=1.0');
-    } else {
-        content = [content, 'maximum-scale=1.0'].join(', ')
-    }
-
-    el.setAttribute('content', content);
-  }
-};
-
-const disableIosTextFieldZoom = addMaximumScaleToMetaViewport;
-
-// https://stackoverflow.com/questions/9038625/detect-if-device-is-ios/9039885#9039885
-const checkIsIOS = () =>
-  /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-if (checkIsIOS()) {
-  disableIosTextFieldZoom();
-}
-
-
-
 function isMobileDevice() {
        return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
    }
@@ -126,26 +97,47 @@ let manualAFK = false;
 let lastProcessedSettingsEvent = null;
 let isReloadingSettings = false;
 
+let sseConnection = null;
+let sseReconnectAttempts = 0;
+let sseMaxReconnectAttempts = 5;
+let sseReconnectDelay = 2000;
+let sseConnected = false;
+let sseEnabled = true; // Master switch for SSE (set to false to use Ajax only)
+let sseLastMessageTimestamp = 0;
+let privateMessageConversations = [];
+let whisperConversations = [];
 
+let sseConnectionTimeout = null;
+let sseConnectionEstablished = false;
+let sseReconnectExpected = false; // ADD THIS LINE
 
-// Replace SSE variables with polling variables
-let pollingEnabled = true;
-let pollingLastEventId = 0;
-let pollingActive = false;
-let pollingTimeout = null;
-let pollingRetryCount = 0;
-let pollingMaxRetries = 5;
-let pollingBaseDelay = 1000;
-let pollingCurrentDelay = 500;
+let sseLastEventId = 0;
+
+let sseReconnectTimer = null;
 let userActive = false;
 let activityTimer = null;
-
-let privateMessageConversations = [];
-
-
+let sseIdleTimeout = null;
+let sseMaxIdleTime = 3000; // Close connection if no data for 3 seconds
 
 
-// Keep these event listeners - they're still needed
+let sseFeatures = {
+    messages: true,         // ✅ Using SSE
+    users: true,            // ✅ Using SSE
+    mentions: true,         // ✅ Using SSE
+    whispers: true,         // ✅ Using SSE (room whispers)
+    private_messages: true, // ✅ Using SSE (private messages between users)
+    friends: true,          // ✅ Using SSE
+    room_data: true,        // ✅ Using SSE
+    knocks: true,           // ✅ Using SSE
+    youtube: false,         // ⏸️ Still using Ajax
+    settings_check: true,   // ✅ Using SSE (NEW)
+    inactivity_status: true // ✅ Using SSE (NEW)
+};
+
+
+// ============================================================================
+// Micro-SSE: User Activity Tracking
+// ============================================================================
 document.addEventListener('keydown', () => markUserActive());
 document.addEventListener('click', () => markUserActive());
 document.addEventListener('mousemove', throttle(() => markUserActive(), 5000));
@@ -169,204 +161,42 @@ function throttle(func, limit) {
     };
 }
 
-// ADD these polling functions:
-function initializeEventPolling() {
-    if (pollingActive) {
-        debugLog('⚠️ Polling already active');
-        return;
-    }
-    
-    debugLog('🚀 Initializing event-based polling');
-    pollingActive = true;
-    pollingRetryCount = 0;
-    startEventPolling();
-}
-
-function startEventPolling() {
-    if (!pollingEnabled || !pollingActive) {
-        debugLog('❌ Polling disabled or inactive');
-        return;
-    }
-    
-    if (document.hidden) {
-        debugLog('⏸️ Tab hidden, delaying poll');
-        scheduleNextPoll(3000);
-        return;
-    }
-    
-    $.ajax({
-        url: 'api/poll_room_data.php',
-        method: 'GET',
-        data: {
-            message_limit: messageLimit,
-            check_youtube: youtubeEnabled ? '1' : '0',
-            last_event_id: pollingLastEventId
-        },
-        dataType: 'json',
-        timeout: 10000,
-        success: function(response) {
-            if (response.status === 'no_events') {
-                debugLog('⏳ No events, polling again in ' + pollingCurrentDelay + 'ms');
-                pollingRetryCount = 0;
-                scheduleNextPoll(pollingCurrentDelay);
-            } else if (response.status === 'success') {
-                debugLog('✅ Events received');
-                pollingRetryCount = 0;
-                pollingCurrentDelay = pollingBaseDelay;
-                
-                if (response.last_event_id) {
-                    pollingLastEventId = response.last_event_id;
-                }
-                
-                handlePollingData(response);
-                scheduleNextPoll(100);
-            } else {
-                console.error('❌ Polling error:', response);
-                handlePollingError();
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('❌ AJAX polling error:', error);
-            handlePollingError();
+function resetIdleTimeout() {
+    clearTimeout(sseIdleTimeout);
+    sseIdleTimeout = setTimeout(() => {
+        if (sseConnection && sseConnection.readyState === EventSource.OPEN) {
+            debugLog('⏱️ SSE idle timeout - closing connection');
+            sseConnection.close();
+            scheduleReconnect();
         }
-    });
-}
-
-function scheduleNextPoll(delay) {
-    if (pollingTimeout) {
-        clearTimeout(pollingTimeout);
-    }
-    
-    pollingTimeout = setTimeout(() => {
-        if (pollingActive && pollingEnabled) {
-            startEventPolling();
-        }
-    }, delay || pollingCurrentDelay);
-}
-
-function handlePollingError() {
-    pollingRetryCount++;
-    
-    if (pollingRetryCount >= pollingMaxRetries) {
-        console.error('🔥 Max polling retries reached, stopping');
-        stopEventPolling();
-        showToast('Connection lost. Please refresh the page.', 'error');
-        return;
-    }
-    
-    const retryDelay = pollingBaseDelay * Math.pow(2, pollingRetryCount);
-    debugLog(`🔄 Retry ${pollingRetryCount}/${pollingMaxRetries} in ${retryDelay}ms`);
-    scheduleNextPoll(retryDelay);
-}
-
-function stopEventPolling() {
-    debugLog('🛑 Stopping event polling');
-    pollingActive = false;
-    pollingEnabled = false;
-    
-    if (pollingTimeout) {
-        clearTimeout(pollingTimeout);
-        pollingTimeout = null;
-    }
-}
-
-function handlePollingData(data) {
-    if (!data || typeof data !== 'object') {
-        console.error('Invalid polling data:', data);
-        return;
-    }
-    
-    if (data.last_event_id && data.last_event_id > pollingLastEventId) {
-        pollingLastEventId = data.last_event_id;
-        debugLog('📊 Updated pollingLastEventId to:', pollingLastEventId);
-    }
-    
-    if (data.messages) {
-        handleMessagesResponse(data.messages);
-    }
-    
-    if (data.users) {
-        handleUsersResponse(data.users);
-    }
-    
-    if (data.mentions) {
-        handleMentionsResponse(data.mentions);
-    }
-    
-    if (data.whispers) {
-        handleWhispersResponse(data.whispers);
-    }
-    
-    if (data.private_messages) {
-        handleConversationsResponse(data.private_messages);
-    }
-    
-    if (data.friends) {
-        handleFriendsResponse(data.friends);
-    }
-    
-    if (data.room_data) {
-        handleRoomDataResponse(data.room_data);
-    }
-
-    if (data.knocks) {
-        handleKnocksResponse(data.knocks);
-    }
-    
-    if (data.youtube) {
-        handleYouTubeResponse(data.youtube);
-    }
-    
-    if (data.settings_check) {
-        handleSettingsCheckResponse(data.settings_check);
-    }
-    
-    if (data.inactivity_status) {
-        handleInactivityStatusResponse(data.inactivity_status);
-    }
-
-    if (data.sound_events && typeof data.sound_events === 'object') {
-        const messages = data.messages?.messages || [];
-        const existingMessageCount = $('.chat-message').length;
-        const isEmptyResponse = messages.length === 0 && existingMessageCount > 0 && !isInitialLoad;
-        
-        if (!isEmptyResponse) {
-            if (data.sound_events.system_message) {
-                playSystemNotification();
-            } else if (data.sound_events.new_message) {
-                if (typeof window.playMessageNotification === 'function') {
-                    window.playMessageNotification();
-                }
-            }
-            
-            if (data.sound_events.new_mention) {
-                if (typeof window.playReplyOrMentionSound === 'function') {
-                    window.playReplyOrMentionSound();
-                }
-            }
-            
-            if (data.sound_events.new_whisper) {
-                if (typeof window.playNotificationSound === 'function') {
-                    window.playNotificationSound();
-                }
-            }
-            
-            if (data.sound_events.new_private_message) {
-                if (typeof window.playFriendNotificationSound === 'function') {
-                    window.playFriendNotificationSound();
-                }
-            }
-        }
-    }
+    }, sseMaxIdleTime);
 }
 
 function forceReconnectNow() {
-    clearTimeout(pollingTimeout);
-    pollingCurrentDelay = 100;
-    debugLog('⚡ Forcing immediate poll');
-    if (pollingActive && pollingEnabled) {
-        startEventPolling();
+    clearTimeout(sseReconnectTimer);
+    clearTimeout(sseIdleTimeout);
+    
+    if (sseConnection && sseConnection.readyState === EventSource.OPEN) {
+        sseConnection.close();
     }
+    
+    sseReconnectDelay = 100;
+    debugLog('⚡ Forcing immediate reconnect');
+    setTimeout(() => initializeSSE(), 100);
+}
+
+function scheduleReconnect() {
+    clearTimeout(sseReconnectTimer);
+    
+    if (document.hidden) {
+        debugLog('⏸️ Tab hidden, delaying reconnect');
+        return;
+    }
+    
+    debugLog(`⏱️ Reconnecting in ${sseReconnectDelay}ms`);
+    sseReconnectTimer = setTimeout(() => {
+        initializeSSE();
+    }, sseReconnectDelay);
 }
 
 // Global cache for user effects
@@ -526,9 +356,300 @@ function managedAjax(options) {
     return requestManager.makeRequest(options);
 }
 
+function initializeSSE() {
+    if (sseConnection && sseConnection.readyState !== EventSource.CLOSED) {
+        sseConnection.close();
+    }
+    
+    clearTimeout(sseIdleTimeout);
+    
+    debugLog('🚀 Initializing SSE connection with last_event_id:', sseLastEventId);
+    
+    const params = new URLSearchParams({
+        message_limit: messageLimit,
+        check_youtube: youtubeEnabled ? '1' : '0',
+        last_event_id: sseLastEventId
+    });
+    
+    sseConnectionTimeout = setTimeout(() => {
+        if (!sseConnectionEstablished) {
+            debugLog('⏱️ SSE connection timeout - falling back to Ajax');
+            closeSSE();
+            sseEnabled = false;
+            startRoomUpdates();
+        }
+    }, 10000);
+    
+    sseConnection = new EventSource(`api/sse_room_data.php?${params.toString()}`);
+    
+    resetIdleTimeout();
+    
+    sseConnection.onopen = function() {
+        debugLog('✅ Micro-SSE connected');
+        sseConnected = true;
+        sseConnectionEstablished = true;
+        sseReconnectAttempts = 0;
+        
+        if (sseConnectionTimeout) {
+            clearTimeout(sseConnectionTimeout);
+            sseConnectionTimeout = null;
+        }
+    };
+    
+    sseConnection.onmessage = function(event) {
+        if (!sseConnectionEstablished) {
+            sseConnectionEstablished = true;
+            if (sseConnectionTimeout) {
+                clearTimeout(sseConnectionTimeout);
+                sseConnectionTimeout = null;
+            }
+        }
+        
+        resetIdleTimeout();
+        
+        try {
+            const data = JSON.parse(event.data);
+            handleSSEData(data);
+        } catch (error) {
+            console.error('❌ SSE parse error:', error, 'Raw data:', event.data);
+        }
+    };
+    
+    sseConnection.onerror = function(error) {
+    const state = this.readyState;
+    
+    clearTimeout(sseIdleTimeout);
+    
+    if (sseReconnectExpected) {
+        debugLog('⏭️ Ignoring error during planned reconnection');
+        return;
+    }
+    
+   // console.error('❌ SSE error:', error, 'ReadyState:', state);
+    sseConnected = false;
+    sseConnection.close();
+    
+    if (sseConnectionTimeout) {
+        clearTimeout(sseConnectionTimeout);
+        sseConnectionTimeout = null;
+    }
+    
+    // CRITICAL: Restart the idle timeout to reconnect after a delay
+    debugLog('⏳ Connection error - will retry in 3 seconds');
+    setTimeout(() => {
+        if (sseEnabled && !document.hidden) {
+            debugLog('🔄 Retrying after error');
+            initializeSSE();
+        }
+    }, 3000); // Wait 3 seconds before retrying
+};
+}
+
+// ============================================================================
+// ADD THIS NEW scheduleReconnect FUNCTION
+// ============================================================================
+
+function scheduleReconnect() {
+    clearTimeout(sseReconnectTimer);
+    
+    // Don't reconnect if tab is hidden (save resources)
+    if (document.hidden) {
+        debugLog('⏸️ Tab hidden, delaying reconnect');
+        return;
+    }
+    
+    debugLog(`⏱️ Reconnecting in ${sseReconnectDelay}ms`);
+    sseReconnectTimer = setTimeout(() => {
+        initializeSSE();
+    }, sseReconnectDelay);
+}
 
 
+function closeSSE() {
+    if (sseConnectionTimeout) {
+        clearTimeout(sseConnectionTimeout);
+        sseConnectionTimeout = null;
+    }
+    
+    if (sseReconnectTimer) {
+        clearTimeout(sseReconnectTimer);
+        sseReconnectTimer = null;
+    }
+    
+    if (sseIdleTimeout) {
+        clearTimeout(sseIdleTimeout);
+        sseIdleTimeout = null;
+    }
+    
+    if (sseConnection) {
+        debugLog('🔌 Closing SSE connection');
+        sseConnection.close();
+        sseConnection = null;
+        sseConnected = false;
+        sseConnectionEstablished = false;
+    }
+}
 
+
+// ============================================================================
+// SSE Data Handler
+// ============================================================================
+
+function handleSSEData(data) {
+    if (!data || typeof data !== 'object') {
+        console.error('Invalid SSE data:', data);
+        return;
+    }
+
+     if (data.last_event_id && data.last_event_id > sseLastEventId) {
+        sseLastEventId = data.last_event_id;
+        debugLog('📊 Updated sseLastEventId to:', sseLastEventId);
+    }
+    
+    
+    // Handle different event types
+    switch (data.type) {
+        case 'connected':
+            debugLog('📡 SSE connected to room:', data.room_id);
+            break;
+            
+      /*  case 'reconnect':
+    debugLog('🔄 Reconnect signal:', data.reason);
+    sseLastEventId = data.last_event_id;
+    clearTimeout(sseIdleTimeout);
+    sseConnection.close();
+    
+    if (data.reason === 'data_sent') {
+        sseReconnectDelay = userActive ? 300 : 800;
+    } else if (data.reason === 'no_events') {
+        sseReconnectDelay = userActive ? 2000 : 5000;
+    } else {
+        sseReconnectDelay = userActive ? 1000 : 2500;
+    }
+    
+    scheduleReconnect();
+    break; */
+    
+case 'room_data':
+    debugLog('📦 Received room data');
+    sseLastEventId = data.last_event_id;
+    
+    // Process all data categories
+    if (data.messages && sseFeatures.messages) {
+        handleMessagesResponse(data.messages);
+    }
+    
+    if (data.users && sseFeatures.users) {
+        handleUsersResponse(data.users);
+    }
+    
+    if (data.mentions && sseFeatures.mentions) {
+        handleMentionsResponse(data.mentions);
+    }
+    
+    if (data.whispers && sseFeatures.whispers) {
+        handleWhispersResponse(data.whispers);
+    }
+    
+    if (data.private_messages && sseFeatures.private_messages) {
+        handleConversationsResponse(data.private_messages);
+    }
+    
+    if (data.friends && sseFeatures.friends) {
+        handleFriendsResponse(data.friends);
+    }
+    
+    if (data.room_data && sseFeatures.room_data) {
+        handleRoomDataResponse(data.room_data);
+    }
+
+    if (data.knocks && sseFeatures.knocks) {
+        handleKnocksResponse(data.knocks);
+    }
+    
+    if (data.youtube && sseFeatures.youtube) {
+        handleYouTubeResponse(data.youtube);
+    }
+    
+    if (data.settings_check && sseFeatures.settings_check) {
+        handleSettingsCheckResponse(data.settings_check);
+    }
+    
+    if (data.inactivity_status && sseFeatures.inactivity_status) {
+        handleInactivityStatusResponse(data.inactivity_status);
+    }
+
+    if (data.sound_events && typeof data.sound_events === 'object') {
+        const messages = data.messages?.messages || [];
+        const existingMessageCount = $('.chat-message').length;
+        const isEmptyResponse = messages.length === 0 && existingMessageCount > 0 && !isInitialLoad;
+        
+        if (!isEmptyResponse) {
+            if (data.sound_events.system_message) {
+                playSystemNotification();
+            } else if (data.sound_events.new_message) {
+                if (typeof window.playMessageNotification === 'function') {
+                    window.playMessageNotification();
+                }
+            }
+            
+            if (data.sound_events.new_mention) {
+                if (typeof window.playReplyOrMentionSound === 'function') {
+                    window.playReplyOrMentionSound();
+                }
+            }
+            
+            if (data.sound_events.new_whisper) {
+                if (typeof window.playNotificationSound === 'function') {
+                    window.playNotificationSound();
+                }
+            }
+            
+            if (data.sound_events.new_private_message) {
+                if (typeof window.playFriendNotificationSound === 'function') {
+                    window.playFriendNotificationSound();
+                }
+            }
+        }
+    }
+    
+    // CRITICAL: Close connection immediately after processing
+clearTimeout(sseIdleTimeout);
+sseConnection.close();
+
+// Reconnect quickly to check for more events (500ms)
+// This ensures we catch events that arrived while processing
+setTimeout(() => {
+    if (!document.hidden && sseEnabled) {
+        debugLog('🔄 Quick reconnect after data');
+        initializeSSE();
+    }
+}, 500);
+break;
+            
+        case 'heartbeat':
+            // Connection keepalive, no action needed
+            break;
+            
+        case 'error':
+            console.error('❌ SSE error from server:', data.message);
+            break;
+            
+        default:
+            debugLog('⚠️ Unknown SSE event type:', data.type);
+    }
+}
+
+/*console.log('SSE Connections:');
+console.log('Room SSE:', typeof sseConnection, sseConnection?.readyState);
+console.log('Notification SSE:', typeof notificationSSE);
+console.log('Friend SSE:', typeof friendStatusSSE);
+
+// Check if handlers exist
+console.log('Handlers:');
+console.log('updateGeneralNotifications:', typeof window.updateGeneralNotifications);
+console.log('updateFriendNotifications:', typeof window.updateFriendNotifications);
+console.log('handleRoomStatusUpdate:', typeof window.handleRoomStatusUpdate);*/
 
 // Add missing loadYouTubeAPI function
 function loadYouTubeAPI() {
@@ -554,18 +675,226 @@ function loadYouTubeAPI() {
 // Visibility change handling - pause when hidden
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
-        debugLog('👁️ Tab hidden - slowing polling');
-        pollingCurrentDelay = 3000; // Poll every 3 seconds when hidden
-    } else {
-        debugLog('👁️ Tab visible - resuming normal polling');
-        pollingCurrentDelay = pollingBaseDelay;
-        markUserActive();
-        if (pollingActive && pollingEnabled) {
-            startEventPolling();
+        debugLog('👁️ Tab hidden - pausing SSE');
+        clearTimeout(sseReconnectTimer);
+        if (sseConnection) {
+            sseConnection.close();
         }
+    } else {
+        debugLog('👁️ Tab visible - resuming SSE');
+        markUserActive();
+        initializeSSE();
     }
 });
 
+
+
+// Combined data fetcher for all room data
+function fetchAllRoomData() {
+    const promises = [];
+    
+    // 1. MESSAGES - Skip if using SSE
+     if (!sseFeatures.messages || !sseConnected) {
+        if (!isLoadingMessages) {  // ADDED: Check if already loading
+            promises.push(
+                managedAjax({
+                    url: 'api/get_messages.php',
+                    method: 'GET',
+                    data: { 
+                        room_id: roomId,
+                        limit: messageLimit,
+                        offset: 0
+                    },
+                    dataType: 'json'
+                }).then(response => {
+                    handleMessagesResponse(response);
+                }).catch(error => {
+                    console.error('Messages error:', error);
+                })
+            );
+        } else {
+            debugLog('⏸️ Skipping messages Ajax (already loading)');
+        }
+    } else {
+        debugLog('⏭️ Skipping messages Ajax (using SSE)');
+    }
+    
+    // 2. USERS - Skip if using SSE
+    if (!sseFeatures.users || !sseConnected) {
+        promises.push(
+            managedAjax({
+                url: 'api/get_room_users.php',
+                method: 'GET',
+                data: { room_id: roomId },
+                dataType: 'json'
+            }).then(response => {
+                handleUsersResponse(response);
+            }).catch(error => {
+                console.error('Users error:', error);
+            })
+        );
+    } else {
+        debugLog('⏭️ Skipping users Ajax (using SSE)');
+    }
+    
+    // 3. MENTIONS - Skip if using SSE
+    if (!sseFeatures.mentions || !sseConnected) {
+        promises.push(
+            managedAjax({
+                url: 'api/get_mentions.php',
+                method: 'GET',
+                dataType: 'json'
+            }).then(response => {
+                handleMentionsResponse(response);
+            }).catch(error => {
+                console.error('Mentions error:', error);
+            })
+        );
+    } else {
+        debugLog('⏭️ Skipping mentions Ajax (using SSE)');
+    }
+    
+    // 4. WHISPERS - Skip if using SSE
+    if (!sseFeatures.whispers || !sseConnected) {
+        promises.push(
+            managedAjax({
+                url: 'api/room_whispers.php',
+                method: 'GET',
+                data: { action: 'get_conversations' },
+                dataType: 'json'
+            }).then(response => {
+                handleWhispersResponse(response);
+            }).catch(error => {
+                console.error('Whispers error:', error);
+            })
+        );
+    } else {
+        debugLog('⏭️ Skipping whispers Ajax (using SSE)');
+    }
+
+    // 5. FRIENDS - Skip if using SSE
+    if (!sseFeatures.friends || !sseConnected) {
+        if (currentUser.type === 'user') {
+            promises.push(
+                managedAjax({
+                    url: 'api/friends.php',
+                    method: 'GET',
+                    data: { action: 'get' },
+                    dataType: 'json'
+                }).then(response => {
+                    handleFriendsResponse(response);
+                }).catch(error => {
+                    console.error('Friends error:', error);
+                })
+            );
+        }
+    } else {
+        debugLog('⏭️ Skipping friends Ajax (using SSE)');
+    }
+    
+    // 6. PRIVATE MESSAGE CONVERSATIONS - Skip if using SSE
+    if (!sseFeatures.private_messages || !sseConnected) {
+        if (currentUser.type === 'user') {
+            promises.push(
+                managedAjax({
+                    url: 'api/private_messages.php',
+                    method: 'GET',
+                    data: { action: 'get_conversations' },
+                    dataType: 'json'
+                }).then(response => {
+                    handleConversationsResponse(response);
+                }).catch(error => {
+                    console.error('Conversations error:', error);
+                })
+            );
+        }
+    } else {
+        debugLog('⏭️ Skipping private messages Ajax (using SSE)');
+    }
+
+    // 7. ROOM SETTINGS CHECK - Skip if using SSE
+if (!sseFeatures.settings_check || !sseConnected) {
+    promises.push(
+        managedAjax({
+            url: 'api/check_room_settings.php',
+            method: 'GET',
+            data: { room_id: roomId },
+            dataType: 'json'
+        }).then(response => {
+            handleSettingsCheckResponse(response);
+        }).catch(error => {
+            console.error('Settings check error:', error);
+        })
+    );
+} else {
+    debugLog('⏭️ Skipping settings check Ajax (using SSE)');
+}
+
+    // 8. INDIVIDUAL PRIVATE MESSAGE UPDATES - Still using Ajax for open chats
+    if (currentUser.type === 'user' && openPrivateChats.size > 0) {
+        openPrivateChats.forEach((data, userId) => {
+            const input = $(`#pm-input-${userId}`);
+            const isTyping = input.is(':focus') && input.val().length > 0;
+            
+            if (!isTyping) {
+                promises.push(
+                    managedAjax({
+                        url: 'api/private_messages.php',
+                        method: 'GET',
+                        data: {
+                            action: 'get',
+                            other_user_id: userId
+                        },
+                        dataType: 'json'
+                    }).then(response => {
+                        if (response.status === 'success') {
+                            displayPrivateMessages(userId, response.messages);
+                        }
+                    }).catch(error => {
+                        console.error(`Private messages error for user ${userId}:`, error);
+                    })
+                );
+            }
+        });
+    }
+    
+    // 9. ROOM DATA - Skip if using SSE
+    if (!sseFeatures.room_data || !sseConnected) {
+        promises.push(
+            managedAjax({
+                url: 'api/get_room_data.php',
+                method: 'GET',
+                data: { room_id: roomId },
+                dataType: 'json'
+            }).then(response => {
+                handleRoomDataResponse(response);
+            }).catch(error => {
+                console.error('Room data error:', error);
+            })
+        );
+    } else {
+        debugLog('⏭️ Skipping room data Ajax (using SSE)');
+    }
+
+    // 10. YOUTUBE DATA - Still using Ajax
+    if (!sseFeatures.youtube || !sseConnected) {
+        if (youtubeEnabled) {
+            promises.push(
+                managedAjax({
+                    url: 'api/youtube_combined.php',
+                    method: 'GET',
+                    dataType: 'json'
+                }).then(response => {
+                    handleYouTubeResponse(response);
+                }).catch(error => {
+                    console.error('YouTube error:', error);
+                })
+            );
+        }
+    }
+    
+    return Promise.allSettled(promises);
+}
 
 function handleSettingsCheckResponse(data) {
     if (data.status === 'success' && data.settings_changed && data.event_id) {
@@ -603,22 +932,7 @@ function handleRoomDataResponse(response) {
     //console.log('Room data response:', response);
 }
 
-function handleConversationsResponse(data) {
-    if (data.status === 'success') {
-        privateMessageConversations = data.conversations || [];
-        displayConversations(privateMessageConversations);
-        
-        // AUTO-UPDATE: Load messages for open private message windows
-        if (openPrivateChats && openPrivateChats.size > 0) {
-            openPrivateChats.forEach((chatData, userId) => {
-                const input = $(`#pm-input-${userId}`);
-                if (!input.is(':focus') || input.val().length === 0) {
-                    loadPrivateMessages(userId);
-                }
-            });
-        }
-    }
-}
+
 
 // Response handlers
 function handleMessagesResponse(data) {
@@ -705,7 +1019,7 @@ function handleMessagesResponse(data) {
 }
 
 function handleUsersResponse(data) {
-    // Handle both polling format (direct array) and Ajax format (wrapped object)
+    // FIXED: Handle both SSE format (direct array) and Ajax format (wrapped object)
     let users = data;
     
     // If it's an object with a users property, extract the array
@@ -944,7 +1258,7 @@ function checkIfFriend(userId, callback) {
     }
     
     // Fallback to Ajax only if SSE is not connected
-    if (!pollingEnabled || !pollingActive) {
+    if (!sseEnabled || !sseConnected) {
         $.ajax({
             url: 'api/friends.php',
             method: 'GET',
@@ -1106,7 +1420,6 @@ function testImageAccessibility(url) {
     });
 }
 
-// FIND the success callback in sendValidatedMessage and UPDATE:
 function sendValidatedMessage(message) {
     const messageInput = $('#message');
     const sendBtn = $('.btn-send-message');
@@ -1123,8 +1436,10 @@ function sendValidatedMessage(message) {
         sendData.reply_to = currentReplyTo;
     }
     
+    // OPTIMISTIC UPDATE: Create temporary message ID
     const tempId = `pending_${Date.now()}_${++pendingMessageCounter}`;
     
+    // Create optimistic message object
     const optimisticMessage = {
         id: tempId,
         message: message,
@@ -1144,10 +1459,13 @@ function sendValidatedMessage(message) {
         is_host: isHost,
         reply_to_message_id: sendData.reply_to || null,
         equipped_titles: currentUser.equipped_titles || [],
-        pending: true
+        pending: true // Mark as pending
     };
     
+    // Store in pending map
     pendingMessages.set(tempId, optimisticMessage);
+    
+    // Immediately add to UI
     addOptimisticMessage(optimisticMessage);
     
     $.ajax({
@@ -1156,12 +1474,12 @@ function sendValidatedMessage(message) {
         data: sendData,
         dataType: 'json',
         success: function(response) {
-            // CHANGE THIS LINE - replace sseEnabled check:
-            if (pollingEnabled && typeof forceReconnectNow === 'function') {
-                forceReconnectNow();
-            }
+            if (sseEnabled && typeof forceReconnectNow === 'function') {
+    forceReconnectNow();
+}
 
             if (response.status === 'not_in_room') {
+                // Remove optimistic message
                 removeOptimisticMessage(tempId);
                 alert(response.message || 'You have been disconnected from the room');
                 window.location.href = '/lounge';
@@ -1174,18 +1492,23 @@ function sendValidatedMessage(message) {
                     clearReplyInterface();
                 }
                 
+                // Mark message as confirmed (SSE will replace it with real data)
                 const pendingEl = $(`.chat-message[data-message-id="${tempId}"]`);
                 pendingEl.removeClass('pending-message');
+                
+                // SSE will deliver the real message and replace this one
             } else {
+                // Failed - remove optimistic message
                 removeOptimisticMessage(tempId);
                 alert('Error: ' + response.message);
             }
 
             if (response.ghost_caught) {
-                handleGhostHuntResponse(response);
-            }
+            handleGhostHuntResponse(response);
+        }
         },
         error: function(xhr, status, error) {
+            // Failed - remove optimistic message
             removeOptimisticMessage(tempId);
             console.error('AJAX error in sendMessage:', status, error);
             alert('AJAX error: ' + error);
@@ -1415,7 +1738,7 @@ function pollForNewMessages() {
                         if (latestMessage.id != currentLatest) {
                             const wasAtBottom = chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 50;
                             if (wasAtBottom) {
-                               if (!pollingActive || !sseFeatures.messages) {
+                               if (!sseConnected || !sseFeatures.messages) {
                     if (typeof loadMessages === 'function') {
                         loadMessages();
                     }
@@ -1688,6 +2011,7 @@ if (msg.type === 'narrator') {
     
     let replyContent = '';
 if (msg.reply_to_message_id && msg.reply_original_message) {
+    // Build reply author name
     let replyAuthor = 'Unknown';
     if (msg.reply_original_registered_username) {
         replyAuthor = msg.reply_original_registered_username;
@@ -1697,6 +2021,7 @@ if (msg.reply_to_message_id && msg.reply_original_message) {
         replyAuthor = msg.reply_original_guest_name;
     }
     
+    // Build reply avatar
     let replyAvatar = 'default_avatar.jpg';
     if (msg.reply_original_registered_avatar) {
         replyAvatar = msg.reply_original_registered_avatar;
@@ -1704,6 +2029,7 @@ if (msg.reply_to_message_id && msg.reply_original_message) {
         replyAvatar = msg.reply_original_avatar;
     }
     
+    // Reply styling values
     const replyAvatarHue = msg.reply_original_avatar_hue || 0;
     const replyAvatarSat = msg.reply_original_avatar_saturation || 100;
     const replyBubbleHue = msg.reply_original_bubble_hue || 0;
@@ -1753,8 +2079,11 @@ if (msg.reply_to_message_id && msg.reply_original_message) {
              data-type="${msg.type || 'chat'}"
              style="position: relative;">
             ${messageActions}
-            ${replyContent}
-            
+            <img src="images/${avatar}" 
+                 class="message-avatar" 
+                 style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); ${avatarClickHandler ? 'cursor: pointer;' : ''}"
+                 ${avatarClickHandler}
+                 alt="${name}'s avatar">
             
             <!-- Message header moved outside the bubble -->
             <div class="message-header-external">
@@ -1764,21 +2093,14 @@ if (msg.reply_to_message_id && msg.reply_original_message) {
                 </div>
                 <div class="message-time">${timestamp}</div>
             </div>
-            <div class="users-content">
-            <img src="images/${avatar}" 
-                 class="message-avatar" 
-                 style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); ${avatarClickHandler ? 'cursor: pointer;' : ''}"
-                 ${avatarClickHandler}
-                 alt="${name}'s avatar">
-
+            
             <!-- Message bubble with filters, but content isolated from filters -->
             <div class="message-bubble" style="filter: hue-rotate(${bubbleHue}deg) saturate(${bubbleSat}%);">
-                
+                ${replyContent}
                 <!-- Message content wrapper that resets filters -->
                 <div class="message-content-wrapper" style="filter: hue-rotate(${-bubbleHue}deg) saturate(${bubbleSat > 0 ? (10000/bubbleSat) : 100}%);">
                     <div class="message-content">${processedMessage}</div>
                 </div>
-            </div>
             </div>
         </div>
     `;
@@ -3266,7 +3588,7 @@ function saveRoomSettings() {
                         location.reload();
                     }, 2000);
                 } else {
-                   if (!pollingActive || !sseFeatures.messages) {
+                   if (!sseConnected || !sseFeatures.messages) {
                     if (typeof loadMessages === 'function') {
                         loadMessages();
                     }
@@ -3559,7 +3881,7 @@ function confirmBanUser(userIdString, userName) {
                 $('#banUserModal').modal('hide');
                 
                 loadUsers();
-                if (!pollingActive || !sseFeatures.messages) {
+                if (!sseConnected || !sseFeatures.messages) {
                     if (typeof loadMessages === 'function') {
                         loadMessages();
                     }
@@ -3661,7 +3983,7 @@ function respondToKnock(knockId, response) {
         success: function(result) {
             if (result.status === 'success') {
                 dismissKnock(knockId);
-                if (!pollingActive || !sseFeatures.messages) {
+                if (!sseConnected || !sseFeatures.messages) {
                     if (typeof loadMessages === 'function') {
                         loadMessages();
                     }
@@ -3697,7 +4019,7 @@ function createTestUser() {
             if (response.status === 'success') {
                 alert('Test user created: ' + response.user.name);
                 loadUsers();
-                if (!pollingActive || !sseFeatures.messages) {
+                if (!sseConnected || !sseFeatures.messages) {
                     if (typeof loadMessages === 'function') {
                         loadMessages();
                     }
@@ -3993,10 +4315,11 @@ function markWhisperAsRead(userIdString) {
 }
 
 function checkForNewWhispers() {
-    // Use cached polling data if available and polling is active
-    if (pollingActive && whisperConversations.length >= 0) {
-        debugLog('✅ Using cached whisper conversations from polling');
+    // Use cached SSE data if available and SSE is connected
+    if (sseConnected && whisperConversations.length >= 0) {
+        debugLog('✅ Using cached whisper conversations from SSE');
         
+        // Update unread badges using cached data
         whisperConversations.forEach(conv => {
             const userIdString = conv.other_user_id_string;
             
@@ -4022,9 +4345,9 @@ function checkForNewWhispers() {
         return;
     }
     
-    // Only make AJAX call if polling is not active
-    if (!pollingEnabled || !pollingActive) {
-        debugLog('⚠️ Polling not active, falling back to Ajax for whisper conversations');
+    // Only make AJAX call if SSE is not connected
+    if (!sseEnabled || !sseConnected) {
+        debugLog('⚠️ SSE not connected, falling back to AJAX for whisper conversations');
         managedAjax({
             url: 'api/room_whispers.php',
             method: 'GET',
@@ -4061,10 +4384,12 @@ function checkForNewWhispers() {
         });
     }
     
+    // Update individual whisper windows
     openWhispers.forEach((data, userIdString) => {
         const safeId = data.safeId;
         const input = $(`#whisper-input-${safeId}`);
         
+        // Only update if user is not actively typing
         if (!input.is(':focus') || input.val().length === 0) {
             // Individual messages handled by loadWhisperMessages
         }
@@ -4211,7 +4536,7 @@ $(document).ready(function() {
     // Host-specific features
     if (isHost) {
         debugLog('🚪 User is host, starting knock checking...');
-     /*if (!pollingEnabled || !sseFeatures.knocks) {
+     /*if (!sseEnabled || !sseFeatures.knocks) {
      setInterval(checkForKnocks, 5000);
  }
         setTimeout(checkForKnocks, 1000);*/
@@ -4240,18 +4565,17 @@ $(document).ready(function() {
     //startRoomUpdates();
 
     // Initialize SSE connection
-     if (pollingEnabled) {
-        debugLog('🚀 Starting Event-Based Polling system');
-        markUserActive();
-        initializeEventPolling();
-        debugLog('✅ Room initialization complete with Event Polling');
-    }
-
-    // ADD THIS: Force initial load of users and messages
-    loadMessages();
-    loadUsers();
-        loadFriends();
-        loadConversations();
+    if (sseEnabled) {
+    debugLog('🚀 Starting Micro-SSE system');
+    markUserActive(); // User is active when starting
+    initializeSSE();
+    startRoomUpdates();
+    debugLog('✅ Room initialization complete with SSE + Ajax hybrid mode');
+} else {
+    debugLog('🚀 Starting Ajax-only mode');
+    startRoomUpdates();
+    debugLog('✅ Room initialization complete with Ajax-only mode');
+}
 
     // Keep only essential intervals at lower frequencies
     //setTimeout(checkUserStatus, 1000);
@@ -4271,7 +4595,7 @@ $(window).on('beforeunload', function() {
         mentionCheckInterval = null;
     }
     
-    stopEventPolling(); // Replace closeSSE()
+    closeSSE();
     
     if (activityTimer) {
         clearTimeout(activityTimer);
@@ -4283,39 +4607,46 @@ $(window).on('beforeunload', function() {
     stopKickDetection();
 });
 
-// Update the debug functions
-window.togglePolling = function(enabled) {
-    if (enabled === undefined) {
-        pollingEnabled = !pollingEnabled;
+
+window.toggleSSE = function(feature = null) {
+    if (feature === null) {
+        // Toggle master switch
+        sseEnabled = !sseEnabled;
+        console.log(`🔧 SSE ${sseEnabled ? 'ENABLED' : 'DISABLED'}`);
+        
+        if (sseEnabled) {
+            initializeSSE();
+        } else {
+            closeSSE();
+        }
+    } else if (sseFeatures.hasOwnProperty(feature)) {
+        // Toggle specific feature
+        sseFeatures[feature] = !sseFeatures[feature];
+        console.log(`🔧 SSE for ${feature}: ${sseFeatures[feature] ? 'ENABLED' : 'DISABLED'}`);
     } else {
-        pollingEnabled = enabled;
-    }
-    
-    console.log(`🔧 Polling ${pollingEnabled ? 'ENABLED' : 'DISABLED'}`);
-    
-    if (pollingEnabled && !pollingActive) {
-        initializeEventPolling();
-    } else if (!pollingEnabled) {
-        stopEventPolling();
+        console.log('Invalid feature. Available:', Object.keys(sseFeatures).join(', '));
     }
 };
 
-window.showPollingStatus = function() {
-    console.log('=== POLLING STATUS ===');
-    console.log('Enabled:', pollingEnabled);
-    console.log('Active:', pollingActive);
-    console.log('Last Event ID:', pollingLastEventId);
-    console.log('Current Delay:', pollingCurrentDelay + 'ms');
-    console.log('Retry Count:', pollingRetryCount);
+window.showSSEStatus = function() {
+    console.log('=== SSE STATUS ===');
+    console.log('Master enabled:', sseEnabled);
+    console.log('Connected:', sseConnected);
+    console.log('Reconnect attempts:', sseReconnectAttempts);
+    console.log('Features using SSE:');
+    Object.keys(sseFeatures).forEach(feature => {
+        const icon = sseFeatures[feature] ? '✅' : '⏸️';
+        console.log(`  ${icon} ${feature}: ${sseFeatures[feature]}`);
+    });
+    console.log('Connection:', sseConnection ? 'Active' : 'Null');
 };
 
-window.forceImmediatePoll = function() {
-    console.log('🔄 Forcing immediate poll...');
-    forceReconnectNow();
+window.forceSSEReconnect = function() {
+    console.log('🔄 Forcing SSE reconnect...');
+    sseReconnectAttempts = 0;
+    closeSSE();
+    initializeSSE();
 };
-
-
-
 
 function toggleMobileUsers() {
     const userListContent = $('#userList').html();
@@ -4379,26 +4710,40 @@ function closeFriendsPanel() {
 }
 
 function loadFriends() {
-    debugLog('Loading friends...');
+    debugLog('Loading friends from SSE data...');
     
-    // REMOVE the polling check - always make AJAX call for now
-    managedAjax({
-        url: 'api/friends.php',
-        method: 'GET',
-        data: { action: 'get' },
-        dataType: 'json'
-    }).then(response => {
-        debugLog('Friends response:', response);
-        if (response.status === 'success') {
-            friends = response.friends;
-            updateFriendsPanel();
+    // SSE already populates the 'friends' array
+    // Just update the UI with existing data
+    if (friends && Array.isArray(friends)) {
+        updateFriendsPanel();
+        debugLog('✅ Friends loaded from cache:', friends.length);
+    } else {
+        // Only make Ajax call if SSE is not connected
+        if (!sseEnabled || !sseConnected) {
+            debugLog('⚠️ SSE not connected, falling back to Ajax');
+            managedAjax({
+                url: 'api/friends.php',
+                method: 'GET',
+                data: { action: 'get' },
+                dataType: 'json'
+            }).then(response => {
+                debugLog('Friends response:', response);
+                if (response.status === 'success') {
+                    friends = response.friends;
+                    updateFriendsPanel();
+                } else {
+                    $('#friendsList').html('<p class="text-danger">Error: ' + response.message + '</p>');
+                }
+            }).catch(error => {
+                console.error('Friends API error:', error);
+                $('#friendsList').html('<p class="text-danger">Failed to load friends</p>');
+            });
         } else {
-            $('#friendsList').html('<p class="text-danger">Error: ' + response.message + '</p>');
+            debugLog('⏳ Waiting for SSE to populate friends...');
+            // SSE will populate friends soon, just show loading state
+            updateFriendsPanel();
         }
-    }).catch(error => {
-        console.error('Friends API error:', error);
-        $('#friendsList').html('<p class="text-danger">Failed to load friends</p>');
-    });
+    }
 }
 
 function updateFriendsPanel() {
@@ -4545,24 +4890,36 @@ function acceptFriend(friendId) {
 function loadConversations() {
     debugLog('Loading conversations...');
     
-    // REMOVE the polling check - always make AJAX call for now
-    managedAjax({
-        url: 'api/private_messages.php',
-        method: 'GET',
-        data: { action: 'get_conversations' },
-        dataType: 'json'
-    }).then(response => {
-        debugLog('Conversations response:', response);
-        if (response.status === 'success') {
-            privateMessageConversations = response.conversations || [];
-            displayConversations(privateMessageConversations);
-        } else {
-            $('#conversationsList').html('<p class="text-danger small">Error loading conversations</p>');
-        }
-    }).catch(error => {
-        console.error('Conversations API error:', error);
-        $('#conversationsList').html('<p class="text-danger small">Failed to load conversations</p>');
-    });
+    // Use cached SSE data if available and SSE is connected
+    if (sseConnected && privateMessageConversations.length > 0) {
+        debugLog('✅ Using cached conversations from SSE:', privateMessageConversations.length);
+        displayConversations(privateMessageConversations);
+        return;
+    }
+    
+    // Only make AJAX call if SSE is not connected or no cached data
+    if (!sseEnabled || !sseConnected) {
+        debugLog('⚠️ SSE not connected, falling back to AJAX for conversations');
+        managedAjax({
+            url: 'api/private_messages.php',
+            method: 'GET',
+            data: { action: 'get_conversations' },
+            dataType: 'json'
+        }).then(response => {
+            debugLog('Conversations response:', response);
+            if (response.status === 'success') {
+                displayConversations(response.conversations);
+            } else {
+                $('#conversationsList').html('<p class="text-danger small">Error loading conversations</p>');
+            }
+        }).catch(error => {
+            console.error('Conversations API error:', error);
+            $('#conversationsList').html('<p class="text-danger small">Failed to load conversations</p>');
+        });
+    } else {
+        debugLog('⏳ Waiting for SSE to populate conversations...');
+        $('#conversationsList').html('<p class="text-muted small">Loading...</p>');
+    }
 }
 
 function displayConversations(conversations) {
@@ -4805,7 +5162,7 @@ function syncAvatarCustomization() {
                 debugLog('Avatar customization synced:', response);
                 setTimeout(() => {
                     loadUsers();
-                    if (!pollingActive || !sseFeatures.messages) {
+                    if (!sseConnected || !sseFeatures.messages) {
                     if (typeof loadMessages === 'function') {
                         loadMessages();
                     }
@@ -5069,7 +5426,7 @@ function executeQuickBan(userIdString, username, ipAddress) {
                 
                 setTimeout(() => {
                     loadUsers();
-                    if (!pollingActive || !sseFeatures.messages) {
+                    if (!sseConnected || !sseFeatures.messages) {
                     if (typeof loadMessages === 'function') {
                         loadMessages();
                     }
@@ -5433,7 +5790,7 @@ function addMentionHighlightCSS() {
                 
                 setTimeout(() => {
                     loadUsers();
-                    if (!pollingActive || !sseFeatures.messages) {
+                    if (!sseConnected || !sseFeatures.messages) {
                     if (typeof loadMessages === 'function') {
                         loadMessages();
                     }
@@ -5677,7 +6034,7 @@ function executePassHost(targetUserIdString) {
                 // Reload users to reflect changes
                 setTimeout(() => {
                     loadUsers();
-                    if (!pollingActive || !sseFeatures.messages) {
+                    if (!sseConnected || !sseFeatures.messages) {
                     if (typeof loadMessages === 'function') {
                         loadMessages();
                     }

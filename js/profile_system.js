@@ -215,6 +215,60 @@ function acceptFriend(friendId) {
     });
 }
 
+function acceptFriendFromProfile(friendId) {
+    const acceptBtn = $(`button[onclick="acceptFriendFromProfile(${friendId})"]`);
+    const originalHtml = acceptBtn.html();
+    acceptBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+    
+    managedAjax({
+        url: 'api/friends.php',
+        method: 'POST',
+        data: {
+            action: 'accept',
+            friend_id: friendId
+        },
+        dataType: 'json',
+        timeout: 10000,
+        success: function(response) {
+            if (response.status === 'success') {
+                showNotification('Friend request accepted!', 'success');
+                closeProfilePopup();
+                
+                if (typeof clearFriendshipCache === 'function') {
+                    clearFriendshipCache();
+                }
+                if (typeof loadUsers === 'function') {
+                    loadUsers();
+                }
+                if (typeof loadFriends === 'function') {
+                    loadFriends();
+                }
+            } else {
+                showNotification('Error: ' + (response.message || 'Unknown error'), 'error');
+                acceptBtn.prop('disabled', false).html(originalHtml);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Accept friend from profile error:', {xhr, status, error});
+            let errorMsg = 'Network error occurred';
+            
+            if (status === 'timeout') {
+                errorMsg = 'Request timed out. Please try again.';
+            } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            }
+            
+            showNotification('Error: ' + errorMsg, 'error');
+            acceptBtn.prop('disabled', false).html(originalHtml);
+        },
+        complete: function() {
+            setTimeout(() => {
+                acceptBtn.prop('disabled', false).html(originalHtml);
+            }, 100);
+        }
+    });
+}
+
 
 function addFriendFromProfile(username) {
     if (!username) {
@@ -1882,3 +1936,4 @@ function showToast(message, type) {
     $('body').append(toast);
     setTimeout(() => toast.fadeOut(300, () => toast.remove()), 2000);
 }
+

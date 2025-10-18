@@ -7,7 +7,7 @@ body {
         
         .container-fluid {
             background-color: #1a1a1a;
-            min-height: 100vh;
+            min-height: calc(100vh - 60px);
             padding: 0 !important;
             display: flex;
             align-items: baseline;
@@ -20,13 +20,14 @@ body {
         
         .lounge-container {
             background: #22222266 !important;
-            border: 1px solid #333;
-            border-radius: 15px;
-            padding: 40px;
-            margin: 40px auto;
+            /* border: 1px solid #333; */
+            border-radius: 0;
+            /* padding: 40px; */
+            margin: 0px auto;
             max-width: 1400px;
             width: 100%;
             box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            min-height: calc(100vh - 60px);
         }
         
         .user-profile-card {
