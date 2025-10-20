@@ -135,8 +135,12 @@ let pollingActive = false;
 let pollingTimeout = null;
 let pollingRetryCount = 0;
 let pollingMaxRetries = 5;
-let pollingBaseDelay = 1000;
-let pollingCurrentDelay = 500;
+let pollingBaseDelay = 3000; // Increased from 1000ms to 3000ms to reduce server load
+let pollingCurrentDelay = 3000; // Increased from 500ms to 3000ms
+let pollingMinDelay = 2000; // Minimum delay when active (was 100ms)
+let pollingMaxDelay = 10000; // Maximum delay during quiet periods
+let pollingInactivityCounter = 0; // Track consecutive polls with no events
+let pollingRequestInFlight = false; // Prevent concurrent requests
 let userActive = false;
 let activityTimer = null;
 
@@ -187,13 +191,22 @@ function startEventPolling() {
         debugLog('❌ Polling disabled or inactive');
         return;
     }
-    
-    if (document.hidden) {
-        debugLog('⏸️ Tab hidden, delaying poll');
-        scheduleNextPoll(3000);
+
+    // Prevent concurrent requests
+    if (pollingRequestInFlight) {
+        debugLog('⚠️ Request already in flight, skipping poll');
+        scheduleNextPoll(pollingCurrentDelay);
         return;
     }
-    
+
+    if (document.hidden) {
+        debugLog('⏸️ Tab hidden, delaying poll');
+        scheduleNextPoll(10000); // Increased from 3000ms to 10000ms when hidden
+        return;
+    }
+
+    pollingRequestInFlight = true;
+
     $.ajax({
         url: 'api/poll_room_data.php',
         method: 'GET',
@@ -205,27 +218,44 @@ function startEventPolling() {
         dataType: 'json',
         timeout: 10000,
         success: function(response) {
+            pollingRequestInFlight = false;
+
             if (response.status === 'no_events') {
-                debugLog('⏳ No events, polling again in ' + pollingCurrentDelay + 'ms');
+                // Adaptive polling: slow down when no events
+                pollingInactivityCounter++;
+
+                // Gradually increase delay up to maxDelay (10s)
+                if (pollingInactivityCounter > 3) {
+                    pollingCurrentDelay = Math.min(
+                        pollingCurrentDelay + 1000,
+                        pollingMaxDelay
+                    );
+                }
+
+                debugLog('⏳ No events (' + pollingInactivityCounter + ' consecutive), polling again in ' + pollingCurrentDelay + 'ms');
                 pollingRetryCount = 0;
                 scheduleNextPoll(pollingCurrentDelay);
             } else if (response.status === 'success') {
                 debugLog('✅ Events received');
                 pollingRetryCount = 0;
-                pollingCurrentDelay = pollingBaseDelay;
-                
+                pollingInactivityCounter = 0; // Reset inactivity counter
+                pollingCurrentDelay = pollingBaseDelay; // Reset to base delay
+
                 if (response.last_event_id) {
                     pollingLastEventId = response.last_event_id;
                 }
-                
+
                 handlePollingData(response);
-                scheduleNextPoll(100);
+                // Increased from 100ms to pollingMinDelay (2000ms) to reduce load
+                scheduleNextPoll(pollingMinDelay);
             } else {
+                pollingRequestInFlight = false;
                 console.error('❌ Polling error:', response);
                 handlePollingError();
             }
         },
         error: function(xhr, status, error) {
+            pollingRequestInFlight = false;
             console.error('❌ AJAX polling error:', error);
             handlePollingError();
         }
@@ -263,7 +293,8 @@ function stopEventPolling() {
     debugLog('🛑 Stopping event polling');
     pollingActive = false;
     pollingEnabled = false;
-    
+    pollingRequestInFlight = false; // Reset the in-flight flag
+
     if (pollingTimeout) {
         clearTimeout(pollingTimeout);
         pollingTimeout = null;
@@ -362,7 +393,8 @@ function handlePollingData(data) {
 
 function forceReconnectNow() {
     clearTimeout(pollingTimeout);
-    pollingCurrentDelay = 100;
+    pollingCurrentDelay = pollingMinDelay; // Use minimum delay instead of 100ms
+    pollingInactivityCounter = 0; // Reset inactivity counter on forced poll
     debugLog('⚡ Forcing immediate poll');
     if (pollingActive && pollingEnabled) {
         startEventPolling();
@@ -554,13 +586,19 @@ function loadYouTubeAPI() {
 // Visibility change handling - pause when hidden
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
-        debugLog('👁️ Tab hidden - slowing polling');
-        pollingCurrentDelay = 3000; // Poll every 3 seconds when hidden
+        debugLog('👁️ Tab hidden - slowing polling to 10s');
+        pollingCurrentDelay = 10000; // Increased from 3000ms to 10000ms when hidden
     } else {
         debugLog('👁️ Tab visible - resuming normal polling');
         pollingCurrentDelay = pollingBaseDelay;
+        pollingInactivityCounter = 0; // Reset inactivity counter when tab becomes visible
         markUserActive();
         if (pollingActive && pollingEnabled) {
+            // Cancel current timeout and start immediately
+            if (pollingTimeout) {
+                clearTimeout(pollingTimeout);
+                pollingTimeout = null;
+            }
             startEventPolling();
         }
     }
@@ -4304,9 +4342,15 @@ window.showPollingStatus = function() {
     console.log('=== POLLING STATUS ===');
     console.log('Enabled:', pollingEnabled);
     console.log('Active:', pollingActive);
+    console.log('Request In Flight:', pollingRequestInFlight);
     console.log('Last Event ID:', pollingLastEventId);
     console.log('Current Delay:', pollingCurrentDelay + 'ms');
+    console.log('Base Delay:', pollingBaseDelay + 'ms');
+    console.log('Min Delay:', pollingMinDelay + 'ms');
+    console.log('Max Delay:', pollingMaxDelay + 'ms');
+    console.log('Inactivity Counter:', pollingInactivityCounter);
     console.log('Retry Count:', pollingRetryCount);
+    console.log('Tab Hidden:', document.hidden);
 };
 
 window.forceImmediatePoll = function() {
