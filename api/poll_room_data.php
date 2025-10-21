@@ -2,8 +2,8 @@
 // api/poll_room_data.php - Event-driven AJAX polling (replaces SSE)
 session_start();
 
-set_time_limit(5);
-ini_set('max_execution_time', 5);
+set_time_limit(3);
+ini_set('max_execution_time', 3);
 
 header('Content-Type: application/json');
 
@@ -343,116 +343,75 @@ try {
         $all_data['mentions'] = ['status' => 'success', 'mentions' => $mentions];
     }
     
-    // WHISPERS
+    // WHISPERS - Optimized to eliminate N+1 query problem
     if (in_array('whisper', $event_types)) {
         $whisper_stmt = $conn->prepare("
-            SELECT DISTINCT 
-                CASE WHEN sender_user_id_string = ? THEN recipient_user_id_string ELSE sender_user_id_string END as other_user_id_string
-            FROM room_whispers 
-            WHERE room_id = ? AND (sender_user_id_string = ? OR recipient_user_id_string = ?)
+            SELECT
+                CASE WHEN rw.sender_user_id_string = ? THEN rw.recipient_user_id_string ELSE rw.sender_user_id_string END as other_user_id_string,
+                cu.username,
+                cu.guest_name,
+                SUM(CASE WHEN rw.sender_user_id_string = CASE WHEN rw.sender_user_id_string = ? THEN rw.recipient_user_id_string ELSE rw.sender_user_id_string END
+                    AND rw.recipient_user_id_string = ?
+                    AND rw.is_read = 0 THEN 1 ELSE 0 END) as unread_count
+            FROM room_whispers rw
+            LEFT JOIN chatroom_users cu ON cu.room_id = rw.room_id
+                AND cu.user_id_string = CASE WHEN rw.sender_user_id_string = ? THEN rw.recipient_user_id_string ELSE rw.sender_user_id_string END
+            WHERE rw.room_id = ? AND (rw.sender_user_id_string = ? OR rw.recipient_user_id_string = ?)
+            GROUP BY other_user_id_string, cu.username, cu.guest_name
         ");
-        $whisper_stmt->bind_param("siss", $user_id_string, $room_id, $user_id_string, $user_id_string);
+        $whisper_stmt->bind_param("sssssss", $user_id_string, $user_id_string, $user_id_string, $user_id_string, $room_id, $user_id_string, $user_id_string);
         $whisper_stmt->execute();
         $whisper_result = $whisper_stmt->get_result();
-        
+
         $whispers = [];
         while ($row = $whisper_result->fetch_assoc()) {
-            $other_user_id = $row['other_user_id_string'];
-            
-            $user_stmt = $conn->prepare("
-                SELECT username, guest_name 
-                FROM chatroom_users 
-                WHERE room_id = ? AND user_id_string = ?
-            ");
-            $user_stmt->bind_param("is", $room_id, $other_user_id);
-            $user_stmt->execute();
-            $user_result = $user_stmt->get_result();
-            
-            if ($user_result->num_rows > 0) {
-                $user_data = $user_result->fetch_assoc();
-                
-                $count_stmt = $conn->prepare("
-                    SELECT COUNT(*) as count FROM room_whispers 
-                    WHERE room_id = ? AND sender_user_id_string = ? AND recipient_user_id_string = ? AND is_read = 0
-                ");
-                $count_stmt->bind_param("iss", $room_id, $other_user_id, $user_id_string);
-                $count_stmt->execute();
-                $count_result = $count_stmt->get_result();
-                $unread_count = $count_result->fetch_assoc()['count'];
-                $count_stmt->close();
-                
-                $whispers[] = [
-                    'other_user_id_string' => $other_user_id,
-                    'username' => $user_data['username'],
-                    'guest_name' => $user_data['guest_name'],
-                    'unread_count' => (int)$unread_count
-                ];
-            }
-            $user_stmt->close();
+            $whispers[] = [
+                'other_user_id_string' => $row['other_user_id_string'],
+                'username' => $row['username'],
+                'guest_name' => $row['guest_name'],
+                'unread_count' => (int)$row['unread_count']
+            ];
         }
         $whisper_stmt->close();
         $all_data['whispers'] = ['status' => 'success', 'conversations' => $whispers];
     }
     
-    // PRIVATE MESSAGES
+    // PRIVATE MESSAGES - Optimized to eliminate N+1 query problem
     if (in_array('private_message', $event_types) && $user_id) {
         $pm_stmt = $conn->prepare("
-            SELECT DISTINCT 
-                CASE WHEN sender_id = ? THEN recipient_id ELSE sender_id END as other_user_id
-            FROM private_messages 
-            WHERE sender_id = ? OR recipient_id = ?
+            SELECT
+                CASE WHEN pm.sender_id = ? THEN pm.recipient_id ELSE pm.sender_id END as other_user_id,
+                u.username,
+                u.avatar,
+                u.avatar_hue,
+                u.avatar_saturation,
+                (SELECT pm2.message FROM private_messages pm2
+                 WHERE (pm2.sender_id = ? AND pm2.recipient_id = CASE WHEN pm.sender_id = ? THEN pm.recipient_id ELSE pm.sender_id END)
+                    OR (pm2.recipient_id = ? AND pm2.sender_id = CASE WHEN pm.sender_id = ? THEN pm.recipient_id ELSE pm.sender_id END)
+                 ORDER BY pm2.created_at DESC LIMIT 1) as last_message,
+                SUM(CASE WHEN pm.sender_id = CASE WHEN pm.sender_id = ? THEN pm.recipient_id ELSE pm.sender_id END
+                    AND pm.recipient_id = ?
+                    AND pm.is_read = 0 THEN 1 ELSE 0 END) as unread_count
+            FROM private_messages pm
+            LEFT JOIN users u ON u.id = CASE WHEN pm.sender_id = ? THEN pm.recipient_id ELSE pm.sender_id END
+            WHERE pm.sender_id = ? OR pm.recipient_id = ?
+            GROUP BY other_user_id, u.username, u.avatar, u.avatar_hue, u.avatar_saturation
         ");
-        $pm_stmt->bind_param("iii", $user_id, $user_id, $user_id);
+        $pm_stmt->bind_param("iiiiiiiiii", $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id, $user_id);
         $pm_stmt->execute();
         $pm_result = $pm_stmt->get_result();
-        
+
         $pms = [];
         while ($row = $pm_result->fetch_assoc()) {
-            $other_user_id = $row['other_user_id'];
-            
-            $user_stmt = $conn->prepare("
-                SELECT username, avatar, avatar_hue, avatar_saturation 
-                FROM users WHERE id = ?
-            ");
-            $user_stmt->bind_param("i", $other_user_id);
-            $user_stmt->execute();
-            $user_result = $user_stmt->get_result();
-            
-            if ($user_result->num_rows > 0) {
-                $user_data = $user_result->fetch_assoc();
-                
-                $last_msg_stmt = $conn->prepare("
-                    SELECT message FROM private_messages 
-                    WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)
-                    ORDER BY created_at DESC LIMIT 1
-                ");
-                $last_msg_stmt->bind_param("iiii", $user_id, $other_user_id, $other_user_id, $user_id);
-                $last_msg_stmt->execute();
-                $last_msg_result = $last_msg_stmt->get_result();
-                $last_message = $last_msg_result->num_rows > 0 ? $last_msg_result->fetch_assoc()['message'] : '';
-                $last_msg_stmt->close();
-                
-                $unread_stmt = $conn->prepare("
-                    SELECT COUNT(*) as count FROM private_messages 
-                    WHERE sender_id = ? AND recipient_id = ? AND is_read = 0
-                ");
-                $unread_stmt->bind_param("ii", $other_user_id, $user_id);
-                $unread_stmt->execute();
-                $unread_result = $unread_stmt->get_result();
-                $unread_count = $unread_result->fetch_assoc()['count'];
-                $unread_stmt->close();
-                
-                $pms[] = [
-                    'other_user_id' => $other_user_id,
-                    'username' => $user_data['username'],
-                    'avatar' => $user_data['avatar'],
-                    'avatar_hue' => $user_data['avatar_hue'],
-                    'avatar_saturation' => $user_data['avatar_saturation'],
-                    'last_message' => $last_message,
-                    'unread_count' => (int)$unread_count
-                ];
-            }
-            $user_stmt->close();
+            $pms[] = [
+                'other_user_id' => (int)$row['other_user_id'],
+                'username' => $row['username'],
+                'avatar' => $row['avatar'],
+                'avatar_hue' => $row['avatar_hue'],
+                'avatar_saturation' => $row['avatar_saturation'],
+                'last_message' => $row['last_message'] ?? '',
+                'unread_count' => (int)$row['unread_count']
+            ];
         }
         $pm_stmt->close();
         $all_data['private_messages'] = ['status' => 'success', 'conversations' => $pms];
