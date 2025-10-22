@@ -4289,8 +4289,8 @@ $(document).ready(function() {
     // ADD THIS: Force initial load of users and messages
     loadMessages();
     loadUsers();
-        loadFriends();
-        loadConversations();
+    // loadFriends(); // REMOVED - handled by friends_sidebar.js
+    // loadConversations(); // REMOVED - handled by friends_sidebar.js
 
     // Keep only essential intervals at lower frequencies
     //setTimeout(checkUserStatus, 1000);
@@ -4527,7 +4527,7 @@ function addFriend() {
             if (response.status === 'success') {
                 $('#addFriendInput').val('');
                 alert('Friend request sent!');
-                loadFriends();
+                // loadFriends(); // REMOVED - handled by friends_sidebar.js
             } else {
                 alert('Error: ' + response.message);
             }
@@ -4561,10 +4561,10 @@ function acceptFriend(friendId) {
                     loadUsers();
                 }
                 
-                // Update friends list
-                if (friends && Array.isArray(friends)) {
-                    updateFriendsPanel();
-                }
+                // Update friends list - DISABLED, handled by friends_sidebar.js
+                // if (friends && Array.isArray(friends)) {
+                //     updateFriendsPanel();
+                // }
             } else {
                 showNotification('Error: ' + (response.message || 'Unknown error'), 'error');
                 acceptBtn.prop('disabled', false).html(originalHtml);
