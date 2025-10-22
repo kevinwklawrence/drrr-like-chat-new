@@ -7,17 +7,17 @@
         }
         
         .room-container {
-            background: #222;
+            background: #0b0b0b;
             border: 1px solid #333;
             border-radius: 0px;
-            margin: 0px auto;
-            max-width: 1400px;
+            margin: 0px 0px 0px 0px;
+            max-width: calc(100vw - 240px);
             box-shadow: 0 8px 25px rgba(0,0,0,0.3);
             overflow: hidden;
         }
         
         .room-header {
-            background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+            background: linear-gradient(135deg, #191919 0%, #171717 100%);
             border-bottom: 1px solid #404040;
             padding: 20px;
             color: #ffffff;
@@ -141,7 +141,7 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            border-right: 1px solid #333;
+            /* border-right: 1px solid #333; */
         }
         
         .chat-messages {
@@ -332,7 +332,7 @@
         /* Chat Input */
         .chat-input-container {
             padding: 10px 30px 10px 10px;
-            background: #2a2a2a;
+            background: #181818;
             border-top: 1px solid #404040;
         }
         
@@ -344,7 +344,7 @@
         
         .chat-input {
             flex: 1;
-            background: #333 !important;
+            background: #010101 !important;
             border: 2px solid #555 !important;
             color: #fff !important;
             border-radius: 25px !important;
@@ -361,7 +361,7 @@
         }
         
         .btn-send-message {
-            background: linear-gradient(45deg, #677eea, #764ba2);
+            background: linear-gradient(45deg, #3b3b3b, #373737);
             border: none;
             color: white;
             padding: 12px 24px;
@@ -380,7 +380,7 @@
         /* Sidebar */
         .chat-sidebar {
     width: 280px;
-    background: #2a2a2a;
+    background: #191919;
     display: flex;
     flex-direction: column;
     transition: width 0.3s ease;
@@ -576,7 +576,7 @@
             align-items: center;
             justify-content: center;
             height: 100%;
-            color: #666;
+            color: #7d7d7d;
         }
         
         .loading-spinner {
@@ -683,9 +683,10 @@
     .room-title {
         font-size: 1.1rem;
         flex-direction: row;
-        align-items: flex-start;
         gap: 6px;
         font-size: 13px !important;
+        display: flex;
+        justify-content: center;
     }
 
     .room-title span {

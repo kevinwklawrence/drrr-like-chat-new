@@ -36,10 +36,9 @@ body::-webkit-scrollbar {
 #chatbox {
             height: 400px;
             overflow-y: auto;
-            border: 1px solid #ccc;
+            border: 1px solid #cccccc17;
             padding: 30px 50px 30px 50px;
-            background: rgb(63 63 63 / 75%);
-            max-width: 1120px;
+            background: rgb(26 26 26 / 75%);
         }
 
 div#chatbox {
@@ -207,7 +206,7 @@ body {
 /* Responsive adjustments */
 @media (max-width: 768px) {
     #chatbox img {height: inherit;width: inherit;/* top: 48px; */border-radius:2px;left: 0px;}
-    #chatbox {padding: 10px;background: rgb(63 63 63 / 100%);border: none;}
+    #chatbox {padding: 10px;background: rgb(13 13 13);border: none;}
     .knock-notification {
         position: fixed;
         top: 10px;

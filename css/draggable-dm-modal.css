@@ -9,7 +9,7 @@
     right: 360px; /* Account for sidebar */
     width: 420px;
     max-height: 600px;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    background: linear-gradient(135deg, #232323 0%, #111111 100%);
     border: 2px solid rgba(78, 168, 222, 0.3);
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
@@ -36,7 +36,7 @@
 
 /* Header with drag handle */
 .dm-modal-header {
-    background: linear-gradient(135deg, #2d3561 0%, #1f2947 100%);
+    background: linear-gradient(135deg, #1b1b1b 0%, #0b0b0b 100%);
     padding: 12px 15px;
     border-bottom: 2px solid rgba(255, 255, 255, 0.1);
     cursor: move;
@@ -74,7 +74,7 @@
 }
 
 .dm-modal-title i {
-    color: #4ea8de;
+    color: #c9c9c9;
 }
 
 .dm-modal-recipient-info {
@@ -128,7 +128,7 @@
     padding: 12px 15px;
     background: transparent;
     border: none;
-    color: #8b9dc3;
+    color: #545454;
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
@@ -142,8 +142,8 @@
 }
 
 .dm-modal-tab.active {
-    background: rgba(78, 168, 222, 0.1);
-    color: #4ea8de;
+    background: rgb(206 206 206 / 10%);
+    color: #cbcbcb;
 }
 
 .dm-modal-tab.active::after {

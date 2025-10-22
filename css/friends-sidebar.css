@@ -9,10 +9,10 @@
     position: fixed;
     top: 56px; /* Below navbar */
     right: 0;
-    width: 320px;
+    width: 240px;
     height: calc(100vh - 56px);
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    border-left: 2px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #131313 0%, #000000 100%);
+    /* border-left: 2px solid rgba(255, 255, 255, 0.1); */
     box-shadow: -5px 0 20px rgba(0, 0, 0, 0.3);
     z-index: 1000;
     display: flex;
@@ -23,7 +23,7 @@
 
 .friends-sidebar-header {
     padding: 20px;
-    background: linear-gradient(135deg, #2d3561 0%, #1f2947 100%);
+    background: linear-gradient(135deg, #232323 0%, #0f0f0f 100%);
     border-bottom: 2px solid rgba(255, 255, 255, 0.1);
     flex-shrink: 0;
 }
@@ -38,7 +38,7 @@
 }
 
 .friends-sidebar-header h5 i {
-    color: #4ea8de;
+    color: #ffffff;
 }
 
 .friends-sidebar-content {
@@ -73,7 +73,7 @@
 .sidebar-section-title {
     font-size: 0.85rem;
     font-weight: 600;
-    color: #8b9dc3;
+    color: #c5c5c5;
     text-transform: uppercase;
     letter-spacing: 1px;
     margin-bottom: 12px;
@@ -189,11 +189,9 @@
 }
 
 .friend-item-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+    width: 38px;
+    height: 38px;
     object-fit: cover;
-    border: 2px solid rgba(78, 168, 222, 0.5);
     position: relative;
 }
 
@@ -213,6 +211,7 @@
 
 .friend-status-indicator.offline {
     background: #6b7280;
+    display:none;
 }
 
 .friend-item-info {
@@ -232,6 +231,7 @@
 .friend-item-status {
     font-size: 0.75rem;
     color: #8b9dc3;
+    display:none;
 }
 
 .friend-item-actions {
@@ -281,11 +281,9 @@
 }
 
 .conversation-avatar {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
+    width: 38px;
+    height: 38px;
     object-fit: cover;
-    border: 2px solid rgba(78, 168, 222, 0.5);
 }
 
 .conversation-info {
@@ -337,6 +335,8 @@
     display: flex;
     gap: 8px;
     margin-bottom: 15px;
+    max-width: 100%;
+    overflow: auto;
 }
 
 .add-friend-input {
@@ -347,6 +347,7 @@
     border-radius: 6px;
     color: #ffffff;
     font-size: 0.9rem;
+    width: 100%;
 }
 
 .add-friend-input:focus {
@@ -364,6 +365,8 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
+    /* flex: 1; */
+    width: 25%;
 }
 
 .add-friend-btn:hover {

@@ -447,9 +447,30 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
             <i class="fas fa-video-slash"></i>
         </button>
         <?php endif; ?>
+                   <!-- Sidebar -->
+
+<!-- AFTER -->
+<div class="chat-sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-title">
+            <span><i class="fas fa-users"></i> Users</span>
+            <button class="btn btn-sm btn-outline-secondary d-md-none mobile-users-toggle" onclick="toggleMobileUsers()">
+                <i class="fas fa-chevron-down"></i>
+            </button>
+        </div>
+    </div>
+    <div class="sidebar-content mobile-collapsible" id="userList">
+        
+        
+        
+        <!-- YouTube Player Toggle Button -->
+        
+    </div>
+        </div>
             <!-- Main Chat Area -->
             <div class="chat-main">
                 <!-- Messages -->
+                 
                 <div class="chat-messages" id="chatbox">
                     <div class="loading-messages">
                         <div class="loading-spinner"></div>
@@ -472,28 +493,7 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
                 </div>
             </div>
             
-            <!-- Sidebar -->
-
-<!-- AFTER -->
-<div class="chat-sidebar">
-    <div class="sidebar-header">
-        <div class="sidebar-title">
-            <span><i class="fas fa-users"></i> Users</span>
-            <button class="btn btn-test-user" onclick="createTestUser()">
-                <i class="fas fa-plus"></i> Test User
-            </button>
-            <button class="btn btn-sm btn-outline-secondary d-md-none mobile-users-toggle" onclick="toggleMobileUsers()">
-                <i class="fas fa-chevron-down"></i>
-            </button>
-        </div>
-    </div>
-    <div class="sidebar-content mobile-collapsible" id="userList">
-        
-        
-        
-        <!-- YouTube Player Toggle Button -->
-        
-    </div>
+ 
 
      <!-- Mobile User List Modal -->
     <div class="modal fade" id="mobileUsersModal" tabindex="-1" aria-labelledby="mobileUsersModalLabel" aria-hidden="true">
