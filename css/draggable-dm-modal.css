@@ -185,37 +185,45 @@
     padding: 15px;
     min-height: 300px;
     max-height: 450px;
-    background: rgba(0, 0, 0, 0.1);
+    background: #f3f3f3;
+    filter: invert(1) hue-rotate(180deg);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .dm-modal-body::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
 }
 
 .dm-modal-body::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
+    background: #e0e0e0;
+    border-radius: 3px;
 }
 
 .dm-modal-body::-webkit-scrollbar-thumb {
-    background: rgba(78, 168, 222, 0.5);
-    border-radius: 4px;
+    background: #999;
+    border-radius: 3px;
 }
 
 .dm-modal-body::-webkit-scrollbar-thumb:hover {
-    background: rgba(78, 168, 222, 0.7);
+    background: #777;
 }
 
 .dm-tab-content {
     display: none;
+    flex: 1;
 }
 
 .dm-tab-content.active {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 /* Private Messages Tab Content */
 .dm-conversations-list {
-    display: flex;
+    display: none !important; /* Hidden - we show messages directly */
     flex-direction: column;
     gap: 10px;
 }
@@ -281,44 +289,23 @@
 
 /* Message Display Area (when conversation is opened) */
 .dm-messages-container {
-    display: none;
+    display: none !important; /* Not used in new design */
 }
 
 .dm-messages-container.active {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+    display: none !important; /* Not used in new design */
 }
 
 .dm-messages-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    margin-bottom: 12px;
+    display: none !important; /* Not used in new design */
 }
 
 .dm-back-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    color: #8b9dc3;
-    padding: 6px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-}
-
-.dm-back-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
+    display: none !important; /* Not used in new design */
 }
 
 .dm-recipient-name {
-    font-weight: 600;
-    color: #ffffff;
-    font-size: 1rem;
+    display: none !important; /* Not used in new design */
 }
 
 .dm-messages-list {
@@ -587,3 +574,68 @@ body:not(.has-friends-sidebar) .dm-modal-container {
         opacity: 1;
     }
 }
+
+/* Original Private Message Bubble Styling */
+.private-chat-message {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.private-chat-message.sent {
+    flex-direction: row-reverse;
+}
+
+.private-message-avatar {
+    width: 58px;
+    height: 58px;
+    border-radius: 6px;
+    margin: 0 10px;
+    flex-shrink: 0;
+    border: 2px solid rgba(255,255,255,0.3);
+}
+
+.private-message-bubble {
+    max-width: 70%;
+    padding: 12px 16px;
+    border-radius: 15px;
+    word-wrap: break-word;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    background: var(--user-gradient, linear-gradient(to bottom, rgba(119,198,251,1) 0%, rgba(124,233,252,1) 100%));
+    border: 2px solid var(--user-border-color, #ffffff);
+}
+
+.private-message-bubble.sent {
+    margin-left: auto;
+}
+
+.private-message-bubble.received {
+    margin-right: auto;
+}
+
+.private-message-header-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 11px;
+    opacity: 0.9;
+}
+
+.private-message-author {
+    font-weight: 700;
+    color: inherit;
+    font-size: 12px;
+}
+
+.private-message-time {
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+.private-message-content {
+    font-size: 14px;
+    line-height: 1.4;
+    color: inherit;
+}
+

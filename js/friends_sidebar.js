@@ -39,11 +39,19 @@ class FriendsSidebarManager {
         this.loadConversations();
         this.loadFriendRequests();
 
+        // Load whisper conversations if in a room
+        if (typeof roomId !== 'undefined' && roomId) {
+            this.loadWhisperConversations();
+        }
+
         // Start periodic updates (every 10 seconds)
         this.updateInterval = setInterval(() => {
             this.loadFriends();
             this.loadConversations();
             this.loadFriendRequests();
+            if (typeof roomId !== 'undefined' && roomId) {
+                this.loadWhisperConversations();
+            }
         }, 10000);
 
         console.log('Friends Sidebar Manager initialized');
@@ -138,9 +146,10 @@ class FriendsSidebarManager {
             const isOnline = friend.is_online || false;
             const statusClass = isOnline ? 'online' : 'offline';
             const statusText = isOnline ? 'Online' : 'Offline';
+            const friendUserId = friend.friend_user_id; // Fixed field name
 
             html += `
-                <div class="friend-item" data-user-id="${friend.friend_id}">
+                <div class="friend-item" data-user-id="${friendUserId}">
                     <div class="friend-item-avatar-container" style="position: relative;">
                         <img src="images/${friend.avatar || 'default_avatar.jpg'}"
                              class="friend-item-avatar"
@@ -153,7 +162,7 @@ class FriendsSidebarManager {
                         <div class="friend-item-status">${statusText}</div>
                     </div>
                     <div class="friend-item-actions">
-                        <button class="friend-action-btn" onclick="friendsSidebarManager.openPrivateMessage('${friend.friend_id}', '${friend.username}')" title="Send message">
+                        <button class="friend-action-btn" onclick="friendsSidebarManager.openPrivateMessage(${friendUserId}, '${friend.username}')" title="Send message">
                             <i class="fas fa-envelope"></i>
                         </button>
                     </div>
@@ -304,7 +313,10 @@ class FriendsSidebarManager {
         const conversationsList = document.getElementById('conversationsList');
         if (!conversationsList) return;
 
-        if (this.conversations.length === 0) {
+        // Combine private messages and whispers
+        const allConversations = [...this.conversations, ...this.whisperConversations];
+
+        if (allConversations.length === 0) {
             conversationsList.innerHTML = `
                 <div class="sidebar-empty-state">
                     <i class="fas fa-comments"></i>
@@ -314,20 +326,29 @@ class FriendsSidebarManager {
             return;
         }
 
+        // Sort by most recent
+        allConversations.sort((a, b) => {
+            const timeA = new Date(a.last_message_time || 0);
+            const timeB = new Date(b.last_message_time || 0);
+            return timeB - timeA;
+        });
+
         let html = '';
-        this.conversations.forEach(conv => {
+        allConversations.forEach(conv => {
             const unreadClass = conv.unread_count > 0 ? 'unread' : '';
             const preview = conv.last_message ? this.stripHTML(conv.last_message) : 'No messages yet';
             const timeAgo = this.getTimeAgo(conv.last_message_time);
+            const isWhisper = conv.type === 'whisper';
+            const icon = isWhisper ? '<i class="fas fa-comment-dots" style="font-size: 0.8rem; margin-right: 4px;"></i>' : '';
 
             html += `
-                <div class="conversation-item ${unreadClass}" onclick="friendsSidebarManager.openPrivateMessage('${conv.other_user_id}', '${conv.other_username}')">
-                    <img src="images/${conv.other_avatar || 'default_avatar.jpg'}"
+                <div class="conversation-item ${unreadClass}" onclick="friendsSidebarManager.${isWhisper ? 'openWhisperConversation' : 'openPrivateMessage'}(${conv.other_user_id}, '${conv.username}')">
+                    <img src="images/${conv.avatar || 'default_avatar.jpg'}"
                          class="conversation-avatar"
-                         alt="${conv.other_username}"
-                         style="filter: hue-rotate(${conv.other_avatar_hue || 0}deg) saturate(${conv.other_avatar_saturation || 100}%);">
+                         alt="${conv.username}"
+                         style="filter: hue-rotate(${conv.avatar_hue || 0}deg) saturate(${conv.avatar_saturation || 100}%);">
                     <div class="conversation-info">
-                        <div class="conversation-name">${conv.other_username}</div>
+                        <div class="conversation-name">${icon}${conv.username}</div>
                         <div class="conversation-preview">${preview}</div>
                     </div>
                     <div class="conversation-meta">
@@ -346,55 +367,32 @@ class FriendsSidebarManager {
     // ========================================
 
     openPrivateMessage(userId, username) {
-        this.currentDMRecipient = { userId, username };
+        this.currentDMRecipient = { userId: parseInt(userId), username };
         this.dmModalOpen = true;
         this.currentTab = 'private-messages';
 
         const dmModal = document.getElementById('dmModal');
         const dmRecipientInfo = document.getElementById('dmRecipientInfo');
+        const dmTitle = dmModal?.querySelector('.dm-modal-title');
 
         if (dmModal) {
             dmModal.classList.remove('hidden');
             dmModal.classList.remove('minimized');
 
-            if (dmRecipientInfo) {
-                dmRecipientInfo.textContent = `- ${username}`;
+            // Update title to show recipient
+            if (dmTitle) {
+                dmTitle.innerHTML = `<i class="fas fa-envelope"></i> Chat with ${username}`;
             }
 
-            // Switch to Private Messages tab and show conversation
+            // Switch to Private Messages tab and load messages directly
             this.switchDMTab('private-messages');
-            this.showDMConversation(userId, username);
+            this.loadPrivateMessages(userId);
         }
-    }
-
-    showDMConversation(userId, username) {
-        // Hide conversations list, show messages container
-        const conversationsList = document.getElementById('dmConversationsList');
-        const messagesContainer = document.getElementById('dmMessagesContainer');
-        const dmCurrentRecipient = document.getElementById('dmCurrentRecipient');
-
-        if (conversationsList) conversationsList.style.display = 'none';
-        if (messagesContainer) {
-            messagesContainer.classList.add('active');
-            messagesContainer.style.display = 'flex';
-        }
-        if (dmCurrentRecipient) dmCurrentRecipient.textContent = username;
-
-        // Load messages for this user
-        this.loadPrivateMessages(userId);
     }
 
     closeDMConversation() {
-        const conversationsList = document.getElementById('dmConversationsList');
-        const messagesContainer = document.getElementById('dmMessagesContainer');
-
-        if (conversationsList) conversationsList.style.display = 'flex';
-        if (messagesContainer) {
-            messagesContainer.classList.remove('active');
-            messagesContainer.style.display = 'none';
-        }
-
-        this.currentDMRecipient = null;
+        // No longer needed with the new design - just close the modal
+        this.closeDMModal();
     }
 
     loadPrivateMessages(userId) {
@@ -418,11 +416,11 @@ class FriendsSidebarManager {
     }
 
     renderPrivateMessages(messages) {
-        const messagesList = document.getElementById('dmMessagesList');
-        if (!messagesList) return;
+        const messagesTab = document.getElementById('privateMessagesTab');
+        if (!messagesTab) return;
 
         if (messages.length === 0) {
-            messagesList.innerHTML = `
+            messagesTab.innerHTML = `
                 <div class="dm-empty-state">
                     <i class="fas fa-comment-slash"></i>
                     <p class="dm-empty-state-title">No messages yet</p>
@@ -432,33 +430,46 @@ class FriendsSidebarManager {
             return;
         }
 
+        // Group messages by date for better readability
         let html = '';
         messages.forEach(msg => {
             const isSent = msg.sender_id == currentUser.id;
             const messageClass = isSent ? 'sent' : 'received';
-            const timeAgo = this.getTimeAgo(msg.created_at);
+            const timeFormatted = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            // Use the user's color for the bubble
+            const userColor = msg.color || 'blue';
+            const bubbleClass = `user-color-${userColor}`;
+
+            // Apply custom hue/saturation to bubble if available
+            let bubbleStyle = '';
+            if (msg.bubble_hue !== null && msg.bubble_saturation !== null) {
+                bubbleStyle = `filter: hue-rotate(${msg.bubble_hue}deg) saturate(${msg.bubble_saturation}%);`;
+            }
 
             html += `
-                <div class="dm-message ${messageClass}">
+                <div class="private-chat-message ${messageClass}">
                     <img src="images/${msg.avatar || 'default_avatar.jpg'}"
-                         class="dm-message-avatar"
+                         class="private-message-avatar"
                          style="filter: hue-rotate(${msg.avatar_hue || 0}deg) saturate(${msg.avatar_saturation || 100}%);"
                          alt="${msg.username}">
-                    <div class="dm-message-content">
-                        <div class="dm-message-header">
-                            <span class="dm-message-author">${msg.username}</span>
-                            <span class="dm-message-time">${timeAgo}</span>
+                    <div class="private-message-bubble ${bubbleClass} ${messageClass}" style="${bubbleStyle}">
+                        <div class="private-message-header-info">
+                            <div class="private-message-author">${msg.username}</div>
+                            <div class="private-message-time">${timeFormatted}</div>
                         </div>
-                        <div class="dm-message-bubble">${msg.message}</div>
+                        <div class="private-message-content">${msg.message}</div>
                     </div>
                 </div>
             `;
         });
 
-        messagesList.innerHTML = html;
+        messagesTab.innerHTML = html;
 
         // Scroll to bottom
-        messagesList.scrollTop = messagesList.scrollHeight;
+        setTimeout(() => {
+            messagesTab.scrollTop = messagesTab.scrollHeight;
+        }, 50);
     }
 
     switchDMTab(tabName) {
@@ -487,9 +498,124 @@ class FriendsSidebarManager {
     }
 
     loadWhisperConversations() {
-        // TODO: Implement whisper conversations loading
-        // This will integrate with the existing whisper system
-        console.log('Loading whisper conversations...');
+        // Load whisper conversations from room_whispers table
+        $.ajax({
+            url: 'api/room_whispers.php',
+            method: 'GET',
+            data: { action: 'get_conversations' },
+            dataType: 'json',
+            success: (response) => {
+                if (response.status === 'success') {
+                    // Mark whisper conversations with type
+                    this.whisperConversations = (response.conversations || []).map(conv => ({
+                        ...conv,
+                        type: 'whisper'
+                    }));
+                    // Re-render conversations to include whispers
+                    this.renderConversations();
+                }
+            },
+            error: (xhr, status, error) => {
+                console.error('Error loading whisper conversations:', error);
+            }
+        });
+    }
+
+    openWhisperConversation(userId, username) {
+        // Similar to openPrivateMessage but for whispers
+        this.currentDMRecipient = { userId: parseInt(userId), username };
+        this.dmModalOpen = true;
+        this.currentTab = 'whispers';
+
+        const dmModal = document.getElementById('dmModal');
+        const dmTitle = dmModal?.querySelector('.dm-modal-title');
+
+        if (dmModal) {
+            dmModal.classList.remove('hidden');
+            dmModal.classList.remove('minimized');
+
+            if (dmTitle) {
+                dmTitle.innerHTML = `<i class="fas fa-comment-dots"></i> Whisper with ${username}`;
+            }
+
+            // Switch to Whispers tab and load messages
+            this.switchDMTab('whispers');
+            this.loadWhisperMessages(userId);
+        }
+    }
+
+    loadWhisperMessages(userId) {
+        $.ajax({
+            url: 'api/room_whispers.php',
+            method: 'GET',
+            data: {
+                action: 'get',
+                other_user_id: userId
+            },
+            dataType: 'json',
+            success: (response) => {
+                if (response.status === 'success') {
+                    this.renderWhisperMessages(response.messages || []);
+                }
+            },
+            error: (xhr, status, error) => {
+                console.error('Error loading whisper messages:', error);
+            }
+        });
+    }
+
+    renderWhisperMessages(messages) {
+        const whispersTab = document.getElementById('whispersTab');
+        if (!whispersTab) return;
+
+        if (messages.length === 0) {
+            whispersTab.innerHTML = `
+                <div class="dm-empty-state">
+                    <i class="fas fa-comment-slash"></i>
+                    <p class="dm-empty-state-title">No whispers yet</p>
+                    <p class="dm-empty-state-text">Start a whisper conversation!</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Use same rendering as private messages
+        let html = '';
+        messages.forEach(msg => {
+            const isSent = msg.sender_id == currentUser.id;
+            const messageClass = isSent ? 'sent' : 'received';
+            const timeFormatted = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const userColor = msg.color || 'blue';
+            const bubbleClass = `user-color-${userColor}`;
+
+            let bubbleStyle = '';
+            if (msg.bubble_hue !== null && msg.bubble_saturation !== null) {
+                bubbleStyle = `filter: hue-rotate(${msg.bubble_hue}deg) saturate(${msg.bubble_saturation}%);`;
+            }
+
+            html += `
+                <div class="private-chat-message ${messageClass}">
+                    <img src="images/${msg.avatar || 'default_avatar.jpg'}"
+                         class="private-message-avatar"
+                         style="filter: hue-rotate(${msg.avatar_hue || 0}deg) saturate(${msg.avatar_saturation || 100}%);"
+                         alt="${msg.username}">
+                    <div class="private-message-bubble ${bubbleClass} ${messageClass}" style="${bubbleStyle}">
+                        <div class="private-message-header-info">
+                            <div class="private-message-author">${msg.username}</div>
+                            <div class="private-message-time">${timeFormatted}</div>
+                        </div>
+                        <div class="private-message-content">${msg.message}</div>
+                    </div>
+                </div>
+            `;
+        });
+
+        whispersTab.innerHTML = html;
+
+        setTimeout(() => {
+            whispersTab.scrollTop = whispersTab.scrollHeight;
+        }, 50);
     }
 
     toggleDMModal() {
@@ -521,12 +647,14 @@ class FriendsSidebarManager {
 
         if (!message) return;
 
+        console.log('Sending message to user ID:', this.currentDMRecipient.userId);
+
         $.ajax({
             url: 'api/private_messages.php',
             method: 'POST',
             data: {
                 action: 'send',
-                recipient_id: this.currentDMRecipient.userId,
+                recipient_id: parseInt(this.currentDMRecipient.userId),
                 message: message
             },
             dataType: 'json',
@@ -539,11 +667,13 @@ class FriendsSidebarManager {
                     this.loadConversations();
                 } else {
                     alert('Error sending message: ' + response.message);
+                    console.error('Send message error:', response);
                 }
             },
             error: (xhr, status, error) => {
                 console.error('Error sending message:', error);
-                alert('Failed to send message');
+                console.error('XHR:', xhr);
+                alert('Failed to send message: ' + error);
             }
         });
     }
@@ -704,8 +834,7 @@ function closeDMConversation() {
 
 function closeWhisperConversation() {
     if (friendsSidebarManager) {
-        // TODO: Implement whisper conversation closing
-        console.log('Closing whisper conversation');
+        friendsSidebarManager.closeDMModal();
     }
 }
 
