@@ -1544,9 +1544,13 @@ $(document).ready(function() {
             debugLog('Parent button:', this.closest('button'));
         });
     }, 1000);
-    initializePrivateMessaging();
+    // OLD SYSTEM DISABLED - Using new friends_sidebar.js instead
+    // initializePrivateMessaging();
 });
 
+// OLD SYSTEM DISABLED - Using new friends_sidebar.js instead
+// These functions are now handled by FriendsSidebarManager
+/*
 function showFriendsPanel() {
     $('#friendsPanel').show();
     loadFriends();
@@ -1556,6 +1560,7 @@ function showFriendsPanel() {
 function closeFriendsPanel() {
     $('#friendsPanel').hide();
 }
+*/
 
 function updateFriendsPanel() {
     debugLog('Updating friends panel with:', friends);

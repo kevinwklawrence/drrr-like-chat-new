@@ -437,11 +437,17 @@ class FriendsSidebarManager {
             const messageClass = isSent ? 'sent' : 'received';
             const timeFormatted = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            // Use the user's color for the bubble
+            // Determine which username and avatar to use
+            const username = isSent ? msg.sender_username : msg.recipient_username;
+            const avatar = isSent ? msg.sender_avatar : msg.recipient_avatar;
+
+            // Use the sender's color for the bubble (this is stored when message was sent)
             const userColor = msg.color || 'blue';
             const bubbleClass = `user-color-${userColor}`;
 
-            // Apply custom hue/saturation to bubble if available
+            // Apply custom hue/saturation from stored values
+            const avatarHue = msg.avatar_hue || 0;
+            const avatarSat = msg.avatar_saturation || 100;
             let bubbleStyle = '';
             if (msg.bubble_hue !== null && msg.bubble_saturation !== null) {
                 bubbleStyle = `filter: hue-rotate(${msg.bubble_hue}deg) saturate(${msg.bubble_saturation}%);`;
@@ -449,13 +455,13 @@ class FriendsSidebarManager {
 
             html += `
                 <div class="private-chat-message ${messageClass}">
-                    <img src="images/${msg.avatar || 'default_avatar.jpg'}"
+                    <img src="images/${avatar || 'default_avatar.jpg'}"
                          class="private-message-avatar"
-                         style="filter: hue-rotate(${msg.avatar_hue || 0}deg) saturate(${msg.avatar_saturation || 100}%);"
-                         alt="${msg.username}">
+                         style="filter: hue-rotate(${avatarHue}deg) saturate(${avatarSat}%);"
+                         alt="${username}">
                     <div class="private-message-bubble ${bubbleClass} ${messageClass}" style="${bubbleStyle}">
                         <div class="private-message-header-info">
-                            <div class="private-message-author">${msg.username}</div>
+                            <div class="private-message-author">${username}</div>
                             <div class="private-message-time">${timeFormatted}</div>
                         </div>
                         <div class="private-message-content">${msg.message}</div>
@@ -466,10 +472,13 @@ class FriendsSidebarManager {
 
         messagesTab.innerHTML = html;
 
-        // Scroll to bottom
+        // Scroll to bottom with slight delay to ensure rendering is complete
         setTimeout(() => {
-            messagesTab.scrollTop = messagesTab.scrollHeight;
-        }, 50);
+            const dmModalBody = messagesTab.closest('.dm-modal-body');
+            if (dmModalBody) {
+                dmModalBody.scrollTop = dmModalBody.scrollHeight;
+            }
+        }, 100);
     }
 
     switchDMTab(tabName) {
@@ -586,9 +595,15 @@ class FriendsSidebarManager {
             const messageClass = isSent ? 'sent' : 'received';
             const timeFormatted = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+            // Determine which username and avatar to use (similar to private messages)
+            const username = isSent ? msg.sender_username : msg.recipient_username;
+            const avatar = isSent ? msg.sender_avatar : msg.recipient_avatar;
+
             const userColor = msg.color || 'blue';
             const bubbleClass = `user-color-${userColor}`;
 
+            const avatarHue = msg.avatar_hue || 0;
+            const avatarSat = msg.avatar_saturation || 100;
             let bubbleStyle = '';
             if (msg.bubble_hue !== null && msg.bubble_saturation !== null) {
                 bubbleStyle = `filter: hue-rotate(${msg.bubble_hue}deg) saturate(${msg.bubble_saturation}%);`;
@@ -596,13 +611,13 @@ class FriendsSidebarManager {
 
             html += `
                 <div class="private-chat-message ${messageClass}">
-                    <img src="images/${msg.avatar || 'default_avatar.jpg'}"
+                    <img src="images/${avatar || 'default_avatar.jpg'}"
                          class="private-message-avatar"
-                         style="filter: hue-rotate(${msg.avatar_hue || 0}deg) saturate(${msg.avatar_saturation || 100}%);"
-                         alt="${msg.username}">
+                         style="filter: hue-rotate(${avatarHue}deg) saturate(${avatarSat}%);"
+                         alt="${username}">
                     <div class="private-message-bubble ${bubbleClass} ${messageClass}" style="${bubbleStyle}">
                         <div class="private-message-header-info">
-                            <div class="private-message-author">${msg.username}</div>
+                            <div class="private-message-author">${username}</div>
                             <div class="private-message-time">${timeFormatted}</div>
                         </div>
                         <div class="private-message-content">${msg.message}</div>
@@ -613,9 +628,13 @@ class FriendsSidebarManager {
 
         whispersTab.innerHTML = html;
 
+        // Scroll to bottom with slight delay
         setTimeout(() => {
-            whispersTab.scrollTop = whispersTab.scrollHeight;
-        }, 50);
+            const dmModalBody = whispersTab.closest('.dm-modal-body');
+            if (dmModalBody) {
+                dmModalBody.scrollTop = dmModalBody.scrollHeight;
+            }
+        }, 100);
     }
 
     toggleDMModal() {
