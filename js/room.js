@@ -887,11 +887,12 @@ function applySyncState(sync) {
 function handleFriendsResponse(response) {
     if (response.status === 'success') {
         friends = response.friends;
-        
+
+        // OLD SYSTEM DISABLED - Using new friends_sidebar.js instead
         // Only update the panel if it's visible
-        if ($('#friendsPanel').is(':visible')) {
-            updateFriendsPanel();
-        }
+        // if ($('#friendsPanel').is(':visible')) {
+        //     updateFriendsPanel();
+        // }
     }
 }
 
@@ -4400,15 +4401,17 @@ function toggleMobileQueue(section) {
 let openPrivateChats = new Map();
 let friends = [];
 
+// OLD SYSTEM DISABLED - Using new friends_sidebar.js instead
+/*
 function initializePrivateMessaging() {
     if (currentUser.type !== 'user') return;
-    
+
     debugLog('💬 Initializing private messaging...');
     loadFriends();
-    
+
     // Remove the old interval - whispers are now handled by fetchAllRoomData
     // setInterval(checkForNewPrivateMessages, 3000);
-    
+
     debugLog('✅ Private messaging initialized (using managed updates)');
 }
 
@@ -4421,10 +4424,13 @@ function showFriendsPanel() {
 function closeFriendsPanel() {
     $('#friendsPanel').hide();
 }
+*/
 
+// OLD SYSTEM DISABLED - Using new friends_sidebar.js instead
+/*
 function loadFriends() {
     debugLog('Loading friends...');
-    
+
     // REMOVE the polling check - always make AJAX call for now
     managedAjax({
         url: 'api/friends.php',
@@ -4444,6 +4450,7 @@ function loadFriends() {
         $('#friendsList').html('<p class="text-danger">Failed to load friends</p>');
     });
 }
+*/
 
 function updateFriendsPanel() {
     debugLog('Updating friends panel with:', friends);
