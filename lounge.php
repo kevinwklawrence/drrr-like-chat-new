@@ -123,6 +123,8 @@ if (!empty($user_id_string)) {
     <link href="css/moderator.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
 <link href="css/loading.css?v=<?php echo $versions['version']; ?>" rel="stylesheet">
 <link rel="stylesheet" href="css/friend_notifications.css?v=<?php echo $versions['version']; ?>">
+<link rel="stylesheet" href="css/friends-sidebar.css?v=<?php echo $versions['version']; ?>">
+<link rel="stylesheet" href="css/draggable-dm-modal.css?v=<?php echo $versions['version']; ?>">
 <style>
     .notice-link {
         color: #ffe1b3;
@@ -140,7 +142,7 @@ if (!empty($user_id_string)) {
     }
     </style>
 </head>
-<body>
+<body<?php if ($_SESSION['user']['type'] === 'user') echo ' class="has-friends-sidebar"'; ?>>
     <div class="avatar-loader" id="avatarLoader">
     <div class="loader-content">
         <div>Loading content...<hr>
@@ -421,15 +423,166 @@ if (!empty($user_id_string)) {
         </div>
     </div>
 
-    <div class="friends-panel" id="friendsPanel" style="display: none;">
-    <div class="card-header">
-        <h6><i class="fas fa-user-friends"></i> Friends</h6>
-        <button class="btn-close" style="color:black;" onclick="closeFriendsPanel()">×</button>
+    <!-- Friends Sidebar (Desktop) - Members Only -->
+    <?php if ($_SESSION['user']['type'] === 'user'): ?>
+    <aside class="friends-sidebar" id="friendsSidebar">
+        <div class="friends-sidebar-header">
+            <h5><i class="fas fa-user-friends"></i> Friends & Messages</h5>
+        </div>
+        <div class="friends-sidebar-content" id="friendsSidebarContent">
+            <!-- Friend Requests Section -->
+            <div class="sidebar-section" id="friendRequestsSection" style="display: none;">
+                <div class="sidebar-section-title">
+                    <span><i class="fas fa-user-plus"></i> Friend Requests</span>
+                    <span class="sidebar-section-count" id="friendRequestsCount">0</span>
+                </div>
+                <div id="friendRequestsList"></div>
+            </div>
+
+            <!-- Recent Conversations Section -->
+            <div class="sidebar-section" id="conversationsSection">
+                <div class="sidebar-section-title">
+                    <span><i class="fas fa-comments"></i> Conversations</span>
+                </div>
+                <div id="conversationsList">
+                    <div class="sidebar-empty-state">
+                        <i class="fas fa-comments"></i>
+                        <p>No conversations yet</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Friends Section -->
+            <div class="sidebar-section" id="friendsSection">
+                <div class="sidebar-section-title">
+                    <span><i class="fas fa-users"></i> Friends</span>
+                    <span class="sidebar-section-count" id="friendsCount">0</span>
+                </div>
+                <form class="add-friend-form" onsubmit="addFriend(event)">
+                    <input type="text" class="add-friend-input" id="addFriendInput" placeholder="Add friend by username..." required>
+                    <button type="submit" class="add-friend-btn">
+                        <i class="fas fa-user-plus"></i>
+                    </button>
+                </form>
+                <div id="friendsList">
+                    <div class="sidebar-empty-state">
+                        <i class="fas fa-user-friends"></i>
+                        <p>No friends yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Friends Mobile Modal (Mobile) -->
+    <div class="modal fade friends-mobile-modal" id="friendsMobileModal" tabindex="-1" aria-labelledby="friendsMobileModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="friendsMobileModalLabel">
+                        <i class="fas fa-user-friends"></i> Friends & Messages
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: invert(1);"></button>
+                </div>
+                <div class="modal-body" id="friendsMobileContent">
+                    <!-- Same content as desktop sidebar will be synced here -->
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="card-body" id="friendsList">
-        Loading friends...
+    <?php endif; ?>
+
+    <!-- Draggable DM Modal (For both desktop and mobile) -->
+    <?php if ($_SESSION['user']['type'] === 'user'): ?>
+    <div class="dm-modal-container hidden" id="dmModal">
+        <div class="dm-modal-header">
+            <div class="dm-modal-header-left">
+                <i class="fas fa-grip-vertical dm-modal-drag-handle"></i>
+                <h6 class="dm-modal-title">
+                    <i class="fas fa-envelope"></i> Messages
+                    <span class="dm-modal-recipient-info" id="dmRecipientInfo"></span>
+                </h6>
+            </div>
+            <div class="dm-modal-header-actions">
+                <button class="dm-modal-action-btn minimize" onclick="toggleDMModal()" title="Minimize">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="dm-modal-action-btn close" onclick="closeDMModal()" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="dm-modal-tabs">
+            <button class="dm-modal-tab active" data-tab="private-messages" onclick="switchDMTab('private-messages')">
+                <i class="fas fa-envelope"></i> Private Messages
+                <span class="dm-modal-tab-badge" id="pmUnreadBadge" style="display: none;">0</span>
+            </button>
+            <button class="dm-modal-tab" data-tab="whispers" onclick="switchDMTab('whispers')">
+                <i class="fas fa-comment-dots"></i> Whispers
+                <span class="dm-modal-tab-badge" id="whispersUnreadBadge" style="display: none;">0</span>
+            </button>
+        </div>
+
+        <div class="dm-modal-body">
+            <!-- Private Messages Tab -->
+            <div class="dm-tab-content active" id="privateMessagesTab">
+                <div class="dm-conversations-list" id="dmConversationsList">
+                    <div class="dm-empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p class="dm-empty-state-title">No conversations</p>
+                        <p class="dm-empty-state-text">Start a conversation with a friend!</p>
+                    </div>
+                </div>
+
+                <!-- Message view (hidden by default) -->
+                <div class="dm-messages-container" id="dmMessagesContainer">
+                    <div class="dm-messages-header">
+                        <button class="dm-back-btn" onclick="closeDMConversation()">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <span class="dm-recipient-name" id="dmCurrentRecipient"></span>
+                    </div>
+                    <div class="dm-messages-list" id="dmMessagesList"></div>
+                </div>
+            </div>
+
+            <!-- Whispers Tab -->
+            <div class="dm-tab-content" id="whispersTab">
+                <div class="dm-whispers-list" id="dmWhispersList">
+                    <div class="dm-empty-state">
+                        <i class="fas fa-comment-slash"></i>
+                        <p class="dm-empty-state-title">No whispers</p>
+                        <p class="dm-empty-state-text">Whispers are room-specific private messages</p>
+                    </div>
+                </div>
+
+                <!-- Whisper view (hidden by default) -->
+                <div class="dm-messages-container" id="dmWhispersContainer" style="display: none;">
+                    <div class="dm-messages-header">
+                        <button class="dm-back-btn" onclick="closeWhisperConversation()">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <span class="dm-recipient-name" id="whisperCurrentRecipient"></span>
+                    </div>
+                    <div class="dm-messages-list" id="whisperMessagesList"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dm-modal-footer">
+            <form class="dm-input-form" onsubmit="sendDMMessage(event)" id="dmInputForm">
+                <input type="text" class="dm-input" id="dmMessageInput" placeholder="Type a message..." required>
+                <button type="submit" class="dm-send-btn">
+                    <i class="fas fa-paper-plane"></i> Send
+                </button>
+            </form>
+        </div>
     </div>
-</div>
+    <?php endif; ?>
+
+    <!-- Toast Notifications Container -->
+    <div class="notification-toast-container" id="notificationToastContainer"></div>
 
 
 <!-- Introduction Modal (Add before closing </body> in lounge.php) -->
@@ -681,6 +834,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <script src="js/loading.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/friend_notifications.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/leaderboard.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/friends_sidebar.js?v=<?php echo $versions['version']; ?>"></script>
 
 <?php include 'user_settings.php'; ?>
 </body>

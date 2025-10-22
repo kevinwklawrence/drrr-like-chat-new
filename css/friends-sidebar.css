@@ -1,0 +1,592 @@
+/* ==============================================
+   FRIENDS SIDEBAR - DESKTOP & MOBILE REDESIGN
+   ============================================== */
+
+/* ===============================================
+   RIGHT SIDEBAR - DESKTOP (Always Visible)
+   =============================================== */
+.friends-sidebar {
+    position: fixed;
+    top: 56px; /* Below navbar */
+    right: 0;
+    width: 320px;
+    height: calc(100vh - 56px);
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-left: 2px solid rgba(255, 255, 255, 0.1);
+    box-shadow: -5px 0 20px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.friends-sidebar-header {
+    padding: 20px;
+    background: linear-gradient(135deg, #2d3561 0%, #1f2947 100%);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+
+.friends-sidebar-header h5 {
+    margin: 0;
+    color: #ffffff;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.friends-sidebar-header h5 i {
+    color: #4ea8de;
+}
+
+.friends-sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 15px;
+}
+
+.friends-sidebar-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.friends-sidebar-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.friends-sidebar-content::-webkit-scrollbar-thumb {
+    background: rgba(78, 168, 222, 0.5);
+    border-radius: 4px;
+}
+
+.friends-sidebar-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(78, 168, 222, 0.7);
+}
+
+/* Sections within sidebar */
+.sidebar-section {
+    margin-bottom: 25px;
+}
+
+.sidebar-section-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #8b9dc3;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sidebar-section-count {
+    background: rgba(78, 168, 222, 0.2);
+    color: #4ea8de;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+}
+
+/* Friend Request Items */
+.friend-request-item {
+    background: rgba(255, 107, 107, 0.1);
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s ease;
+}
+
+.friend-request-item:hover {
+    background: rgba(255, 107, 107, 0.15);
+    border-color: rgba(255, 107, 107, 0.5);
+}
+
+.friend-request-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 107, 107, 0.5);
+}
+
+.friend-request-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.friend-request-name {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.friend-request-time {
+    font-size: 0.75rem;
+    color: #8b9dc3;
+}
+
+.friend-request-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.friend-request-btn {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.friend-request-btn.accept {
+    background: #4ea8de;
+    color: white;
+}
+
+.friend-request-btn.accept:hover {
+    background: #3d8ab8;
+}
+
+.friend-request-btn.decline {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.friend-request-btn.decline:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Friend Items */
+.friend-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.friend-item:hover {
+    background: rgba(78, 168, 222, 0.1);
+    border-color: rgba(78, 168, 222, 0.3);
+}
+
+.friend-item-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(78, 168, 222, 0.5);
+    position: relative;
+}
+
+.friend-status-indicator {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #1a1a2e;
+}
+
+.friend-status-indicator.online {
+    background: #4ade80;
+}
+
+.friend-status-indicator.offline {
+    background: #6b7280;
+}
+
+.friend-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.friend-item-name {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.friend-item-status {
+    font-size: 0.75rem;
+    color: #8b9dc3;
+}
+
+.friend-item-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.friend-action-btn {
+    padding: 6px 10px;
+    background: rgba(78, 168, 222, 0.2);
+    border: 1px solid rgba(78, 168, 222, 0.3);
+    border-radius: 5px;
+    color: #4ea8de;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.friend-action-btn:hover {
+    background: rgba(78, 168, 222, 0.3);
+    border-color: rgba(78, 168, 222, 0.5);
+}
+
+/* Conversation Items */
+.conversation-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.conversation-item:hover {
+    background: rgba(78, 168, 222, 0.1);
+    border-color: rgba(78, 168, 222, 0.3);
+}
+
+.conversation-item.unread {
+    background: rgba(78, 168, 222, 0.15);
+    border-color: rgba(78, 168, 222, 0.4);
+}
+
+.conversation-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(78, 168, 222, 0.5);
+}
+
+.conversation-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.conversation-name {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.conversation-preview {
+    font-size: 0.8rem;
+    color: #8b9dc3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.conversation-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+}
+
+.conversation-time {
+    font-size: 0.7rem;
+    color: #6b7280;
+}
+
+.conversation-unread-badge {
+    background: #ff6b6b;
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+/* Add Friend Form */
+.add-friend-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.add-friend-input {
+    flex: 1;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 0.9rem;
+}
+
+.add-friend-input:focus {
+    outline: none;
+    border-color: rgba(78, 168, 222, 0.5);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.add-friend-btn {
+    padding: 10px 15px;
+    background: #4ea8de;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.add-friend-btn:hover {
+    background: #3d8ab8;
+}
+
+.add-friend-btn i {
+    font-size: 1rem;
+}
+
+/* Empty State */
+.sidebar-empty-state {
+    text-align: center;
+    padding: 30px 20px;
+    color: #6b7280;
+}
+
+.sidebar-empty-state i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+.sidebar-empty-state p {
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* ===============================================
+   MOBILE MODAL VERSION
+   =============================================== */
+.friends-mobile-modal {
+    display: none; /* Hidden by default, shown only on mobile */
+}
+
+.friends-mobile-modal .modal-dialog {
+    margin: 0;
+    max-width: 100%;
+    height: 100vh;
+}
+
+.friends-mobile-modal .modal-content {
+    height: 100%;
+    border: none;
+    border-radius: 0;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+.friends-mobile-modal .modal-header {
+    background: linear-gradient(135deg, #2d3561 0%, #1f2947 100%);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    padding: 20px;
+}
+
+.friends-mobile-modal .modal-header h5 {
+    color: #ffffff;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.friends-mobile-modal .modal-body {
+    padding: 15px;
+    overflow-y: auto;
+}
+
+/* ===============================================
+   TOAST NOTIFICATIONS (Non-intrusive)
+   =============================================== */
+.notification-toast-container {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.notification-toast {
+    background: linear-gradient(135deg, #2d3561 0%, #1f2947 100%);
+    border: 1px solid rgba(78, 168, 222, 0.3);
+    border-radius: 8px;
+    padding: 15px 20px;
+    min-width: 300px;
+    max-width: 400px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    pointer-events: auto;
+    animation: slideInRight 0.3s ease, fadeOut 0.3s ease 4.7s;
+    animation-fill-mode: forwards;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+        transform: translateX(400px);
+    }
+}
+
+.notification-toast-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.notification-toast-icon.friend-request {
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+}
+
+.notification-toast-icon.dm {
+    background: rgba(78, 168, 222, 0.2);
+    color: #4ea8de;
+}
+
+.notification-toast-content {
+    flex: 1;
+}
+
+.notification-toast-title {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+}
+
+.notification-toast-message {
+    font-size: 0.85rem;
+    color: #8b9dc3;
+}
+
+.notification-toast-close {
+    background: none;
+    border: none;
+    color: #8b9dc3;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.notification-toast-close:hover {
+    color: #ffffff;
+}
+
+/* ===============================================
+   RESPONSIVE DESIGN
+   =============================================== */
+@media (max-width: 768px) {
+    /* Hide desktop sidebar on mobile */
+    .friends-sidebar {
+        display: none;
+    }
+
+    /* Show mobile modal trigger */
+    .friends-mobile-trigger {
+        display: block !important;
+    }
+
+    /* Adjust notification position for mobile */
+    .notification-toast-container {
+        right: 10px;
+        left: 10px;
+        top: 60px;
+    }
+
+    .notification-toast {
+        min-width: unset;
+        max-width: 100%;
+    }
+}
+
+@media (min-width: 769px) {
+    /* Hide mobile modal on desktop */
+    .friends-mobile-modal {
+        display: none !important;
+    }
+
+    /* Ensure desktop sidebar is visible */
+    .friends-sidebar {
+        display: flex;
+    }
+
+    /* Hide mobile trigger on desktop */
+    .friends-mobile-trigger {
+        display: none !important;
+    }
+}
+
+/* Adjust main content area to account for sidebar */
+@media (min-width: 769px) {
+    body.has-friends-sidebar #content,
+    body.has-friends-sidebar .main-content,
+    body.has-friends-sidebar #room-container {
+        margin-right: 320px;
+    }
+}

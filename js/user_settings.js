@@ -9,7 +9,8 @@ class UserSettings {
             youtubeMuted: false,
             theatreMode: false,
             dimmerLevel: 100,
-            excludeYouTubeFromDimmer: true
+            excludeYouTubeFromDimmer: true,
+            showDMsAutomatically: false
         };
         
         this.modalInitialized = false;
@@ -52,7 +53,8 @@ class UserSettings {
             youtubeMuted: false,
             theatreMode: false,
             dimmerLevel: 100,
-            excludeYouTubeFromDimmer: true
+            excludeYouTubeFromDimmer: true,
+            showDMsAutomatically: false
         };
         this.saveSettings();
     }
@@ -148,7 +150,25 @@ class UserSettings {
                                 </label>
                                 <div class="theatre-switch" id="youtubeExclusionSwitch"></div>
                             </div>
-                        
+
+                        <!-- Messages Settings Section (Members Only) -->
+                        ${typeof currentUser !== 'undefined' && currentUser.type === 'user' ? `
+                        <div class="settings-section">
+                            <h6><i class="fas fa-envelope"></i> Messages Settings</h6>
+
+                            <div class="theatre-toggle" onclick="userSettingsManager.toggleShowDMsAutomatically()">
+                                <label for="showDMsAutomatically">
+                                    <i class="fas fa-comment-dots"></i>
+                                    Show DMs Automatically
+                                </label>
+                                <div class="theatre-switch" id="showDMsSwitch"></div>
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                <i class="fas fa-info-circle"></i>
+                                When enabled, the DM window will automatically appear when you receive a new message.
+                            </small>
+                        </div>
+                        ` : ''}
 
                         <div class="settings-footer">
                             <button class="reset-btn" onclick="userSettingsManager.resetUserSettings()">
@@ -271,6 +291,32 @@ class UserSettings {
         if (theatreSwitch) {
             if (this.settings.theatreMode) {
                 theatreSwitch.classList.add('active');
+            }
+        }
+
+        // Show DMs automatically toggle (members only)
+        const showDMsSwitch = document.getElementById('showDMsSwitch');
+        if (showDMsSwitch) {
+            // Load from database for registered users
+            if (typeof currentUser !== 'undefined' && currentUser.type === 'user') {
+                $.ajax({
+                    url: 'api/get_dm_settings.php',
+                    method: 'GET',
+                    dataType: 'json',
+                    success: (response) => {
+                        if (response.status === 'success') {
+                            this.settings.showDMsAutomatically = response.show_dms_automatically;
+                            if (this.settings.showDMsAutomatically) {
+                                showDMsSwitch.classList.add('active');
+                            }
+                        }
+                    }
+                });
+            } else {
+                // Use local storage value for guests
+                if (this.settings.showDMsAutomatically) {
+                    showDMsSwitch.classList.add('active');
+                }
             }
         }
 
@@ -409,7 +455,7 @@ class UserSettings {
     toggleYouTubeExclusion() {
         this.settings.excludeYouTubeFromDimmer = !this.settings.excludeYouTubeFromDimmer;
         this.saveSettings();
-        
+
         const youtubeExclusionSwitch = document.getElementById('youtubeExclusionSwitch');
         if (youtubeExclusionSwitch) {
             if (this.settings.excludeYouTubeFromDimmer) {
@@ -418,8 +464,43 @@ class UserSettings {
                 youtubeExclusionSwitch.classList.remove('active');
             }
         }
-        
+
         this.updateDimmerEffect();
+    }
+
+    toggleShowDMsAutomatically() {
+        this.settings.showDMsAutomatically = !this.settings.showDMsAutomatically;
+        this.saveSettings();
+
+        // Update UI switch
+        const showDMsSwitch = document.getElementById('showDMsSwitch');
+        if (showDMsSwitch) {
+            if (this.settings.showDMsAutomatically) {
+                showDMsSwitch.classList.add('active');
+            } else {
+                showDMsSwitch.classList.remove('active');
+            }
+        }
+
+        // Save to database for registered users
+        if (typeof currentUser !== 'undefined' && currentUser.type === 'user') {
+            $.ajax({
+                url: 'api/update_dm_settings.php',
+                method: 'POST',
+                data: {
+                    show_dms_automatically: this.settings.showDMsAutomatically ? 1 : 0
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status !== 'success') {
+                        console.error('Failed to save DM setting to database:', response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error saving DM setting:', error);
+                }
+            });
+        }
     }
 
     playNotificationSound(soundFile = '/sounds/message_notification.mp3') {
