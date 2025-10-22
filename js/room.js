@@ -4401,20 +4401,19 @@ function toggleMobileQueue(section) {
 let openPrivateChats = new Map();
 let friends = [];
 
-// OLD SYSTEM DISABLED - Using new friends_sidebar.js instead
-/*
+// Minimal initialization for private messaging (without panel functions)
 function initializePrivateMessaging() {
     if (currentUser.type !== 'user') return;
 
     debugLog('💬 Initializing private messaging...');
-    loadFriends();
-
-    // Remove the old interval - whispers are now handled by fetchAllRoomData
-    // setInterval(checkForNewPrivateMessages, 3000);
+    // loadFriends(); // REMOVED - handled by new friends_sidebar.js
+    // checkForNewPrivateMessages is now handled by polling system
 
     debugLog('✅ Private messaging initialized (using managed updates)');
 }
 
+// OLD PANEL FUNCTIONS DISABLED - Using new friends_sidebar.js instead
+/*
 function showFriendsPanel() {
     $('#friendsPanel').show();
     loadFriends();
