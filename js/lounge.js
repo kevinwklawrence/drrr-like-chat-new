@@ -1308,12 +1308,10 @@ let friends = [];
 
 function initializePrivateMessaging() {
     if (currentUser.type !== 'user') return;
-
-    // loadFriends(); // REMOVED - handled by new friends_sidebar.js
-    // checkForNewPrivateMessages(); // REMOVED - handled by friends_sidebar.js polling
-    // setInterval(checkForNewPrivateMessages, 500); // REMOVED - handled by friends_sidebar.js polling
-
-    debugLog('✅ Private messaging initialized (using new friends_sidebar.js)');
+    
+    loadFriends();
+    checkForNewPrivateMessages();
+    setInterval(checkForNewPrivateMessages, 500);
 }
 
 function openPrivateMessage(userId, username) {
