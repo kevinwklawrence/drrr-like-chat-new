@@ -437,9 +437,9 @@ class FriendsSidebarManager {
             const messageClass = isSent ? 'sent' : 'received';
             const timeFormatted = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            // Determine which username and avatar to use
-            const username = isSent ? msg.sender_username : msg.recipient_username;
-            const avatar = isSent ? msg.sender_avatar : msg.recipient_avatar;
+            // ALWAYS use the sender's info - that's who wrote the message
+            const username = msg.sender_username;
+            const avatar = msg.sender_avatar;
 
             // Use the sender's color for the bubble (this is stored when message was sent)
             const userColor = msg.color || 'blue';
@@ -595,9 +595,9 @@ class FriendsSidebarManager {
             const messageClass = isSent ? 'sent' : 'received';
             const timeFormatted = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            // Determine which username and avatar to use (similar to private messages)
-            const username = isSent ? msg.sender_username : msg.recipient_username;
-            const avatar = isSent ? msg.sender_avatar : msg.recipient_avatar;
+            // ALWAYS use the sender's info - that's who wrote the message
+            const username = msg.sender_username;
+            const avatar = msg.sender_avatar;
 
             const userColor = msg.color || 'blue';
             const bubbleClass = `user-color-${userColor}`;
