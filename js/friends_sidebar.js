@@ -543,10 +543,17 @@ class FriendsSidebarManager {
     }
 
     openWhisperConversation(userIdString, username) {
+        console.log('=== OPEN WHISPER DEBUG ===');
+        console.log('userIdString received:', userIdString, 'type:', typeof userIdString);
+        console.log('username:', username);
+
         // Store the full user_id_string (e.g., 'user_123' or 'guest_abcd')
-        this.currentDMRecipient = { userIdString: userIdString, username };
+        this.currentDMRecipient = { userIdString: userIdString, username: username };
         this.dmModalOpen = true;
         this.currentTab = 'whispers';
+
+        console.log('Stored currentDMRecipient:', this.currentDMRecipient);
+        console.log('Current tab set to:', this.currentTab);
 
         // Close mobile friends modal if open
         if (window.innerWidth <= 768) {
@@ -681,19 +688,26 @@ class FriendsSidebarManager {
 
         if (!this.currentDMRecipient) {
             alert('No recipient selected');
+            console.error('currentDMRecipient is null/undefined');
             return;
         }
 
         const input = document.getElementById('dmMessageInput');
         const message = input.value.trim();
 
-        if (!message) return;
+        if (!message) {
+            console.log('Message is empty');
+            return;
+        }
 
         const isWhisper = this.currentTab === 'whispers';
         const apiUrl = isWhisper ? 'api/room_whispers.php' : 'api/private_messages.php';
 
-        console.log('Sending', isWhisper ? 'whisper' : 'message', 'to:',
-                    isWhisper ? this.currentDMRecipient.userIdString : this.currentDMRecipient.userId);
+        console.log('=== SEND MESSAGE DEBUG ===');
+        console.log('currentTab:', this.currentTab);
+        console.log('isWhisper:', isWhisper);
+        console.log('currentDMRecipient:', this.currentDMRecipient);
+        console.log('Sending to:', isWhisper ? this.currentDMRecipient.userIdString : this.currentDMRecipient.userId);
 
         // Prepare data based on API requirements
         const apiData = isWhisper ? {
@@ -705,6 +719,16 @@ class FriendsSidebarManager {
             recipient_id: parseInt(this.currentDMRecipient.userId),
             message: message
         };
+
+        console.log('API URL:', apiUrl);
+        console.log('API Data:', apiData);
+
+        // Validation before sending
+        if (isWhisper && (!apiData.recipient_user_id_string || apiData.recipient_user_id_string === 'undefined')) {
+            alert('Error: Invalid recipient ID for whisper');
+            console.error('Invalid userIdString:', apiData.recipient_user_id_string);
+            return;
+        }
 
         $.ajax({
             url: apiUrl,
