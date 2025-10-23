@@ -168,9 +168,9 @@ if (!empty($provided_invite) && !empty($room_invite_code) && $provided_invite ==
         if (isset($room['invite_only']) && $room['invite_only']) {
             $provided_invite = $_POST['invite_code'] ?? $_GET['invite'] ?? '';
             $room_invite_code = $room['invite_code'] ?? '';
-            
+
             error_log("JOIN_ROOM: Invite check - provided: '$provided_invite', expected: '$room_invite_code'");
-            
+
             if (empty($provided_invite) || $provided_invite !== $room_invite_code) {
                 echo json_encode(['status' => 'error', 'message' => 'This room requires a valid invite code']);
                 exit;
@@ -178,17 +178,17 @@ if (!empty($provided_invite) && !empty($room_invite_code) && $provided_invite ==
                 error_log("JOIN_ROOM: Valid invite code provided");
             }
         }
-        
+
         // Check access restrictions
         $access_denied_reason = null;
-        
+
         // Check members-only access
         if ($room['members_only']) {
             if ($user_session['type'] !== 'user') {
                 $access_denied_reason = 'This room is for registered members only';
             }
         }
-        
+
         // Check friends-only access
         if (!$access_denied_reason && $room['friends_only']) {
             if ($user_session['type'] !== 'user') {
@@ -197,14 +197,14 @@ if (!empty($provided_invite) && !empty($room_invite_code) && $provided_invite ==
                 // Check if current user is friend of host
                 $current_user_id = $user_session['id'] ?? null;
                 $host_user_id_string = $room['host_user_id_string'] ?? '';
-                
+
                 if ($current_user_id && $host_user_id_string) {
                     $friend_check = $conn->prepare("
-                        SELECT COUNT(*) as is_friend 
+                        SELECT COUNT(*) as is_friend
                         FROM friends f
                         JOIN users u ON (f.user_id = u.id OR f.friend_user_id = u.id)
-                        WHERE f.status = 'accepted' 
-                        AND ((f.user_id = ? AND u.user_id_string = ?) 
+                        WHERE f.status = 'accepted'
+                        AND ((f.user_id = ? AND u.user_id_string = ?)
                              OR (f.friend_user_id = ? AND u.user_id_string = ?))
                     ");
                     if ($friend_check) {
@@ -224,14 +224,15 @@ if (!empty($provided_invite) && !empty($room_invite_code) && $provided_invite ==
                 }
             }
         }
-        
+
         // If access is denied, return error
         if ($access_denied_reason) {
             echo json_encode(['status' => 'error', 'message' => $access_denied_reason]);
             exit;
         }
-        
-        $access_granted = true;
+
+        // REMOVED: Don't set $access_granted = true here
+        // Password validation still needs to happen if room has a password
     } else {
         error_log("JOIN_ROOM_DEBUG: Access restrictions bypassed for admin/moderator");
     }
@@ -261,6 +262,44 @@ if (!empty($provided_invite) && !empty($room_invite_code) && $provided_invite ==
         error_log("JOIN_ROOM: Granted room key via invite code");
     }
 }
+
+    // SINGLE ROOM RESTRICTION: Remove user from all other rooms before joining this one
+    $remove_stmt = $conn->prepare("SELECT room_id, username, guest_name FROM chatroom_users WHERE user_id_string = ? AND room_id != ?");
+    if ($remove_stmt) {
+        $remove_stmt->bind_param("si", $user_id_string, $room_id);
+        $remove_stmt->execute();
+        $previous_rooms_result = $remove_stmt->get_result();
+
+        // Add leave messages to previous rooms
+        while ($previous_room = $previous_rooms_result->fetch_assoc()) {
+            $previous_room_id = $previous_room['room_id'];
+            $display_name = $previous_room['guest_name'] ?? $previous_room['username'] ?? 'User';
+            $leave_message = $display_name . ' left the room';
+
+            $leave_stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, ?, ?, 1, NOW(), ?, 'system')");
+            if ($leave_stmt) {
+                $avatar = $user_session['avatar'] ?? 'default_avatar.jpg';
+                $leave_stmt->bind_param("isss", $previous_room_id, $user_id_string, $leave_message, $avatar);
+                $leave_stmt->execute();
+                $leave_stmt->close();
+            }
+
+            error_log("JOIN_ROOM_DEBUG: User $user_id_string removed from room $previous_room_id");
+        }
+        $remove_stmt->close();
+
+        // Now delete the user from all other rooms
+        $delete_stmt = $conn->prepare("DELETE FROM chatroom_users WHERE user_id_string = ? AND room_id != ?");
+        if ($delete_stmt) {
+            $delete_stmt->bind_param("si", $user_id_string, $room_id);
+            $delete_stmt->execute();
+            $deleted_count = $delete_stmt->affected_rows;
+            if ($deleted_count > 0) {
+                error_log("JOIN_ROOM_DEBUG: Removed user from $deleted_count other room(s)");
+            }
+            $delete_stmt->close();
+        }
+    }
 
     // Check if user is already in the room
     $stmt = $conn->prepare("SELECT id FROM chatroom_users WHERE room_id = ? AND user_id_string = ?");
