@@ -100,16 +100,16 @@ function displayProfilePopup(user, avatarElement) {
         }
         
         if (isInRoom) {
-            // FIXED: Don't use escapeHtml on numeric ID
+            // Use new friends_sidebar whisper system
             actionsHtml += `
-                <button class="btn btn-sm btn-secondary profile-action-btn" onclick="openWhisper('user_${user.id}', '${escapeHtml(user.username)}'); event.stopPropagation();">
+                <button class="btn btn-sm btn-secondary profile-action-btn" onclick="if(friendsSidebarManager){friendsSidebarManager.openWhisperConversation(${user.id}, '${escapeHtml(user.username)}');} event.stopPropagation();">
                     <i class="fas fa-comment"></i> Message
                 </button>
             `;
         } else {
-            // FIXED: Don't use escapeHtml on numeric ID
+            // Use new friends_sidebar PM system
             actionsHtml += `
-                <button class="btn btn-sm btn-secondary profile-action-btn" onclick="openPrivateMessage(${user.id}, '${escapeHtml(user.username)}'); event.stopPropagation();">
+                <button class="btn btn-sm btn-secondary profile-action-btn" onclick="if(friendsSidebarManager){friendsSidebarManager.openPrivateMessage(${user.id}, '${escapeHtml(user.username)}');} event.stopPropagation();">
                     <i class="fas fa-envelope"></i> PM
                 </button>
             `;
