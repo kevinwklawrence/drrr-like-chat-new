@@ -371,6 +371,14 @@ class FriendsSidebarManager {
         this.dmModalOpen = true;
         this.currentTab = 'private-messages';
 
+        // Close mobile friends modal if open
+        if (window.innerWidth <= 768) {
+            const mobileModal = bootstrap.Modal.getInstance(document.getElementById('friendsMobileModal'));
+            if (mobileModal) {
+                mobileModal.hide();
+            }
+        }
+
         const dmModal = document.getElementById('dmModal');
         const dmRecipientInfo = document.getElementById('dmRecipientInfo');
         const dmTitle = dmModal?.querySelector('.dm-modal-title');
@@ -536,6 +544,14 @@ class FriendsSidebarManager {
         this.dmModalOpen = true;
         this.currentTab = 'whispers';
 
+        // Close mobile friends modal if open
+        if (window.innerWidth <= 768) {
+            const mobileModal = bootstrap.Modal.getInstance(document.getElementById('friendsMobileModal'));
+            if (mobileModal) {
+                mobileModal.hide();
+            }
+        }
+
         const dmModal = document.getElementById('dmModal');
         const dmTitle = dmModal?.querySelector('.dm-modal-title');
 
@@ -559,16 +575,19 @@ class FriendsSidebarManager {
             method: 'GET',
             data: {
                 action: 'get',
-                other_user_id: userId
+                other_user_id_string: 'user_' + userId
             },
             dataType: 'json',
             success: (response) => {
                 if (response.status === 'success') {
                     this.renderWhisperMessages(response.messages || []);
+                } else {
+                    console.error('Load whisper messages error:', response.message);
                 }
             },
             error: (xhr, status, error) => {
                 console.error('Error loading whisper messages:', error);
+                console.error('Response:', xhr.responseText);
             }
         });
     }
@@ -666,24 +685,38 @@ class FriendsSidebarManager {
 
         if (!message) return;
 
-        console.log('Sending message to user ID:', this.currentDMRecipient.userId);
+        const isWhisper = this.currentTab === 'whispers';
+        const apiUrl = isWhisper ? 'api/room_whispers.php' : 'api/private_messages.php';
+
+        console.log('Sending', isWhisper ? 'whisper' : 'message', 'to user ID:', this.currentDMRecipient.userId);
+
+        // Prepare data based on API requirements
+        const apiData = isWhisper ? {
+            action: 'send',
+            recipient_user_id_string: 'user_' + this.currentDMRecipient.userId,
+            message: message
+        } : {
+            action: 'send',
+            recipient_id: parseInt(this.currentDMRecipient.userId),
+            message: message
+        };
 
         $.ajax({
-            url: 'api/private_messages.php',
+            url: apiUrl,
             method: 'POST',
-            data: {
-                action: 'send',
-                recipient_id: parseInt(this.currentDMRecipient.userId),
-                message: message
-            },
+            data: apiData,
             dataType: 'json',
             success: (response) => {
                 if (response.status === 'success') {
                     input.value = '';
-                    // Reload messages
-                    this.loadPrivateMessages(this.currentDMRecipient.userId);
-                    // Reload conversations to update preview
-                    this.loadConversations();
+                    // Reload messages based on tab
+                    if (isWhisper) {
+                        this.loadWhisperMessages(this.currentDMRecipient.userId);
+                        this.loadWhisperConversations();
+                    } else {
+                        this.loadPrivateMessages(this.currentDMRecipient.userId);
+                        this.loadConversations();
+                    }
                 } else {
                     alert('Error sending message: ' + response.message);
                     console.error('Send message error:', response);
@@ -692,6 +725,7 @@ class FriendsSidebarManager {
             error: (xhr, status, error) => {
                 console.error('Error sending message:', error);
                 console.error('XHR:', xhr);
+                console.error('Response:', xhr.responseText);
                 alert('Failed to send message: ' + error);
             }
         });
