@@ -1940,9 +1940,8 @@ function renderUser(user) {
         
         const displayName = user.display_name || user.username || user.guest_name || 'Unknown';
         const whisperText = user.is_afk ? '' : '';
-        const numericUserId = user.user_id || parseInt(user.user_id_string?.replace('user_', '')) || 0;
         actions += `
-            <button class="btn whisper-btn ${user.is_afk ? 'afk-user' : ''}" onclick="if(friendsSidebarManager){friendsSidebarManager.openWhisperConversation(${numericUserId}, '${displayName.replace(/'/g, "\\'")}');}">
+            <button class="btn whisper-btn ${user.is_afk ? 'afk-user' : ''}" onclick="if(friendsSidebarManager){friendsSidebarManager.openWhisperConversation('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}');}">
                 <i class="fas fa-comment"></i> ${whisperText}
             </button>
         `;
