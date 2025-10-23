@@ -1534,7 +1534,8 @@ function renderMessage(msg) {
         
         return `
             <div class="system-message">
-                <img src="images/${avatar}" 
+                <img src="images/${avatar}"
+                     loading="eager"
                      style="filter: hue-rotate(${systemHue}deg) saturate(${systemSat}%);"
                      alt="System">
                 <span>${msg.message}</span>
@@ -1556,7 +1557,8 @@ if (msg.type === 'rp') {
     
     return `
         <div class="rp-message">
-            <img src="images/${avatar}" 
+            <img src="images/${avatar}"
+                 loading="eager"
                  style="filter: hue-rotate(${rpHue}deg) saturate(${rpSat}%);"
                  alt="${rpName}">
             <span><strong>${rpName}</strong> ${msg.message}</span>
@@ -1571,7 +1573,8 @@ if (msg.type === 'roll') {
     
     return `
         <div class="roll-message">
-            <img src="images/${avatar}" 
+            <img src="images/${avatar}"
+                 loading="eager"
                  style="filter: hue-rotate(${rollHue}deg) saturate(${rollSat}%);"
                  alt="Dice Roll">
             <span class="roll-result"> 🎲 ${msg.message}</span>
@@ -1593,7 +1596,8 @@ if (msg.type === 'do') {
     
     return `
         <div class="do-message">
-            <img src="images/${avatar}" 
+            <img src="images/${avatar}"
+                 loading="eager"
                  style="filter: hue-rotate(${doHue}deg) saturate(${doSat}%);"
                  alt="${doName}">
             <span>${msg.message}</span>
@@ -1608,7 +1612,8 @@ if (msg.type === 'flip') {
     
     return `
         <div class="flip-message">
-            <img src="images/${avatar}" 
+            <img src="images/${avatar}"
+                 loading="eager"
                  style="filter: hue-rotate(${flipHue}deg) saturate(${flipSat}%);"
                  alt="Coin Flip">
             <span><span class="flip-result">${msg.message}</span></span>
@@ -1623,7 +1628,8 @@ if (msg.type === 'eightball') {
     
     return `
         <div class="eightball-message">
-            <img src="images/${avatar}" 
+            <img src="images/${avatar}"
+                 loading="eager"
                  style="filter: hue-rotate(${eightballHue}deg) saturate(${eightballSat}%);"
                  alt="Magic 8 Ball">
             <span><span class="eightball-result">${msg.message}</span></span>
@@ -1645,7 +1651,8 @@ if (msg.type === 'npc') {
     
     return `
         <div class="npc-message">
-            <img src="images/${avatar}" 
+            <img src="images/${avatar}"
+                 loading="eager"
                  style="filter: hue-rotate(${npcHue}deg) saturate(${npcSat}%);"
                  alt="${npcController}">
             <span>${msg.message}</span>
@@ -1761,8 +1768,9 @@ if (msg.reply_to_message_id && msg.reply_original_message) {
     replyContent = `
         <div class="message-reply user-color-${replyColor}" style="filter: hue-rotate(${replyBubbleHue}deg) saturate(${replyBubbleSat}%);">
             <div class="reply-header" style="filter: hue-rotate(${-replyBubbleHue}deg) saturate(${replyBubbleSat > 0 ? (10000/replyBubbleSat) : 100}%);">
-                <img src="images/${replyAvatar}" 
+                <img src="images/${replyAvatar}"
                      class="reply-author-avatar"
+                     loading="eager"
                      style="filter: hue-rotate(${replyAvatarHue}deg) saturate(${replyAvatarSat}%);"
                      alt="${replyAuthor}">
                 <span class="reply-author-name">${replyAuthor}</span>
@@ -1815,8 +1823,7 @@ if (msg.reply_to_message_id && msg.reply_original_message) {
             <div class="users-content">
             <img src="images/${avatar}"
                  class="message-avatar"
-                 width="58"
-                 height="58"
+                 loading="eager"
                  style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); ${avatarClickHandler ? 'cursor: pointer;' : ''}"
                  ${avatarClickHandler}
                  alt="${name}'s avatar">
@@ -2064,8 +2071,7 @@ function renderUser(user) {
             <div class="user-info-row">
                 <img src="images/${avatar}"
                      class="user-avatar ${user.is_afk ? 'afk-avatar' : ''}"
-                     width="40"
-                     height="40"
+                     loading="eager"
                      style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); ${avatarClickHandler ? 'cursor: pointer;' : ''}"
                      ${avatarClickHandler}
                      alt="${name}'s avatar">
@@ -3671,7 +3677,7 @@ function displayKnockNotifications(knocks) {
                  role="alert" 
                  style="position: fixed; top: ${topPosition}px; right: 20px; z-index: 1070; max-width: 400px; background: #2a2a2a; border: 1px solid #404040; color: #e0e0e0;">
                 <div class="d-flex align-items-center">
-                    <img src="images/${avatar}" width="40" height="40" class="rounded-circle me-3" alt="${userName}" style="border: 2px solid #007bff;">
+                    <img src="images/${avatar}" loading="eager" class="rounded-circle me-3" alt="${userName}" style="border: 2px solid #007bff;">
                     <div class="flex-grow-1">
                         <h6 class="mb-1" style="color: #e0e0e0;">
                             <i class="fas fa-hand-paper text-primary"></i> Knock Request
@@ -4011,8 +4017,9 @@ const bubbleSat = isOwn ? (currentUser.bubble_saturation || 100) : (msg.bubble_s
     
     html += `
         <div class="private-chat-message ${isOwn ? 'sent' : 'received'}">
-            <img src="images/${avatar}" 
-                 class="private-message-avatar" 
+            <img src="images/${avatar}"
+                 class="private-message-avatar"
+                 loading="eager"
                  style="filter: hue-rotate(${avatarHue}deg) saturate(${avatarSat}%);"
                  alt="${author}'s avatar">
             <div class="private-message-bubble ${isOwn ? 'sent' : 'received'} user-color-${userColor}" style="filter: hue-rotate(${bubbleHue}deg) saturate(${bubbleSat}%);">
@@ -4492,7 +4499,7 @@ function updateFriendsPanel() {
             if (friend.status === 'accepted') {
                 html += `
                     <div class="d-flex align-items-center mb-2 p-2" style="background: #333; border-radius: 4px;">
-                        <img src="images/${friend.avatar || 'default_avatar.jpg'}" width="24" height="24" class="me-2" style="border-radius: 2px; filter: hue-rotate(${friend.avatar_hue || 0}deg) saturate(${friend.avatar_saturation || 100}%);">
+                        <img src="images/${friend.avatar || 'default_avatar.jpg'}" loading="eager" class="me-2" style="border-radius: 2px; filter: hue-rotate(${friend.avatar_hue || 0}deg) saturate(${friend.avatar_saturation || 100}%);">
                         <div class="flex-grow-1">
                             <small style="color: #e0e0e0;">${friend.username}</small>
                         </div>
@@ -4638,7 +4645,7 @@ function displayConversations(conversations) {
             const unreadBadge = conv.unread_count > 0 ? `<span class="badge bg-danger">${conv.unread_count}</span>` : '';
             html += `
                 <div class="d-flex align-items-center mb-2 p-2" style="background: #333; border-radius: 4px; cursor: pointer;" onclick="openPrivateMessage(${conv.other_user_id}, '${conv.username}')">
-                    <img src="images/${conv.avatar}" width="24" height="24" class="me-2" style="border-radius: 2px; filter: hue-rotate(${conv.avatar_hue || 0}deg) saturate(${conv.avatar_saturation || 100}%);">
+                    <img src="images/${conv.avatar}" loading="eager" class="me-2" style="border-radius: 2px; filter: hue-rotate(${conv.avatar_hue || 0}deg) saturate(${conv.avatar_saturation || 100}%);">
                     <div class="flex-grow-1">
                         <small style="color: #e0e0e0;">${conv.username}</small>
                         <br><small class="text-muted">${conv.last_message ? conv.last_message.substring(0, 30) + '...' : 'No messages'}</small>
@@ -4818,8 +4825,9 @@ function displayPrivateMessages(otherUserId, messages) {
     
     html += `
         <div class="private-chat-message ${isOwn ? 'sent' : 'received'}">
-            <img src="images/${avatar}" 
-                 class="private-message-avatar" 
+            <img src="images/${avatar}"
+                 class="private-message-avatar"
+                 loading="eager"
                  style="filter: hue-rotate(${avatarHue}deg) saturate(${avatarSat}%);"
                  alt="${author}'s avatar">
             <div class="private-message-bubble ${isOwn ? 'sent' : 'received'} user-color-${userColor}">
@@ -5326,7 +5334,7 @@ function displayMentions() {
             <div class="mention-notification unread ${mention.type}" 
                  onclick="jumpToMessage(${mention.message_id}, ${mention.id})">
                 <div class="mention-notification-header">
-                    <img src="images/${mention.sender_avatar}" class="mention-notification-avatar" alt="Avatar">
+                    <img src="images/${mention.sender_avatar}" loading="eager" class="mention-notification-avatar" alt="Avatar">
                     <span class="mention-notification-author">${mention.sender_name}</span>
                     <span class="mention-notification-type ${mention.type}">
                         <i class="fas ${typeIcon}"></i> ${typeName}

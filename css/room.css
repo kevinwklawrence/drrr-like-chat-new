@@ -237,6 +237,7 @@
             display: block;
             max-width: 58px;
             max-height: 58px;
+            aspect-ratio: 1 / 1;
         }
         
         /* FIXED: Header layout with badges inline */
@@ -514,6 +515,7 @@
             display: block;
             max-width: 40px;
             max-height: 40px;
+            aspect-ratio: 1 / 1;
         }
         
         .user-details {
@@ -817,6 +819,7 @@
         object-fit: contain;
         max-width: 30px;
         max-height: 30px;
+        aspect-ratio: 1 / 1;
     }
     
     .user-name {
@@ -847,6 +850,7 @@
         object-fit: contain;
         max-width: 35px;
         max-height: 35px;
+        aspect-ratio: 1 / 1;
     }
     
     .message-bubble::before {
