@@ -798,28 +798,36 @@ function handleMentionsResponse(response) {
 function handleWhispersResponse(data) {
     if (data.status === 'success') {
         whisperConversations = data.conversations || [];
-        
+
+        // DISABLED OLD SYSTEM - Whispers now handled by friends_sidebar.js
+        // Update friends sidebar with whisper data if available
+        if (typeof friendsSidebarManager !== 'undefined' && friendsSidebarManager) {
+            friendsSidebarManager.whisperConversations = whisperConversations;
+            friendsSidebarManager.renderConversations();
+        }
+
+        /* OLD WHISPER AUTO-OPEN DISABLED
         // Update unread badges for open whispers
         whisperConversations.forEach(conv => {
             const userIdString = conv.other_user_id_string;
-            
+
             if (conv.unread_count > 0 && !openWhispers.has(userIdString)) {
                 const displayName = conv.username || conv.guest_name || 'Unknown';
                 openWhisper(userIdString, displayName);
             }
-            
+
             if (openWhispers.has(userIdString)) {
                 const data = openWhispers.get(userIdString);
                 data.unreadCount = conv.unread_count;
                 openWhispers.set(userIdString, data);
-                
+
                 const unreadElement = $(`#whisper-unread-${data.safeId}`);
                 if (conv.unread_count > 0) {
                     unreadElement.text(conv.unread_count).show();
                 } else {
                     unreadElement.hide();
                 }
-                
+
                 // AUTO-UPDATE: Load messages for open whisper windows
                 const input = $(`#whisper-input-${data.safeId}`);
                 if (!input.is(':focus') || input.val().length === 0) {
@@ -827,6 +835,7 @@ function handleWhispersResponse(data) {
                 }
             }
         });
+        */
     }
 }
 
@@ -1931,19 +1940,20 @@ function renderUser(user) {
         
         const displayName = user.display_name || user.username || user.guest_name || 'Unknown';
         const whisperText = user.is_afk ? '' : '';
+        const numericUserId = user.user_id || parseInt(user.user_id_string?.replace('user_', '')) || 0;
         actions += `
-            <button class="btn whisper-btn ${user.is_afk ? 'afk-user' : ''}" onclick="openWhisper('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
+            <button class="btn whisper-btn ${user.is_afk ? 'afk-user' : ''}" onclick="if(friendsSidebarManager){friendsSidebarManager.openWhisperConversation(${numericUserId}, '${displayName.replace(/'/g, "\\'")}');}">
                 <i class="fas fa-comment"></i> ${whisperText}
             </button>
         `;
-        
+
         if (user.user_id && currentUser.type === 'user') {
             if (friendshipCache.has(user.user_id)) {
                 const isFriend = friendshipCache.get(user.user_id);
                 if (isFriend) {
                     const pmText = user.is_afk ? 'PM (AFK)' : 'PM';
                     actions += `
-                        <button class="btn btn-primary ${user.is_afk ? 'afk-user' : ''}" onclick="openPrivateMessage(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
+                        <button class="btn btn-primary ${user.is_afk ? 'afk-user' : ''}" onclick="if(friendsSidebarManager){friendsSidebarManager.openPrivateMessage(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}');}">
                             <i class="fas fa-envelope"></i>
                         </button>
                     `;
