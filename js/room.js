@@ -1813,8 +1813,10 @@ if (msg.reply_to_message_id && msg.reply_original_message) {
                 <div class="message-time">${timestamp}</div>
             </div>
             <div class="users-content">
-            <img src="images/${avatar}" 
-                 class="message-avatar" 
+            <img src="images/${avatar}"
+                 class="message-avatar"
+                 width="58"
+                 height="58"
                  style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); ${avatarClickHandler ? 'cursor: pointer;' : ''}"
                  ${avatarClickHandler}
                  alt="${name}'s avatar">
@@ -2060,8 +2062,10 @@ function renderUser(user) {
     return `
         <div class="${userItemClass}">
             <div class="user-info-row">
-                <img src="images/${avatar}" 
-                     class="user-avatar ${user.is_afk ? 'afk-avatar' : ''}" 
+                <img src="images/${avatar}"
+                     class="user-avatar ${user.is_afk ? 'afk-avatar' : ''}"
+                     width="40"
+                     height="40"
                      style="filter: hue-rotate(${hue}deg) saturate(${saturation}%); ${avatarClickHandler ? 'cursor: pointer;' : ''}"
                      ${avatarClickHandler}
                      alt="${name}'s avatar">
