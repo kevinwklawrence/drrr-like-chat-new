@@ -701,13 +701,31 @@ class FriendsSidebarManager {
         }
 
         const isWhisper = this.currentTab === 'whispers';
-        const apiUrl = isWhisper ? 'api/room_whispers.php' : 'api/private_messages.php';
 
         console.log('=== SEND MESSAGE DEBUG ===');
         console.log('currentTab:', this.currentTab);
         console.log('isWhisper:', isWhisper);
         console.log('currentDMRecipient:', this.currentDMRecipient);
-        console.log('Sending to:', isWhisper ? this.currentDMRecipient.userIdString : this.currentDMRecipient.userId);
+
+        // Check if we have the right recipient type for the current tab
+        const hasUserIdString = this.currentDMRecipient.hasOwnProperty('userIdString');
+        const hasUserId = this.currentDMRecipient.hasOwnProperty('userId');
+
+        console.log('hasUserIdString:', hasUserIdString, 'hasUserId:', hasUserId);
+
+        if (isWhisper && !hasUserIdString && hasUserId) {
+            alert('Error: Cannot send whisper to a PM recipient. Please click on the user again to start a whisper conversation.');
+            console.error('Mismatch: Trying to send whisper but have PM recipient');
+            return;
+        }
+
+        if (!isWhisper && !hasUserId && hasUserIdString) {
+            alert('Error: Cannot send PM to a whisper recipient. Please click on the user again to start a PM conversation.');
+            console.error('Mismatch: Trying to send PM but have whisper recipient');
+            return;
+        }
+
+        const apiUrl = isWhisper ? 'api/room_whispers.php' : 'api/private_messages.php';
 
         // Prepare data based on API requirements
         const apiData = isWhisper ? {
@@ -722,13 +740,6 @@ class FriendsSidebarManager {
 
         console.log('API URL:', apiUrl);
         console.log('API Data:', apiData);
-
-        // Validation before sending
-        if (isWhisper && (!apiData.recipient_user_id_string || apiData.recipient_user_id_string === 'undefined')) {
-            alert('Error: Invalid recipient ID for whisper');
-            console.error('Invalid userIdString:', apiData.recipient_user_id_string);
-            return;
-        }
 
         $.ajax({
             url: apiUrl,
