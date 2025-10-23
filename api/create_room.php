@@ -323,7 +323,45 @@ if (in_array('permanent', $chatroom_columns)) {
     $stmt->close();
     
     error_log("CREATE_ROOM_DEBUG: Room created with ID: $room_id");
-    
+
+    // SINGLE ROOM RESTRICTION: Remove user from all other rooms before joining this new room
+    $remove_stmt = $conn->prepare("SELECT room_id, username, guest_name FROM chatroom_users WHERE user_id_string = ? AND room_id != ?");
+    if ($remove_stmt) {
+        $remove_stmt->bind_param("si", $user_id_string, $room_id);
+        $remove_stmt->execute();
+        $previous_rooms_result = $remove_stmt->get_result();
+
+        // Add leave messages to previous rooms
+        while ($previous_room = $previous_rooms_result->fetch_assoc()) {
+            $previous_room_id = $previous_room['room_id'];
+            $display_name = $previous_room['guest_name'] ?? $previous_room['username'] ?? 'User';
+            $leave_message = $display_name . ' left the room';
+
+            $leave_stmt = $conn->prepare("INSERT INTO messages (room_id, user_id_string, message, is_system, timestamp, avatar, type) VALUES (?, ?, ?, 1, NOW(), ?, 'system')");
+            if ($leave_stmt) {
+                $avatar = $_SESSION['user']['avatar'] ?? 'default_avatar.jpg';
+                $leave_stmt->bind_param("isss", $previous_room_id, $user_id_string, $leave_message, $avatar);
+                $leave_stmt->execute();
+                $leave_stmt->close();
+            }
+
+            error_log("CREATE_ROOM_DEBUG: User $user_id_string removed from room $previous_room_id");
+        }
+        $remove_stmt->close();
+
+        // Now delete the user from all other rooms
+        $delete_stmt = $conn->prepare("DELETE FROM chatroom_users WHERE user_id_string = ? AND room_id != ?");
+        if ($delete_stmt) {
+            $delete_stmt->bind_param("si", $user_id_string, $room_id);
+            $delete_stmt->execute();
+            $deleted_count = $delete_stmt->affected_rows;
+            if ($deleted_count > 0) {
+                error_log("CREATE_ROOM_DEBUG: Removed user from $deleted_count other room(s)");
+            }
+            $delete_stmt->close();
+        }
+    }
+
 // VERIFICATION: Check if password was actually saved
 if ($has_password && $hashed_password) {
     // Add a small delay to ensure database commit
