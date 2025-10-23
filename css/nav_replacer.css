@@ -1,6 +1,4 @@
-.container-fluid {
-align-items: flex-start;
-}
+.container-fluid {align-items: flex-start;}
 .rooms-section-header {
     display:none;
 }
@@ -36,8 +34,8 @@ align-items: flex-start;
     display:none;
 }
 #globalNavbar {
-    background: #222 !important;
-    border-color: #333 !important;
+    background: #22222266 !important;
+    border-color: #222 !important;
 }
 .dropdown-menu-dark {
     background: #222 !important;

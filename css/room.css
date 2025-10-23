@@ -135,6 +135,7 @@
  }
 .chat-container.no-youtube .chat-main {
     flex: 1;
+    width: calc(100% - 240px);
 }
         
         .chat-main {
@@ -467,7 +468,7 @@
         
         /* User List */
         .user-item {
-            background: #333;
+            background: #191919;
             border: 1px solid #404040;
             border-radius: 0;
             padding: 12px;
@@ -767,6 +768,7 @@
         flex-direction: column;
         margin-top: 30px;
         margin-bottom: 60px;
+        width: 100vw !important;
     }
     
     .chat-messages {
@@ -1853,7 +1855,7 @@
 
 /* Small clock icon to indicate pending status */
 .pending-message .message-time::after {
-    content: ' ÃƒÂ¢Ã‚ÂÃ‚Â±';
+    content: ' ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒâ€šÃ‚Â±';
     font-size: 0.85em;
     opacity: 0.6;
     margin-left: 4px;

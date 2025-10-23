@@ -379,10 +379,17 @@
 
 @media (max-width: 768px) {
 
-    .row {
+    .lounge-container .row {
         --bs-gutter-x: 0 !important;
         margin-bottom: 0 !important;
+        width: inherit;
+        background: #0f0f0f !important;
     }
+
+    #roomsList .row {
+        background:inherit !important;
+    }
+    
     .room-header-enhanced {
         padding: 12px 15px;
     }
@@ -766,7 +773,7 @@ body {
         
         /* Form controls dark theme */
         .form-control, .form-select {
-            background: #333 !important;
+            background: #22222266 !important;
             border: 1px solid #555 !important;
             color: #fff !important;
         }
@@ -824,6 +831,9 @@ body {
         @media (max-width: 768px) {
             .container-fluid {
                 padding: 10px;
+                /* width: 100vw !important; */
+                margin: 0;
+                padding: 0;
             }
             
             .lounge-container {

@@ -11,7 +11,7 @@ body {
             padding: 0 !important;
             display: flex;
             align-items: baseline;
-            justify-content: center;
+            /* justify-content: center; */
             flex-direction: row;
             flex-wrap: nowrap;
             align-content: center;
@@ -23,9 +23,9 @@ body {
             /* border: 1px solid #333; */
             border-radius: 0;
             /* padding: 40px; */
-            margin: 0px auto;
-            max-width: 1400px;
-            width: 100%;
+            margin: 0;
+            max-width: calc(100vw - 240px);
+            /* width: 100%; */
             box-shadow: 0 8px 25px rgba(0,0,0,0.3);
             min-height: calc(100vh - 60px);
         }
@@ -275,6 +275,10 @@ body {
             
             .container-fluid {
                 padding: 10px;
+                left: 0;
+                position: relative;
+                top: 0;
+                width: 100vw;
             }
             
             .lounge-container {
@@ -282,6 +286,7 @@ body {
                 border-radius: 0;
                 border: none;
                 margin: 0;
+                width: inherit;
             }
 
             .lounge-header {
