@@ -341,8 +341,12 @@ class FriendsSidebarManager {
             const isWhisper = conv.type === 'whisper';
             const icon = isWhisper ? '<i class="fas fa-comment-dots" style="font-size: 0.8rem; margin-right: 4px;"></i>' : '';
 
+            // Use correct ID field based on type
+            const recipientId = isWhisper ? conv.other_user_id_string : conv.other_user_id;
+            const idParam = isWhisper ? `'${recipientId}'` : recipientId;
+
             html += `
-                <div class="conversation-item ${unreadClass}" onclick="friendsSidebarManager.${isWhisper ? 'openWhisperConversation' : 'openPrivateMessage'}(${conv.other_user_id}, '${conv.username}')">
+                <div class="conversation-item ${unreadClass}" onclick="friendsSidebarManager.${isWhisper ? 'openWhisperConversation' : 'openPrivateMessage'}(${idParam}, '${conv.username}')">
                     <img src="images/${conv.avatar || 'default_avatar.jpg'}"
                          class="conversation-avatar"
                          alt="${conv.username}"
@@ -538,9 +542,9 @@ class FriendsSidebarManager {
         });
     }
 
-    openWhisperConversation(userId, username) {
-        // Similar to openPrivateMessage but for whispers
-        this.currentDMRecipient = { userId: parseInt(userId), username };
+    openWhisperConversation(userIdString, username) {
+        // Store the full user_id_string (e.g., 'user_123' or 'guest_abcd')
+        this.currentDMRecipient = { userIdString: userIdString, username };
         this.dmModalOpen = true;
         this.currentTab = 'whispers';
 
@@ -565,17 +569,17 @@ class FriendsSidebarManager {
 
             // Switch to Whispers tab and load messages
             this.switchDMTab('whispers');
-            this.loadWhisperMessages(userId);
+            this.loadWhisperMessages(userIdString);
         }
     }
 
-    loadWhisperMessages(userId) {
+    loadWhisperMessages(userIdString) {
         $.ajax({
             url: 'api/room_whispers.php',
             method: 'GET',
             data: {
                 action: 'get',
-                other_user_id_string: 'user_' + userId
+                other_user_id_string: userIdString
             },
             dataType: 'json',
             success: (response) => {
@@ -688,12 +692,13 @@ class FriendsSidebarManager {
         const isWhisper = this.currentTab === 'whispers';
         const apiUrl = isWhisper ? 'api/room_whispers.php' : 'api/private_messages.php';
 
-        console.log('Sending', isWhisper ? 'whisper' : 'message', 'to user ID:', this.currentDMRecipient.userId);
+        console.log('Sending', isWhisper ? 'whisper' : 'message', 'to:',
+                    isWhisper ? this.currentDMRecipient.userIdString : this.currentDMRecipient.userId);
 
         // Prepare data based on API requirements
         const apiData = isWhisper ? {
             action: 'send',
-            recipient_user_id_string: 'user_' + this.currentDMRecipient.userId,
+            recipient_user_id_string: this.currentDMRecipient.userIdString,
             message: message
         } : {
             action: 'send',
@@ -711,7 +716,7 @@ class FriendsSidebarManager {
                     input.value = '';
                     // Reload messages based on tab
                     if (isWhisper) {
-                        this.loadWhisperMessages(this.currentDMRecipient.userId);
+                        this.loadWhisperMessages(this.currentDMRecipient.userIdString);
                         this.loadWhisperConversations();
                     } else {
                         this.loadPrivateMessages(this.currentDMRecipient.userId);

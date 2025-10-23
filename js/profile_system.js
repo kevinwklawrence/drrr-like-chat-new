@@ -100,9 +100,9 @@ function displayProfilePopup(user, avatarElement) {
         }
         
         if (isInRoom) {
-            // Use new friends_sidebar whisper system
+            // Use new friends_sidebar whisper system - construct user_id_string
             actionsHtml += `
-                <button class="btn btn-sm btn-secondary profile-action-btn" onclick="if(friendsSidebarManager){friendsSidebarManager.openWhisperConversation(${user.id}, '${escapeHtml(user.username)}');} event.stopPropagation();">
+                <button class="btn btn-sm btn-secondary profile-action-btn" onclick="if(friendsSidebarManager){friendsSidebarManager.openWhisperConversation('user_${user.id}', '${escapeHtml(user.username)}');} event.stopPropagation();">
                     <i class="fas fa-comment"></i> Message
                 </button>
             `;
