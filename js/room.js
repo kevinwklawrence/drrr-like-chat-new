@@ -686,12 +686,15 @@ function handleMessagesResponse(data) {
         return;
     }
 
-    // Check for pending messages
+    // Check for pending messages and remove duplicates
     messages.forEach(msg => {
         pendingMessages.forEach((pendingMsg, tempId) => {
+            // Match by message content and sender
             if (pendingMsg.message === msg.message &&
                 pendingMsg.user_id_string === msg.user_id_string) {
-                removeOptimisticMessage(tempId);
+                // Remove the optimistic message from Map and DOM
+                pendingMessages.delete(tempId);
+                $(`.chat-message[data-message-id="${tempId}"]`).remove();
             }
         });
     });
@@ -702,58 +705,12 @@ function handleMessagesResponse(data) {
 
     const chatbox = $('#chatbox');
 
-    // INCREMENTAL UPDATE: Only append new messages
-    if (isIncremental && existingMessageCount > 0) {
-        let html = '';
-        let newMessagesAdded = 0;
+    // Smart message handling: only replace on true initial load (empty chatbox)
+    // Otherwise always append only new messages
+    const shouldReplaceAll = existingMessageCount === 0 && isInitialLoad;
 
-        messages.forEach(msg => {
-            if (msg && msg.id && msg.message !== undefined) {
-                // Check if message already exists in DOM
-                if ($(`[data-message-id="${msg.id}"]`).length === 0) {
-                    html += renderMessage(msg);
-                    newMessagesAdded++;
-                    // Update lastLoadedMessageId
-                    if (msg.id > lastLoadedMessageId) {
-                        lastLoadedMessageId = msg.id;
-                    }
-                }
-            } else {
-                console.warn('Skipping invalid message:', msg);
-            }
-        });
-
-        if (html && newMessagesAdded > 0) {
-            const wasAtBottom = chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20;
-
-            // Append new messages
-            chatbox.append(html);
-
-            // WAIT for all effects to load, THEN apply
-            Promise.all(effectPromises).then(() => {
-                messages.forEach(msg => {
-                    if (msg && msg.user_id) {
-                        const messageEl = $(`.chat-message[data-message-id="${msg.id}"]`);
-                        if (messageEl.length > 0) {
-                            applyEffectsToMessage(messageEl, msg.user_id);
-                        }
-                    }
-                });
-            });
-
-            // Auto-scroll if user was at bottom
-            if (wasAtBottom) {
-                setTimeout(() => {
-                    chatbox.scrollTop(chatbox[0].scrollHeight);
-                }, 50);
-            }
-
-            if (typeof applyAllAvatarFilters === 'function') {
-                setTimeout(applyAllAvatarFilters, 100);
-            }
-        }
-    } else {
-        // INITIAL LOAD: Replace all messages
+    if (shouldReplaceAll) {
+        // INITIAL LOAD: Replace all messages (only when chatbox is truly empty)
         let html = '';
 
         if (messages.length === 0) {
@@ -794,6 +751,59 @@ function handleMessagesResponse(data) {
                     chatbox.scrollTop(chatbox[0].scrollHeight);
                 }, 50);
                 isInitialLoad = false;
+            }
+
+            if (typeof applyAllAvatarFilters === 'function') {
+                setTimeout(applyAllAvatarFilters, 100);
+            }
+        }
+    } else {
+        // INCREMENTAL UPDATE: Only append new messages (even if is_incremental is false)
+        let html = '';
+        let newMessagesAdded = 0;
+
+        messages.forEach(msg => {
+            if (msg && msg.id && msg.message !== undefined) {
+                // Check if message already exists in DOM
+                if ($(`[data-message-id="${msg.id}"]`).length === 0) {
+                    html += renderMessage(msg);
+                    newMessagesAdded++;
+                    // Update lastLoadedMessageId
+                    if (msg.id > lastLoadedMessageId) {
+                        lastLoadedMessageId = msg.id;
+                    }
+                }
+            } else {
+                console.warn('Skipping invalid message:', msg);
+            }
+        });
+
+        if (html && newMessagesAdded > 0) {
+            const wasAtBottom = chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20;
+
+            // Remove empty chat placeholder if present
+            chatbox.find('.empty-chat').remove();
+
+            // Append new messages
+            chatbox.append(html);
+
+            // WAIT for all effects to load, THEN apply
+            Promise.all(effectPromises).then(() => {
+                messages.forEach(msg => {
+                    if (msg && msg.user_id) {
+                        const messageEl = $(`.chat-message[data-message-id="${msg.id}"]`);
+                        if (messageEl.length > 0) {
+                            applyEffectsToMessage(messageEl, msg.user_id);
+                        }
+                    }
+                });
+            });
+
+            // Auto-scroll if user was at bottom
+            if (wasAtBottom) {
+                setTimeout(() => {
+                    chatbox.scrollTop(chatbox[0].scrollHeight);
+                }, 50);
             }
 
             if (typeof applyAllAvatarFilters === 'function') {
