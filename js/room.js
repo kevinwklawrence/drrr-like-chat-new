@@ -2002,6 +2002,11 @@ function renderUser(user) {
         badges += '<span class="user-badge badge-guest"><i class="fas fa-user" title="Guest"></i></span>';
     }
 
+    // Display bet amount if user has placed a bet
+    if (user.bet_amount && user.bet_amount > 0) {
+        badges += `<span class="user-badge badge-bet" title="Bet placed"><i class="fas fa-coins"></i> ${user.bet_amount} Dura</span>`;
+    }
+
     // Load and display titles for registered users
      let titleBadges = '';
     if (user.user_id && user.user_id > 0 && user.equipped_titles && Array.isArray(user.equipped_titles)) {
@@ -4378,6 +4383,11 @@ $(document).ready(function() {
     loadUsers();
     // loadFriends(); // REMOVED - handled by friends_sidebar.js
     // loadConversations(); // REMOVED - handled by friends_sidebar.js
+
+    // Initialize betting pool system
+    if (typeof initBettingPool === 'function') {
+        initBettingPool();
+    }
 
     // Keep only essential intervals at lower frequencies
     //setTimeout(checkUserStatus, 1000);
