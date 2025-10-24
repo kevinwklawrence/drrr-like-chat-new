@@ -539,7 +539,7 @@
 
 /* When sidebar is present, adjust position */
 body.has-friends-sidebar .dm-modal-container {
-    right: 360px;
+    /* right: 360px; */
 }
 
 body:not(.has-friends-sidebar) .dm-modal-container {

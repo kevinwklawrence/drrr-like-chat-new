@@ -237,7 +237,6 @@
             display: block;
             max-width: 58px;
             max-height: 58px;
-            aspect-ratio: 1 / 1;
         }
         
         /* FIXED: Header layout with badges inline */
@@ -515,7 +514,6 @@
             display: block;
             max-width: 40px;
             max-height: 40px;
-            aspect-ratio: 1 / 1;
         }
         
         .user-details {
@@ -819,7 +817,6 @@
         object-fit: contain;
         max-width: 30px;
         max-height: 30px;
-        aspect-ratio: 1 / 1;
     }
     
     .user-name {
@@ -848,9 +845,8 @@
         width: 35px;
         height: 35px;
         object-fit: contain;
-        max-width: 35px;
-        max-height: 35px;
-        aspect-ratio: 1 / 1;
+        /* max-width: 35px; */
+        /* max-height: 35px; */
     }
     
     .message-bubble::before {
@@ -1457,7 +1453,7 @@
 
     .has-reply .users-content .message-bubble {
         margin-top: 5px !important;
-        margin-left: 60px;
+        /* margin-left: 60px; */
         max-width: calc(100% - 45px);
         padding: 0px 5px 2px 5px !important;
         overflow: visible; /* Maintain visibility on mobile */
@@ -2069,7 +2065,7 @@
 
 .users-content {
     display: inline-flex;
-    align-items: baseline;
+    align-items: center;
     margin: 0;
     padding: 0;
     position: static;

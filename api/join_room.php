@@ -231,8 +231,12 @@ if (!empty($provided_invite) && !empty($room_invite_code) && $provided_invite ==
             exit;
         }
 
-        // REMOVED: Don't set $access_granted = true here
-        // Password validation still needs to happen if room has a password
+        // If the room does not require a password, we've completed all access checks
+        // and can grant access. If the room requires a password, leave $access_granted
+        // false so the password flow below can validate it.
+        if (empty($room['has_password']) || $room['has_password'] == 0) {
+            $access_granted = true;
+        }
     } else {
         error_log("JOIN_ROOM_DEBUG: Access restrictions bypassed for admin/moderator");
     }
