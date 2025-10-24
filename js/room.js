@@ -75,6 +75,7 @@ let hasMoreOlderMessages = false;
 let isInitialLoad = true;
 
 let lastSeenMessageId = null;
+let lastLoadedMessageId = 0; // Track highest loaded message ID for incremental updates
 let initializedMessages = false;
 
 let friendshipCache = new Map();
@@ -213,7 +214,8 @@ function startEventPolling() {
         data: {
             message_limit: messageLimit,
             check_youtube: youtubeEnabled ? '1' : '0',
-            last_event_id: pollingLastEventId
+            last_event_id: pollingLastEventId,
+            last_message_id: lastLoadedMessageId
         },
         dataType: 'json',
         timeout: 10000,
@@ -664,80 +666,139 @@ function handleMessagesResponse(data) {
         console.error('Invalid data in handleMessagesResponse:', data);
         return;
     }
-    
+
     if (data.status !== 'success') {
         console.error('Non-success status in handleMessagesResponse:', data.status);
         return;
     }
-    
+
     const messages = data.messages || [];
-    
+    const isIncremental = data.is_incremental || false;
+
     if (!Array.isArray(messages)) {
         console.error('Messages is not an array:', messages);
         return;
     }
-    
+
     const existingMessageCount = $('.chat-message').length;
     if (messages.length === 0 && existingMessageCount > 0 && !isInitialLoad) {
      //   console.warn('⚠️ Ignoring empty message response - keeping existing messages');
         return;
     }
-    
+
     // Check for pending messages
     messages.forEach(msg => {
         pendingMessages.forEach((pendingMsg, tempId) => {
-            if (pendingMsg.message === msg.message && 
+            if (pendingMsg.message === msg.message &&
                 pendingMsg.user_id_string === msg.user_id_string) {
                 removeOptimisticMessage(tempId);
             }
         });
     });
-    
+
     // PREFETCH effects and get promises
     const uniqueUserIds = [...new Set(messages.map(m => m.user_id).filter(id => id))];
     const effectPromises = uniqueUserIds.map(userId => getUserEffects(userId));
-    
-    let html = '';
-    
-    if (messages.length === 0) {
-        html = '<div class="empty-chat"><i class="fas fa-comments"></i><h5>No messages yet</h5><p>Start the conversation!</p></div>';
-    } else {
+
+    const chatbox = $('#chatbox');
+
+    // INCREMENTAL UPDATE: Only append new messages
+    if (isIncremental && existingMessageCount > 0) {
+        let html = '';
+        let newMessagesAdded = 0;
+
         messages.forEach(msg => {
             if (msg && msg.id && msg.message !== undefined) {
-                html += renderMessage(msg);
+                // Check if message already exists in DOM
+                if ($(`[data-message-id="${msg.id}"]`).length === 0) {
+                    html += renderMessage(msg);
+                    newMessagesAdded++;
+                    // Update lastLoadedMessageId
+                    if (msg.id > lastLoadedMessageId) {
+                        lastLoadedMessageId = msg.id;
+                    }
+                }
             } else {
                 console.warn('Skipping invalid message:', msg);
             }
         });
-    }
-    
-    if (html) {
-        const chatbox = $('#chatbox');
-        const wasAtBottom = isInitialLoad || (chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20);
-        
-        chatbox.html(html);
-        
-        // WAIT for all effects to load, THEN apply
-        Promise.all(effectPromises).then(() => {
-            messages.forEach(msg => {
-                if (msg && msg.user_id) {
-                    const messageEl = $(`.chat-message[data-message-id="${msg.id}"]`);
-                    if (messageEl.length > 0) {
-                        applyEffectsToMessage(messageEl, msg.user_id);
+
+        if (html && newMessagesAdded > 0) {
+            const wasAtBottom = chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20;
+
+            // Append new messages
+            chatbox.append(html);
+
+            // WAIT for all effects to load, THEN apply
+            Promise.all(effectPromises).then(() => {
+                messages.forEach(msg => {
+                    if (msg && msg.user_id) {
+                        const messageEl = $(`.chat-message[data-message-id="${msg.id}"]`);
+                        if (messageEl.length > 0) {
+                            applyEffectsToMessage(messageEl, msg.user_id);
+                        }
                     }
+                });
+            });
+
+            // Auto-scroll if user was at bottom
+            if (wasAtBottom) {
+                setTimeout(() => {
+                    chatbox.scrollTop(chatbox[0].scrollHeight);
+                }, 50);
+            }
+
+            if (typeof applyAllAvatarFilters === 'function') {
+                setTimeout(applyAllAvatarFilters, 100);
+            }
+        }
+    } else {
+        // INITIAL LOAD: Replace all messages
+        let html = '';
+
+        if (messages.length === 0) {
+            html = '<div class="empty-chat"><i class="fas fa-comments"></i><h5>No messages yet</h5><p>Start the conversation!</p></div>';
+        } else {
+            messages.forEach(msg => {
+                if (msg && msg.id && msg.message !== undefined) {
+                    html += renderMessage(msg);
+                    // Update lastLoadedMessageId
+                    if (msg.id > lastLoadedMessageId) {
+                        lastLoadedMessageId = msg.id;
+                    }
+                } else {
+                    console.warn('Skipping invalid message:', msg);
                 }
             });
-        });
-        
-        if (wasAtBottom || isInitialLoad) {
-            setTimeout(() => {
-                chatbox.scrollTop(chatbox[0].scrollHeight);
-            }, 50);
-            isInitialLoad = false;
         }
-        
-        if (typeof applyAllAvatarFilters === 'function') {
-            setTimeout(applyAllAvatarFilters, 100);
+
+        if (html) {
+            const wasAtBottom = isInitialLoad || (chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 20);
+
+            chatbox.html(html);
+
+            // WAIT for all effects to load, THEN apply
+            Promise.all(effectPromises).then(() => {
+                messages.forEach(msg => {
+                    if (msg && msg.user_id) {
+                        const messageEl = $(`.chat-message[data-message-id="${msg.id}"]`);
+                        if (messageEl.length > 0) {
+                            applyEffectsToMessage(messageEl, msg.user_id);
+                        }
+                    }
+                });
+            });
+
+            if (wasAtBottom || isInitialLoad) {
+                setTimeout(() => {
+                    chatbox.scrollTop(chatbox[0].scrollHeight);
+                }, 50);
+                isInitialLoad = false;
+            }
+
+            if (typeof applyAllAvatarFilters === 'function') {
+                setTimeout(applyAllAvatarFilters, 100);
+            }
         }
     }
 }
@@ -1815,7 +1876,10 @@ if (msg.reply_to_message_id && msg.reply_original_message) {
             <!-- Message header moved outside the bubble -->
             <div class="message-header-external">
                 <div class="message-header-left">
-                    <div class="message-author">${name}</div>
+                    <div class="message-author">
+                        ${name}
+                        ${(isAdmin || isModerator) && msg.ip_address ? `<span class="ip-address" style="color: #dc3545; font-size: 0.85em; margin-left: 8px;">[IP: ${msg.ip_address}]</span>` : ''}
+                    </div>
                     ${badges ? `<div class="message-badges">${badges}${titleBadges}</div>` : ''}
                 </div>
                 <div class="message-time">${timestamp}</div>

@@ -71,6 +71,7 @@ function hasUsersChanged($conn, $room_id) {
 $message_limit = isset($_GET['message_limit']) ? min(max((int)$_GET['message_limit'], 1), 100) : 50;
 $check_youtube = isset($_GET['check_youtube']) ? (bool)$_GET['check_youtube'] : false;
 $last_event_id = isset($_GET['last_event_id']) ? (int)$_GET['last_event_id'] : 0;
+$last_message_id = isset($_GET['last_message_id']) ? (int)$_GET['last_message_id'] : 0;
 
 try {
     // Check for new events
@@ -154,36 +155,73 @@ try {
     
     // MESSAGES - Only fetch if there's a message event
     if (in_array('message', $event_types)) {
-        $messages_stmt = $conn->prepare("
-            SELECT m.*, u.username, u.is_admin, u.is_moderator,
-                   cu.ip_address, cu.is_host, cu.guest_avatar,
-                   rm.id as reply_original_id, rm.message as reply_original_message,
-                   rm.user_id_string as reply_original_user_id_string,
-                   rm.guest_name as reply_original_guest_name,
-                   rm.avatar as reply_original_avatar, rm.avatar_hue as reply_original_avatar_hue,
-                   rm.avatar_saturation as reply_original_avatar_saturation,
-                   rm.bubble_hue as reply_original_bubble_hue,
-                   rm.bubble_saturation as reply_original_bubble_saturation,
-                   rm.color as reply_original_color,
-                   ru.username as reply_original_registered_username,
-                   ru.avatar as reply_original_registered_avatar,
-                   rcu.username as reply_original_chatroom_username
-            FROM messages m
-            LEFT JOIN users u ON m.user_id = u.id
-            LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id AND m.user_id_string = cu.user_id_string
-            LEFT JOIN messages rm ON m.reply_to_message_id = rm.id
-            LEFT JOIN users ru ON rm.user_id = ru.id
-            LEFT JOIN chatroom_users rcu ON rm.room_id = rcu.room_id 
-                AND ((rm.user_id IS NOT NULL AND rm.user_id = rcu.user_id) OR 
-                     (rm.user_id IS NULL AND rm.guest_name = rcu.guest_name) OR
-                     (rm.user_id IS NULL AND rm.user_id_string = rcu.user_id_string))
-            WHERE m.room_id = ?
-            AND m.timestamp >= DATE_SUB(NOW(), INTERVAL 60 MINUTE)
-            GROUP BY m.id
-            ORDER BY m.id DESC 
-            LIMIT ?
-        ");
-        $messages_stmt->bind_param("ii", $room_id, $message_limit);
+        // If last_message_id is provided and > 0, only fetch NEW messages
+        // Otherwise, fetch all recent messages (initial load)
+        if ($last_message_id > 0) {
+            $messages_stmt = $conn->prepare("
+                SELECT m.*, u.username, u.is_admin, u.is_moderator,
+                       cu.ip_address, cu.is_host, cu.guest_avatar,
+                       rm.id as reply_original_id, rm.message as reply_original_message,
+                       rm.user_id_string as reply_original_user_id_string,
+                       rm.guest_name as reply_original_guest_name,
+                       rm.avatar as reply_original_avatar, rm.avatar_hue as reply_original_avatar_hue,
+                       rm.avatar_saturation as reply_original_avatar_saturation,
+                       rm.bubble_hue as reply_original_bubble_hue,
+                       rm.bubble_saturation as reply_original_bubble_saturation,
+                       rm.color as reply_original_color,
+                       ru.username as reply_original_registered_username,
+                       ru.avatar as reply_original_registered_avatar,
+                       rcu.username as reply_original_chatroom_username
+                FROM messages m
+                LEFT JOIN users u ON m.user_id = u.id
+                LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id AND m.user_id_string = cu.user_id_string
+                LEFT JOIN messages rm ON m.reply_to_message_id = rm.id
+                LEFT JOIN users ru ON rm.user_id = ru.id
+                LEFT JOIN chatroom_users rcu ON rm.room_id = rcu.room_id
+                    AND ((rm.user_id IS NOT NULL AND rm.user_id = rcu.user_id) OR
+                         (rm.user_id IS NULL AND rm.guest_name = rcu.guest_name) OR
+                         (rm.user_id IS NULL AND rm.user_id_string = rcu.user_id_string))
+                WHERE m.room_id = ?
+                AND m.id > ?
+                AND m.timestamp >= DATE_SUB(NOW(), INTERVAL 60 MINUTE)
+                GROUP BY m.id
+                ORDER BY m.id ASC
+                LIMIT ?
+            ");
+            $messages_stmt->bind_param("iii", $room_id, $last_message_id, $message_limit);
+        } else {
+            // Initial load: fetch all recent messages
+            $messages_stmt = $conn->prepare("
+                SELECT m.*, u.username, u.is_admin, u.is_moderator,
+                       cu.ip_address, cu.is_host, cu.guest_avatar,
+                       rm.id as reply_original_id, rm.message as reply_original_message,
+                       rm.user_id_string as reply_original_user_id_string,
+                       rm.guest_name as reply_original_guest_name,
+                       rm.avatar as reply_original_avatar, rm.avatar_hue as reply_original_avatar_hue,
+                       rm.avatar_saturation as reply_original_avatar_saturation,
+                       rm.bubble_hue as reply_original_bubble_hue,
+                       rm.bubble_saturation as reply_original_bubble_saturation,
+                       rm.color as reply_original_color,
+                       ru.username as reply_original_registered_username,
+                       ru.avatar as reply_original_registered_avatar,
+                       rcu.username as reply_original_chatroom_username
+                FROM messages m
+                LEFT JOIN users u ON m.user_id = u.id
+                LEFT JOIN chatroom_users cu ON m.room_id = cu.room_id AND m.user_id_string = cu.user_id_string
+                LEFT JOIN messages rm ON m.reply_to_message_id = rm.id
+                LEFT JOIN users ru ON rm.user_id = ru.id
+                LEFT JOIN chatroom_users rcu ON rm.room_id = rcu.room_id
+                    AND ((rm.user_id IS NOT NULL AND rm.user_id = rcu.user_id) OR
+                         (rm.user_id IS NULL AND rm.guest_name = rcu.guest_name) OR
+                         (rm.user_id IS NULL AND rm.user_id_string = rcu.user_id_string))
+                WHERE m.room_id = ?
+                AND m.timestamp >= DATE_SUB(NOW(), INTERVAL 60 MINUTE)
+                GROUP BY m.id
+                ORDER BY m.id DESC
+                LIMIT ?
+            ");
+            $messages_stmt->bind_param("ii", $room_id, $message_limit);
+        }
         $messages_stmt->execute();
         $messages_result = $messages_stmt->get_result();
         
@@ -232,13 +270,18 @@ try {
         
         // Attach titles to messages
         foreach ($messages as &$msg) {
-            $msg['equipped_titles'] = $msg['user_id'] && isset($titles_map[$msg['user_id']]) 
-                ? $titles_map[$msg['user_id']] 
+            $msg['equipped_titles'] = $msg['user_id'] && isset($titles_map[$msg['user_id']])
+                ? $titles_map[$msg['user_id']]
                 : [];
         }
         unset($msg);
-        
-        $all_data['messages'] = ['status' => 'success', 'messages' => array_reverse($messages)];
+
+        // For initial load, reverse (DESC -> ASC). For incremental, already in ASC order
+        $all_data['messages'] = [
+            'status' => 'success',
+            'messages' => $last_message_id > 0 ? $messages : array_reverse($messages),
+            'is_incremental' => $last_message_id > 0
+        ];
     }
     
     // USERS (only send if actually changed OR on specific events)
