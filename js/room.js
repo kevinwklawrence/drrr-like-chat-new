@@ -145,6 +145,17 @@ let pollingRequestInFlight = false; // Prevent concurrent requests
 let userActive = false;
 let activityTimer = null;
 
+// SSE features flags (for backward compatibility with old code)
+// Since we're using polling now, set all to true to prevent old loadMessages() calls
+const sseFeatures = {
+    messages: true,
+    users: true,
+    whispers: true,
+    mentions: true,
+    knocks: true,
+    youtube: true
+};
+
 let privateMessageConversations = [];
 
 
@@ -689,9 +700,23 @@ function handleMessagesResponse(data) {
     // Check for pending messages and remove duplicates
     messages.forEach(msg => {
         pendingMessages.forEach((pendingMsg, tempId) => {
-            // Match by message content and sender
-            if (pendingMsg.message === msg.message &&
-                pendingMsg.user_id_string === msg.user_id_string) {
+            // Strip HTML tags from both messages for comparison
+            const stripHtml = (html) => {
+                const tmp = document.createElement('div');
+                tmp.innerHTML = html;
+                return tmp.textContent || tmp.innerText || '';
+            };
+
+            const pendingText = stripHtml(pendingMsg.message).trim();
+            const msgText = stripHtml(msg.message).trim();
+
+            // Match by stripped message content and sender
+            // Use includes for more lenient matching in case of extra formatting
+            const messagesMatch = pendingText === msgText ||
+                                 (pendingText.length > 10 && msgText.includes(pendingText)) ||
+                                 (msgText.length > 10 && pendingText.includes(msgText));
+
+            if (messagesMatch && pendingMsg.user_id_string === msg.user_id_string) {
                 // Remove the optimistic message from Map and DOM
                 pendingMessages.delete(tempId);
                 $(`.chat-message[data-message-id="${tempId}"]`).remove();
@@ -1292,9 +1317,14 @@ function sendValidatedMessage(message) {
                 if (typeof clearReplyInterface === 'function') {
                     clearReplyInterface();
                 }
-                
+
+                // Keep the optimistic message visible but mark it for replacement
+                // The real message will replace it when polling returns it
                 const pendingEl = $(`.chat-message[data-message-id="${tempId}"]`);
                 pendingEl.removeClass('pending-message');
+
+                // DON'T delete from pendingMessages yet - let the deduplication code handle it
+                // when the real message arrives from polling
             } else {
                 removeOptimisticMessage(tempId);
                 alert('Error: ' + response.message);
@@ -1510,47 +1540,10 @@ function resetMessagePagination() {
 }
 
 function pollForNewMessages() {
-    if (isLoadingMessages) return;
-    
-    const chatbox = $('#chatbox');
-    const isAtBottom = chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 100;
-    
-    if (isAtBottom) {
-        $.ajax({
-            url: 'api/get_messages.php',
-            method: 'GET',
-            data: { 
-                room_id: roomId,
-                limit: 5, // Just check last 5 messages
-                offset: 0
-            },
-            success: function(response) {
-                try {
-                    let data = JSON.parse(response);
-                    if (data.status === 'success' && data.messages && data.messages.length > 0) {
-                        const latestMessage = data.messages[data.messages.length - 1];
-                        const currentLatest = $('.chat-message').last().data('message-id');
-                        
-                        if (latestMessage.id != currentLatest) {
-                            const wasAtBottom = chatbox.scrollTop() + chatbox.innerHeight() >= chatbox[0].scrollHeight - 50;
-                            if (wasAtBottom) {
-                               if (!pollingActive || !sseFeatures.messages) {
-                    if (typeof loadMessages === 'function') {
-                        loadMessages();
-                    }
-                }
-                            }
-                        }
-                    }
-                } catch (e) {
-                    console.debug('Poll error:', e);
-                }
-            },
-            error: function() {
-                console.debug('Poll request failed');
-            }
-        });
-    }
+    // DEPRECATED: This function is no longer used
+    // New event-based polling system (poll_room_data.php) handles message updates
+    // Kept for backward compatibility but does nothing
+    return;
 }
 
 function optimizeForMobile() {
@@ -4380,8 +4373,8 @@ $(document).ready(function() {
         debugLog('✅ Room initialization complete with Event Polling');
     }
 
-    // ADD THIS: Force initial load of users and messages
-    loadMessages();
+    // Initial data will be loaded by the event polling system
+    // No need to call loadMessages() - it will be loaded via poll_room_data.php
     loadUsers();
     // loadFriends(); // REMOVED - handled by friends_sidebar.js
     // loadConversations(); // REMOVED - handled by friends_sidebar.js
