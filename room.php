@@ -235,6 +235,7 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
         <link rel="stylesheet" href="css/effects.css?v=<?php echo $versions['version']; ?>">
         <link rel="stylesheet" href="css/friends-sidebar.css?v=<?php echo $versions['version']; ?>">
         <link rel="stylesheet" href="css/draggable-dm-modal.css?v=<?php echo $versions['version']; ?>">
+        <link rel="stylesheet" href="css/betting_pool.css?v=<?php echo $versions['version']; ?>">
 
 
 
@@ -320,6 +321,12 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
                     <?php if ($is_host): ?>
                         <button class="btn btn-room-settings" onclick="showRoomSettings()">
                             <i class="fas fa-cog"></i>
+                        </button>
+                    <?php endif; ?>
+
+                    <?php if ($is_host || $is_admin || $is_moderator): ?>
+                        <button class="btn btn-primary" onclick="showCreatePoolModal()" title="Create Betting Pool">
+                            <i class="fas fa-coins"></i>
                         </button>
                     <?php endif; ?>
 
@@ -1037,6 +1044,7 @@ $('<style>').text(`
     <script src="js/room.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/mute_system.js"></script>
     <script src="js/dura_system.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/betting_pool.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/inventory_system.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/profile_system.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/loading.js?v=<?php echo $versions['version']; ?>"></script>

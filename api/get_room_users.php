@@ -198,9 +198,76 @@ if ($is_registered && $row['user_id'] > 0) {
     }
 }
 
+    // Load equipped titles for registered users
+    if ($is_registered && $row['user_id'] > 0) {
+        $user_id = $row['user_id'];
+        $title_stmt = $conn->prepare("
+            SELECT t.title_id, t.name, t.description, t.rarity, t.icon
+            FROM user_titles ut
+            JOIN titles t ON ut.title_id = t.title_id
+            WHERE ut.user_id = ? AND ut.is_equipped = 1
+            ORDER BY t.rarity DESC, t.name ASC
+        ");
+        $title_stmt->bind_param("i", $user_id);
+        $title_stmt->execute();
+        $title_result = $title_stmt->get_result();
+
+        $equipped_titles = [];
+        while ($title = $title_result->fetch_assoc()) {
+            $equipped_titles[] = [
+                'title_id' => $title['title_id'],
+                'name' => $title['name'],
+                'description' => $title['description'],
+                'rarity' => $title['rarity'],
+                'icon' => $title['icon']
+            ];
+        }
+        $title_stmt->close();
+
+        $user_data['equipped_titles'] = $equipped_titles;
+    } else {
+        $user_data['equipped_titles'] = [];
+    }
+
 $users[] = $user_data;
 }
 $stmt->close();
+
+// Check if there's an active betting pool and add bet amounts to users
+$pool_stmt = $conn->prepare("SELECT id FROM betting_pools WHERE room_id = ? AND status = 'active' LIMIT 1");
+$pool_stmt->bind_param("i", $room_id);
+$pool_stmt->execute();
+$pool_result = $pool_stmt->get_result();
+
+if ($pool_result->num_rows > 0) {
+    $pool = $pool_result->fetch_assoc();
+    $pool_id = $pool['id'];
+    $pool_stmt->close();
+
+    // Get all bets for this pool
+    $bet_stmt = $conn->prepare("SELECT user_id_string, bet_amount FROM betting_pool_bets WHERE pool_id = ?");
+    $bet_stmt->bind_param("i", $pool_id);
+    $bet_stmt->execute();
+    $bet_result = $bet_stmt->get_result();
+
+    $bets_map = [];
+    while ($bet = $bet_result->fetch_assoc()) {
+        $bets_map[$bet['user_id_string']] = (int)$bet['bet_amount'];
+    }
+    $bet_stmt->close();
+
+    // Add bet amounts to users
+    for ($i = 0; $i < count($users); $i++) {
+        $user_id_string = $users[$i]['user_id_string'];
+        $users[$i]['bet_amount'] = $bets_map[$user_id_string] ?? 0;
+    }
+} else {
+    $pool_stmt->close();
+    // No active pool, set all bet amounts to 0
+    for ($i = 0; $i < count($users); $i++) {
+        $users[$i]['bet_amount'] = 0;
+    }
+}
 
 error_log("Retrieved " . count($users) . " users for room_id=$room_id");
 echo json_encode($users);

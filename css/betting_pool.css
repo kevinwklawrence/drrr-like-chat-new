@@ -1,0 +1,289 @@
+/* Betting Pool System Styles */
+
+/* Betting Pool Widget */
+#betting-pool-widget {
+    margin: 15px;
+    background: linear-gradient(135deg, #2c2c3e 0%, #1e1e2e 100%);
+    border: 2px solid #4a4a6a;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.betting-pool-widget {
+    width: 100%;
+}
+
+.pool-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #4a4a6a;
+}
+
+.pool-header h3 {
+    margin: 0;
+    font-size: 1.3em;
+    color: #ffd700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pool-header i {
+    color: #ffd700;
+}
+
+.pool-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.pool-description {
+    margin: 10px 0;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 3px solid #4a4a6a;
+    color: #b8b8c8;
+    font-size: 0.95em;
+    border-radius: 4px;
+}
+
+.pool-stats {
+    display: flex;
+    gap: 20px;
+    margin: 12px 0;
+    padding: 10px;
+    background: rgba(255, 215, 0, 0.1);
+    border-radius: 8px;
+}
+
+.pool-total, .pool-participants {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #fff;
+    font-size: 1.05em;
+}
+
+.pool-total i, .pool-participants i {
+    color: #ffd700;
+}
+
+.pool-total strong {
+    color: #ffd700;
+    font-size: 1.1em;
+}
+
+.user-bet-status {
+    margin-top: 12px;
+    padding: 10px;
+    background: rgba(76, 175, 80, 0.2);
+    border: 1px solid #4caf50;
+    border-radius: 6px;
+    color: #4caf50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
+.pool-bet-action {
+    margin-top: 12px;
+    text-align: center;
+}
+
+.pool-bet-action .btn {
+    width: 100%;
+    padding: 10px;
+    font-size: 1.05em;
+    font-weight: 600;
+}
+
+/* Bet Badge in User List */
+.badge-bet {
+    background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+    color: #1a1a2e;
+    font-weight: 700;
+    border: 1px solid #ffed4e;
+    box-shadow: 0 2px 6px rgba(255, 215, 0, 0.4);
+}
+
+.badge-bet i {
+    color: #1a1a2e;
+}
+
+/* Betting Pool Modals */
+#createPoolModal .modal-content,
+#placeBetModal .modal-content,
+#selectWinnerModal .modal-content {
+    background: #2a2a3e;
+    color: #fff;
+    border: 2px solid #4a4a6a;
+}
+
+#createPoolModal .modal-header,
+#placeBetModal .modal-header,
+#selectWinnerModal .modal-header {
+    background: #1e1e2e;
+    border-bottom: 2px solid #4a4a6a;
+}
+
+#createPoolModal .modal-title,
+#placeBetModal .modal-title,
+#selectWinnerModal .modal-title {
+    color: #ffd700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#createPoolModal .modal-footer,
+#placeBetModal .modal-footer,
+#selectWinnerModal .modal-footer {
+    background: #1e1e2e;
+    border-top: 2px solid #4a4a6a;
+}
+
+#createPoolModal .form-control,
+#placeBetModal .form-control {
+    background: #1e1e2e;
+    color: #fff;
+    border: 1px solid #4a4a6a;
+}
+
+#createPoolModal .form-control:focus,
+#placeBetModal .form-control:focus {
+    background: #2a2a3e;
+    color: #fff;
+    border-color: #ffd700;
+    box-shadow: 0 0 0 0.2rem rgba(255, 215, 0, 0.25);
+}
+
+#createPoolModal .form-label,
+#placeBetModal .form-label {
+    color: #b8b8c8;
+    font-weight: 600;
+}
+
+#createPoolModal .alert,
+#placeBetModal .alert {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid #4a4a6a;
+    color: #b8b8c8;
+}
+
+#createPoolModal .alert-info,
+#placeBetModal .alert-info {
+    border-left: 3px solid #2196f3;
+}
+
+#placeBetModal .alert-warning {
+    background: rgba(255, 152, 0, 0.1);
+    border-left: 3px solid #ff9800;
+}
+
+/* Select Winner Modal */
+.bets-list {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-top: 15px;
+}
+
+.bet-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid #4a4a6a;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.bet-item:hover {
+    background: rgba(255, 215, 0, 0.2);
+    border-color: #ffd700;
+    transform: translateX(5px);
+}
+
+.bet-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.bet-amount {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #ffd700;
+    font-weight: 700;
+    font-size: 1.1em;
+}
+
+.bet-amount i {
+    color: #ffd700;
+}
+
+/* Scrollbar for bets list */
+.bets-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.bets-list::-webkit-scrollbar-track {
+    background: #1e1e2e;
+    border-radius: 4px;
+}
+
+.bets-list::-webkit-scrollbar-thumb {
+    background: #4a4a6a;
+    border-radius: 4px;
+}
+
+.bets-list::-webkit-scrollbar-thumb:hover {
+    background: #5a5a7a;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #betting-pool-widget {
+        margin: 10px;
+        padding: 12px;
+    }
+
+    .pool-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .pool-stats {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .bet-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
