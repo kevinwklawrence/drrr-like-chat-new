@@ -236,6 +236,8 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
         <link rel="stylesheet" href="css/friends-sidebar.css?v=<?php echo $versions['version']; ?>">
         <link rel="stylesheet" href="css/draggable-dm-modal.css?v=<?php echo $versions['version']; ?>">
         <link rel="stylesheet" href="css/betting_pool.css?v=<?php echo $versions['version']; ?>">
+        <link rel="stylesheet" href="css/news_modal.css">
+
 
 
 
@@ -1057,6 +1059,9 @@ $('<style>').text(`
     <script src="js/pumpkin_smash.js"></script>
     <script src="js/trick_or_treat.js"></script>
     <script src="js/leaderboard.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/news_modal.js"></script>
+     <script src="js/tos_modal.js"></script>
+
 
 <script>
   kofiWidgetOverlay.draw('duranu', {
@@ -1069,7 +1074,7 @@ $('<style>').text(`
 
     
 
-
+<?php include 'email_request.php'; ?>
     <?php include 'user_settings.php'; ?>
 </body>
 </html>

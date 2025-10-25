@@ -125,6 +125,8 @@ if (!empty($user_id_string)) {
 <link rel="stylesheet" href="css/friend_notifications.css?v=<?php echo $versions['version']; ?>">
 <link rel="stylesheet" href="css/friends-sidebar.css?v=<?php echo $versions['version']; ?>">
 <link rel="stylesheet" href="css/draggable-dm-modal.css?v=<?php echo $versions['version']; ?>">
+<link rel="stylesheet" href="css/news_modal.css">
+
 <style>
     .notice-link {
         color: #ffe1b3;
@@ -275,7 +277,7 @@ if (!empty($user_id_string)) {
                 <div class="col-lg-3">
                     <div class="user-profile-card">
                         <div class="text-center">
-                            <img src="images/<?php echo htmlspecialchars($avatar); ?>" 
+                            <img src="images/<?php echo htmlspecialchars($avatar);?>?v=<?php echo $versions['version']; ?>" 
      class="avatar-selector" 
      id="currentAvatar" 
      style="filter: hue-rotate(<?php echo $_SESSION['user']['avatar_hue'] ?? 0; ?>deg) saturate(<?php echo $_SESSION['user']['avatar_saturation'] ?? 100; ?>%);"
@@ -331,7 +333,20 @@ if (!empty($user_id_string)) {
                             </div>
                         </div>
                     </div>
-                    <div class="notice"><h4>Notice:</h4><small>Want to support us? Consider donating.
+                    <div class="notice"><h4>Notice:</h4>
+                    <button onclick="showNewsModal()" class="btn btn-primary btn-sm btn-block mb-2">
+    <i class="fas fa-newspaper"></i> View Latest News
+</button>
+<br>
+<button onclick="openEmailRequest()" class="btn btn-warning btn-sm btn-block mb-2">
+    <i class="fas fa-envelope"></i> Report Issues / Request Features
+</button>
+<br>
+<button onclick="showTosModal()" class="btn btn-danger btn-sm btn-block mb-2">
+    <i class="fas fa-scale-balanced"></i> Show Terms of Service
+</button>
+<br>
+                    <small>Want to support us? Consider donating.
                         <script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
 <script>
   kofiWidgetOverlay.draw('duranu', {
@@ -341,9 +356,9 @@ if (!empty($user_id_string)) {
     'floating-chat.donateButton.text-color': '#fff'
   });
 </script>
-<br>Contact directly at: <a class="notice-link" href="mailto:admin@duranu.net">admin@duranu.net</a>.
+<br><!--Contact directly at: <a class="notice-link" href="mailto:admin@duranu.net">admin@duranu.net</a>.
 <br>Report bugs at: <a class="notice-link" href="mailto:bugs@duranu.net">bugs@duranu.net</a>.
-<br>Send feature requests at: <a class="notice-link" href="mailto:request@duranu.net">request@duranu.net</a>.
+<br>Send feature requests at: <a class="notice-link" href="mailto:request@duranu.net">request@duranu.net</a>.-->
 </small>
 
 </div>
@@ -835,7 +850,10 @@ document.addEventListener('DOMContentLoaded', function() {
     <script src="js/friend_notifications.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/leaderboard.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/friends_sidebar.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/news_modal.js"></script>
+     <script src="js/tos_modal.js"></script>
 
+<?php include 'email_request.php'; ?>
 <?php include 'user_settings.php'; ?>
 </body>
 </html>

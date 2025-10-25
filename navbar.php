@@ -26,10 +26,13 @@ if (!$is_logged_in) {
     // Lounge navigation
     $nav_items = [
         ['href' => '#', 'icon' => 'fas fa-list-ol', 'text' => 'Leaderboard', 'onclick' => 'showLeaderboardModal()', 'class' => 'btn-warning'],
-        ['href' => '#', 'icon' => 'fas fa-plus', 'text' => 'Create Room', 'onclick' => 'showCreateRoomModal()', 'class' => 'btn-success'],
+        ['href' => '#', 'icon' => 'fas fa-scale-balanced', 'text' => 'ToS', 'onclick' => 'showTosModal()', 'class' => 'btn-warning'],
+        ['href' => '#', 'icon' => 'fas fa-newspaper', 'text' => 'News', 'onclick' => 'showNewsModal()', 'class' => 'btn-warning'],
+        ['href' => '#', 'icon' => 'fas fa-envelope', 'text' => 'Send Email', 'onclick' => 'openEmailRequest()'],
+        //['href' => '#', 'icon' => 'fas fa-plus', 'text' => 'Create Room', 'onclick' => 'showCreateRoomModal()', 'class' => 'btn-success'],
        // ['href' => '#', 'icon' => 'fas fa-user-edit', 'text' => 'Profile', 'onclick' => 'showProfileEditor()'],
        ['href' => '#', 'icon' => 'fas fa-filter', 'text' => 'Filter', 'onclick' => 'showFilterModal()'],
-        ['href' => '#', 'icon' => 'fas fa-cog', 'text' => 'Settings', 'onclick' => 'openUserSettings()'],
+        //['href' => '#', 'icon' => 'fas fa-cog', 'text' => 'Settings', 'onclick' => 'openUserSettings()'],
         ['href' => 'logout.php', 'icon' => 'fas fa-sign-out-alt', 'text' => 'Logout', 'class' => 'btn-danger']
     ];
     
@@ -49,13 +52,18 @@ if (!$is_logged_in) {
 } elseif ($current_page === 'room') {
     // Room navigation
     $nav_items = [
+       // ['href' => '#', 'icon' => 'fas fa-coins', 'text' => 'Bet', 'onclick' => 'showPlaceBetModal()', 'class' => 'btn-primary'],
+       ['href' => '#', 'icon' => 'fas fa-user', 'text' => 'Users', 'onclick' => 'toggleMobileUsers()'],
         ['href' => '#', 'icon' => 'fas fa-book-open', 'text' => 'Commands/Help', 'onclick' => 'openCommandsModal()', 'class' => 'btn-warning'],
         ['href' => '#', 'icon' => 'fas fa-list-ol', 'text' => 'Leaderboard', 'onclick' => 'showLeaderboardModal()', 'class' => 'btn-warning'],
+        ['href' => '#', 'icon' => 'fas fa-scale-balanced', 'text' => 'ToS', 'onclick' => 'showTosModal()', 'class' => 'btn-warning'],
+        ['href' => '#', 'icon' => 'fas fa-newspaper', 'text' => 'News', 'onclick' => 'showNewsModal()', 'class' => 'btn-warning'],
+        ['href' => '#', 'icon' => 'fas fa-envelope', 'text' => 'Send Email', 'onclick' => 'openEmailRequest()'],
         ['href' => '#', 'icon' => 'fas fa-plane-departure', 'text' => 'AFK', 'onclick' => 'toggleAFK()', 'class' => 'btn-warning'],
-        ['href' => '#', 'icon' => 'fas fa-user', 'text' => 'Users', 'onclick' => 'toggleMobileUsers()'],
+        
       //  ['id' => 'notificationBell', 'href' => '#', 'icon' => 'fas fa-bell', 'text' => 'Notifications', 'onclick' => 'markAllNotificationsRead()'],
-        ['href' => '#', 'icon' => 'fas fa-cog', 'text' => 'Settings', 'onclick' => 'openUserSettings()'],
-        ['href' => '#', 'icon' => 'fas fa-door-open', 'text' => 'Leave Room', 'onclick' => 'leaveRoom()', 'class' => 'btn-info']
+       // ['href' => '#', 'icon' => 'fas fa-cog', 'text' => 'Settings', 'onclick' => 'openUserSettings()'],
+        //['href' => '#', 'icon' => 'fas fa-door-open', 'text' => 'Leave Room', 'onclick' => 'leaveRoom()', 'class' => 'btn-info']
     ];
     
     // Add friends for members only
@@ -86,7 +94,8 @@ if (!$is_logged_in) {
     // Add room settings for hosts
     if ($is_host_in_room || $is_admin || $is_moderator) {
         $room_settings_item = ['href' => '#', 'icon' => 'fas fa-tools', 'text' => 'Room Settings', 'onclick' => 'showRoomSettings()', 'class' => 'btn-primary'];
-        array_splice($nav_items, -1, 0, [$room_settings_item]);
+        $create_bet_pool = ['href' => '#', 'icon' => 'fas fa-coins', 'text' => 'Create Betting Pool', 'onclick' => 'showCreatePoolModal()', 'class' => 'btn-primary'];
+        array_splice($nav_items, -1, 0, [$room_settings_item,$create_bet_pool]);
     }
     
     // Add admin/moderator items
@@ -117,9 +126,20 @@ echo "<!-- Nav items count: " . count($nav_items) . ", Use hamburger: " . ($use_
     
     <!-- Navigation items -->
     <div class="navbar-nav ms-auto">
+        <button id="userSettings" class="btn chat-control-btn" title="Settings" onclick="openUserSettings()">
+        <i class="fas fa-cog"></i>
+    </button>
          <?php if ($current_page === 'room'): ?>
-    <button id="notificationBell" class="btn chat-control-btn" title="Notifications" onclick="markAllNotificationsRead()">
+    <!--<button id="notificationBell" class="btn chat-control-btn" title="Notifications" onclick="markAllNotificationsRead()">
         <i class="fas fa-bell"></i>
+    </button>-->
+    <button id="leaveRoom" class="btn chat-control-btn" title="Leave" onclick="leaveRoom()">
+        <i class="fas fa-door-open"></i>
+    </button>
+<?php endif; ?>
+<?php if ($current_page === 'lounge'): ?>
+    <button id="createRoom" class="btn chat-control-btn" title="Create Room" onclick="showCreateRoomModal()">
+        <i class="fas fa-square-plus"></i>
     </button>
 <?php endif; ?>
         <?php if (!$use_hamburger): ?>
@@ -140,7 +160,7 @@ echo "<!-- Nav items count: " . count($nav_items) . ", Use hamburger: " . ($use_
             <!-- Hamburger menu dropdown when >4 items -->
             <div class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle btn btn-outline-light" href="#" role="button" data-bs-toggle="dropdown">
-                    <i class="fas fa-bars"></i> <span class="d-none d-md-inline ms-1">Options</span>
+                    <i class="fas fa-bars"></i> <span class="d-none d-md-inline ms-1"></span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
                     <?php foreach ($nav_items as $item): ?>

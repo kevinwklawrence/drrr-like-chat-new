@@ -70,7 +70,7 @@ body {
         
         .online-users-card .card-body {
             padding: 16px;
-            max-height: 300px;
+            max-height: 500px;
             overflow-y: auto;
             background: inherit;
         }
@@ -234,7 +234,9 @@ body {
         
         @media (max-width: 768px) {
 
-            
+            .online-users-card .card-body {
+                max-height: 200px;
+            }
 
             .create-room-btn {
             background: #28a745;

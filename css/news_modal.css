@@ -1,0 +1,180 @@
+/* css/news_modal.css - Styles for News Modal */
+
+.news-content {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.news-post {
+    transition: all 0.2s ease;
+}
+
+.news-post:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.news-post-content h4, 
+.news-post-content h5, 
+.news-post-content h6 {
+    margin-top: 15px;
+    margin-bottom: 10px;
+    color: #4a9eff;
+}
+
+.news-post-content p {
+    margin-bottom: 10px;
+}
+
+.news-post-content a {
+    color: #4a9eff;
+    text-decoration: none;
+}
+
+.news-post-content a:hover {
+    text-decoration: underline;
+}
+
+.news-post-content strong {
+    font-weight: 600;
+}
+
+.news-post-content ul,
+.news-post-content ol {
+    margin-left: 20px;
+    margin-bottom: 10px;
+}
+
+/* Image styling within posts */
+.news-post-content img,
+.news-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 15px 0;
+    display: block;
+    border: 2px solid #555;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.news-post-content img:hover,
+.news-image:hover {
+    transform: scale(1.02);
+    border-color: #4a9eff;
+}
+
+/* Image preview in create form */
+#imagePreview .img-thumbnail {
+    border: 2px solid #555;
+    background: #2a2a2a;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    #newsModal .modal-dialog {
+        margin: 10px;
+        max-width: calc(100% - 20px);
+    }
+    
+    #newsModal .modal-body {
+        padding: 10px;
+    }
+    
+    .news-content {
+        max-height: 50vh;
+    }
+    
+    .news-post {
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .news-post h6 {
+        font-size: 0.95rem;
+    }
+    
+    .news-post-content {
+        font-size: 0.9rem;
+    }
+    
+    .news-post-content img,
+    .news-image {
+        margin: 10px 0;
+        border-width: 1px;
+    }
+    
+    #newsTabs .nav-link {
+        font-size: 0.85rem;
+        padding: 8px 10px;
+    }
+    
+    #createPostModal .modal-dialog {
+        margin: 10px;
+        max-width: calc(100% - 20px);
+    }
+    
+    #createPostModal .form-control,
+    #createPostModal .form-select {
+        font-size: 0.9rem;
+    }
+    
+    #imagePreview .position-relative {
+        width: 60px !important;
+        height: 60px !important;
+    }
+}
+
+/* Tab styling improvements */
+#newsTabs .nav-link {
+    color: #999;
+    border: none;
+    padding: 10px 15px;
+    transition: all 0.2s ease;
+}
+
+#newsTabs .nav-link:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+#newsTabs .nav-link.active {
+    color: #4a9eff;
+    background: rgba(74, 158, 255, 0.1);
+    border-bottom: 2px solid #4a9eff;
+}
+
+/* Create post form styling */
+#createPostForm .form-label {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+#createPostForm .form-control:focus,
+#createPostForm .form-select:focus {
+    background: #3a3a3a;
+    border-color: #4a9eff;
+    color: #fff;
+    box-shadow: 0 0 0 0.2rem rgba(74, 158, 255, 0.25);
+}
+
+/* Scrollbar styling for news content */
+.news-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.news-content::-webkit-scrollbar-track {
+    background: #2a2a2a;
+    border-radius: 4px;
+}
+
+.news-content::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+.news-content::-webkit-scrollbar-thumb:hover {
+    background: #666;
+}

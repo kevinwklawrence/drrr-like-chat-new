@@ -180,23 +180,26 @@ while ($row = $result->fetch_assoc()) {
         'is_afk' => (bool)$row['is_afk'],
         'manual_afk' => (bool)$row['manual_afk'],
         'afk_since' => $row['afk_since'],
-        'afk_duration_minutes' => $afk_duration_minutes
+        'afk_duration_minutes' => $afk_duration_minutes,
+        
+        // Betting pool - default to 0
+        'bet_amount' => 0
     ];
 
     
     
     // ADMIN/MODERATOR AUTO-HOST PRIVILEGES
-// Only check for registered users (guest users don't have is_admin/is_moderator)
-if ($is_registered && $row['user_id'] > 0) {
-    $is_admin = (int)($row['is_admin'] ?? 0);
-    $is_moderator = (int)($row['is_moderator'] ?? 0);
-    
-    if ($is_admin == 1 || $is_moderator == 1) {
-        // Automatically grant host privileges to admins/moderators
-        $user_data['is_host'] = 1;
-        $user_data['has_elevated_privileges'] = true; // Flag for UI (optional)
+    // Only check for registered users (guest users don't have is_admin/is_moderator)
+    if ($is_registered && $row['user_id'] > 0) {
+        $is_admin = (int)($row['is_admin'] ?? 0);
+        $is_moderator = (int)($row['is_moderator'] ?? 0);
+        
+        if ($is_admin == 1 || $is_moderator == 1) {
+            // Automatically grant host privileges to admins/moderators
+            $user_data['is_host'] = 1;
+            $user_data['has_elevated_privileges'] = true; // Flag for UI (optional)
+        }
     }
-}
 
     // Load equipped titles for registered users
     if ($is_registered && $row['user_id'] > 0) {
@@ -229,45 +232,49 @@ if ($is_registered && $row['user_id'] > 0) {
         $user_data['equipped_titles'] = [];
     }
 
-$users[] = $user_data;
+    $users[] = $user_data;
 }
 $stmt->close();
 
-// Check if there's an active betting pool and add bet amounts to users
-$pool_stmt = $conn->prepare("SELECT id FROM betting_pools WHERE room_id = ? AND status = 'active' LIMIT 1");
-$pool_stmt->bind_param("i", $room_id);
-$pool_stmt->execute();
-$pool_result = $pool_stmt->get_result();
-
-if ($pool_result->num_rows > 0) {
-    $pool = $pool_result->fetch_assoc();
-    $pool_id = $pool['id'];
-    $pool_stmt->close();
-
-    // Get all bets for this pool
-    $bet_stmt = $conn->prepare("SELECT user_id_string, bet_amount FROM betting_pool_bets WHERE pool_id = ?");
-    $bet_stmt->bind_param("i", $pool_id);
-    $bet_stmt->execute();
-    $bet_result = $bet_stmt->get_result();
-
-    $bets_map = [];
-    while ($bet = $bet_result->fetch_assoc()) {
-        $bets_map[$bet['user_id_string']] = (int)$bet['bet_amount'];
-    }
-    $bet_stmt->close();
-
-    // Add bet amounts to users
-    for ($i = 0; $i < count($users); $i++) {
-        $user_id_string = $users[$i]['user_id_string'];
-        $users[$i]['bet_amount'] = $bets_map[$user_id_string] ?? 0;
-    }
-} else {
-    $pool_stmt->close();
-    // No active pool, set all bet amounts to 0
-    for ($i = 0; $i < count($users); $i++) {
-        $users[$i]['bet_amount'] = 0;
+// === BETTING POOL CODE - SIMPLE VERSION ===
+// Check if table exists
+$table_check = $conn->query("SHOW TABLES LIKE 'betting_pools'");
+if ($table_check && $table_check->num_rows > 0) {
+    // Get active pool
+    $pool_stmt = $conn->prepare("SELECT id FROM betting_pools WHERE room_id = ? AND status = 'active' LIMIT 1");
+    $pool_stmt->bind_param("i", $room_id);
+    $pool_stmt->execute();
+    $pool_result = $pool_stmt->get_result();
+    
+    if ($pool_result->num_rows > 0) {
+        $pool = $pool_result->fetch_assoc();
+        $pool_id = $pool['id'];
+        $pool_stmt->close();
+        
+        // Get bets
+        $bet_stmt = $conn->prepare("SELECT user_id_string, bet_amount FROM betting_pool_bets WHERE pool_id = ?");
+        $bet_stmt->bind_param("i", $pool_id);
+        $bet_stmt->execute();
+        $bet_result = $bet_stmt->get_result();
+        
+        // Map bets to user_id_string
+        $bets = [];
+        while ($bet = $bet_result->fetch_assoc()) {
+            $bets[$bet['user_id_string']] = (int)$bet['bet_amount'];
+        }
+        $bet_stmt->close();
+        
+        // Add bet amounts to users
+        for ($i = 0; $i < count($users); $i++) {
+            if (isset($bets[$users[$i]['user_id_string']])) {
+                $users[$i]['bet_amount'] = $bets[$users[$i]['user_id_string']];
+            }
+        }
+    } else {
+        $pool_stmt->close();
     }
 }
+// === END BETTING POOL CODE ===
 
 error_log("Retrieved " . count($users) . " users for room_id=$room_id");
 echo json_encode($users);

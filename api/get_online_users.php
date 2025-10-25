@@ -109,14 +109,111 @@ try {
         error_log("Auto-logged out " . count($logged_out_users) . " inactive users: " . implode(', ', $logged_out_users));
     }
     
-    // Now get the remaining active users (exclude ghost mode users from display)
+    // === Load all users currently present in chatroom_users (ignore active threshold) ===
+    $cu_columns_query = $conn->query("SHOW COLUMNS FROM chatroom_users");
+    $cu_columns = [];
+    while ($r = $cu_columns_query->fetch_assoc()) {
+        $cu_columns[] = $r['Field'];
+    }
+
+    // Build select fields for chatroom_users that roughly match the global_users output
+    $cu_select = [
+        'cu.user_id',
+        'cu.user_id_string',
+        'cu.username as cu_username',
+        'u.username as username',
+        'cu.guest_name',
+        "u.avatar as avatar",
+        'cu.avatar as guest_avatar',
+        "COALESCE(u.is_admin, 0) as is_admin",
+        "COALESCE(u.is_moderator, 0) as is_moderator",
+        "COALESCE(cu.color, 'black') as color",
+        'cu.last_activity',
+        'TIMESTAMPDIFF(SECOND, cu.last_activity, NOW()) as seconds_since_activity'
+    ];
+
+    // Add avatar customization fields if available on chatroom_users
+    if (in_array('avatar_hue', $cu_columns)) {
+        $cu_select[] = 'cu.avatar_hue';
+    } else {
+        $cu_select[] = '0 as avatar_hue';
+    }
+    if (in_array('avatar_saturation', $cu_columns)) {
+        $cu_select[] = 'cu.avatar_saturation';
+    } else {
+        $cu_select[] = '100 as avatar_saturation';
+    }
+
+    // Equipped titles for registered users (uses registered username if present)
+    $cu_select[] = "(
+        SELECT JSON_ARRAYAGG(
+            JSON_OBJECT('name', si.name, 'rarity', si.rarity, 'icon', si.icon)
+        )
+        FROM users u2
+        JOIN user_inventory ui ON u2.id = ui.user_id
+        JOIN shop_items si ON ui.item_id = si.item_id
+        WHERE u2.username = u.username
+        AND ui.is_equipped = 1
+        AND si.type = 'title'
+        ORDER BY FIELD(si.rarity, 'legendary', 'strange', 'rare', 'common')
+        LIMIT 5
+    ) as equipped_titles";
+
+    $sql_cu = "SELECT " . implode(', ', $cu_select) . " FROM chatroom_users cu LEFT JOIN users u ON cu.user_id = u.id ORDER BY cu.last_activity DESC";
+    $cu_stmt = $conn->prepare($sql_cu);
+    $cu_stmt->execute();
+    $cu_result = $cu_stmt->get_result();
+
+    // Use associative map keyed by user_id_string to prevent duplicates when merging with global_users
+    $users_map = [];
+    while ($row = $cu_result->fetch_assoc()) {
+        if (empty($row['user_id_string'])) continue;
+
+        // Determine registered vs guest
+        $is_registered = !empty($row['user_id']) && $row['user_id'] > 0;
+        $username = $is_registered ? ($row['username'] ?? '') : ($row['cu_username'] ?? '');
+        $guest_name = $row['guest_name'] ?? null;
+
+        $display_name = $username ?: $guest_name ?: 'Unknown User';
+
+        $avatar = 'default_avatar.jpg';
+        if (!empty($row['avatar'])) {
+            $avatar = $row['avatar'];
+        } elseif (!empty($row['guest_avatar'])) {
+            $avatar = $row['guest_avatar'];
+        }
+
+        $seconds_since = (int)($row['seconds_since_activity'] ?? 0);
+        $activity_status = $seconds_since > 900 ? 'away' : 'online';
+
+        $users_map[$row['user_id_string']] = [
+            'user_id_string' => $row['user_id_string'],
+            'username' => $username,
+            'guest_name' => $guest_name,
+            'display_name' => $display_name,
+            'avatar' => $avatar,
+            'guest_avatar' => $row['guest_avatar'] ?? null,
+            'is_admin' => (int)($row['is_admin'] ?? 0),
+            'is_moderator' => (int)($row['is_moderator'] ?? 0),
+            'color' => $row['color'] ?? 'black',
+            'last_activity' => $row['last_activity'],
+            'seconds_since_activity' => $seconds_since,
+            'activity_status' => $activity_status,
+            'equipped_titles' => json_decode($row['equipped_titles'] ?? '[]', true) ?? [],
+            'avatar_hue' => (int)($row['avatar_hue'] ?? 0),
+            'avatar_saturation' => (int)($row['avatar_saturation'] ?? 100)
+        ];
+    }
+    $cu_stmt->close();
+
+    // === Now load global_users (existing behavior) and merge without duplicates ===
     $columns_check = $conn->query("SHOW COLUMNS FROM global_users");
     $available_columns = [];
     while ($row = $columns_check->fetch_assoc()) {
         $available_columns[] = $row['Field'];
     }
-    
-    // Build the select fields
+
+    // Build the select fields (unchanged)
     $select_fields = [
         'gu.user_id_string',
         'gu.username', 
@@ -145,27 +242,27 @@ try {
     ) as equipped_titles",
         'TIMESTAMPDIFF(SECOND, gu.last_activity, NOW()) as seconds_since_activity'
     ];
-    
+
     // Add is_moderator if it exists
     if (in_array('is_moderator', $available_columns)) {
         $select_fields[] = 'gu.is_moderator';
     } else {
         $select_fields[] = '0 as is_moderator';
     }
-    
+
     // Add avatar customization fields if they exist
     if (in_array('avatar_hue', $available_columns)) {
         $select_fields[] = 'gu.avatar_hue';
     } else {
         $select_fields[] = '0 as avatar_hue';
     }
-    
+
     if (in_array('avatar_saturation', $available_columns)) {
         $select_fields[] = 'gu.avatar_saturation';
     } else {
         $select_fields[] = '100 as avatar_saturation';
     }
-    
+
     $sql = "SELECT " . implode(', ', $select_fields) . "
             FROM global_users gu
             LEFT JOIN users u ON gu.username = u.username
@@ -173,20 +270,20 @@ try {
             AND COALESCE(u.ghost_mode, 0) = 0
             ORDER BY gu.last_activity DESC
             LIMIT 50";
-    
+
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $active_threshold);
     $stmt->execute();
     $result = $stmt->get_result();
-    
-    $users = [];
+
+    // Merge global users into map if not already present
     while ($row = $result->fetch_assoc()) {
-        // Additional filtering: skip users with empty or null user_id_string
-        if (empty($row['user_id_string'])) {
+        if (empty($row['user_id_string'])) continue;
+        if (isset($users_map[$row['user_id_string']])) {
+            // already present from chatroom_users, skip
             continue;
         }
-        
-        // Determine display name preference
+
         $display_name = '';
         if (!empty($row['guest_name'])) {
             $display_name = $row['guest_name'];
@@ -195,23 +292,21 @@ try {
         } else {
             $display_name = 'Unknown User';
         }
-        
-        // Determine avatar preference
+
         $avatar = 'default_avatar.jpg';
         if (!empty($row['avatar'])) {
             $avatar = $row['avatar'];
         } elseif (!empty($row['guest_avatar'])) {
             $avatar = $row['guest_avatar'];
         }
-        
-        // Calculate activity status
+
         $seconds_since = (int)$row['seconds_since_activity'];
         $activity_status = 'online';
         if ($seconds_since > 900) {
             $activity_status = 'away';
         }
-        
-        $users[] = [
+
+        $users_map[$row['user_id_string']] = [
             'user_id_string' => $row['user_id_string'],
             'username' => $row['username'],
             'guest_name' => $row['guest_name'],
@@ -226,20 +321,22 @@ try {
             'activity_status' => $activity_status,
             'equipped_titles' => json_decode($row['equipped_titles'] ?? '[]', true) ?? [],
             'avatar_hue' => (int)($row['avatar_hue'] ?? 0),
-            
             'avatar_saturation' => (int)($row['avatar_saturation'] ?? 100)
         ];
     }
-    
+
     $stmt->close();
-    
-    // Log the count for debugging
-    $log_message = "Online users query returned " . count($users) . " active users (threshold: {$active_threshold} minutes, ghost mode excluded)";
+
+    // Final users array is values of the map
+    $users = array_values($users_map);
+
+    // Log merged counts for debugging
+    $log_message = "Online users compiled: " . count($users) . " users (chatroom_users + active global_users merge)";
     if (!empty($logged_out_users)) {
         $log_message .= ". Auto-logged out: " . count($logged_out_users) . " users";
     }
     error_log($log_message);
-    
+
     echo json_encode($users);
     
 } catch (Exception $e) {

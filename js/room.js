@@ -1598,7 +1598,7 @@ function renderMessage(msg) {
         
         return `
             <div class="system-message">
-                <img src="images/${avatar}"
+                <img src="images/${avatar}?v=<?php echo $versions['version']; ?>"
                      loading="eager"
                      style="filter: hue-rotate(${systemHue}deg) saturate(${systemSat}%);"
                      alt="System">
@@ -4380,7 +4380,7 @@ $(document).ready(function() {
 
     // Initial data will be loaded by the event polling system
     // No need to call loadMessages() - it will be loaded via poll_room_data.php
-    loadUsers();
+    
     // loadFriends(); // REMOVED - handled by friends_sidebar.js
     // loadConversations(); // REMOVED - handled by friends_sidebar.js
 
@@ -4389,10 +4389,13 @@ $(document).ready(function() {
         initBettingPool();
     }
 
+    
+
     // Keep only essential intervals at lower frequencies
     //setTimeout(checkUserStatus, 1000);
     //kickDetectionInterval = setInterval(checkUserStatus, 10000); // Reduced from 5s to 10s
-    
+    loadUsers();
+
     // Focus message input
     $('#message').focus();
     
@@ -6335,3 +6338,14 @@ $(document).on('click', '.message-action-btn.reply-btn', function(e) {
         showReplyInterface(messageId, authorName, preview);
     }
 });
+
+// Add at the very end of room.js
+if (window.location.hostname.includes('duranu.net')) {
+   // console.log('🔍 Debug mode active');
+    // Log when loadUsers is called
+    const _loadUsers = loadUsers;
+    loadUsers = function() {
+       // console.log('📞 loadUsers called at:', new Date().toLocaleTimeString());
+        return _loadUsers.apply(this, arguments);
+    };
+}
