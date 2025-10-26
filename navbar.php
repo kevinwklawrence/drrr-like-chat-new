@@ -25,6 +25,7 @@ if (!$is_logged_in) {
 } elseif ($current_page === 'lounge') {
     // Lounge navigation
     $nav_items = [
+        ['href' => '/hideout', 'icon' => 'fas fa-paw', 'text' => 'Hideout', 'class' => 'btn-warning'],
         ['href' => '#', 'icon' => 'fas fa-list-ol', 'text' => 'Leaderboard', 'onclick' => 'showLeaderboardModal()', 'class' => 'btn-warning'],
         ['href' => '#', 'icon' => 'fas fa-scale-balanced', 'text' => 'ToS', 'onclick' => 'showTosModal()', 'class' => 'btn-warning'],
         ['href' => '#', 'icon' => 'fas fa-newspaper', 'text' => 'News', 'onclick' => 'showNewsModal()', 'class' => 'btn-warning'],
@@ -52,6 +53,7 @@ if (!$is_logged_in) {
 } elseif ($current_page === 'room') {
     // Room navigation
     $nav_items = [
+        ['href' => '/hideout', 'icon' => 'fas fa-paw', 'text' => 'Hideout', 'class' => 'btn-warning'],
        // ['href' => '#', 'icon' => 'fas fa-coins', 'text' => 'Bet', 'onclick' => 'showPlaceBetModal()', 'class' => 'btn-primary'],
        ['href' => '#', 'icon' => 'fas fa-user', 'text' => 'Users', 'onclick' => 'toggleMobileUsers()'],
         ['href' => '#', 'icon' => 'fas fa-book-open', 'text' => 'Commands/Help', 'onclick' => 'openCommandsModal()', 'class' => 'btn-warning'],

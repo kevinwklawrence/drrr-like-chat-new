@@ -236,7 +236,8 @@ $youtube_enabled = isset($room['youtube_enabled']) ? (bool)$room['youtube_enable
         <link rel="stylesheet" href="css/friends-sidebar.css?v=<?php echo $versions['version']; ?>">
         <link rel="stylesheet" href="css/draggable-dm-modal.css?v=<?php echo $versions['version']; ?>">
         <link rel="stylesheet" href="css/betting_pool.css?v=<?php echo $versions['version']; ?>">
-        <link rel="stylesheet" href="css/news_modal.css">
+        <link rel="stylesheet" href="css/news_modal.css?v=<?php echo $versions['version']; ?>">
+        <link rel="stylesheet" href="css/user-actions-dropdown.css?v=<?php echo $versions['version']; ?>">
 
 
 
@@ -1055,12 +1056,14 @@ $('<style>').text(`
     <script src="js/friends_sidebar.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/inactivity_warning.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/disconnect_checker.js?v=<?php echo $versions['version']; ?>"></script>
-    <script src="js/ghost_hunt.js"></script>
-    <script src="js/pumpkin_smash.js"></script>
-    <script src="js/trick_or_treat.js"></script>
+    <script src="js/ghost_hunt.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/pumpkin_smash.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/trick_or_treat.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/leaderboard.js?v=<?php echo $versions['version']; ?>"></script>
-    <script src="js/news_modal.js"></script>
-     <script src="js/tos_modal.js"></script>
+    <script src="js/news_modal.js?v=<?php echo $versions['version']; ?>"></script>
+     <script src="js/tos_modal.js?v=<?php echo $versions['version']; ?>"></script>
+     <script src="js/profile_pets_ext.js?v=<?php echo $versions['version']; ?>"></script>
+     <script src="js/user-actions-dropdown.js?v=<?php echo $versions['version']; ?>"></script>
 
 
 <script>

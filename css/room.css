@@ -393,9 +393,7 @@
     /* right: 0; */
 }
 
-.chat-container:has(.youtube-player-container.enabled:not(.user-hidden)) .chat-sidebar {
-    width: 200px;
-}
+.chat-container:has(.youtube-player-container.enabled:not(.user-hidden)) .chat-sidebar {display: none;}
 
 .chat-container:has(.youtube-player-container.enabled:not(.user-hidden)) .user-item {
     padding: 8px;

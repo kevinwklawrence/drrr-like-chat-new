@@ -32,7 +32,7 @@ function showUserProfile(userId, avatarElement) {
         dataType: 'json',
         success: function(response) {
             if (response.status === 'success') {
-                displayProfilePopup(response.user, avatarElement);
+                displayProfilePopup(response.user);
             } else {
                 alert('Error: ' + response.message);
             }
@@ -43,28 +43,27 @@ function showUserProfile(userId, avatarElement) {
     });
 }
 
-function displayProfilePopup(user, avatarElement) {
-    const rect = avatarElement.getBoundingClientRect();
+function displayProfilePopup(user) {
     const links = user.hyperlinks || [];
     
     const isInRoom = typeof roomId !== 'undefined' && roomId;
     
     let linksHtml = '';
     if (links.length > 0) {
-        linksHtml = '<div class="profile-links">';
+        linksHtml = '<div class="profile-modal-links">';
         links.forEach(link => {
-            linksHtml += `<a href="${link.url}" target="_blank" class="profile-link">${link.title}</a>`;
+            linksHtml += `<a href="${link.url}" target="_blank" class="profile-modal-link"><i class="fas fa-link"></i> ${escapeHtml(link.title)}</a>`;
         });
         linksHtml += '</div>';
     }
     
     const coverPhoto = user.cover_photo ? 
-        `<div class="profile-cover" style="background-image: url('images/covers/${user.cover_photo}')"></div>` : 
-        '<div class="profile-cover profile-cover-default"></div>';
+        `<div class="profile-modal-cover" style="background-image: url('images/covers/${user.cover_photo}')"></div>` : 
+        '<div class="profile-modal-cover profile-modal-cover-default"></div>';
     
     let actionsHtml = '';
     if (currentUser.type === 'user') {
-        actionsHtml = '<div class="profile-popup-actions">';
+        actionsHtml = '<div class="profile-modal-actions">';
         
         switch(user.friendship_status) {
             case 'friends':
@@ -82,7 +81,6 @@ function displayProfilePopup(user, avatarElement) {
                 `;
                 break;
             case 'request_received':
-                // FIXED: Don't use escapeHtml on numeric ID
                 actionsHtml += `
                     <button class="btn btn-sm btn-info profile-action-btn" onclick="acceptFriendFromProfile(${user.id}); event.stopPropagation();">
                         <i class="fas fa-user-check"></i> Accept Request
@@ -90,24 +88,21 @@ function displayProfilePopup(user, avatarElement) {
                 `;
                 break;
             default: // 'none'
-                // FIXED: Only escape the username string, not the ID
                 actionsHtml += `
                     <button class="btn btn-sm btn-primary profile-action-btn" onclick="addFriendFromProfile('${escapeHtml(user.username)}'); event.stopPropagation();">
-                        <i class="fas fa-user-plus"></i>
+                        <i class="fas fa-user-plus"></i> Add Friend
                     </button>
                 `;
                 break;
         }
         
         if (isInRoom) {
-            // Use new friends_sidebar whisper system - construct user_id_string
             actionsHtml += `
                 <button class="btn btn-sm btn-secondary profile-action-btn" onclick="if(friendsSidebarManager){friendsSidebarManager.openWhisperConversation('user_${user.id}', '${escapeHtml(user.username)}');} event.stopPropagation();">
                     <i class="fas fa-comment"></i> Message
                 </button>
             `;
         } else {
-            // Use new friends_sidebar PM system
             actionsHtml += `
                 <button class="btn btn-sm btn-secondary profile-action-btn" onclick="if(friendsSidebarManager){friendsSidebarManager.openPrivateMessage(${user.id}, '${escapeHtml(user.username)}');} event.stopPropagation();">
                     <i class="fas fa-envelope"></i> PM
@@ -118,48 +113,50 @@ function displayProfilePopup(user, avatarElement) {
         actionsHtml += '</div>';
     }
     
-    const popupHtml = `
-        <div class="profile-popup" id="profilePopup">
-            ${coverPhoto}
-            <div class="profile-popup-content">
-                <div class="profile-popup-header">
-                    <img src="images/${user.avatar}" 
-                         style="filter: hue-rotate(${user.avatar_hue || 0}deg) saturate(${user.avatar_saturation || 100}%);"
-                         class="profile-popup-avatar" alt="Avatar">
-                    <div class="profile-popup-info">
-                        <h6 class="profile-popup-name">${user.username}</h6>
-                        ${user.status ? `<div class="profile-popup-status">${user.status}</div>` : ''}
+    const titleHtml = user.status ? `<div class="profile-modal-status">${escapeHtml(user.status)}</div>` : '';
+    const bioHtml = user.bio ? `<div class="profile-modal-bio">${escapeHtml(user.bio)}</div>` : '';
+    
+    const modalHtml = `
+        <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered profile-modal-dialog">
+                <div class="modal-content profile-modal-content">
+                    ${coverPhoto}
+                    <div class="profile-modal-body">
+                        <div class="profile-modal-header">
+                            <img src="images/${user.avatar}" 
+                                 style="filter: hue-rotate(${user.avatar_hue || 0}deg) saturate(${user.avatar_saturation || 100}%);"
+                                 class="profile-modal-avatar" alt="Avatar">
+                            <div class="profile-modal-info">
+                                <h5 class="profile-modal-username">${escapeHtml(user.username)}</h5>
+                                ${titleHtml}
+                            </div>
+                        </div>
+                        ${bioHtml}
+                        ${linksHtml}
+                        ${actionsHtml}
                     </div>
-                    <button class="profile-popup-close" onclick="closeProfilePopup()">&times;</button>
                 </div>
-                ${user.bio ? `<div class="profile-popup-bio">${user.bio}</div>` : ''}
-                ${linksHtml}
-                ${actionsHtml}
             </div>
         </div>
     `;
     
-    $('body').append(popupHtml);
+    // Remove any existing profile modal
+    $('#profileModal').remove();
     
-    const popup = $('#profilePopup');
-    popup.css({
-        left: rect.left + rect.width + 10,
-        top: Math.max(10, rect.top - 100)
+    // Add modal to body
+    $('body').append(modalHtml);
+    
+    // Show modal using Bootstrap
+    const modalElement = document.getElementById('profileModal');
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
+    
+    // Clean up on hide
+    modalElement.addEventListener('hidden.bs.modal', function () {
+        $('#profileModal').remove();
     });
     
-    activeProfilePopup = popup;
-    
-    $('.profile-action-btn').on('click', function(e) {
-        e.stopPropagation();
-    });
-    
-    setTimeout(() => {
-        $(document).on('click.profilePopup', function(e) {
-            if (!$(e.target).closest('.profile-popup, .user-avatar, .message-avatar').length) {
-                closeProfilePopup();
-            }
-        });
-    }, 100);
+    activeProfilePopup = modal;
 }
 
 function acceptFriend(friendId) {
@@ -187,7 +184,6 @@ function acceptFriend(friendId) {
                     loadUsers();
                 }
                 
-                // Reload friends list from server
                 loadFriends();
             } else {
                 showNotification('Error: ' + (response.message || 'Unknown error'), 'error');
@@ -206,11 +202,6 @@ function acceptFriend(friendId) {
             
             showNotification('Error: ' + errorMsg, 'error');
             acceptBtn.prop('disabled', false).html(originalHtml);
-        },
-        complete: function() {
-            setTimeout(() => {
-                acceptBtn.prop('disabled', false).html(originalHtml);
-            }, 100);
         }
     });
 }
@@ -240,16 +231,14 @@ function acceptFriendFromProfile(friendId) {
                 if (typeof loadUsers === 'function') {
                     loadUsers();
                 }
-                if (typeof loadFriends === 'function') {
-                    loadFriends();
-                }
+                loadFriends();
             } else {
                 showNotification('Error: ' + (response.message || 'Unknown error'), 'error');
                 acceptBtn.prop('disabled', false).html(originalHtml);
             }
         },
         error: function(xhr, status, error) {
-            console.error('Accept friend from profile error:', {xhr, status, error});
+            console.error('Accept friend error:', {xhr, status, error});
             let errorMsg = 'Network error occurred';
             
             if (status === 'timeout') {
@@ -260,23 +249,12 @@ function acceptFriendFromProfile(friendId) {
             
             showNotification('Error: ' + errorMsg, 'error');
             acceptBtn.prop('disabled', false).html(originalHtml);
-        },
-        complete: function() {
-            setTimeout(() => {
-                acceptBtn.prop('disabled', false).html(originalHtml);
-            }, 100);
         }
     });
 }
 
-
 function addFriendFromProfile(username) {
-    if (!username) {
-        alert('Invalid username');
-        return;
-    }
-    
-    if (confirm('Send friend request to ' + username + '?')) {
+    if (confirm(`Send friend request to ${username}?`)) {
         $.ajax({
             url: 'api/friends.php',
             method: 'POST',
@@ -313,9 +291,12 @@ function addFriendFromProfile(username) {
 
 function closeProfilePopup() {
     if (activeProfilePopup) {
-        activeProfilePopup.remove();
+        if (typeof activeProfilePopup.hide === 'function') {
+            activeProfilePopup.hide();
+        }
         activeProfilePopup = null;
     }
+    $('#profileModal').remove();
     $(document).off('click.profilePopup');
 }
 

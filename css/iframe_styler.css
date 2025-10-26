@@ -11,7 +11,7 @@
 }
 
 .youtube-player-container.enabled {
-    width: 400px;
+    width: 600px;
 }
 
 .youtube-player-container.user-hidden {
@@ -369,3 +369,6 @@
     animation: spin 1s linear infinite;
 }
 
+iframe#youtube-player {
+    height: 335px;
+}

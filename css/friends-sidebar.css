@@ -111,11 +111,10 @@
 }
 
 .friend-request-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+    width: 38px;
+    height: 38px;
     object-fit: cover;
-    border: 2px solid rgba(255, 107, 107, 0.5);
+    /* border: 2px solid rgba(255, 107, 107, 0.5); */
 }
 
 .friend-request-info {
@@ -284,6 +283,8 @@
     width: 38px;
     height: 38px;
     object-fit: cover;
+    align-self:center;
+    margin-right:10px;
 }
 
 .conversation-info {
@@ -591,5 +592,66 @@
     body.has-friends-sidebar .main-content,
     body.has-friends-sidebar #room-container {
         margin-right: 320px;
+    }
+}
+/* Hide Conversation Button Styles */
+.conversation-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.conversation-hide-btn {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: #999;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    opacity: 0;
+    margin-left: 4px;
+}
+
+.conversation-item:hover .conversation-hide-btn {
+    opacity: 1;
+}
+
+.conversation-hide-btn:hover {
+    background: rgba(255, 59, 48, 0.1);
+    color: #ff3b30;
+}
+
+.conversation-hide-btn:active {
+    transform: scale(0.95);
+}
+
+.conversation-hide-btn i {
+    font-size: 14px;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .conversation-hide-btn {
+        opacity: 1;
+        width: 36px;
+        height: 36px;
+    }
+    
+    .conversation-hide-btn i {
+        font-size: 16px;
+    }
+}
+
+/* Touch device optimization - always show button */
+@media (hover: none) and (pointer: coarse) {
+    .conversation-hide-btn {
+        opacity: 1;
     }
 }

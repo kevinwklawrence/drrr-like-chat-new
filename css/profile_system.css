@@ -1,3 +1,230 @@
+/* Profile Modal Styles */
+.profile-modal-dialog {
+    max-width: 400px;
+}
+
+.profile-modal-content {
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 12px;
+    overflow: hidden;
+    color: #e0e0e0;
+}
+
+.profile-modal-cover {
+    height: 120px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    width: 100%;
+}
+
+.profile-modal-cover-default {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.profile-modal-body {
+    padding: 0 20px 20px 20px;
+    position: relative;
+}
+
+.profile-modal-header {
+    display: flex;
+    align-items: flex-end;
+    margin-bottom: 15px;
+    margin-top: -30px;
+}
+
+.profile-modal-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    border: 4px solid #2a2a2a;
+    margin-right: 15px;
+    flex-shrink: 0;
+    background: #2a2a2a;
+}
+
+.profile-modal-info {
+    flex: 1;
+    padding-bottom: 10px;
+}
+
+.profile-modal-username {
+    font-weight: 700;
+    margin: 0;
+    color: #fff;
+    font-size: 1.25rem;
+}
+
+.profile-modal-status {
+    font-size: 0.9rem;
+    color: #aaa;
+    font-style: italic;
+    margin-top: 4px;
+}
+
+.profile-modal-bio {
+    font-size: 0.95rem;
+    color: #ddd;
+    margin-bottom: 15px;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.profile-modal-links {
+    margin-bottom: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.profile-modal-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #444;
+    color: #fff;
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+}
+
+.profile-modal-link:hover {
+    background: #555;
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.profile-modal-link i {
+    font-size: 0.8rem;
+}
+
+.profile-modal-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.profile-modal-actions .btn {
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-modal-actions .profile-status-btn {
+    pointer-events: none;
+    opacity: 0.8;
+    cursor: default;
+}
+
+.profile-modal-actions .profile-action-btn {
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.profile-status-btn .spinner-border,
+.profile-status-btn .loading-spinner {
+    display: none !important;
+}
+
+.profile-modal-actions .btn[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.profile-modal-actions .btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.profile-modal-actions .btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #212529;
+}
+
+.profile-modal-actions .btn-info {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .profile-modal-dialog {
+        max-width: calc(100vw - 20px);
+        margin: 10px;
+    }
+    
+    .profile-modal-cover {
+        height: 100px;
+    }
+    
+    .profile-modal-avatar {
+        width: 70px;
+        height: 70px;
+        margin-right: 12px;
+    }
+    
+    .profile-modal-username {
+        font-size: 1.1rem;
+    }
+    
+    .profile-modal-body {
+        padding: 0 15px 15px 15px;
+    }
+    
+    .profile-modal-actions .btn {
+        font-size: 0.875rem;
+        padding: 6px 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-modal-cover {
+        height: 80px;
+    }
+    
+    .profile-modal-avatar {
+        width: 60px;
+        height: 60px;
+        margin-right: 10px;
+    }
+    
+    .profile-modal-header {
+        margin-top: -25px;
+    }
+    
+    .profile-modal-username {
+        font-size: 1rem;
+    }
+    
+    .profile-modal-status {
+        font-size: 0.8rem;
+    }
+    
+    .profile-modal-bio {
+        font-size: 0.875rem;
+    }
+    
+    .profile-modal-link {
+        font-size: 0.8rem;
+        padding: 5px 10px;
+    }
+    
+    .profile-modal-actions {
+        flex-direction: column;
+    }
+    
+    .profile-modal-actions .btn {
+        width: 100%;
+    }
+}
+
+/* Legacy Popup Styles - Keep for backward compatibility */
 .profile-popup {
     position: fixed;
     background: #2a2a2a;
@@ -169,12 +396,6 @@
     cursor: pointer;
 }
 
-/* Prevent loading spinners on status buttons */
-.profile-status-btn .spinner-border,
-.profile-status-btn .loading-spinner {
-    display: none !important;
-}
-
 .profile-popup-actions .btn[disabled] {
     opacity: 0.6;
     cursor: not-allowed;
@@ -230,7 +451,6 @@
     transform: scale(1.05);
 }
 
-/* Toast animation */
 @keyframes slideInRight {
     from {
         transform: translateX(400px);
@@ -242,7 +462,6 @@
     }
 }
 
-/* Mobile responsive presets */
 @media (max-width: 768px) {
     .preset-card {
         padding: 12px !important;
@@ -259,12 +478,6 @@
     }
 }
 
-/* ============================================
-   EFFECT PREVIEW STYLES
-   Add to css/style.css
-   ============================================ */
-
-/* Base effect preview container */
 .effect-preview {
     display: inline-flex;
     align-items: center;
@@ -272,77 +485,4 @@
     width: 58px;
     height: 58px;
     position: relative;
-}
-
-/* Glow preview specific styling */
-.effect-preview-glow {
-    /* Container for glow previews */
-}
-
-/* Overlay preview specific styling */
-.effect-preview-overlay {
-    /* Container for overlay previews */
-}
-
-/* Bubble preview specific styling */
-.effect-preview-bubble {
-    /* Container for bubble effect previews */
-}
-
-/* Make sure the preview animations work */
-.effect-preview .avatar-glow {
-    pointer-events: none;
-}
-
-.effect-preview .avatar-overlay {
-    pointer-events: none;
-}
-
-/* Adjust preview sizing in shop/inventory cards */
-.shop-item .effect-preview,
-.inventory-item .effect-preview {
-    margin: 0 auto;
-}
-
-/* Ensure preview effects are visible against dark backgrounds */
-.effect-preview-glow > div:last-child {
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
-}
-
-/* Mobile responsive */
-@media (max-width: 768px) {
-    .effect-preview {
-        width: 50px;
-        height: 50px;
-    }
-    
-    .effect-preview-glow > div:last-child {
-        width: 40px !important;
-        height: 40px !important;
-    }
-    
-    .effect-preview-bubble > div {
-        width: 45px !important;
-        height: 35px !important;
-        font-size: 1rem !important;
-    }
-}
-
-/* Hover effect for shop items */
-.shop-item:hover .effect-preview-glow .avatar-glow,
-.inventory-item:hover .effect-preview-glow .avatar-glow {
-    opacity: 1;
-    filter: brightness(1.2);
-}
-
-.shop-item:hover .effect-preview-overlay .avatar-overlay,
-.inventory-item:hover .effect-preview-overlay .avatar-overlay {
-    opacity: 1;
-    filter: brightness(1.1);
-}
-
-.shop-item:hover .effect-preview-bubble > div,
-.inventory-item:hover .effect-preview-bubble > div {
-    transform: scale(1.05);
-    transition: transform 0.2s ease;
 }

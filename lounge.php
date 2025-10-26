@@ -850,8 +850,9 @@ document.addEventListener('DOMContentLoaded', function() {
     <script src="js/friend_notifications.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/leaderboard.js?v=<?php echo $versions['version']; ?>"></script>
     <script src="js/friends_sidebar.js?v=<?php echo $versions['version']; ?>"></script>
-    <script src="js/news_modal.js"></script>
-     <script src="js/tos_modal.js"></script>
+    <script src="js/news_modal.js?v=<?php echo $versions['version']; ?>"></script>
+     <script src="js/tos_modal.js?v=<?php echo $versions['version']; ?>"></script>
+    <script src="js/profile_pets_ext.js?v=<?php echo $versions['version']; ?>"></script>
 
 <?php include 'email_request.php'; ?>
 <?php include 'user_settings.php'; ?>

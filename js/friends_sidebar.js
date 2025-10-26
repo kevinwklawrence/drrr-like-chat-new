@@ -15,6 +15,8 @@ class FriendsSidebarManager {
         this.dragOffset = { x: 0, y: 0 };
         this.updateInterval = null;
         this.notificationQueue = [];
+        this.roomUsers = []; // Track users currently in the room
+        this.hiddenConversations = this.loadHiddenConversations(); // Track temporarily hidden conversations
 
         this.initialize();
     }
@@ -174,20 +176,117 @@ class FriendsSidebarManager {
     }
 
     loadFriendRequests() {
+        // Try to get friend requests from multiple sources
+        
+        // First, try the notifications endpoint
         $.ajax({
             url: 'api/friends.php',
             method: 'GET',
             data: { action: 'get_notifications' },
             dataType: 'json',
             success: (response) => {
-                if (response.status === 'success') {
-                    const pendingRequests = response.notifications.filter(n => n.type === 'friend_request' && !n.is_read);
-                    this.friendRequests = pendingRequests;
-                    this.renderFriendRequests();
+                console.log('Friend requests (notifications) response:', response);
+                let requestsFromNotifications = [];
+                
+                if (response.status === 'success' && response.notifications) {
+                    requestsFromNotifications = response.notifications.filter(n => n.type === 'friend_request' && !n.is_read);
+                    console.log('Requests from notifications:', requestsFromNotifications);
                 }
+                
+                // Also check the main friends endpoint for pending requests
+                $.ajax({
+                    url: 'api/friends.php',
+                    method: 'GET',
+                    data: { action: 'get' },
+                    dataType: 'json',
+                    success: (friendsResponse) => {
+                        console.log('Friends response for requests check:', friendsResponse);
+                        let requestsFromFriends = [];
+                        
+                        if (friendsResponse.status === 'success' && friendsResponse.friends) {
+                            // Check for 'pending' status requests where current user is the recipient
+                            requestsFromFriends = friendsResponse.friends.filter(f => 
+                                f.status === 'pending' && f.request_type === 'received'
+                            );
+                            console.log('Requests from friends endpoint (pending):', requestsFromFriends);
+                        }
+                        
+                        // Combine both sources and remove duplicates
+                        const allRequests = [...requestsFromNotifications];
+                        
+                        // Add friend requests that aren't already in notifications
+                        requestsFromFriends.forEach(fr => {
+                            if (!allRequests.find(r => r.from_user_id === fr.friend_user_id)) {
+                                // Convert friend format to notification format
+                                allRequests.push({
+                                    id: fr.id, // Friendship record ID (used for accept/decline)
+                                    friendship_id: fr.id, // Store explicitly for clarity
+                                    type: 'friend_request',
+                                    from_user_id: fr.friend_user_id,
+                                    from_username: fr.username,
+                                    from_avatar: fr.avatar,
+                                    avatar_hue: fr.avatar_hue,
+                                    avatar_saturation: fr.avatar_saturation,
+                                    is_read: false,
+                                    created_at: fr.created_at
+                                });
+                            }
+                        });
+                        
+                        console.log('Total friend requests found:', allRequests);
+                        this.friendRequests = allRequests;
+                        this.renderFriendRequests();
+                    },
+                    error: (xhr, status, error) => {
+                        console.error('Error checking friends for requests:', error);
+                        // Fall back to just notifications
+                        this.friendRequests = requestsFromNotifications;
+                        this.renderFriendRequests();
+                    }
+                });
             },
             error: (xhr, status, error) => {
                 console.error('Error loading friend requests:', error);
+                console.error('Response:', xhr.responseText);
+                
+                // Try the friends endpoint as fallback
+                $.ajax({
+                    url: 'api/friends.php',
+                    method: 'GET',
+                    data: { action: 'get' },
+                    dataType: 'json',
+                    success: (friendsResponse) => {
+                        console.log('Fallback friends response:', friendsResponse);
+                        let requestsFromFriends = [];
+                        
+                        if (friendsResponse.status === 'success' && friendsResponse.friends) {
+                            requestsFromFriends = friendsResponse.friends.filter(f => 
+                                f.status === 'pending' && f.request_type === 'received'
+                            );
+                            
+                            this.friendRequests = requestsFromFriends.map(fr => ({
+                                id: fr.id,
+                                friendship_id: fr.id,
+                                type: 'friend_request',
+                                from_user_id: fr.friend_user_id,
+                                from_username: fr.username,
+                                from_avatar: fr.avatar,
+                                avatar_hue: fr.avatar_hue,
+                                avatar_saturation: fr.avatar_saturation,
+                                is_read: false,
+                                created_at: fr.created_at
+                            }));
+                        }
+                        
+                        console.log('Friend requests from fallback:', this.friendRequests);
+                        this.renderFriendRequests();
+                    },
+                    error: (xhr2, status2, error2) => {
+                        console.error('Error in fallback friends check:', error2);
+                        this.friendRequests = [];
+                        this.renderFriendRequests();
+                    }
+                });
             }
         });
     }
@@ -214,15 +313,16 @@ class FriendsSidebarManager {
             const timeAgo = this.getTimeAgo(request.created_at);
             html += `
                 <div class="friend-request-item" data-notification-id="${request.id}">
-                    <img src="images/${request.from_avatar || 'default_avatar.jpg'}"
+                    <img src="images/${request.from_avatar || request.avatar || 'default_avatar.jpg'}"
                          class="friend-request-avatar"
-                         alt="${request.from_username}">
+                         alt="${request.from_username || request.username}"
+                         style="filter: hue-rotate(${request.avatar_hue || 0}deg) saturate(${request.avatar_saturation || 100}%);">
                     <div class="friend-request-info">
-                        <div class="friend-request-name">${request.from_username}</div>
+                        <div class="friend-request-name">${request.from_username || request.username}</div>
                         <div class="friend-request-time">${timeAgo}</div>
                     </div>
                     <div class="friend-request-actions">
-                        <button class="friend-request-btn accept" onclick="friendsSidebarManager.acceptFriendRequest(${request.from_user_id}, ${request.id})">
+                        <button class="friend-request-btn accept" onclick="friendsSidebarManager.acceptFriendRequest(${request.friendship_id || request.id}, ${request.id})">
                             <i class="fas fa-check"></i>
                         </button>
                         <button class="friend-request-btn decline" onclick="friendsSidebarManager.declineFriendRequest(${request.id})">
@@ -237,6 +337,16 @@ class FriendsSidebarManager {
     }
 
     acceptFriendRequest(friendId, notificationId) {
+        console.log('Accepting friend request with friendId:', friendId, 'notificationId:', notificationId);
+        const requestItem = document.querySelector(`[data-notification-id="${notificationId}"]`);
+        const buttons = requestItem ? requestItem.querySelectorAll('button') : [];
+        
+        // Disable buttons and show loading state
+        buttons.forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+        });
+
         $.ajax({
             url: 'api/friends.php',
             method: 'POST',
@@ -246,22 +356,35 @@ class FriendsSidebarManager {
             },
             dataType: 'json',
             success: (response) => {
+                console.log('Accept friend request response:', response);
                 if (response.status === 'success') {
-                    // Remove the notification
-                    $(`[data-notification-id="${notificationId}"]`).fadeOut(300, function() {
-                        $(this).remove();
-                    });
+                    // Remove the notification immediately
+                    if (requestItem) {
+                        $(requestItem).fadeOut(300, function() {
+                            $(this).remove();
+                        });
+                    }
 
                     // Reload friends and requests
                     this.loadFriends();
                     this.loadFriendRequests();
 
-                    this.showToastNotification('friend-request', 'Friend Request Accepted', `You are now friends with this user!`);
+                    this.showToastNotification('friend-request', 'Friend Request Accepted', `You are now friends!`);
                 } else {
+                    // Re-enable buttons on error
+                    buttons.forEach(btn => {
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                    });
                     alert('Error accepting friend request: ' + response.message);
                 }
             },
             error: (xhr, status, error) => {
+                // Re-enable buttons on error
+                buttons.forEach(btn => {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                });
                 console.error('Error accepting friend request:', error);
                 alert('Failed to accept friend request');
             }
@@ -269,6 +392,15 @@ class FriendsSidebarManager {
     }
 
     declineFriendRequest(notificationId) {
+        const requestItem = document.querySelector(`[data-notification-id="${notificationId}"]`);
+        const buttons = requestItem ? requestItem.querySelectorAll('button') : [];
+        
+        // Disable buttons and show loading state
+        buttons.forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+        });
+
         // Mark notification as read to remove it
         $.ajax({
             url: 'api/friends.php',
@@ -279,10 +411,20 @@ class FriendsSidebarManager {
             },
             dataType: 'json',
             success: (response) => {
-                $(`[data-notification-id="${notificationId}"]`).fadeOut(300, function() {
-                    $(this).remove();
-                });
+                if (requestItem) {
+                    $(requestItem).fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                }
                 this.loadFriendRequests();
+            },
+            error: (xhr, status, error) => {
+                // Re-enable buttons on error
+                buttons.forEach(btn => {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                });
+                console.error('Error declining friend request:', error);
             }
         });
     }
@@ -299,7 +441,20 @@ class FriendsSidebarManager {
             dataType: 'json',
             success: (response) => {
                 if (response.status === 'success') {
-                    this.conversations = response.conversations || [];
+                    const newConversations = response.conversations || [];
+                    
+                    // Unhide conversations that received new messages
+                    newConversations.forEach(conv => {
+                        if (this.isConversationHidden(conv.username)) {
+                            // Check if this is a new message (compare with old data)
+                            const oldConv = this.conversations.find(c => c.username === conv.username);
+                            if (!oldConv || new Date(conv.last_message_time) > new Date(oldConv.last_message_time)) {
+                                this.unhideConversation(conv.username);
+                            }
+                        }
+                    });
+                    
+                    this.conversations = newConversations;
                     this.renderConversations();
                 }
             },
@@ -326,39 +481,82 @@ class FriendsSidebarManager {
             return;
         }
 
-        // Sort by most recent
-        allConversations.sort((a, b) => {
+        // MERGE conversations by username - keep only the most recent one per person
+        const mergedConversations = new Map();
+        allConversations.forEach(conv => {
+            const username = conv.username;
+            const existingConv = mergedConversations.get(username);
+            
+            if (!existingConv) {
+                // First conversation with this user
+                mergedConversations.set(username, conv);
+            } else {
+                // Already have a conversation with this user - keep the most recent one
+                const existingTime = new Date(existingConv.last_message_time || 0);
+                const newTime = new Date(conv.last_message_time || 0);
+                
+                if (newTime > existingTime) {
+                    mergedConversations.set(username, conv);
+                } else if (newTime.getTime() === existingTime.getTime()) {
+                    // Same timestamp - prefer PM over whisper for consistency
+                    if (conv.type !== 'whisper') {
+                        mergedConversations.set(username, conv);
+                    }
+                }
+            }
+        });
+
+        // Convert back to array and filter out hidden conversations
+        const uniqueConversations = Array.from(mergedConversations.values()).filter(conv => 
+            !this.isConversationHidden(conv.username)
+        );
+        
+        uniqueConversations.sort((a, b) => {
             const timeA = new Date(a.last_message_time || 0);
             const timeB = new Date(b.last_message_time || 0);
             return timeB - timeA;
         });
 
+        if (uniqueConversations.length === 0) {
+            conversationsList.innerHTML = `
+                <div class="sidebar-empty-state">
+                    <i class="fas fa-comments"></i>
+                    <p>No visible conversations</p>
+                </div>
+            `;
+            return;
+        }
+
         let html = '';
-        allConversations.forEach(conv => {
+        uniqueConversations.forEach(conv => {
             const unreadClass = conv.unread_count > 0 ? 'unread' : '';
             const preview = conv.last_message ? this.stripHTML(conv.last_message) : 'No messages yet';
             const timeAgo = this.getTimeAgo(conv.last_message_time);
             const isWhisper = conv.type === 'whisper';
-            const icon = isWhisper ? '<i class="fas fa-comment-dots" style="font-size: 0.8rem; margin-right: 4px;"></i>' : '';
 
             // Use correct ID field based on type
             const recipientId = isWhisper ? conv.other_user_id_string : conv.other_user_id;
             const idParam = isWhisper ? `'${recipientId}'` : recipientId;
 
             html += `
-                <div class="conversation-item ${unreadClass}" onclick="friendsSidebarManager.${isWhisper ? 'openWhisperConversation' : 'openPrivateMessage'}(${idParam}, '${conv.username}')">
-                    <img src="images/${conv.avatar || 'default_avatar.jpg'}"
-                         class="conversation-avatar"
-                         alt="${conv.username}"
-                         style="filter: hue-rotate(${conv.avatar_hue || 0}deg) saturate(${conv.avatar_saturation || 100}%);">
-                    <div class="conversation-info">
-                        <div class="conversation-name">${icon}${conv.username}</div>
-                        <div class="conversation-preview">${preview}</div>
+                <div class="conversation-item ${unreadClass}">
+                    <div onclick="friendsSidebarManager.${isWhisper ? 'openWhisperConversation' : 'openPrivateMessage'}(${idParam}, '${conv.username}')" style="display: flex; flex: 1; min-width: 0;">
+                        <img src="images/${conv.avatar || 'default_avatar.jpg'}"
+                             class="conversation-avatar"
+                             alt="${conv.username}"
+                             style="filter: hue-rotate(${conv.avatar_hue || 0}deg) saturate(${conv.avatar_saturation || 100}%);">
+                        <div class="conversation-info">
+                            <div class="conversation-name">${conv.username}</div>
+                            <div class="conversation-preview">${preview}</div>
+                        </div>
+                        <div class="conversation-meta">
+                            <div class="conversation-time">${timeAgo}</div>
+                            ${conv.unread_count > 0 ? `<div class="conversation-unread-badge">${conv.unread_count}</div>` : ''}
+                        </div>
                     </div>
-                    <div class="conversation-meta">
-                        <div class="conversation-time">${timeAgo}</div>
-                        ${conv.unread_count > 0 ? `<div class="conversation-unread-badge">${conv.unread_count}</div>` : ''}
-                    </div>
+                    <button class="conversation-hide-btn" onclick="event.stopPropagation(); friendsSidebarManager.hideConversation('${conv.username}')" title="Hide conversation">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
             `;
         });
@@ -367,11 +565,60 @@ class FriendsSidebarManager {
     }
 
     // ========================================
+    // HIDDEN CONVERSATIONS MANAGEMENT
+    // ========================================
+
+    loadHiddenConversations() {
+        try {
+            const hidden = localStorage.getItem('hiddenConversations');
+            return hidden ? JSON.parse(hidden) : [];
+        } catch (e) {
+            console.error('Error loading hidden conversations:', e);
+            return [];
+        }
+    }
+
+    saveHiddenConversations() {
+        try {
+            localStorage.setItem('hiddenConversations', JSON.stringify(this.hiddenConversations));
+        } catch (e) {
+            console.error('Error saving hidden conversations:', e);
+        }
+    }
+
+    isConversationHidden(username) {
+        return this.hiddenConversations.includes(username);
+    }
+
+    hideConversation(username) {
+        if (!this.isConversationHidden(username)) {
+            this.hiddenConversations.push(username);
+            this.saveHiddenConversations();
+            this.renderConversations();
+        }
+    }
+
+    unhideConversation(username) {
+        const index = this.hiddenConversations.indexOf(username);
+        if (index > -1) {
+            this.hiddenConversations.splice(index, 1);
+            this.saveHiddenConversations();
+            this.renderConversations();
+        }
+    }
+
+
+    // ========================================
     // DM MODAL MANAGEMENT
     // ========================================
 
     openPrivateMessage(userId, username) {
-        this.currentDMRecipient = { userId: parseInt(userId), username };
+        // Store both userId and userIdString (for flexibility)
+        this.currentDMRecipient = { 
+            userId: parseInt(userId), 
+            userIdString: 'user_' + userId,
+            username: username 
+        };
         this.dmModalOpen = true;
         this.currentTab = 'private-messages';
 
@@ -527,11 +774,23 @@ class FriendsSidebarManager {
             dataType: 'json',
             success: (response) => {
                 if (response.status === 'success') {
-                    // Mark whisper conversations with type
-                    this.whisperConversations = (response.conversations || []).map(conv => ({
+                    const newWhisperConversations = (response.conversations || []).map(conv => ({
                         ...conv,
                         type: 'whisper'
                     }));
+                    
+                    // Unhide conversations that received new whisper messages
+                    newWhisperConversations.forEach(conv => {
+                        if (this.isConversationHidden(conv.username)) {
+                            // Check if this is a new message (compare with old data)
+                            const oldConv = this.whisperConversations.find(c => c.username === conv.username);
+                            if (!oldConv || new Date(conv.last_message_time) > new Date(oldConv.last_message_time)) {
+                                this.unhideConversation(conv.username);
+                            }
+                        }
+                    });
+                    
+                    this.whisperConversations = newWhisperConversations;
                     // Re-render conversations to include whispers
                     this.renderConversations();
                 }
@@ -547,8 +806,16 @@ class FriendsSidebarManager {
         console.log('userIdString received:', userIdString, 'type:', typeof userIdString);
         console.log('username:', username);
 
-        // Store the full user_id_string (e.g., 'user_123' or 'guest_abcd')
-        this.currentDMRecipient = { userIdString: userIdString, username: username };
+        // Store both userIdString and userId (extract from userIdString if registered user)
+        const recipient = { userIdString: userIdString, username: username };
+        
+        // If it's a registered user (user_123 format), extract userId
+        const match = userIdString.match(/^user_(\d+)$/);
+        if (match) {
+            recipient.userId = parseInt(match[1]);
+        }
+        
+        this.currentDMRecipient = recipient;
         this.dmModalOpen = true;
         this.currentTab = 'whispers';
 
@@ -687,8 +954,7 @@ class FriendsSidebarManager {
         event.preventDefault();
 
         if (!this.currentDMRecipient) {
-            alert('No recipient selected');
-            console.error('currentDMRecipient is null/undefined');
+            alert('No recipient selected. Please click on a conversation first.');
             return;
         }
 
@@ -696,50 +962,79 @@ class FriendsSidebarManager {
         const message = input.value.trim();
 
         if (!message) {
-            console.log('Message is empty');
             return;
         }
 
-        const isWhisper = this.currentTab === 'whispers';
+        // Use the CURRENT TAB to determine message type
+        const isWhisperTab = this.currentTab === 'whispers';
+        let apiUrl, apiData;
 
-        console.log('=== SEND MESSAGE DEBUG ===');
-        console.log('currentTab:', this.currentTab);
-        console.log('isWhisper:', isWhisper);
-        console.log('currentDMRecipient:', this.currentDMRecipient);
+        if (isWhisperTab) {
+            // Whisper tab - send as whisper
+            // First, make sure we have a userIdString
+            let userIdString = this.currentDMRecipient.userIdString;
+            if (!userIdString && this.currentDMRecipient.userId) {
+                // Convert userId to userIdString
+                userIdString = 'user_' + this.currentDMRecipient.userId;
+            }
+            
+            if (!userIdString) {
+                alert('Cannot whisper to this user.');
+                return;
+            }
 
-        // Check if we have the right recipient type for the current tab
-        const hasUserIdString = this.currentDMRecipient.hasOwnProperty('userIdString');
-        const hasUserId = this.currentDMRecipient.hasOwnProperty('userId');
+            console.log('=== WHISPER SEND DEBUG ===');
+            console.log('Sending whisper to userIdString:', userIdString);
+            console.log('Current recipient:', this.currentDMRecipient);
+            
+            // CHECK if user is in room BEFORE sending
+            const inRoom = this.isUserInRoom(this.currentDMRecipient.userId, userIdString);
+            console.log('Is in room:', inRoom);
+            
+            if (!inRoom) {
+                alert('This user is not currently in the room. Whispers only work for users in the same room. Please switch to the Private Messages tab.');
+                return;
+            }
+            
+            // If user was found by username match, use their ACTUAL room userIdString
+            if (this.currentDMRecipient.actualRoomUserIdString) {
+                userIdString = this.currentDMRecipient.actualRoomUserIdString;
+                console.log('Using actual room userIdString:', userIdString);
+            }
 
-        console.log('hasUserIdString:', hasUserIdString, 'hasUserId:', hasUserId);
+            apiUrl = 'api/room_whispers.php';
+            apiData = {
+                action: 'send',
+                recipient_user_id_string: userIdString,
+                message: message
+            };
+        } else {
+            // PM tab - send as private message
+            let userId = this.currentDMRecipient.userId;
+            
+            if (!userId && this.currentDMRecipient.userIdString) {
+                // Try to extract userId from userIdString
+                const match = this.currentDMRecipient.userIdString.match(/^user_(\d+)$/);
+                if (match) {
+                    userId = parseInt(match[1]);
+                } else {
+                    alert('Cannot send private message to guest users.');
+                    return;
+                }
+            }
+            
+            if (!userId) {
+                alert('Cannot send private message to this user.');
+                return;
+            }
 
-        if (isWhisper && !hasUserIdString && hasUserId) {
-            alert('Error: Cannot send whisper to a PM recipient. Please click on the user again to start a whisper conversation.');
-            console.error('Mismatch: Trying to send whisper but have PM recipient');
-            return;
+            apiUrl = 'api/private_messages.php';
+            apiData = {
+                action: 'send',
+                recipient_id: parseInt(userId),
+                message: message
+            };
         }
-
-        if (!isWhisper && !hasUserId && hasUserIdString) {
-            alert('Error: Cannot send PM to a whisper recipient. Please click on the user again to start a PM conversation.');
-            console.error('Mismatch: Trying to send PM but have whisper recipient');
-            return;
-        }
-
-        const apiUrl = isWhisper ? 'api/room_whispers.php' : 'api/private_messages.php';
-
-        // Prepare data based on API requirements
-        const apiData = isWhisper ? {
-            action: 'send',
-            recipient_user_id_string: this.currentDMRecipient.userIdString,
-            message: message
-        } : {
-            action: 'send',
-            recipient_id: parseInt(this.currentDMRecipient.userId),
-            message: message
-        };
-
-        console.log('API URL:', apiUrl);
-        console.log('API Data:', apiData);
 
         $.ajax({
             url: apiUrl,
@@ -749,27 +1044,30 @@ class FriendsSidebarManager {
             success: (response) => {
                 if (response.status === 'success') {
                     input.value = '';
-                    // Reload messages based on tab
-                    if (isWhisper) {
-                        this.loadWhisperMessages(this.currentDMRecipient.userIdString);
+                    // Reload based on what we just sent
+                    if (isWhisperTab && apiData.recipient_user_id_string) {
+                        this.loadWhisperMessages(apiData.recipient_user_id_string);
                         this.loadWhisperConversations();
-                    } else {
-                        this.loadPrivateMessages(this.currentDMRecipient.userId);
+                    } else if (apiData.recipient_id) {
+                        this.loadPrivateMessages(apiData.recipient_id);
                         this.loadConversations();
                     }
                 } else {
-                    alert('Error sending message: ' + response.message);
-                    console.error('Send message error:', response);
+                    // Better error handling
+                    if (response.message && response.message.toLowerCase().includes('not in room')) {
+                        alert('This user is not currently in the room. Please switch to the Private Messages tab to message them.');
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
                 }
             },
             error: (xhr, status, error) => {
                 console.error('Error sending message:', error);
-                console.error('XHR:', xhr);
-                console.error('Response:', xhr.responseText);
-                alert('Failed to send message: ' + error);
+                alert('Failed to send message. Please try again.');
             }
         });
     }
+
 
     // ========================================
     // DRAGGABLE FUNCTIONALITY
@@ -883,6 +1181,69 @@ class FriendsSidebarManager {
         const tmp = document.createElement('div');
         tmp.innerHTML = html;
         return tmp.textContent || tmp.innerText || '';
+    }
+
+    updateRoomUsers(users) {
+        // Called from room.js to update who's currently in the room
+        this.roomUsers = users || [];
+    }
+
+    isUserInRoom(userId, userIdString) {
+        // Read users directly from the whisper buttons in the user list
+        const userList = document.getElementById('userList');
+        if (!userList) {
+            console.log('❌ userList not found');
+            return false;
+        }
+        
+        // Find all whisper buttons and check their onclick attributes
+        const whisperButtons = userList.querySelectorAll('.whisper-btn');
+        console.log(`🔍 Found ${whisperButtons.length} whisper buttons in room`);
+        
+        const foundUsers = [];
+        for (let button of whisperButtons) {
+            const onclick = button.getAttribute('onclick');
+            if (!onclick) continue;
+            
+            // Extract user_id_string and username from onclick
+            // Format: friendsSidebarManager.openWhisperConversation('user_123', 'Username')
+            // Note: username may have escaped quotes like 'O\'Brien'
+            const match = onclick.match(/openWhisperConversation\('([^']+)',\s*'((?:[^'\\]|\\.)*)'/);
+            if (match) {
+                const buttonUserIdString = match[1];
+                const buttonUsername = match[2].replace(/\\'/g, "'"); // Unescape quotes
+                foundUsers.push({ userIdString: buttonUserIdString, username: buttonUsername });
+                
+                console.log('Room user:', buttonUsername, '→', buttonUserIdString);
+                
+                // Direct match on userIdString
+                if (userIdString && buttonUserIdString === userIdString) {
+                    console.log('✅ Found user in room by userIdString:', userIdString);
+                    return true;
+                }
+                
+                // Match userId by extracting from user_123 format
+                if (userId) {
+                    const userMatch = buttonUserIdString.match(/^user_(\d+)$/);
+                    if (userMatch && parseInt(userMatch[1]) === parseInt(userId)) {
+                        console.log('✅ Found user in room by userId:', userId, '(as', buttonUserIdString + ')');
+                        return true;
+                    }
+                }
+                
+                // Match by username (for cases where user is guest but we have their registered userId)
+                if (this.currentDMRecipient && buttonUsername === this.currentDMRecipient.username) {
+                    console.log('✅ Found user in room by username:', buttonUsername, 'with userIdString:', buttonUserIdString);
+                    // Update the recipient with the ACTUAL userIdString they're using in the room
+                    this.currentDMRecipient.actualRoomUserIdString = buttonUserIdString;
+                    return true;
+                }
+            }
+        }
+        
+        console.log('❌ User NOT in room. Looking for:', { userId, userIdString, username: this.currentDMRecipient?.username });
+        console.log('Users in room:', foundUsers);
+        return false;
     }
 
     destroy() {

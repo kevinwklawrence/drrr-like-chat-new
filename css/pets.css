@@ -1,0 +1,358 @@
+/* css/pets.css - Pet System Styling */
+
+.pet-card {
+    background: #2a2a2a;
+    border: 2px solid #444;
+    border-radius: 12px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.pet-card:hover {
+    border-color: #667eea;
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.pet-card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.pet-image {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    margin-right: 1rem;
+    border-radius: 8px;
+    background: #333;
+    padding: 0.5rem;
+}
+
+.pet-info h4 {
+    margin: 0;
+    color: #fff;
+    font-size: 1.2rem;
+}
+
+.pet-type {
+    color: #999;
+    font-size: 0.9rem;
+}
+
+.bond-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    padding: 0.3rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+
+.stat-bar {
+    margin-bottom: 0.8rem;
+}
+
+.stat-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+}
+
+.progress {
+    height: 12px;
+    background: #333;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progress-bar.happiness-bar {
+    background: linear-gradient(90deg, #ff6b6b, #ffd93d);
+}
+
+.progress-bar.hunger-bar {
+    background: linear-gradient(90deg, #6bcf7f, #43a047);
+}
+
+.progress-bar.xp-bar {
+    background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+.dura-collect {
+    background: #333;
+    padding: 0.8rem;
+    border-radius: 8px;
+    text-align: center;
+    margin-top: 1rem;
+    border: 2px solid #444;
+}
+
+.dura-amount {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #ffd93d;
+    display: block;
+}
+
+.dura-rate {
+    font-size: 0.85rem;
+    color: #999;
+}
+
+/* Pet Modal Styling */
+.pet-modal-image {
+    width: 150px;
+    height: 150px;
+    object-fit: contain;
+    margin: 0 auto;
+    display: block;
+    background: #333;
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.pet-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.8rem;
+    margin-top: 1.5rem;
+}
+
+.pet-action-btn {
+    padding: 0.8rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.pet-action-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.pet-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pet-action-btn.feed-btn {
+    background: linear-gradient(135deg, #6bcf7f, #43a047);
+    color: #fff;
+}
+
+.pet-action-btn.play-btn {
+    background: linear-gradient(135deg, #ffd93d, #ffb02e);
+    color: #333;
+}
+
+.pet-action-btn.care-btn {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+    color: #fff;
+}
+
+.pet-action-btn.collect-btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+}
+
+.cooldown-timer {
+    font-size: 0.75rem;
+    opacity: 0.8;
+}
+
+/* Pet Shop Styling */
+.shop-pet-card {
+    background: #2a2a2a;
+    border: 2px solid #444;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.shop-pet-card.owned {
+    opacity: 0.6;
+    border-color: #555;
+}
+
+.shop-pet-image {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    background: #333;
+    border-radius: 8px;
+    padding: 0.5rem;
+}
+
+.shop-pet-info {
+    flex: 1;
+}
+
+.shop-pet-name {
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    color: #fff;
+}
+
+.shop-pet-desc {
+    font-size: 0.85rem;
+    color: #999;
+    margin-bottom: 0.5rem;
+}
+
+.shop-pet-price {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #ffd93d;
+}
+
+.rarity-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-left: 0.5rem;
+}
+
+.rarity-common {
+    background: #6c757d;
+    color: #fff;
+}
+
+.rarity-rare {
+    background: #3b82f6;
+    color: #fff;
+}
+
+.rarity-legendary {
+    background: linear-gradient(135deg, #ffd93d, #ff6b6b);
+    color: #fff;
+}
+
+.starter-badge {
+    background: #43a047;
+    color: #fff;
+}
+
+/* Favorite Star */
+.favorite-star {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #444;
+    transition: all 0.2s;
+}
+
+.favorite-star.active {
+    color: #ffd93d;
+}
+
+.favorite-star:hover {
+    transform: scale(1.2);
+}
+
+/* Empty State */
+.empty-pets {
+    text-align: center;
+    padding: 3rem 1rem;
+    background: #2a2a2a;
+    border-radius: 12px;
+    border: 2px dashed #444;
+}
+
+.empty-pets i {
+    font-size: 3rem;
+    color: #555;
+    margin-bottom: 1rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .pet-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .pet-modal-image {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .shop-pet-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .shop-pet-image {
+        width: 80px;
+        height: 80px;
+    }
+}
+
+/* Animations */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.collecting {
+    animation: pulse 1s ease-in-out;
+}
+
+/* Profile Pet Display */
+.profile-pets-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #444;
+}
+
+.profile-pet-mini {
+    display: inline-block;
+    margin: 0.3rem;
+    text-align: center;
+}
+
+.profile-pet-mini img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    background: #333;
+    border-radius: 6px;
+    padding: 0.3rem;
+    border: 2px solid #667eea;
+}
+
+.profile-pet-mini .pet-name {
+    font-size: 0.75rem;
+    color: #ccc;
+    display: block;
+    margin-top: 0.2rem;
+}
+
+.profile-pet-mini .bond-level {
+    font-size: 0.65rem;
+    color: #999;
+}

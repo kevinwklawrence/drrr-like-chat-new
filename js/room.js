@@ -878,6 +878,11 @@ function handleUsersResponse(data) {
     }
     
     $('#userList').html(html);
+
+    // Update friends sidebar with current room users (for whisper detection)
+    if (typeof friendsSidebarManager !== 'undefined' && friendsSidebarManager) {
+        friendsSidebarManager.updateRoomUsers(users);
+    }
 }
 
 function handleMentionsResponse(response) {
@@ -2016,125 +2021,147 @@ function renderUser(user) {
     }
     
     let actions = '';
-    if (user.user_id_string !== currentUserIdString) {
-        actions = `<div class="user-actions">`;
-        
-        const displayName = user.display_name || user.username || user.guest_name || 'Unknown';
-        const whisperText = user.is_afk ? '' : '';
-        actions += `
-            <button class="btn whisper-btn ${user.is_afk ? 'afk-user' : ''}" onclick="if(friendsSidebarManager){friendsSidebarManager.openWhisperConversation('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}');}">
-                <i class="fas fa-comment"></i> ${whisperText}
-            </button>
-        `;
-
-        if (user.user_id && currentUser.type === 'user') {
-            if (friendshipCache.has(user.user_id)) {
-                const isFriend = friendshipCache.get(user.user_id);
-                if (isFriend) {
-                    const pmText = user.is_afk ? 'PM (AFK)' : 'PM';
-                    actions += `
-                        <button class="btn btn-primary ${user.is_afk ? 'afk-user' : ''}" onclick="if(friendsSidebarManager){friendsSidebarManager.openPrivateMessage(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}');}">
-                            <i class="fas fa-envelope"></i>
-                        </button>
-                    `;
-                } else {
-                    actions += `
-                        <button class="btn friend-btn" onclick="sendFriendRequest(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
-                            <i class="fas fa-user-plus"></i>
-                        </button>
-                    `;
-                }
-                 // Mute button
-                const isMuted = isUserMuted(user.user_id_string);
-                if (isMuted) {
-                    actions += `
-                        <button class="btn btn-secondary" onclick="unmuteUser('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
-                            <i class="fas fa-volume-mute"></i>
-                        </button>
-                    `;
-                } else {
-                    actions += `
-                        <button class="btn btn-warning" onclick="muteUser('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
-                            <i class="fas fa-volume-up"></i>
-                        </button>
-                    `;
-                }
-                
-            }
-             else {
-                actions += `<div id="friend-action-${user.user_id}" class="d-inline">
-                    <button class="btn btn-secondary btn-sm" disabled>
-                        <i class="fas fa-spinner fa-spin"></i> Loading...
-                    </button>
-                </div>`;
-                
-                setTimeout(() => {
-                    checkIfFriend(user.user_id, function(isFriend) {
-                        const container = $(`#friend-action-${user.user_id}`);
-                        if (container.length > 0) {
-                            if (isFriend) {
-                                const pmText = user.is_afk ? 'PM (AFK)' : 'PM';
-                                container.html(`
-                                    <button class="btn btn-primary ${user.is_afk ? 'afk-user' : ''}" onclick="openPrivateMessage(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
-                                        <i class="fas fa-envelope"></i>
-                                    </button>
-                                `);
-                            } else {
-                                container.html(`
-                                    <button class="btn friend-btn" onclick="sendFriendRequest(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
-                                        <i class="fas fa-user-plus"></i>
-                                    </button>
-                                `);
-                            }
-                        }
-                    });
-                }, 50);
-            }
-        }
-        
-        if ((isHost || isAdmin || isModerator) && !user.is_host && !user.is_admin && !user.is_moderator) {
-            actions += `
-                <button class="btn btn-ban-user" onclick="showBanModal('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
-                    <i class="fas fa-ban"></i>
-                </button>
-            `;
-        }
-
-        if (isHost && !user.is_host && !isCurrentUser && !user.is_admin && !user.is_moderator) {
-    actions += `
-        <button class="btn btn-pass-host" onclick="showPassHostModal('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}')">
-            <i class="fas fa-crown"></i>
-        </button>
-    `;
-}
-
-        if ((isAdmin || isModerator) && !user.is_admin && !(user.is_moderator && !isAdmin)) {
-            actions += `
-                <button class="btn btn-site-ban-user" onclick="showQuickBanModal('${user.user_id_string}', '${displayName.replace(/'/g, "\\'")}', '')">
-                    <i class="fas fa-ban"></i>
-                </button>
-            `;
-        }
-
-         if (user.user_id && user.user_id > 0) {
-                actions += `
-                    <button class="btn tip-btn" onclick="showTipModal(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
-                        <i class="fas fa-coins"></i>
-                    </button>
+if (user.user_id_string !== currentUserIdString) {
+    const displayName = user.display_name || user.username || user.guest_name || 'Unknown';
+    const userIdSafe = user.user_id_string.replace(/'/g, "\\'");
+    
+    // Build dropdown menu items
+    let menuItems = '';
+    
+    // Friend/PM action (conditionally added based on friendship status)
+    if (user.user_id && currentUser.type === 'user') {
+        if (friendshipCache.has(user.user_id)) {
+            const isFriend = friendshipCache.get(user.user_id);
+            if (isFriend) {
+                // PM button for friends
+                const pmText = user.is_afk ? 'PM (AFK)' : 'PM';
+                menuItems += `
+                    <div class="user-actions-menu-item pm-action" onclick="if(friendsSidebarManager){friendsSidebarManager.openPrivateMessage(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}');}">
+                        <i class="fas fa-envelope"></i>
+                        <span>${pmText}</span>
+                    </div>
+                `;
+            } else {
+                // Add Friend button
+                menuItems += `
+                    <div class="user-actions-menu-item friend-action" onclick="sendFriendRequest(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Add Friend</span>
+                    </div>
                 `;
             }
-        
-        actions += `</div>`;
-    } else if (isCurrentUser) {
-        // AFK toggle for current user
-       /* actions = `
-            <div class="user-actions">
-                <button class="btn btn-toggle-afk ${currentUserAFK ? 'btn-warning' : 'btn-outline-warning'}" onclick="toggleAFK()">
-                    ${currentUserAFK ? '<i class="fas fa-eye"></i> Back from AFK' : '<i class="fas fa-bed"></i> Go AFK'}
-                </button>
-            </div>
-        `;*/
+        } else {
+            // Loading state
+            menuItems += `
+                <div class="user-actions-menu-item loading" id="friend-action-menu-${user.user_id}">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Loading...</span>
+                </div>
+            `;
+            
+            // Asynchronously check friendship and update menu
+            setTimeout(() => {
+                checkIfFriend(user.user_id, function(isFriend) {
+                    const menuItem = document.getElementById(`friend-action-menu-${user.user_id}`);
+                    if (menuItem) {
+                        if (isFriend) {
+                            const pmText = user.is_afk ? 'PM (AFK)' : 'PM';
+                            menuItem.outerHTML = `
+                                <div class="user-actions-menu-item pm-action" onclick="if(friendsSidebarManager){friendsSidebarManager.openPrivateMessage(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}');}">
+                                    <i class="fas fa-envelope"></i>
+                                    <span>${pmText}</span>
+                                </div>
+                            `;
+                        } else {
+                            menuItem.outerHTML = `
+                                <div class="user-actions-menu-item friend-action" onclick="sendFriendRequest(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
+                                    <i class="fas fa-user-plus"></i>
+                                    <span>Add Friend</span>
+                                </div>
+                            `;
+                        }
+                    }
+                });
+            }, 50);
+        }
     }
+    
+    // Mute button - ALWAYS VISIBLE (moved outside friendship check)
+    const isMuted = typeof isUserMuted === 'function' ? isUserMuted(user.user_id_string) : false;
+    if (isMuted) {
+        menuItems += `
+            <div class="user-actions-menu-item unmute-action" onclick="unmuteUser('${userIdSafe}', '${displayName.replace(/'/g, "\\'")}')">
+                <i class="fas fa-volume-mute"></i>
+                <span>Unmute</span>
+            </div>
+        `;
+    } else {
+        menuItems += `
+            <div class="user-actions-menu-item mute-action" onclick="muteUser('${userIdSafe}', '${displayName.replace(/'/g, "\\'")}')">
+                <i class="fas fa-volume-up"></i>
+                <span>Mute</span>
+            </div>
+        `;
+    }
+    
+    // Ban button (room ban for host/admin/moderator)
+    if ((isHost || isAdmin || isModerator) && !user.is_host && !user.is_admin && !user.is_moderator) {
+        menuItems += `
+            <div class="user-actions-menu-item ban-action" onclick="showBanModal('${userIdSafe}', '${displayName.replace(/'/g, "\\'")}')">
+                <i class="fas fa-ban"></i>
+                <span>Ban from Room</span>
+            </div>
+        `;
+    }
+    
+    // Pass Host button
+    if (isHost && !user.is_host && !isCurrentUser && !user.is_admin && !user.is_moderator) {
+        menuItems += `
+            <div class="user-actions-menu-item host-action" onclick="showPassHostModal('${userIdSafe}', '${displayName.replace(/'/g, "\\'")}')">
+                <i class="fas fa-crown"></i>
+                <span>Pass Host</span>
+            </div>
+        `;
+    }
+    
+    // Site Ban button (admin/moderator only)
+    if ((isAdmin || isModerator) && !user.is_admin && !(user.is_moderator && !isAdmin)) {
+        menuItems += `
+            <div class="user-actions-menu-item ban-action" onclick="showQuickBanModal('${userIdSafe}', '${displayName.replace(/'/g, "\\'")}', '')">
+                <i class="fas fa-ban"></i>
+                <span>Site Ban</span>
+            </div>
+        `;
+    }
+    
+    // Tip button
+    if (user.user_id && user.user_id > 0) {
+        menuItems += `
+            <div class="user-actions-menu-item tip-action" onclick="showTipModal(${user.user_id}, '${(user.username || '').replace(/'/g, "\\'")}')">
+                <i class="fas fa-coins"></i>
+                <span>Send Tip</span>
+            </div>
+        `;
+    }
+    
+    // Build actions HTML with whisper button + dropdown menu
+    const whisperText = user.is_afk ? '' : '';
+    actions = `
+        <div class="user-actions">
+            <button class="btn whisper-btn ${user.is_afk ? 'afk-user' : ''}" onclick="if(typeof friendsSidebarManager !== 'undefined' && friendsSidebarManager){friendsSidebarManager.openWhisperConversation('${userIdSafe}', '${displayName.replace(/'/g, "\\'")}');}">
+                <i class="fas fa-comment"></i> ${whisperText}
+            </button>
+            <div class="user-actions-dropdown">
+                <button class="user-actions-menu-btn" onclick="toggleUserActionsMenu('${userIdSafe}', event, '${displayName.replace(/'/g, "\\'")}')">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+                <div class="user-actions-menu" id="user-actions-menu-${userIdSafe}">
+                    ${menuItems}
+                </div>
+            </div>
+        </div>
+    `;
+}
     
     const userItemClass = (user.is_afk ? 'user-item afk-user' : 'user-item') + userItemExtraClass;
 
@@ -4608,7 +4635,7 @@ function updateFriendsPanel() {
     html += '</div></div>';
     $('#friendsList').html(html);
     
-    loadConversations();
+   // loadConversations();
 }
 
 function addFriend() {
